@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +19,12 @@ export function AuthForm({ mode }: Props) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isSupabaseConfigured()) {
+      setError(
+        "Supabase n’est pas configuré dans ce déploiement (variables manquantes au build).",
+      );
+      return;
+    }
     setError(null);
     setPending(true);
     const supabase = createClient();
@@ -53,8 +59,27 @@ export function AuthForm({ mode }: Props) {
     }
   }
 
+  const configured = isSupabaseConfigured();
+
   return (
     <div className="mx-auto w-full max-w-[400px] rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+      {!configured && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-relaxed text-amber-950">
+          <strong className="block font-black">Configuration manquante</strong>
+          Le site a été construit sans les clés Supabase. Ajoute les secrets{" "}
+          <code className="rounded bg-amber-100/80 px-1 text-xs">
+            NEXT_PUBLIC_SUPABASE_URL
+          </code>{" "}
+          et{" "}
+          <code className="rounded bg-amber-100/80 px-1 text-xs">
+            NEXT_PUBLIC_SUPABASE_ANON_KEY
+          </code>{" "}
+          dans GitHub → Settings → Secrets → Actions, puis relance le déploiement.
+          Les variables{" "}
+          <code className="text-xs">NEXT_PUBLIC_*</code> sont figées au moment du{" "}
+          <code className="text-xs">npm run build</code>, pas à l’ouverture de la page.
+        </div>
+      )}
       <h1 className="text-2xl font-black text-slate-900">
         {mode === "login" ? "Connexion" : "Créer un compte"}
       </h1>
@@ -110,7 +135,7 @@ export function AuthForm({ mode }: Props) {
 
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !configured}
           className="w-full rounded-xl bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(47,111,237,0.25)] disabled:opacity-60"
         >
           {pending
