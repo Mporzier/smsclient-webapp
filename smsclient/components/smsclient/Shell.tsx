@@ -1,6 +1,8 @@
 "use client";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/cn";
+import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
 import { navOverrideForRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
@@ -176,7 +178,14 @@ export function AppShell({
   onNewCampaign,
   children,
 }: ShellProps) {
+  const { signOut } = useAuth();
+  const router = useRouter();
   const active = navOverrideForRoute(route);
+
+  async function handleLogout() {
+    await signOut();
+    router.replace("/auth/login");
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] p-6">
@@ -289,12 +298,8 @@ export function AppShell({
               </button>
               <button
                 type="button"
-                onClick={() => go("deconnexion")}
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left font-semibold text-slate-600",
-                  active === "deconnexion" &&
-                    "border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)] text-slate-900",
-                )}
+                onClick={handleLogout}
+                className="flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left font-semibold text-slate-600 hover:bg-slate-50"
               >
                 <IconLogout />
                 Déconnexion
