@@ -32,11 +32,33 @@ jobs:
         working-directory: smsclient
         run: npm ci
 
+      # Secrets : Settings → Secrets and variables → Actions → Repository secrets
+      # (pas seulement « Environment » : le job build n’utilise pas environment:)
+      #
+      # Pages : Settings → Pages → Source = « GitHub Actions ». Si la source est une
+      # branche (gh-pages / main), ce workflow ne sert pas et tu vois un vieux build.
+      - name: Vérifier que les secrets Supabase sont bien injectés (longueurs seulement)
+        working-directory: smsclient
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set -e
+          ulen="${#NEXT_PUBLIC_SUPABASE_URL}"
+          klen="${#NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+          echo "NEXT_PUBLIC_SUPABASE_URL length=$ulen (attendu > 0)"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY length=$klen (attendu > 0)"
+          if [ "$ulen" -eq 0 ] || [ "$klen" -eq 0 ]; then
+            echo "::error::Secrets vides ou inaccessibles pour ce workflow. Vérifie les *Repository* secrets (pas uniquement Environment), absence de faute de frappe, et relance le workflow après les avoir créés."
+            exit 1
+          fi
+
       - name: Build static export
         working-directory: smsclient
         env:
-          # Project page : https://<user>.github.io/<repo>/
           BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
