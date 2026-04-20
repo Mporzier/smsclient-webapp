@@ -1,30 +1,48 @@
 "use client";
 
 import { AppShell } from "@/components/smsclient/Shell";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { LandingScreens } from "@/components/smsclient/Landing";
 import {
   CampagnesView,
-  ContactRowData,
   ContactsView,
   CreditsView,
   DeconnexionView,
   GroupesView,
   ParametresView,
   StatistiquesView,
-} from "@/components/smsclient/MainViews";
+} from "./MainViews";
 import {
   AjouterContactFlow,
   CampagneWizard,
   CreerGroupeFlow,
 } from "@/components/smsclient/FlowViews";
+import { ImportContactsModal } from "./ImportContactsModal";
 import {
   ContactModal,
   CreditsModal,
   GroupModal,
 } from "@/components/smsclient/PrototypeModals";
+import { useContacts } from "@/hooks/useContacts";
+import { useGroups } from "@/hooks/useGroups";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
+import { createClient } from "@/lib/supabase/client";
+import {
+  addClientsToGroupByName,
+  insertClient,
+  updateClient,
+} from "@/lib/supabase/clients";
+import { insertClientGroup } from "@/lib/supabase/groups";
+import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import type { ContactRowData } from "@/lib/types/contact";
 import type { AppRoute } from "@/lib/proto/routes";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const DEFAULT_SMS =
   "🎉 {PRENOM}, -20% aujourd'hui sur toute la boutique ! Offre valable jusqu'à 19h. Montrez ce SMS en caisse.";
@@ -52,27 +70,57 @@ function fmtFr(iso: string) {
 
 export function PrototypeApp() {
   const { landing, route, go } = useProtoNavigation();
+  const { user } = useAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const {
+    rows: contacts,
+    loading: contactsLoading,
+    error: contactsError,
+    refresh: refreshContacts,
+  } = useContacts();
+
+  const {
+    rows: groupRows,
+    loading: groupsLoading,
+    error: groupsError,
+    refresh: refreshGroups,
+  } = useGroups();
 
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactModalMode, setContactModalMode] = useState<"add" | "edit">("add");
+  const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [importContactsOpen, setImportContactsOpen] = useState(false);
 
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
   const [cmPhone, setCmPhone] = useState("");
-  const [cmGroup, setCmGroup] = useState("");
-  const [extraGroups, setExtraGroups] = useState<string[]>([]);
+  const [cmGroups, setCmGroups] = useState<string[]>([]);
 
-  const groupOptions = useMemo(
-    () => [...new Set(["Clients VIP", "Clients Fidèles", "Prospects", ...extraGroups])],
-    [extraGroups],
+  const groupOptions = useMemo(() => {
+    const fromDb = groupRows.map((g) => g.name);
+    const fromContacts = [
+      ...new Set(contacts.flatMap((c) => c.groups)),
+    ];
+    return [...new Set([...fromDb, ...fromContacts])];
+  }, [contacts, groupRows]);
+
+  const groupModalContacts = useMemo(
+    () =>
+      contacts.map((c) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        groups: c.groups,
+      })),
+    [contacts],
   );
 
   const [acFirst, setAcFirst] = useState("");
   const [acLast, setAcLast] = useState("");
   const [acPhone, setAcPhone] = useState("");
-  const [acGroup, setAcGroup] = useState("");
+  const [acGroups, setAcGroups] = useState<string[]>([]);
   const [acOptIn, setAcOptIn] = useState(true);
   const [acStop, setAcStop] = useState(false);
 
@@ -95,35 +143,43 @@ export function PrototypeApp() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const anyModal = groupModalOpen || contactModalOpen || creditsModalOpen;
+    const anyModal =
+      groupModalOpen ||
+      contactModalOpen ||
+      creditsModalOpen ||
+      importContactsOpen;
     document.body.style.overflow = anyModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [groupModalOpen, contactModalOpen, creditsModalOpen]);
+  }, [groupModalOpen, contactModalOpen, creditsModalOpen, importContactsOpen]);
 
   useEffect(() => {
-    if (route !== "credits" && route !== "statistiques") {
-      setCreditsModalOpen(false);
-    }
-    if (route !== "statistiques") setStatsOpen(false);
+    startTransition(() => {
+      if (route !== "credits" && route !== "statistiques") {
+        setCreditsModalOpen(false);
+      }
+      if (route !== "statistiques") setStatsOpen(false);
+    });
   }, [route]);
 
   const openContactAdd = useCallback(() => {
     setContactModalMode("add");
+    setContactEditRow(null);
     setCmFirst("");
     setCmLast("");
     setCmPhone("");
-    setCmGroup("");
+    setCmGroups([]);
     setContactModalOpen(true);
   }, []);
 
   const openContactEdit = useCallback((row: ContactRowData) => {
     setContactModalMode("edit");
-    setCmFirst(row.name);
-    setCmLast("");
+    setContactEditRow(row);
+    setCmFirst(row.firstName);
+    setCmLast(row.lastName);
     setCmPhone(row.phone);
-    setCmGroup(row.group === "Non Classé" ? "" : row.group);
+    setCmGroups([...row.groups]);
     setContactModalOpen(true);
   }, []);
 
@@ -133,31 +189,102 @@ export function PrototypeApp() {
     return () => window.clearTimeout(t);
   }, []);
 
+  const handleContactSave = useCallback(
+    async (payload: ContactFormSubmitPayload) => {
+      if (!user?.id) {
+        throw new Error("Tu dois être connecté pour enregistrer un contact.");
+      }
+      if (contactModalMode === "edit" && contactEditRow) {
+        const { error } = await updateClient(
+          supabase,
+          user.id,
+          contactEditRow.id,
+          payload,
+        );
+        if (error) throw error;
+      } else {
+        const { error } = await insertClient(supabase, user.id, payload);
+        if (error) throw error;
+      }
+      await refreshContacts();
+      showToast("Contact enregistré");
+    },
+    [
+      user,
+      supabase,
+      contactModalMode,
+      contactEditRow,
+      refreshContacts,
+      showToast,
+    ],
+  );
+
   const applyStatsRange = useCallback(() => {
     setChipLabel(`Période · ${fmtFr(dateFrom)} → ${fmtFr(dateTo)}`);
   }, [dateFrom, dateTo]);
 
-  const onGroupCreatedFromModal = useCallback((name: string, desc: string) => {
-    const n = name.trim();
-    if (n) setExtraGroups((prev) => (prev.includes(n) ? prev : [...prev, n]));
-    void desc;
-  }, []);
+  const onGroupCreatedFromModal = useCallback(
+    async (name: string, desc: string, selectedContactIds: string[]) => {
+      if (!user?.id) {
+        throw new Error("Tu dois être connecté pour créer un groupe.");
+      }
+      const trimmed = name.trim();
+      const { error } = await insertClientGroup(supabase, user.id, name, desc);
+      if (error) throw error;
+      if (selectedContactIds.length > 0) {
+        const assign = await addClientsToGroupByName(
+          supabase,
+          user.id,
+          selectedContactIds,
+          trimmed,
+        );
+        if (assign.error) throw assign.error;
+      }
+      await refreshGroups();
+      await refreshContacts();
+      if (trimmed) {
+        setCmGroups((prev) =>
+          prev.includes(trimmed) ? prev : [...prev, trimmed],
+        );
+      }
+      showToast(
+        selectedContactIds.length > 0
+          ? `Groupe créé · ${selectedContactIds.length} contact${selectedContactIds.length > 1 ? "s" : ""} rattaché${selectedContactIds.length > 1 ? "s" : ""}`
+          : "Groupe créé",
+      );
+    },
+    [user, supabase, refreshGroups, refreshContacts, showToast],
+  );
 
   const renderRoute = (r: AppRoute) => {
     switch (r) {
       case "contacts":
         return (
-          <ContactsView onAddContact={openContactAdd} onRowClick={openContactEdit} />
+          <ContactsView
+            rows={contacts}
+            loading={contactsLoading}
+            error={contactsError}
+            onImport={() => setImportContactsOpen(true)}
+            onAddContact={openContactAdd}
+            onRowClick={openContactEdit}
+          />
         );
       case "groupes":
-        return <GroupesView onCreateGroup={() => setGroupModalOpen(true)} />;
+        return (
+          <GroupesView
+            rows={groupRows}
+            loading={groupsLoading}
+            error={groupsError}
+            onCreateGroup={() => setGroupModalOpen(true)}
+          />
+        );
       case "campagnes":
         return <CampagnesView onNewCampaign={() => go("nouvelle-campagne-1")} />;
       case "credits":
         return (
           <CreditsView
             onBuyCredits={() => setCreditsModalOpen(true)}
-            onInvoiceClick={(id) =>
+            onInvoiceClick={(id: string) =>
               showToast(`Téléchargement de la facture ${id} (prototype)`)
             }
           />
@@ -190,8 +317,9 @@ export function PrototypeApp() {
             setLast={setAcLast}
             phone={acPhone}
             setPhone={setAcPhone}
-            group={acGroup}
-            setGroup={setAcGroup}
+            groups={acGroups}
+            setGroups={setAcGroups}
+            groupOptions={groupOptions}
             optIn={acOptIn}
             setOptIn={setAcOptIn}
             stop={acStop}
@@ -209,8 +337,9 @@ export function PrototypeApp() {
             setLast={setAcLast}
             phone={acPhone}
             setPhone={setAcPhone}
-            group={acGroup}
-            setGroup={setAcGroup}
+            groups={acGroups}
+            setGroups={setAcGroups}
+            groupOptions={groupOptions}
             optIn={acOptIn}
             setOptIn={setAcOptIn}
             stop={acStop}
@@ -228,8 +357,9 @@ export function PrototypeApp() {
             setLast={setAcLast}
             phone={acPhone}
             setPhone={setAcPhone}
-            group={acGroup}
-            setGroup={setAcGroup}
+            groups={acGroups}
+            setGroups={setAcGroups}
+            groupOptions={groupOptions}
             optIn={acOptIn}
             setOptIn={setAcOptIn}
             stop={acStop}
@@ -351,7 +481,14 @@ export function PrototypeApp() {
         );
       default:
         return (
-          <ContactsView onAddContact={openContactAdd} onRowClick={openContactEdit} />
+          <ContactsView
+            rows={contacts}
+            loading={contactsLoading}
+            error={contactsError}
+            onImport={() => setImportContactsOpen(true)}
+            onAddContact={openContactAdd}
+            onRowClick={openContactEdit}
+          />
         );
     }
   };
@@ -381,10 +518,9 @@ export function PrototypeApp() {
       <GroupModal
         open={groupModalOpen}
         onClose={() => setGroupModalOpen(false)}
-        onCreated={(name, desc) => {
-          onGroupCreatedFromModal(name, desc);
-          if (name.trim()) setCmGroup(name.trim());
-        }}
+        contacts={groupModalContacts}
+        contactsLoading={contactsLoading}
+        onCreated={onGroupCreatedFromModal}
       />
 
       <ContactModal
@@ -397,13 +533,19 @@ export function PrototypeApp() {
         setLast={setCmLast}
         phone={cmPhone}
         setPhone={setCmPhone}
-        group={cmGroup}
-        setGroup={setCmGroup}
+        groups={cmGroups}
+        setGroups={setCmGroups}
         groupOptions={groupOptions}
         onCreateGroupRequest={() => {
           setGroupModalOpen(true);
-          setCmGroup("");
+          setCmGroups([]);
         }}
+        consentDefaults={
+          contactEditRow
+            ? { optIn: contactEditRow.optIn, stop: contactEditRow.stopSms }
+            : null
+        }
+        onSaveContact={handleContactSave}
       />
 
       <CreditsModal
@@ -411,6 +553,17 @@ export function PrototypeApp() {
         onClose={() => setCreditsModalOpen(false)}
         onBought={() => showToast("Achat confirmé (prototype).")}
       />
+
+      {user?.id && (
+        <ImportContactsModal
+          open={importContactsOpen}
+          onClose={() => setImportContactsOpen(false)}
+          supabase={supabase}
+          userId={user.id}
+          onImported={refreshContacts}
+          onNotify={showToast}
+        />
+      )}
 
       {toast && (
         <div

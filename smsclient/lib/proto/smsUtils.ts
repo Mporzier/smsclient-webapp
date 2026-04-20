@@ -31,3 +31,24 @@ export function normalizeFRPhone(v: string): string {
   }
   return s;
 }
+
+/** Mobile FR affiché (ex. 06 …) → +33… pour stockage / unique constraint */
+export function frDisplayToE164(display: string): string | null {
+  const d = display.replace(/\D/g, "");
+  if (d.length === 10 && d.startsWith("0")) {
+    return `+33${d.slice(1)}`;
+  }
+  return null;
+}
+
+export function e164ToFrDisplay(e164: string): string {
+  if (e164.startsWith("+33")) {
+    return normalizeFRPhone(`0${e164.slice(3)}`);
+  }
+  return e164;
+}
+
+export function isValidFrMobile(display: string): boolean {
+  const d = display.replace(/\D/g, "");
+  return d.length === 10 && d.startsWith("0");
+}

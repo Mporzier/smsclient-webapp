@@ -10,7 +10,9 @@ import {
   smsPartsFor,
   isUnicode,
 } from "@/lib/proto/smsUtils";
-import { useMemo, useState } from "react";
+import { formatContactGroups } from "@/lib/types/contact";
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 const fieldBox =
   "rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]";
@@ -57,8 +59,9 @@ type ACProps = {
   setLast: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
-  group: string;
-  setGroup: (v: string) => void;
+  groups: string[];
+  setGroups: Dispatch<SetStateAction<string[]>>;
+  groupOptions: string[];
   optIn: boolean;
   setOptIn: (v: boolean) => void;
   stop: boolean;
@@ -74,13 +77,23 @@ export function AjouterContactFlow({
   setLast,
   phone,
   setPhone,
-  group,
-  setGroup,
+  groups,
+  setGroups,
+  groupOptions,
   optIn,
   setOptIn,
   stop,
   setStop,
 }: ACProps) {
+  const toggleGroup = useCallback(
+    (g: string) => {
+      setGroups((prev) =>
+        prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
+      );
+    },
+    [setGroups],
+  );
+
   const preview = useMemo(() => {
     const f = first.trim();
     const l = last.trim();
@@ -92,11 +105,11 @@ export function AjouterContactFlow({
     return {
       name,
       phoneDisp: norm.trim() || "—",
-      groupDisp: group || "Non classé",
+      groupDisp: formatContactGroups(groups),
       st,
       phoneHint,
     };
-  }, [first, last, phone, group, optIn, stop]);
+  }, [first, last, phone, groups, optIn, stop]);
 
   return (
     <div className="flex min-h-0 flex-col gap-3.5">
@@ -203,24 +216,33 @@ export function AjouterContactFlow({
           </div>
           <div className={fieldBox}>
             <label className={fieldLabel}>
-              <span>Groupe</span>
+              <span>Groupes</span>
               <span className="text-xs font-extrabold text-slate-500">Optionnel</span>
             </label>
-            <div className="mt-2.5 flex h-[46px] items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3">
-              <select
-                className="w-full cursor-pointer appearance-none border-none bg-transparent text-sm font-extrabold text-slate-900 outline-none"
-                value={group}
-                onChange={(e) => setGroup(e.target.value)}
-              >
-                <option value="">Non classé</option>
-                <option>Clients VIP</option>
-                <option>Clients Fidèles</option>
-                <option>Prospects</option>
-                <option>Nouveaux inscrits</option>
-              </select>
+            <div className="mt-2.5 max-h-[200px] space-y-2 overflow-auto rounded-[14px] border border-[#dfe6f2] bg-slate-50 p-3">
+              {groupOptions.length === 0 ? (
+                <p className="m-0 text-xs font-bold text-slate-500">
+                  Aucun segment — crée des groupes depuis l&apos;onglet Groupes.
+                </p>
+              ) : (
+                groupOptions.map((g) => (
+                  <label
+                    key={g}
+                    className="flex cursor-pointer items-center gap-2.5 text-sm font-extrabold text-slate-800"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
+                      checked={groups.includes(g)}
+                      onChange={() => toggleGroup(g)}
+                    />
+                    {g}
+                  </label>
+                ))
+              )}
             </div>
             <p className="mt-2 text-xs font-bold text-slate-500">
-              Tu pourras changer de groupe plus tard.
+              Plusieurs segments possibles ; modifiable plus tard.
             </p>
           </div>
           <div className={cn(fieldBox, "col-span-2 max-[900px]:col-span-1")}>
@@ -294,7 +316,7 @@ export function AjouterContactFlow({
               <br />
               Téléphone : <strong>{preview.phoneDisp}</strong>
               <br />
-              Groupe : <strong>{preview.groupDisp}</strong>
+              Groupes : <strong>{preview.groupDisp}</strong>
               <br />
               Statut : <strong>{preview.st}</strong>
             </p>
@@ -311,7 +333,7 @@ export function AjouterContactFlow({
             {[
               ["Nom", preview.name],
               ["Téléphone", preview.phoneDisp],
-              ["Groupe", preview.groupDisp],
+              ["Groupes", preview.groupDisp],
               ["Source", "Ajout manuel"],
             ].map(([k, v]) => (
               <div key={k} className={fieldBox}>
