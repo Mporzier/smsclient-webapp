@@ -16,6 +16,13 @@ export type ContactRowData = {
   tag?: string;
 };
 
+/** Contact éligible pour l’envoi de campagnes (opt-in SMS, pas de STOP). */
+export function isCampaignEligibleContact(
+  row: Pick<ContactRowData, "optIn" | "stopSms">,
+): boolean {
+  return row.optIn && !row.stopSms;
+}
+
 /** Texte unique pour colonne / recherche (groupes triés, « Non classé » si vide). */
 export function formatContactGroups(groups: string[]): string {
   const g = [...new Set(groups.map((x) => x.trim()).filter(Boolean))].sort((a, b) =>

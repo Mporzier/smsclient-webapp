@@ -1,9 +1,9 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
-import { ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
+import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import type { GroupRowData } from "@/lib/types/group";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type GroupesProps = {
   rows: GroupRowData[];
@@ -30,6 +30,21 @@ export function GroupesView({
       return hay.includes(q);
     });
   }, [rows, searchQuery]);
+
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollX, setTableScrollX] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const update = () => {
+      setTableScrollX(el.scrollWidth > el.clientWidth + 2);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [filtered, loading]);
 
   const showBigEmpty = !loading && !error && rows.length === 0;
   const searchNoResults =
@@ -83,20 +98,31 @@ export function GroupesView({
 
       {!loading && !showBigEmpty && (
         <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <div className="overflow-auto">
-            <table className="w-full border-separate border-spacing-0 text-[15px]">
+          <div ref={tableScrollRef} className="relative min-h-0 overflow-x-auto">
+            {tableScrollX && (
+              <p className="m-0 border-b border-slate-200 bg-amber-50/90 px-3.5 py-1.5 text-center text-xs font-bold text-amber-900/80">
+                ← Défilement horizontal : toutes les colonnes ne sont pas visibles →
+              </p>
+            )}
+            <table className="w-full min-w-0 table-fixed border-separate border-spacing-0 text-[15px]">
+              <colgroup>
+                <col className="w-[34%]" />
+                <col className="w-[12%]" />
+                <col className="w-[30%]" />
+                <col className="w-[24%]" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th className="border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold">
+                  <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Nom du groupe
                   </th>
-                  <th className="border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold">
+                  <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Contacts
                   </th>
-                  <th className="border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold">
+                  <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Dernière campagne
                   </th>
-                  <th className="border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold">
+                  <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Date de création
                   </th>
                 </tr>
@@ -114,17 +140,19 @@ export function GroupesView({
                 ) : (
                   filtered.map((row) => (
                     <tr key={row.id}>
-                      <td className="border-b border-slate-100 px-[18px] py-3.5 font-extrabold text-slate-900">
-                        {row.name}
+                      <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top font-extrabold text-slate-900">
+                        <CellTruncate as="div" title={row.name}>
+                          {row.name}
+                        </CellTruncate>
                       </td>
-                      <td className="border-b border-slate-100 px-[18px] py-3.5">
+                      <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-800">
                         {row.contactCount}
                       </td>
-                      <td className="border-b border-slate-100 px-[18px] py-3.5">
-                        {row.lastCampaignLabel}
+                      <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-800">
+                        <CellTruncate as="div">{row.lastCampaignLabel}</CellTruncate>
                       </td>
-                      <td className="border-b border-slate-100 px-[18px] py-3.5">
-                        {row.createdLabel}
+                      <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-800">
+                        <CellTruncate as="div">{row.createdLabel}</CellTruncate>
                       </td>
                     </tr>
                   ))

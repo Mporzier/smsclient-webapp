@@ -15,7 +15,6 @@ export type AppRoute =
   | "nouvelle-campagne-5"
   | "ajouter-contact-1"
   | "ajouter-contact-2"
-  | "ajouter-contact-3"
   | "creer-groupe-1"
   | "creer-groupe-2";
 
@@ -34,7 +33,6 @@ export const APP_ROUTES: AppRoute[] = [
   "nouvelle-campagne-5",
   "ajouter-contact-1",
   "ajouter-contact-2",
-  "ajouter-contact-3",
   "creer-groupe-1",
   "creer-groupe-2",
 ];
@@ -57,8 +55,7 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   "nouvelle-campagne-4": "Nouvelle campagne — Prévisualisation",
   "nouvelle-campagne-5": "Nouvelle campagne — Envoi",
   "ajouter-contact-1": "Ajouter un contact — Informations",
-  "ajouter-contact-2": "Ajouter un contact — Consentement",
-  "ajouter-contact-3": "Ajouter un contact — Récap",
+  "ajouter-contact-2": "Ajouter un contact — Vérification",
   "creer-groupe-1": "Créer un groupe — Informations",
   "creer-groupe-2": "Créer un groupe — Contacts",
 };
@@ -78,6 +75,8 @@ export function parseHash(raw: string): {
   const h = raw.replace(/^#/, "").trim();
   if (h === "" || h === "home") return { landing: "home", route: "contacts" };
   if (h === "features") return { landing: "features", route: "contacts" };
+  if (h === "ajouter-contact-3")
+    return { landing: null, route: "ajouter-contact-2" };
   if (isAppRoute(h)) return { landing: null, route: h };
   return { landing: null, route: "contacts" };
 }

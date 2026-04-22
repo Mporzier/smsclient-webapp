@@ -6,7 +6,13 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatContactGroups } from "@/lib/types/contact";
 import { isValidFrMobile, normalizeFRPhone } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -47,6 +53,7 @@ export function GroupModal({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const selectAllHeaderRef = useRef<HTMLInputElement>(null);
 
   const filteredContacts = useMemo(() => {
     const q = contactQuery.trim().toLowerCase();
@@ -76,6 +83,36 @@ export function GroupModal({
   const clearSelection = useCallback(() => {
     setSelectedIds([]);
   }, []);
+
+  const allFilteredSelected = useMemo(
+    () =>
+      filteredContacts.length > 0 &&
+      filteredContacts.every((c) => selectedIds.includes(c.id)),
+    [filteredContacts, selectedIds],
+  );
+
+  const toggleSelectAllFiltered = useCallback(() => {
+    if (filteredContacts.length === 0) return;
+    setSelectedIds((prev) => {
+      const allIn = filteredContacts.every((c) => prev.includes(c.id));
+      if (allIn) {
+        const idSet = new Set(filteredContacts.map((c) => c.id));
+        return prev.filter((id) => !idSet.has(id));
+      }
+      const next = new Set(prev);
+      for (const c of filteredContacts) {
+        next.add(c.id);
+      }
+      return Array.from(next);
+    });
+  }, [filteredContacts]);
+
+  useEffect(() => {
+    const el = selectAllHeaderRef.current;
+    if (!el) return;
+    const some = filteredContacts.some((c) => selectedIds.includes(c.id));
+    el.indeterminate = some && !allFilteredSelected;
+  }, [filteredContacts, selectedIds, allFilteredSelected]);
 
   useEffect(() => {
     if (!open) {
@@ -161,9 +198,9 @@ export function GroupModal({
             </span>
           </div>
 
-          <div className="mt-3.5 grid grid-cols-[1.15fr_0.85fr] gap-3.5 max-[980px]:grid-cols-1">
+          <div className="mt-3.5 grid min-w-0 grid-cols-[1.15fr_0.85fr] gap-3.5 max-[980px]:grid-cols-1 [&>div]:min-w-0">
             {step === 1 && (
-              <div className="space-y-3.5">
+              <div className="min-w-0 space-y-3.5">
                 <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
                   <label className="flex justify-between text-[13px] font-black">
                     <span>
@@ -171,9 +208,9 @@ export function GroupModal({
                     </span>
                     <span className="text-xs text-slate-500">{name.length}/40</span>
                   </label>
-                  <div className="mt-2.5 flex h-[46px] items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5">
+                  <div className="mt-2.5 flex h-[46px] min-w-0 items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5">
                     <input
-                      className="w-full border-none bg-transparent text-sm font-extrabold outline-none"
+                      className="min-w-0 w-full border-none bg-transparent text-sm font-extrabold outline-none"
                       maxLength={40}
                       value={name}
                       onChange={(e) => {
@@ -189,19 +226,21 @@ export function GroupModal({
                     <span>Description (optionnel)</span>
                     <span className="text-xs text-slate-500">{desc.length}/120</span>
                   </label>
-                  <div className="mt-2.5 flex h-[46px] items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5">
-                    <input
-                      className="w-full border-none bg-transparent text-sm font-extrabold outline-none"
+                  <div className="mt-2.5 flex min-h-[120px] min-w-0 items-start rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5 py-2.5">
+                    <textarea
+                      className="min-h-[96px] w-full min-w-0 resize-y border-none bg-transparent text-sm font-extrabold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
                       maxLength={120}
                       value={desc}
                       onChange={(e) => setDesc(e.target.value)}
+                      rows={4}
+                      placeholder="Ex : Clients qui achètent au moins 1 fois par mois. (Entrée = nouvelle ligne.)"
                     />
                   </div>
                 </div>
               </div>
             )}
             {step === 2 && (
-              <div className="flex min-h-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <div className="flex min-h-0 min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h3 className="m-0 text-base font-black">Ajouter des contacts</h3>
@@ -267,8 +306,21 @@ export function GroupModal({
                     <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
                       <thead className="sticky top-0 z-[1] bg-slate-100">
                         <tr>
-                          <th className="w-10 border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700">
-                            <span className="sr-only">Sélection</span>
+                          <th
+                            className="w-10 border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700"
+                            scope="col"
+                          >
+                            <input
+                              ref={selectAllHeaderRef}
+                              type="checkbox"
+                              className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-40"
+                              checked={allFilteredSelected}
+                              onChange={toggleSelectAllFiltered}
+                              disabled={
+                                contactsLoading || filteredContacts.length === 0
+                              }
+                              aria-label="Tout sélectionner les contacts de la liste affichée"
+                            />
                           </th>
                           <th className="border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700">
                             Contact
@@ -358,15 +410,20 @@ export function GroupModal({
                 )}
               </div>
             )}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
               <h3 className="m-0 text-base font-black">Récap</h3>
-              <p className="mt-2.5 text-xs font-bold leading-relaxed text-slate-600">
-                Groupe : <strong>{name.trim() || "—"}</strong>
+              <p className="mt-2.5 min-w-0 break-words text-xs font-bold leading-relaxed text-slate-600">
+                Groupe : <strong className="text-slate-900">{name.trim() || "—"}</strong>
                 <br />
-                Description : <strong>{desc.trim() || "—"}</strong>
+                <span className="inline-block min-w-0 max-w-full align-top">
+                  Description :{" "}
+                  <strong className="whitespace-pre-wrap break-words text-slate-900">
+                    {desc.trim() || "—"}
+                  </strong>
+                </span>
                 <br />
                 Rattachement :{" "}
-                <strong>
+                <strong className="text-slate-900">
                   {selectedIds.length === 0
                     ? "aucun contact"
                     : `${selectedIds.length} contact${selectedIds.length > 1 ? "s" : ""}`}
@@ -627,28 +684,15 @@ export function ContactModal({
   consentDefaults,
   onSaveContact,
 }: ContactModalProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [optIn, setOptIn] = useState(true);
-  const [stop, setStop] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) setStep(1);
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     setSaveError(null);
     setValidationError(null);
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    setOptIn(consentDefaults?.optIn ?? true);
-    setStop(consentDefaults?.stop ?? false);
-  }, [open, consentDefaults]);
 
   useEffect(() => {
     setValidationError(null);
@@ -663,13 +707,21 @@ export function ContactModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  const consentSnapshot = useCallback((): { optIn: boolean; stop: boolean } => {
+    if (mode === "edit" && consentDefaults) {
+      return { optIn: consentDefaults.optIn, stop: consentDefaults.stop };
+    }
+    return { optIn: true, stop: false };
+  }, [mode, consentDefaults]);
+
   const syncPreview = useCallback(() => {
     const name = `${first.trim()} ${last.trim()}`.trim() || "—";
     const ph = normalizeFRPhone(phone).trim() || "—";
     const gr = formatContactGroups(groups);
-    const st = stop ? "Désinscrit (STOP)" : optIn ? "Opt-in" : "Non opt-in";
+    const { optIn: oi, stop: stp } = consentSnapshot();
+    const st = stp ? "STOP" : oi ? "Opt-in" : "Non opt-in";
     return { name, ph, gr, st };
-  }, [first, last, phone, groups, optIn, stop]);
+  }, [first, last, phone, groups, consentSnapshot]);
 
   const toggleContactGroup = useCallback(
     (g: string) => {
@@ -682,30 +734,23 @@ export function ContactModal({
 
   const pv = syncPreview();
 
-  const handleContinue = useCallback(() => {
-    if (step === 1) {
-      if (!first.trim()) {
-        setValidationError("Le prénom est obligatoire.");
-        return;
-      }
-      if (!isValidFrMobile(phone)) {
-        setValidationError(
-          "Indique un numéro mobile français à 10 chiffres (ex. 06 12 34 56 78).",
-        );
-        return;
-      }
-      setValidationError(null);
-      setStep(2);
+  const handleFinalSave = useCallback(async () => {
+    if (!first.trim()) {
+      setValidationError("Le prénom est obligatoire.");
       return;
     }
-    setStep((prev) => (prev < 3 ? ((prev + 1) as 1 | 2 | 3) : prev));
-  }, [step, first, phone]);
-
-  const handleFinalSave = useCallback(async () => {
+    if (!isValidFrMobile(phone)) {
+      setValidationError(
+        "Indique un numéro mobile français à 10 chiffres (ex. 06 12 34 56 78).",
+      );
+      return;
+    }
+    setValidationError(null);
     if (!onSaveContact) {
       onClose();
       return;
     }
+    const { optIn, stop } = consentSnapshot();
     setSaveError(null);
     setSaving(true);
     try {
@@ -723,7 +768,7 @@ export function ContactModal({
     } finally {
       setSaving(false);
     }
-  }, [onSaveContact, onClose, first, last, phone, groups, optIn, stop]);
+  }, [onSaveContact, onClose, first, last, phone, groups, consentSnapshot]);
 
   if (!open) return null;
 
@@ -742,9 +787,7 @@ export function ContactModal({
               {mode === "edit" ? "Modifier le contact" : "Ajouter un contact"}
             </div>
             <div className="text-xs font-bold text-slate-500">
-              {step === 1 && "Étape 1/3 — Informations"}
-              {step === 2 && "Étape 2/3 — Consentement"}
-              {step === 3 && "Étape 3/3 — Récap"}
+              Saisis les infos puis enregistre.
             </div>
           </div>
           <button
@@ -758,35 +801,8 @@ export function ContactModal({
         </div>
 
         <div className="bg-slate-50 p-[18px]">
-          <div className="flex flex-wrap gap-2">
-            {([1, 2, 3] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStep(s)}
-                className={cn(
-                  "flex items-center gap-2 rounded-2xl border px-3 py-2 text-[13px] font-extrabold",
-                  step === s
-                    ? "border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                    : "border-transparent bg-slate-100 text-slate-700",
-                )}
-              >
-                <span
-                  className={cn(
-                    "grid h-[26px] w-[26px] place-items-center rounded-[10px] text-xs font-black",
-                    step === s ? "bg-[#2f6fed] text-white" : "bg-slate-200",
-                  )}
-                >
-                  {s}
-                </span>
-                {s === 1 ? "Infos" : s === 2 ? "Consentement" : "Récap"}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3.5 grid grid-cols-[1.1fr_0.9fr] gap-3.5 max-[980px]:grid-cols-1">
-            {step === 1 && (
-              <div className="space-y-3">
+          <div className="grid grid-cols-[1.1fr_0.9fr] gap-3.5 max-[980px]:grid-cols-1">
+            <div className="space-y-3">
                 {validationError && (
                   <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
                     {validationError}
@@ -880,46 +896,13 @@ export function ContactModal({
                     </ProtoBtn>
                   </div>
                 </div>
-              </div>
-            )}
-            {step === 2 && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <h3 className="m-0 text-base font-black">Consentement marketing</h3>
-                <label className="mt-3 flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={optIn}
-                    onChange={(e) => setOptIn(e.target.checked)}
-                  />
-                  <span className="text-sm font-bold text-slate-700">✅ Opt-in SMS</span>
-                </label>
-                <label className="mt-2 flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={stop}
-                    onChange={(e) => setStop(e.target.checked)}
-                  />
-                  <span className="text-sm font-bold text-slate-700">STOP / désinscrit</span>
-                </label>
-              </div>
-            )}
-            {step === 3 && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <h3 className="m-0 text-base font-black">Récapitulatif</h3>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-bold">
-                  <div>Nom</div>
-                  <div>{pv.name}</div>
-                  <div>Téléphone</div>
-                  <div>{pv.ph}</div>
-                  <div>Groupes</div>
-                  <div>{pv.gr}</div>
-                  <div>Statut</div>
-                  <div>{pv.st}</div>
-                </div>
-              </div>
-            )}
+                {mode === "add" && (
+                  <p className="m-0 text-xs font-bold leading-relaxed text-slate-500">
+                    Le statut SMS (opt-in, STOP) évolue après les campagnes et s’affiche dans la
+                    liste.
+                  </p>
+                )}
+            </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
               <h3 className="m-0 text-base font-black">Aperçu</h3>
               <p className="mt-2 text-xs font-bold leading-relaxed text-slate-600">
@@ -928,8 +911,12 @@ export function ContactModal({
                 Téléphone : <strong>{pv.ph}</strong>
                 <br />
                 Groupes : <strong>{pv.gr}</strong>
-                <br />
-                Statut : <strong>{pv.st}</strong>
+                {mode === "edit" && (
+                  <>
+                    <br />
+                    Statut SMS : <strong>{pv.st}</strong>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -941,34 +928,17 @@ export function ContactModal({
           </div>
         )}
 
-        <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
-          <ProtoBtn
-            disabled={saving}
-            onClick={() => {
-              if (step === 1) onClose();
-              else setStep((prev) => (prev - 1) as 1 | 2 | 3);
-            }}
-          >
-            Retour
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
+          <ProtoBtn disabled={saving} onClick={onClose}>
+            Annuler
           </ProtoBtn>
-          <div className="flex gap-2">
-            <ProtoBtn disabled={saving} onClick={onClose}>
-              Annuler
-            </ProtoBtn>
-            {step < 3 ? (
-              <ProtoBtn primary disabled={saving} onClick={handleContinue}>
-                Continuer
-              </ProtoBtn>
-            ) : (
-              <ProtoBtn primary disabled={saving} onClick={() => void handleFinalSave()}>
-                {saving
-                  ? "Enregistrement…"
-                  : mode === "edit"
-                    ? "Enregistrer les modifications"
-                    : "Enregistrer le contact"}
-              </ProtoBtn>
-            )}
-          </div>
+          <ProtoBtn primary disabled={saving} onClick={() => void handleFinalSave()}>
+            {saving
+              ? "Enregistrement…"
+              : mode === "edit"
+                ? "Enregistrer"
+                : "Enregistrer le contact"}
+          </ProtoBtn>
         </div>
       </div>
     </div>

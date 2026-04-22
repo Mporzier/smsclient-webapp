@@ -1,6 +1,30 @@
 import { cn } from "@/lib/cn";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+/** Texte sur une ligne dans une cellule de liste : tronqué, survol = texte complet (attribut title). */
+export function CellTruncate({
+  children,
+  title: titleProp,
+  className,
+  as: Tag = "div",
+}: {
+  children: ReactNode;
+  title?: string;
+  className?: string;
+  as?: "span" | "div";
+}) {
+  const titleText =
+    titleProp ??
+    (typeof children === "string" && children.length > 0
+      ? children
+      : undefined);
+  return (
+    <Tag className={cn("min-w-0 max-w-full truncate", className)} title={titleText}>
+      {children}
+    </Tag>
+  );
+}
+
 export function ProtoBtn({
   className,
   primary,

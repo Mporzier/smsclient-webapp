@@ -6,13 +6,12 @@ import {
   formatInt,
   normalizeFRPhone,
   sanitizeSender,
-  SELECTED_CONTACTS,
   smsPartsFor,
   isUnicode,
 } from "@/lib/proto/smsUtils";
 import { formatContactGroups } from "@/lib/types/contact";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const fieldBox =
   "rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]";
@@ -51,7 +50,7 @@ function StepTab({ active, num, label, onClick }: StepTabProps) {
 /* ——— Ajouter contact (full-page wizard) ——— */
 
 type ACProps = {
-  step: 1 | 2 | 3;
+  step: 1 | 2;
   go: (h: string) => void;
   first: string;
   setFirst: (v: string) => void;
@@ -62,10 +61,6 @@ type ACProps = {
   groups: string[];
   setGroups: Dispatch<SetStateAction<string[]>>;
   groupOptions: string[];
-  optIn: boolean;
-  setOptIn: (v: boolean) => void;
-  stop: boolean;
-  setStop: (v: boolean) => void;
 };
 
 export function AjouterContactFlow({
@@ -80,10 +75,6 @@ export function AjouterContactFlow({
   groups,
   setGroups,
   groupOptions,
-  optIn,
-  setOptIn,
-  stop,
-  setStop,
 }: ACProps) {
   const toggleGroup = useCallback(
     (g: string) => {
@@ -101,15 +92,13 @@ export function AjouterContactFlow({
     const norm = normalizeFRPhone(phone);
     const digits = norm.replace(/[^0-9]/g, "");
     const phoneHint = digits.length === 10 ? "OK" : "Format FR";
-    const st = stop ? "Désinscrit (STOP)" : optIn ? "Opt-in" : "Non opt-in";
     return {
       name,
       phoneDisp: norm.trim() || "—",
       groupDisp: formatContactGroups(groups),
-      st,
       phoneHint,
     };
-  }, [first, last, phone, groups, optIn, stop]);
+  }, [first, last, phone, groups]);
 
   return (
     <div className="flex min-h-0 flex-col gap-3.5">
@@ -117,9 +106,8 @@ export function AjouterContactFlow({
         <div>
           <h1 className="m-0 text-[34px] font-extrabold text-slate-900">Ajouter un contact</h1>
           <div className="mt-1.5 text-xs font-bold text-slate-600">
-            {step === 1 && "Étape 1/3 — Informations"}
-            {step === 2 && "Étape 2/3 — Consentement & tags"}
-            {step === 3 && "Étape 3/3 — Récapitulatif"}
+            {step === 1 && "Étape 1/2 — Informations"}
+            {step === 2 && "Étape 2/2 — Vérification"}
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -134,14 +122,6 @@ export function AjouterContactFlow({
           {step === 2 && (
             <>
               <ProtoBtn onClick={() => go("ajouter-contact-1")}>Retour</ProtoBtn>
-              <ProtoBtn primary onClick={() => go("ajouter-contact-3")}>
-                Continuer
-              </ProtoBtn>
-            </>
-          )}
-          {step === 3 && (
-            <>
-              <ProtoBtn onClick={() => go("ajouter-contact-2")}>Retour</ProtoBtn>
               <ProtoBtn primary onClick={() => go("contacts")}>
                 Enregistrer le contact
               </ProtoBtn>
@@ -152,8 +132,7 @@ export function AjouterContactFlow({
 
       <div className="flex flex-wrap gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
         <StepTab active={step === 1} num="1" label="Infos" onClick={() => go("ajouter-contact-1")} />
-        <StepTab active={step === 2} num="2" label="Consentement" onClick={() => go("ajouter-contact-2")} />
-        <StepTab active={step === 3} num="3" label="Récap" onClick={() => go("ajouter-contact-3")} />
+        <StepTab active={step === 2} num="2" label="Vérification" onClick={() => go("ajouter-contact-2")} />
       </div>
 
       {step === 1 && (
@@ -258,77 +237,11 @@ export function AjouterContactFlow({
       )}
 
       {step === 2 && (
-        <div className="grid grid-cols-[1.3fr_0.7fr] items-start gap-3.5 max-[1100px]:grid-cols-1">
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-              <h2 className="m-0 text-base font-black">Consentement marketing</h2>
-              <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4"
-                  checked={optIn}
-                  onChange={(e) => setOptIn(e.target.checked)}
-                />
-                <span>
-                  <span className="block font-black">✅ Opt-in SMS</span>
-                  <span className="mt-1 block text-xs font-bold text-slate-500">
-                    Le contact a accepté de recevoir des SMS. (Recommandé)
-                  </span>
-                </span>
-              </label>
-              <label className="mt-2.5 flex cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4"
-                  checked={stop}
-                  onChange={(e) => setStop(e.target.checked)}
-                />
-                <span>
-                  <span className="block font-black">STOP / désinscrit</span>
-                  <span className="mt-1 block text-xs font-bold text-slate-500">
-                    Si activé, le contact ne recevra plus de campagnes.
-                  </span>
-                </span>
-              </label>
-              <h3 className="mt-4 text-base font-black">Tags</h3>
-              <div className="mt-2.5 flex flex-wrap gap-2.5">
-                {["VIP", "Anniversaire", "À relancer", "Newsletter"].map((t) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-[#2f6fed]" />
-                    {t}
-                  </span>
-                ))}
-              </div>
-              <h3 className="mt-4 text-base font-black">Note interne</h3>
-              <textarea
-                className="mt-2 min-h-[110px] w-full resize-none rounded-2xl border border-[#dfe6f2] bg-slate-50 p-3.5 text-sm font-extrabold text-slate-900 outline-none"
-                placeholder="Ex : Client régulier — préfère les offres du week-end."
-              />
-            </div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black">Aperçu rapide</h2>
-            <p className="mt-2.5 text-xs font-bold leading-relaxed text-slate-600">
-              Contact : <strong>{preview.name}</strong>
-              <br />
-              Téléphone : <strong>{preview.phoneDisp}</strong>
-              <br />
-              Groupes : <strong>{preview.groupDisp}</strong>
-              <br />
-              Statut : <strong>{preview.st}</strong>
-            </p>
-            <p className="mt-3 text-xs font-bold leading-relaxed text-slate-600">
-              Conseil : conserve la preuve d&apos;opt-in (si besoin) pour rester RGPD friendly.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
         <>
+          <p className="text-sm font-bold text-slate-600">
+            Le statut SMS (opt-in, STOP) se mettra à jour après les envois de campagnes et est
+            visible dans la colonne « Statut SMS » de la liste.
+          </p>
           <div className="grid grid-cols-2 gap-3.5 max-[600px]:grid-cols-1">
             {[
               ["Nom", preview.name],
@@ -336,22 +249,19 @@ export function AjouterContactFlow({
               ["Groupes", preview.groupDisp],
               ["Source", "Ajout manuel"],
             ].map(([k, v]) => (
-              <div key={k} className={fieldBox}>
+              <div key={String(k)} className={fieldBox}>
                 <div className="text-xs font-extrabold text-slate-500">{k}</div>
                 <div className="mt-1.5 font-black text-slate-900">{v}</div>
               </div>
             ))}
-            <div className={cn(fieldBox, "col-span-2 max-[600px]:col-span-1")}>
-              <div className="text-xs font-extrabold text-slate-500">Consentement</div>
-              <div className="mt-1.5 font-black text-slate-900">Opt-in SMS</div>
-            </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black">Ce que ça fera (prototype)</h2>
             <p className="mt-2 text-xs font-bold leading-relaxed text-slate-600">
-              • Ajoute une nouvelle ligne dans la liste Contacts (dans une vraie app).
-              <br />• Le contact pourra être utilisé comme destinataire dans une campagne.
-              <br />• Si “STOP” est activé, il sera exclu des envois.
+              • Ajoute une entrée dans la liste Contacts.
+              <br />
+              • Le contact pourra être ciblé comme destinataire une fois enregistré (flux modale
+              + Supabase).
             </p>
           </div>
         </>
@@ -454,13 +364,14 @@ export function CreerGroupeFlow({
               <span>Description (optionnel)</span>
               <span className="text-xs text-slate-500">{desc.length}/120</span>
             </label>
-            <div className={innerInput}>
-              <input
-                className={innerInp}
+            <div className="mt-2.5 flex min-h-[120px] min-w-0 items-start gap-2.5 rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5 py-2.5">
+              <textarea
+                className="min-h-[96px] w-full min-w-0 resize-y border-none bg-transparent text-sm font-extrabold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
                 maxLength={120}
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                placeholder="Ex : Clients qui achètent au moins 1 fois par mois."
+                rows={4}
+                placeholder="Ex : Clients qui achètent au moins 1 fois par mois. (Entrée = nouvelle ligne.)"
               />
             </div>
           </div>
@@ -506,9 +417,15 @@ export function CreerGroupeFlow({
               </span>
             ))}
           </div>
-          <p className="mt-3 text-xs font-bold text-slate-500">
-            Groupe : <strong>{name.trim() || "—"}</strong> — Description :{" "}
-            <strong>{desc.trim() || "—"}</strong>
+          <p className="mt-3 min-w-0 break-words text-xs font-bold text-slate-500">
+            Groupe : <strong className="text-slate-800">{name.trim() || "—"}</strong>
+            <br />
+            <span className="inline-block min-w-0 max-w-full">
+              Description :{" "}
+              <strong className="whitespace-pre-wrap break-words text-slate-800">
+                {desc.trim() || "—"}
+              </strong>
+            </span>
           </p>
         </div>
       )}
@@ -523,14 +440,18 @@ type CampProps = {
   go: (h: string) => void;
   title: string;
   setTitle: (v: string) => void;
+  /** Libellé expéditeur (préférences compte), affiché en aperçu uniquement. */
   sender: string;
-  setSender: (v: string) => void;
   sms: string;
   setSms: (v: string) => void;
   sendMode: "now" | "sched";
   setSendMode: (v: "now" | "sched") => void;
   aiOpen: boolean;
   setAiOpen: (v: boolean) => void;
+  /** Nombre de contacts éligibles (opt-in, pas STOP) — cohérent avec la liste enregistrée. */
+  recipientCount: number;
+  /** Étape 5 : enregistrement en base puis retour liste. */
+  onConfirmCampaign?: () => void | Promise<void>;
 };
 
 const AI_SUGGESTIONS = [
@@ -554,21 +475,30 @@ export function CampagneWizard({
   title,
   setTitle,
   sender,
-  setSender,
   sms,
   setSms,
   sendMode,
   setSendMode,
   aiOpen,
   setAiOpen,
+  recipientCount,
+  onConfirmCampaign,
 }: CampProps) {
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+
   const unicode = isUnicode(sms);
   const parts = smsPartsFor(sms);
   const len = [...sms].length;
-  const totalCredits = parts * SELECTED_CONTACTS;
+  const recipients = Math.max(0, recipientCount);
+  const totalCredits = parts * recipients;
 
   const displaySender = sanitizeSender(sender).trim() || "BOULANGERIE";
   const displayTitle = title.trim() || "Promo Janvier - VIP";
+
+  useEffect(() => {
+    if (step !== 5) setConfirmError(null);
+  }, [step]);
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -616,9 +546,32 @@ export function CampagneWizard({
           )}
           {step === 5 && (
             <>
-              <ProtoBtn onClick={() => go("nouvelle-campagne-4")}>Retour</ProtoBtn>
-              <ProtoBtn primary onClick={() => go("campagnes")}>
-                Confirmer l&apos;envoi
+              <ProtoBtn onClick={() => go("nouvelle-campagne-4")} disabled={confirmLoading}>
+                Retour
+              </ProtoBtn>
+              <ProtoBtn
+                primary
+                disabled={confirmLoading}
+                onClick={async () => {
+                  if (!onConfirmCampaign) {
+                    go("campagnes");
+                    return;
+                  }
+                  setConfirmError(null);
+                  setConfirmLoading(true);
+                  try {
+                    await onConfirmCampaign();
+                    go("campagnes");
+                  } catch (e) {
+                    setConfirmError(
+                      e instanceof Error ? e.message : "Enregistrement impossible.",
+                    );
+                  } finally {
+                    setConfirmLoading(false);
+                  }
+                }}
+              >
+                {confirmLoading ? "Enregistrement…" : "Confirmer l&apos;envoi"}
               </ProtoBtn>
             </>
           )}
@@ -661,23 +614,10 @@ export function CampagneWizard({
               />
             </div>
           </div>
-          <div className={fieldBox}>
-            <label className={fieldLabel}>
-              <span>Expéditeur (11 car. max)</span>
-              <span className="text-xs text-slate-500">
-                {Math.min(sanitizeSender(sender).length, 11)}/11
-              </span>
-            </label>
-            <div className={innerInput}>
-              <input
-                className={innerInp}
-                maxLength={11}
-                value={sender}
-                onChange={(e) => setSender(sanitizeSender(e.target.value))}
-                placeholder="BOULANGERIE"
-              />
-            </div>
-          </div>
+          <p className="text-sm font-bold text-slate-500">
+            L&apos;expéditeur affiché sur les SMS se configure dans{" "}
+            <strong>Paramètres</strong> → Préférences.
+          </p>
         </div>
       )}
 
@@ -685,9 +625,17 @@ export function CampagneWizard({
         <div className={fieldBox}>
           <h2 className="m-0 text-base font-black">Destinataires</h2>
           <p className="mt-2 text-sm font-bold text-slate-600">
-            Prototype : {SELECTED_CONTACTS.toLocaleString("fr-FR")} contacts sélectionnés (segment
-            &quot;Clients actifs 30j&quot;).
+            {recipients.toLocaleString("fr-FR")} contact
+            {recipients > 1 ? "s" : ""} éligible
+            {recipients > 1 ? "s" : ""} (opt-in SMS, sans STOP), d&apos;après ta base
+            actuelle.
           </p>
+          {recipients === 0 && (
+            <p className="mt-2 text-sm font-extrabold text-amber-800">
+              Aucun contact éligible : ajoute des contacts avec opt-in ou retire STOP avant
+              d&apos;envoyer.
+            </p>
+          )}
         </div>
       )}
 
@@ -816,7 +764,7 @@ export function CampagneWizard({
           </div>
           <div className={fieldBox}>
             <h2 className="m-0 text-base font-black">Récap</h2>
-            <p className="mt-3 text-sm font-bold">Destinataires : {SELECTED_CONTACTS}</p>
+            <p className="mt-3 text-sm font-bold">Destinataires : {recipients}</p>
             <p className="mt-2 text-sm font-bold">Coût estimé : {formatInt(totalCredits)} crédits</p>
           </div>
         </div>
@@ -824,6 +772,11 @@ export function CampagneWizard({
 
       {step === 5 && (
         <div className="max-w-xl space-y-3">
+          {confirmError && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+              {confirmError}
+            </div>
+          )}
           <div className={fieldBox}>
             <h2 className="m-0 text-base font-black">Mode d&apos;envoi</h2>
             <div className="mt-3 flex flex-wrap gap-2.5">

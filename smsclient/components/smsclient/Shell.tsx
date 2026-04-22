@@ -253,7 +253,7 @@ export function AppShell({
             <button
               type="button"
               onClick={onNewCampaign}
-              className="flex cursor-pointer items-center gap-2.5 rounded-2xl border-none px-4 py-3.5 font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] bg-gradient-to-br from-[#4a86ff] to-[#2f6fed]"
+              className="flex cursor-pointer select-none items-center gap-2.5 rounded-2xl border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-4 py-3.5 font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_36px_rgba(47,111,237,0.32)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.99] active:brightness-100"
             >
               <span className="text-lg font-black">＋</span>Nouvelle campagne
             </button>
@@ -268,13 +268,16 @@ export function AppShell({
                     onClick={() => go(item.hash)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-2xl border px-3.5 py-3 text-left font-semibold no-underline",
+                      "group flex w-full cursor-pointer select-none items-center gap-3 rounded-2xl border px-3.5 py-3 text-left font-semibold no-underline transition-all duration-200 ease-out",
+                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
                       isActive
-                        ? "border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)] text-slate-900"
-                        : "border-transparent font-medium text-slate-700",
+                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
+                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-100/80",
                     )}
                   >
-                    {item.icon}
+                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
+                      {item.icon}
+                    </span>
                     {item.label}
                   </button>
                 );
@@ -288,20 +291,26 @@ export function AppShell({
                 type="button"
                 onClick={() => go("parametres")}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left font-semibold text-slate-600",
+                  "group flex w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3.5 py-3 text-left font-semibold text-slate-600 transition-all duration-200 ease-out",
+                  "hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-100/80",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
                   active === "parametres" &&
-                    "border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)] text-slate-900",
+                    "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)]",
                 )}
               >
-                <IconSettings />
+                <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110">
+                  <IconSettings />
+                </span>
                 Paramètres
               </button>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left font-semibold text-slate-600 hover:bg-slate-50"
+                className="group flex w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3.5 py-3 text-left font-semibold text-slate-600 transition-all duration-200 ease-out hover:translate-x-0.5 hover:border-slate-200/80 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.05)] active:scale-[0.99] active:bg-rose-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500/40"
               >
-                <IconLogout />
+                <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110">
+                  <IconLogout />
+                </span>
                 Déconnexion
               </button>
             </div>

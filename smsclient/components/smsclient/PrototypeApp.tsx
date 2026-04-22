@@ -23,8 +23,10 @@ import {
   CreditsModal,
   GroupModal,
 } from "@/components/smsclient/PrototypeModals";
+import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
 import { useGroups } from "@/hooks/useGroups";
+import { usePersistedSmsSender } from "@/hooks/usePersistedSmsSender";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -32,9 +34,13 @@ import {
   insertClient,
   updateClient,
 } from "@/lib/supabase/clients";
+import { insertSmsCampaign } from "@/lib/supabase/campaigns";
 import { insertClientGroup } from "@/lib/supabase/groups";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
-import type { ContactRowData } from "@/lib/types/contact";
+import {
+  isCampaignEligibleContact,
+  type ContactRowData,
+} from "@/lib/types/contact";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
   startTransition,
@@ -86,6 +92,15 @@ export function PrototypeApp() {
     refresh: refreshGroups,
   } = useGroups();
 
+  const {
+    rows: campaignRows,
+    loading: campaignsLoading,
+    error: campaignsError,
+    refresh: refreshCampaigns,
+  } = useCampaigns();
+
+  const { sender: smsSender, setSender: setSmsSender } = usePersistedSmsSender();
+
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactModalMode, setContactModalMode] = useState<"add" | "edit">("add");
@@ -117,19 +132,20 @@ export function PrototypeApp() {
     [contacts],
   );
 
+  const campaignRecipientCount = useMemo(
+    () => contacts.filter((c) => isCampaignEligibleContact(c)).length,
+    [contacts],
+  );
+
   const [acFirst, setAcFirst] = useState("");
   const [acLast, setAcLast] = useState("");
   const [acPhone, setAcPhone] = useState("");
   const [acGroups, setAcGroups] = useState<string[]>([]);
-  const [acOptIn, setAcOptIn] = useState(true);
-  const [acStop, setAcStop] = useState(false);
-
   const [cgName, setCgName] = useState("");
   const [cgDesc, setCgDesc] = useState("");
   const [cgColor, setCgColor] = useState("blue");
 
   const [campaignTitle, setCampaignTitle] = useState("Promo Janvier - VIP");
-  const [campaignSender, setCampaignSender] = useState("BOULANGERIE");
   const [smsBody, setSmsBody] = useState(DEFAULT_SMS);
   const [sendMode, setSendMode] = useState<"now" | "sched">("now");
   const [aiOpen, setAiOpen] = useState(false);
@@ -223,6 +239,32 @@ export function PrototypeApp() {
     setChipLabel(`Période · ${fmtFr(dateFrom)} → ${fmtFr(dateTo)}`);
   }, [dateFrom, dateTo]);
 
+  const handleCampaignConfirm = useCallback(async () => {
+    if (!user?.id) {
+      throw new Error("Tu dois être connecté pour enregistrer une campagne.");
+    }
+    const { error } = await insertSmsCampaign(supabase, user.id, {
+      title: campaignTitle,
+      sender: smsSender,
+      body: smsBody,
+      sendMode,
+      recipientCount: campaignRecipientCount,
+    });
+    if (error) throw error;
+    await refreshCampaigns();
+    showToast("Campagne enregistrée");
+  }, [
+    user,
+    supabase,
+    campaignTitle,
+    smsSender,
+    smsBody,
+    sendMode,
+    campaignRecipientCount,
+    refreshCampaigns,
+    showToast,
+  ]);
+
   const onGroupCreatedFromModal = useCallback(
     async (name: string, desc: string, selectedContactIds: string[]) => {
       if (!user?.id) {
@@ -279,7 +321,14 @@ export function PrototypeApp() {
           />
         );
       case "campagnes":
-        return <CampagnesView onNewCampaign={() => go("nouvelle-campagne-1")} />;
+        return (
+          <CampagnesView
+            rows={campaignRows}
+            loading={campaignsLoading}
+            error={campaignsError}
+            onNewCampaign={() => go("nouvelle-campagne-1")}
+          />
+        );
       case "credits":
         return (
           <CreditsView
@@ -303,7 +352,12 @@ export function PrototypeApp() {
           />
         );
       case "parametres":
-        return <ParametresView />;
+        return (
+          <ParametresView
+            smsSender={smsSender}
+            onSmsSenderChange={setSmsSender}
+          />
+        );
       case "deconnexion":
         return <DeconnexionView onBackContacts={() => go("contacts")} />;
       case "ajouter-contact-1":
@@ -320,10 +374,6 @@ export function PrototypeApp() {
             groups={acGroups}
             setGroups={setAcGroups}
             groupOptions={groupOptions}
-            optIn={acOptIn}
-            setOptIn={setAcOptIn}
-            stop={acStop}
-            setStop={setAcStop}
           />
         );
       case "ajouter-contact-2":
@@ -340,30 +390,6 @@ export function PrototypeApp() {
             groups={acGroups}
             setGroups={setAcGroups}
             groupOptions={groupOptions}
-            optIn={acOptIn}
-            setOptIn={setAcOptIn}
-            stop={acStop}
-            setStop={setAcStop}
-          />
-        );
-      case "ajouter-contact-3":
-        return (
-          <AjouterContactFlow
-            step={3}
-            go={go}
-            first={acFirst}
-            setFirst={setAcFirst}
-            last={acLast}
-            setLast={setAcLast}
-            phone={acPhone}
-            setPhone={setAcPhone}
-            groups={acGroups}
-            setGroups={setAcGroups}
-            groupOptions={groupOptions}
-            optIn={acOptIn}
-            setOptIn={setAcOptIn}
-            stop={acStop}
-            setStop={setAcStop}
           />
         );
       case "creer-groupe-1":
@@ -401,14 +427,15 @@ export function PrototypeApp() {
             go={go}
             title={campaignTitle}
             setTitle={setCampaignTitle}
-            sender={campaignSender}
-            setSender={setCampaignSender}
+            sender={smsSender}
             sms={smsBody}
             setSms={setSmsBody}
             sendMode={sendMode}
             setSendMode={setSendMode}
             aiOpen={aiOpen}
             setAiOpen={setAiOpen}
+            recipientCount={campaignRecipientCount}
+            onConfirmCampaign={handleCampaignConfirm}
           />
         );
       case "nouvelle-campagne-2":
@@ -418,14 +445,15 @@ export function PrototypeApp() {
             go={go}
             title={campaignTitle}
             setTitle={setCampaignTitle}
-            sender={campaignSender}
-            setSender={setCampaignSender}
+            sender={smsSender}
             sms={smsBody}
             setSms={setSmsBody}
             sendMode={sendMode}
             setSendMode={setSendMode}
             aiOpen={aiOpen}
             setAiOpen={setAiOpen}
+            recipientCount={campaignRecipientCount}
+            onConfirmCampaign={handleCampaignConfirm}
           />
         );
       case "nouvelle-campagne-3":
@@ -435,14 +463,15 @@ export function PrototypeApp() {
             go={go}
             title={campaignTitle}
             setTitle={setCampaignTitle}
-            sender={campaignSender}
-            setSender={setCampaignSender}
+            sender={smsSender}
             sms={smsBody}
             setSms={setSmsBody}
             sendMode={sendMode}
             setSendMode={setSendMode}
             aiOpen={aiOpen}
             setAiOpen={setAiOpen}
+            recipientCount={campaignRecipientCount}
+            onConfirmCampaign={handleCampaignConfirm}
           />
         );
       case "nouvelle-campagne-4":
@@ -452,14 +481,15 @@ export function PrototypeApp() {
             go={go}
             title={campaignTitle}
             setTitle={setCampaignTitle}
-            sender={campaignSender}
-            setSender={setCampaignSender}
+            sender={smsSender}
             sms={smsBody}
             setSms={setSmsBody}
             sendMode={sendMode}
             setSendMode={setSendMode}
             aiOpen={aiOpen}
             setAiOpen={setAiOpen}
+            recipientCount={campaignRecipientCount}
+            onConfirmCampaign={handleCampaignConfirm}
           />
         );
       case "nouvelle-campagne-5":
@@ -469,14 +499,15 @@ export function PrototypeApp() {
             go={go}
             title={campaignTitle}
             setTitle={setCampaignTitle}
-            sender={campaignSender}
-            setSender={setCampaignSender}
+            sender={smsSender}
             sms={smsBody}
             setSms={setSmsBody}
             sendMode={sendMode}
             setSendMode={setSendMode}
             aiOpen={aiOpen}
             setAiOpen={setAiOpen}
+            recipientCount={campaignRecipientCount}
+            onConfirmCampaign={handleCampaignConfirm}
           />
         );
       default:
@@ -537,8 +568,8 @@ export function PrototypeApp() {
         setGroups={setCmGroups}
         groupOptions={groupOptions}
         onCreateGroupRequest={() => {
+          setContactModalOpen(false);
           setGroupModalOpen(true);
-          setCmGroups([]);
         }}
         consentDefaults={
           contactEditRow

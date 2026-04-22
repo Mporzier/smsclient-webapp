@@ -2,7 +2,15 @@
 
 import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
 
-export function ParametresView() {
+export type ParametresViewProps = {
+  smsSender: string;
+  onSmsSenderChange: (v: string) => void;
+};
+
+export function ParametresView({
+  smsSender,
+  onSmsSenderChange,
+}: ParametresViewProps) {
   const inp =
     "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
   const lbl = "mb-1.5 block text-xs font-black text-slate-600";
@@ -124,6 +132,23 @@ export function ParametresView() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black text-slate-900">Préférences</h2>
             <div className="mt-3 grid gap-2.5">
+              <div>
+                <label className={lbl}>
+                  Nom d&apos;expéditeur SMS (11 car. max)
+                </label>
+                <input
+                  className={inp}
+                  maxLength={11}
+                  value={smsSender}
+                  onChange={(e) => onSmsSenderChange(e.target.value)}
+                  placeholder="BOULANGERIE"
+                  autoComplete="off"
+                />
+                <p className="mt-1.5 text-xs font-bold text-slate-500">
+                  Affiché comme expéditeur des campagnes. Modifiable ici à tout
+                  moment.
+                </p>
+              </div>
               <label className="flex items-center gap-2.5 text-sm font-extrabold text-slate-600">
                 <input type="checkbox" defaultChecked className="h-[18px] w-[18px]" />
                 Recevoir les notifications email (factures, alertes)

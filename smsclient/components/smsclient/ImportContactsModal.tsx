@@ -251,6 +251,30 @@ export function ImportContactsModal({
 
       const batch = await insertClientsFromImport(supabase, userId, payloads);
 
+      if (batch.inserted === 0) {
+        const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
+        const dupes =
+          batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
+        const reasons: string[] = [];
+        if (invalidTotal > 0) {
+          reasons.push(
+            "numéros non reconnus — utilise 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78",
+          );
+        }
+        if (dupes > 0) {
+          reasons.push("doublons (dans le fichier ou déjà en base)");
+        }
+        if (batch.otherErrors > 0) {
+          reasons.push("erreur d’enregistrement côté serveur");
+        }
+        setImportError(
+          reasons.length > 0
+            ? `Aucun contact n’a été importé. ${reasons.join(" · ")}. Corrige le CSV puis réessaie — la modale reste ouverte.`
+            : "Aucun contact n’a été enregistré. Réessaie (la modale reste ouverte).",
+        );
+        return;
+      }
+
       const parts = [
         `${batch.inserted} contact${batch.inserted > 1 ? "s" : ""} importé${
           batch.inserted > 1 ? "s" : ""
@@ -271,12 +295,12 @@ export function ImportContactsModal({
         parts.push(
           `${invalidTotal} ligne${
             invalidTotal > 1 ? "s" : ""
-          } sans numéro valide`
+          } ignorée${invalidTotal > 1 ? "s" : ""} (numéro non valide)`,
         );
       }
       if (batch.otherErrors > 0) {
         parts.push(
-          `${batch.otherErrors} erreur${batch.otherErrors > 1 ? "s" : ""}`
+          `${batch.otherErrors} erreur${batch.otherErrors > 1 ? "s" : ""}`,
         );
       }
 
@@ -444,8 +468,8 @@ export function ImportContactsModal({
                 </div>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
                   Une colonne doit être mappée sur{" "}
-                  <strong className="text-slate-700">Téléphone</strong> (mobile
-                  français 10 chiffres). Le reste est optionnel.
+                  <strong className="text-slate-700">Téléphone</strong> (06/07
+                  en 10 chiffres ou +33 6/7). Le reste est optionnel.
                 </p>
                 {!hasPhoneColumn && (
                   <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">

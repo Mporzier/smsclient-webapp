@@ -1,5 +1,9 @@
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
-import { isValidFrMobile, normalizeFRPhone } from "@/lib/proto/smsUtils";
+import {
+  coerceFrPhoneForImport,
+  isValidFrMobile,
+  normalizeFRPhone,
+} from "@/lib/proto/smsUtils";
 
 export type ImportColumnRole =
   | "skip"
@@ -74,7 +78,7 @@ export function buildPayloadFromMappedRow(
     }
   }
 
-  const phoneDisplay = normalizeFRPhone(phoneRaw);
+  const phoneDisplay = normalizeFRPhone(coerceFrPhoneForImport(phoneRaw));
   if (!phoneDisplay || !isValidFrMobile(phoneDisplay)) {
     return null;
   }
