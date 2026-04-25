@@ -28,7 +28,7 @@ export async function fetchGroupsWithStats(
 ): Promise<{ data: GroupRowData[]; error: Error | null }> {
   const { data: groups, error: gErr } = await supabase
     .from("client_groups")
-    .select("id,name,last_campaign_at,created_at")
+    .select("id,name,description,last_campaign_at,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
@@ -38,7 +38,7 @@ export async function fetchGroupsWithStats(
 
   const list = (groups ?? []) as Pick<
     ClientGroupRecord,
-    "id" | "name" | "last_campaign_at" | "created_at"
+    "id" | "name" | "description" | "last_campaign_at" | "created_at"
   >[];
 
   const groupIds = list.map((g) => g.id);
@@ -61,6 +61,7 @@ export async function fetchGroupsWithStats(
   const rows: GroupRowData[] = list.map((g) => ({
     id: g.id,
     name: g.name,
+    description: g.description?.trim() ?? "",
     contactCount: counts.get(g.id) ?? 0,
     lastCampaignLabel: g.last_campaign_at
       ? formatDateFr(g.last_campaign_at)
@@ -93,6 +94,33 @@ export async function insertClientGroup(
       return {
         error: new Error("Un groupe avec ce nom existe déjà."),
       };
+    }
+    return { error: new Error(error.message) };
+  }
+  return { error: null };
+}
+
+export async function updateClientGroup(
+  supabase: SupabaseClient,
+  userId: string,
+  groupId: string,
+  payload: { name: string; description: string },
+): Promise<{ error: Error | null }> {
+  const trimmedName = payload.name.trim();
+  if (!trimmedName) {
+    return { error: new Error("Le nom du groupe est obligatoire.") };
+  }
+  const { error } = await supabase
+    .from("client_groups")
+    .update({
+      name: trimmedName,
+      description: payload.description.trim(),
+    })
+    .eq("id", groupId)
+    .eq("user_id", userId);
+  if (error) {
+    if (error.code === "23505") {
+      return { error: new Error("Un groupe avec ce nom existe déjà.") };
     }
     return { error: new Error(error.message) };
   }

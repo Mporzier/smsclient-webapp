@@ -1,4 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+let browserClient: SupabaseClient | null = null;
 
 /**
  * True quand les variables sont définies (build CI / .env.local / secrets GitHub).
@@ -19,14 +22,19 @@ export function isSupabaseConfigured(): boolean {
  * (prérendu sans `.env`). Dans ce cas on utilise un client factice : le build passe,
  * mais il faut configurer les secrets GitHub pour que l’auth marche en prod.
  */
-export function createClient() {
+export function createClient(): SupabaseClient {
+  if (browserClient) {
+    return browserClient;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (url && key) {
-    return createBrowserClient(url, key);
+    browserClient = createBrowserClient(url, key);
+  } else {
+    browserClient = createBrowserClient(
+      "https://placeholder.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.E-build-without-supabase-env",
+    );
   }
-  return createBrowserClient(
-    "https://placeholder.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.E-build-without-supabase-env",
-  );
+  return browserClient;
 }

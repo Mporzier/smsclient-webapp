@@ -3,6 +3,7 @@
 import { cn } from "@/lib/cn";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import type { GroupRowData } from "@/lib/types/group";
 import { formatContactGroups } from "@/lib/types/contact";
 import { isValidFrMobile, normalizeFRPhone } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
@@ -647,6 +648,439 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
   );
 }
 
+type GroupEditModalProps = {
+  open: boolean;
+  group: GroupRowData | null;
+  onClose: () => void;
+  onSave: (payload: { id: string; name: string; description: string }) => Promise<void>;
+  onImportToGroup: () => void;
+  onLaunchCampaign: (groupName: string) => void;
+};
+
+export function GroupEditModal({
+  open,
+  group,
+  onClose,
+  onSave,
+  onImportToGroup,
+  onLaunchCampaign,
+}: GroupEditModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !group) return;
+    setName(group.name);
+    setDescription(group.description ?? "");
+    setError(null);
+  }, [open, group]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const handleSave = useCallback(async () => {
+    if (!group?.id) return;
+    if (!name.trim()) {
+      setError("Le nom du groupe est obligatoire.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave({
+        id: group.id,
+        name,
+        description,
+      });
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Enregistrement impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }, [group, name, description, onSave, onClose]);
+
+  if (!open || !group) return null;
+
+  return (
+    <div
+      className={overlayCls}
+      role="dialog"
+      aria-modal
+      aria-label="Modifier le groupe"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className={cn(modalCard, "max-w-[720px]")}>
+        <div className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
+          <div>
+            <div className="text-lg font-black text-slate-900">Modifier le groupe</div>
+            <div className="text-xs font-bold text-slate-500">
+              Mets à jour le nom et la description du segment.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+            aria-label="Fermer"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="bg-slate-50 p-[18px]">
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <div className="text-[13px] font-black text-slate-900">
+                Actions rapides
+              </div>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <ProtoBtn
+                  className="!h-10 !px-3.5 !text-[13px]"
+                  onClick={onImportToGroup}
+                >
+                  Importer dans ce groupe
+                </ProtoBtn>
+                <ProtoBtn
+                  className="!h-10 !px-3.5 !text-[13px]"
+                  title="CTA présent, action non implémentée pour l’instant"
+                  onClick={() => onLaunchCampaign(name.trim() || group.name)}
+                >
+                  Lancer une campagne
+                </ProtoBtn>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <label className="flex justify-between text-[13px] font-black">
+                <span>Nom du groupe</span>
+                <span className="text-xs text-slate-500">{name.length}/40</span>
+              </label>
+              <div className="mt-2.5 flex h-11 items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5">
+                <input
+                  className="w-full border-none bg-transparent text-sm font-extrabold outline-none"
+                  maxLength={40}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <label className="flex justify-between text-[13px] font-black">
+                <span>Description</span>
+                <span className="text-xs text-slate-500">{description.length}/120</span>
+              </label>
+              <div className="mt-2.5 flex min-h-[120px] items-start rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5 py-2.5">
+                <textarea
+                  className="min-h-[96px] w-full resize-y border-none bg-transparent text-sm font-semibold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
+                  maxLength={120}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Ex : Clients fidèles à forte fréquence d'achat."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="border-t border-rose-200 bg-rose-50 px-[18px] py-2.5 text-sm font-bold text-rose-900">
+            {error}
+          </div>
+        )}
+
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
+          <ProtoBtn disabled={saving} onClick={onClose}>
+            Annuler
+          </ProtoBtn>
+          <ProtoBtn primary disabled={saving} onClick={() => void handleSave()}>
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </ProtoBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type GroupQuickAddContactsModalProps = {
+  open: boolean;
+  groupName: string;
+  contacts: GroupModalContactRow[];
+  contactsLoading?: boolean;
+  onClose: () => void;
+  onConfirm: (selectedIds: string[]) => Promise<void>;
+};
+
+export function GroupQuickAddContactsModal({
+  open,
+  groupName,
+  contacts,
+  contactsLoading = false,
+  onClose,
+  onConfirm,
+}: GroupQuickAddContactsModalProps) {
+  const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const selectAllHeaderRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setSelectedIds([]);
+      setSaving(false);
+      setError(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const normalizedGroupName = groupName.trim().toLowerCase();
+
+  const eligibleContacts = useMemo(() => {
+    if (!normalizedGroupName) return contacts;
+    return contacts.filter(
+      (c) =>
+        !c.groups.some((g) => g.trim().toLowerCase() === normalizedGroupName),
+    );
+  }, [contacts, normalizedGroupName]);
+
+  const filteredContacts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return eligibleContacts;
+    return eligibleContacts.filter((c) => {
+      const hay = `${c.name} ${c.phone} ${c.groups.join(" ")}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [eligibleContacts, query]);
+
+  const toggleContact = useCallback((id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const allFilteredSelected = useMemo(
+    () =>
+      filteredContacts.length > 0 &&
+      filteredContacts.every((c) => selectedIds.includes(c.id)),
+    [filteredContacts, selectedIds],
+  );
+
+  useEffect(() => {
+    const el = selectAllHeaderRef.current;
+    if (!el) return;
+    const some = filteredContacts.some((c) => selectedIds.includes(c.id));
+    el.indeterminate = some && !allFilteredSelected;
+  }, [filteredContacts, selectedIds, allFilteredSelected]);
+
+  const toggleSelectAllFiltered = useCallback(() => {
+    if (filteredContacts.length === 0) return;
+    setSelectedIds((prev) => {
+      const allIn = filteredContacts.every((c) => prev.includes(c.id));
+      if (allIn) {
+        const idSet = new Set(filteredContacts.map((c) => c.id));
+        return prev.filter((id) => !idSet.has(id));
+      }
+      const next = new Set(prev);
+      for (const c of filteredContacts) next.add(c.id);
+      return Array.from(next);
+    });
+  }, [filteredContacts]);
+
+  const handleConfirm = useCallback(async () => {
+    if (selectedIds.length === 0) {
+      setError("Sélectionne au moins un contact.");
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    try {
+      await onConfirm(selectedIds);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ajout impossible.");
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedIds, onConfirm, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className={overlayCls}
+      role="dialog"
+      aria-modal
+      aria-label="Ajouter des contacts au groupe"
+      onClick={(e) => e.target === e.currentTarget && !saving && onClose()}
+    >
+      <div className={cn(modalCard, "max-w-[980px]")}>
+        <div className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
+          <div>
+            <div className="text-lg font-black text-slate-900">Ajouter des contacts</div>
+            <div className="text-xs font-bold text-slate-500">
+              Groupe cible : <span className="text-slate-800">{groupName || "—"}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+            aria-label="Fermer"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-[18px]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+            <div className="flex h-10 max-w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500 shadow-[0_6px_14px_rgba(15,23,42,0.06)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="#64748b" strokeWidth="2" />
+                <path
+                  d="M20 20l-3.3-3.3"
+                  stroke="#64748b"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <input
+                className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                placeholder="Rechercher un contact..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Rechercher un contact"
+              />
+            </div>
+
+            <div className="mt-3 min-h-[220px] overflow-auto rounded-xl border border-slate-200">
+              {contactsLoading ? (
+                <div className="px-3 py-10 text-center text-sm font-bold text-slate-500">
+                  Chargement des contacts…
+                </div>
+              ) : eligibleContacts.length === 0 ? (
+                <div className="px-3 py-8 text-center text-sm font-bold text-slate-600">
+                  Tous les contacts sont déjà présents dans ce groupe.
+                </div>
+              ) : contacts.length === 0 ? (
+                <div className="px-3 py-8 text-center text-sm font-bold text-slate-600">
+                  Aucun contact disponible.
+                </div>
+              ) : (
+                <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
+                  <thead className="sticky top-0 z-[1] bg-slate-100">
+                    <tr>
+                      <th className="w-10 border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700">
+                        <input
+                          ref={selectAllHeaderRef}
+                          type="checkbox"
+                          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+                          checked={allFilteredSelected}
+                          onChange={toggleSelectAllFiltered}
+                          aria-label="Tout sélectionner"
+                        />
+                      </th>
+                      <th className="border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700">
+                        Contact
+                      </th>
+                      <th className="border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700">
+                        Téléphone
+                      </th>
+                      <th className="hidden border-b border-slate-200 px-2 py-2.5 font-extrabold text-slate-700 sm:table-cell">
+                        Groupes actuels
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredContacts.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-3 py-8 text-center font-bold text-slate-500"
+                        >
+                          Aucun résultat pour cette recherche.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredContacts.map((c) => {
+                        const checked = selectedIds.includes(c.id);
+                        return (
+                          <tr
+                            key={c.id}
+                            className="cursor-pointer border-b border-slate-100 bg-white hover:bg-slate-50/90"
+                            onClick={() => toggleContact(c.id)}
+                          >
+                            <td className="px-2 py-2.5 align-middle">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+                                checked={checked}
+                                onChange={() => toggleContact(c.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`Sélectionner ${c.name}`}
+                              />
+                            </td>
+                            <td className="max-w-[200px] truncate px-2 py-2.5 font-extrabold text-slate-900 sm:max-w-none">
+                              {c.name}
+                            </td>
+                            <td className="whitespace-nowrap px-2 py-2.5 font-semibold text-slate-700">
+                              {c.phone}
+                            </td>
+                            <td className="hidden max-w-[min(100%,12rem)] px-2 py-2.5 text-slate-600 sm:table-cell">
+                              <span className="line-clamp-2 text-[12px] font-semibold leading-snug">
+                                {c.groups.length ? c.groups.join(", ") : "—"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="border-t border-rose-200 bg-rose-50 px-[18px] py-2.5 text-sm font-bold text-rose-900">
+            {error}
+          </div>
+        )}
+
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
+          <ProtoBtn disabled={saving} onClick={onClose}>
+            Annuler
+          </ProtoBtn>
+          <ProtoBtn primary disabled={saving || selectedIds.length === 0} onClick={() => void handleConfirm()}>
+            {saving
+              ? "Ajout…"
+              : `Ajouter ${selectedIds.length} contact${selectedIds.length > 1 ? "s" : ""}`}
+          </ProtoBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type ContactModalProps = {
   open: boolean;
   onClose: () => void;
@@ -657,6 +1091,8 @@ type ContactModalProps = {
   setLast: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  notes: string;
+  setNotes: (v: string) => void;
   groups: string[];
   setGroups: Dispatch<SetStateAction<string[]>>;
   groupOptions: string[];
@@ -677,6 +1113,8 @@ export function ContactModal({
   setLast,
   phone,
   setPhone,
+  notes,
+  setNotes,
   groups,
   setGroups,
   groupOptions,
@@ -718,10 +1156,11 @@ export function ContactModal({
     const name = `${first.trim()} ${last.trim()}`.trim() || "—";
     const ph = normalizeFRPhone(phone).trim() || "—";
     const gr = formatContactGroups(groups);
+    const nt = notes.trim() || "—";
     const { optIn: oi, stop: stp } = consentSnapshot();
     const st = stp ? "STOP" : oi ? "Opt-in" : "Non opt-in";
-    return { name, ph, gr, st };
-  }, [first, last, phone, groups, consentSnapshot]);
+    return { name, ph, gr, nt, st };
+  }, [first, last, phone, notes, groups, consentSnapshot]);
 
   const toggleContactGroup = useCallback(
     (g: string) => {
@@ -759,6 +1198,7 @@ export function ContactModal({
         lastName: last.trim(),
         phoneDisplay: phone,
         groupLabels: groups,
+        notes,
         optIn,
         stop,
       });
@@ -768,7 +1208,7 @@ export function ContactModal({
     } finally {
       setSaving(false);
     }
-  }, [onSaveContact, onClose, first, last, phone, groups, consentSnapshot]);
+  }, [onSaveContact, onClose, first, last, phone, notes, groups, consentSnapshot]);
 
   if (!open) return null;
 
@@ -859,6 +1299,22 @@ export function ContactModal({
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+                  <label className="flex justify-between text-[13px] font-black">
+                    <span>Notes (optionnel)</span>
+                    <span className="text-xs text-slate-500">{notes.length}/280</span>
+                  </label>
+                  <div className="mt-2.5 flex min-h-[96px] items-start rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5 py-2.5">
+                    <textarea
+                      className="min-h-[78px] w-full resize-y border-none bg-transparent text-sm font-semibold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
+                      maxLength={280}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                      placeholder="Infos utiles: préférences, contexte client, contraintes..."
+                    />
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
                   <label className="text-[13px] font-black">Groupes</label>
                   <p className="mt-1 text-xs font-bold text-slate-500">
                     Un contact peut appartenir à plusieurs segments.
@@ -911,6 +1367,8 @@ export function ContactModal({
                 Téléphone : <strong>{pv.ph}</strong>
                 <br />
                 Groupes : <strong>{pv.gr}</strong>
+                <br />
+                Notes : <strong className="whitespace-pre-wrap break-words">{pv.nt}</strong>
                 {mode === "edit" && (
                   <>
                     <br />

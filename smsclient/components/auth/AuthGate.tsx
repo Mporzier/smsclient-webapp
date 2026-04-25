@@ -13,16 +13,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAuthPage = pathname?.startsWith("/auth") ?? false;
+  /** Même logique que `basePath` : le pathname côté app n’inclut pas le préfixe du repo. */
+  const isPublicCapturePage =
+    pathname === "/capture" || pathname === "/capture/" || false;
+  const isPublicPage = isAuthPage || isPublicCapturePage;
 
   useEffect(() => {
     if (loading) return;
-    if (!user && !isAuthPage) {
+    if (!user && !isPublicPage) {
       router.replace("/auth/login");
     }
     if (user && isAuthPage) {
       router.replace("/");
     }
-  }, [user, loading, isAuthPage, router, pathname]);
+  }, [user, loading, isAuthPage, isPublicPage, router, pathname]);
 
   if (loading) {
     return (
@@ -32,7 +36,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isAuthPage) {
+  if (!user && !isPublicPage) {
     return null;
   }
 

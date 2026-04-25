@@ -50,6 +50,7 @@ type ImportContactsModalProps = {
   userId: string;
   onImported: () => Promise<void>;
   onNotify: (msg: string) => void;
+  defaultGroupLabel?: string | null;
 };
 
 export function ImportContactsModal({
@@ -59,6 +60,7 @@ export function ImportContactsModal({
   userId,
   onImported,
   onNotify,
+  defaultGroupLabel = null,
 }: ImportContactsModalProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string | null>(null);
@@ -245,6 +247,13 @@ export function ImportContactsModal({
         if (!p) {
           skippedInvalid++;
           continue;
+        }
+        if (defaultGroupLabel?.trim()) {
+          const merged = new Set([
+            ...p.groupLabels,
+            defaultGroupLabel.trim(),
+          ]);
+          p.groupLabels = Array.from(merged);
         }
         payloads.push(p);
       }

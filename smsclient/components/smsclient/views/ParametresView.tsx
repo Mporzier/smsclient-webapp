@@ -1,19 +1,54 @@
 "use client";
 
 import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
+import QRCode from "qrcode";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export type ParametresViewProps = {
   smsSender: string;
   onSmsSenderChange: (v: string) => void;
+  qrPublicUrl: string;
+  qrLoading: boolean;
+  qrError: string | null;
+  onRegenerateQr: () => Promise<void>;
 };
 
 export function ParametresView({
   smsSender,
   onSmsSenderChange,
+  qrPublicUrl,
+  qrLoading,
+  qrError,
+  onRegenerateQr,
 }: ParametresViewProps) {
   const inp =
     "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
   const lbl = "mb-1.5 block text-xs font-black text-slate-600";
+  const [qrImage, setQrImage] = useState<string>("");
+  const [regenLoading, setRegenLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (!qrPublicUrl) {
+        setQrImage("");
+        return;
+      }
+      void QRCode.toDataURL(qrPublicUrl, {
+        margin: 1,
+        width: 260,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      }).then((src: string) => {
+        if (!cancelled) setQrImage(src);
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [qrPublicUrl]);
+
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -107,6 +142,70 @@ export function ParametresView({
         </div>
 
         <div className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-slate-900">QR code boutique</h2>
+            <p className="mt-2 text-sm font-semibold text-slate-600">
+              Affiche ce QR en boutique pour collecter les contacts depuis un formulaire public.
+            </p>
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              {qrLoading ? (
+                <div className="grid min-h-[220px] place-items-center text-sm font-bold text-slate-500">
+                  Génération du QR…
+                </div>
+              ) : qrError ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+                  {qrError}
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  <div className="grid place-items-center rounded-xl bg-white p-3">
+                    {qrImage ? (
+                      <Image
+                        src={qrImage}
+                        alt="QR code boutique"
+                        width={220}
+                        height={220}
+                        unoptimized
+                        className="h-[220px] w-[220px]"
+                      />
+                    ) : (
+                      <div className="h-[220px] w-[220px] animate-pulse rounded-lg bg-slate-200" />
+                    )}
+                  </div>
+                  <input
+                    className={inp}
+                    value={qrPublicUrl || ""}
+                    readOnly
+                    onFocus={(e) => e.currentTarget.select()}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <ProtoBtn
+                      onClick={async () => {
+                        if (!qrPublicUrl) return;
+                        await navigator.clipboard.writeText(qrPublicUrl);
+                      }}
+                    >
+                      Copier le lien
+                    </ProtoBtn>
+                    <ProtoBtn
+                      onClick={async () => {
+                        setRegenLoading(true);
+                        try {
+                          await onRegenerateQr();
+                        } finally {
+                          setRegenLoading(false);
+                        }
+                      }}
+                      disabled={regenLoading || qrLoading}
+                    >
+                      {regenLoading ? "Régénération…" : "Régénérer le QR"}
+                    </ProtoBtn>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black text-slate-900">Plan & sécurité</h2>
             <div className="mt-3 grid gap-2.5">

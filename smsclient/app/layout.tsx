@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="relative min-h-full">
+      <body className="relative h-full w-full overflow-hidden">
         <AuthProvider>
           <AuthGate>{children}</AuthGate>
         </AuthProvider>

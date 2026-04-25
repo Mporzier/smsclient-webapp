@@ -2,6 +2,7 @@
 export type GroupRowData = {
   id: string;
   name: string;
+  description: string;
   contactCount: number;
   lastCampaignLabel: string;
   createdLabel: string;

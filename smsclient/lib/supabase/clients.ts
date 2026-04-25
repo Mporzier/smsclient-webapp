@@ -13,6 +13,7 @@ export type ClientRecord = {
   phone_e164: string;
   /** Rétrocompat / miroir d’affichage (liste des noms de segments). */
   group_label: string;
+  notes: string;
   source: string;
   opt_in: boolean;
   stop_sms: boolean;
@@ -26,6 +27,7 @@ export type ContactFormSubmitPayload = {
   phoneDisplay: string;
   /** Noms de segments (`client_groups.name`) — plusieurs possibles. */
   groupLabels: string[];
+  notes: string;
   optIn: boolean;
   stop: boolean;
 };
@@ -90,6 +92,7 @@ export function clientRecordToRow(
     name,
     phone: e164ToFrDisplay(row.phone_e164),
     groups: mergedGroups,
+    notes: row.notes?.trim() ?? "",
     lastSms: formatLastSms(row.last_sms_sent_at),
     source: row.source,
     optIn: row.opt_in,
@@ -234,6 +237,7 @@ export async function insertClient(
       last_name: payload.lastName.trim(),
       phone_e164,
       group_label,
+      notes: payload.notes.trim(),
       source: options?.source ?? "Ajout manuel",
       opt_in: payload.optIn,
       stop_sms: payload.stop,
@@ -372,6 +376,7 @@ export async function updateClient(
       last_name: payload.lastName.trim(),
       phone_e164,
       group_label,
+      notes: payload.notes.trim(),
       opt_in: payload.optIn,
       stop_sms: payload.stop,
     })

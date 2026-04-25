@@ -21,6 +21,8 @@ import { ImportContactsModal } from "./ImportContactsModal";
 import {
   ContactModal,
   CreditsModal,
+  GroupEditModal,
+  GroupQuickAddContactsModal,
   GroupModal,
 } from "@/components/smsclient/PrototypeModals";
 import { useCampaigns } from "@/hooks/useCampaigns";
@@ -28,6 +30,7 @@ import { useContacts } from "@/hooks/useContacts";
 import { useGroups } from "@/hooks/useGroups";
 import { usePersistedSmsSender } from "@/hooks/usePersistedSmsSender";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
+import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import {
   addClientsToGroupByName,
@@ -35,12 +38,14 @@ import {
   updateClient,
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
-import { insertClientGroup } from "@/lib/supabase/groups";
+import { insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import type { GroupRowData } from "@/lib/types/group";
 import {
   isCampaignEligibleContact,
   type ContactRowData,
 } from "@/lib/types/contact";
+import { isValidFrMobile } from "@/lib/proto/smsUtils";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
   startTransition,
@@ -100,8 +105,18 @@ export function PrototypeApp() {
   } = useCampaigns();
 
   const { sender: smsSender, setSender: setSmsSender } = usePersistedSmsSender();
+  const {
+    publicUrl: userQrPublicUrl,
+    loading: userQrLoading,
+    error: userQrError,
+    regenerate: regenerateUserQr,
+  } = useUserQrCode();
 
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupEditOpen, setGroupEditOpen] = useState(false);
+  const [groupEditRow, setGroupEditRow] = useState<GroupRowData | null>(null);
+  const [groupQuickAddOpen, setGroupQuickAddOpen] = useState(false);
+  const [groupQuickAddTarget, setGroupQuickAddTarget] = useState<GroupRowData | null>(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactModalMode, setContactModalMode] = useState<"add" | "edit">("add");
   const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(null);
@@ -111,6 +126,7 @@ export function PrototypeApp() {
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
   const [cmPhone, setCmPhone] = useState("");
+  const [cmNotes, setCmNotes] = useState("");
   const [cmGroups, setCmGroups] = useState<string[]>([]);
 
   const groupOptions = useMemo(() => {
@@ -132,9 +148,52 @@ export function PrototypeApp() {
     [contacts],
   );
 
+  const [campaignGoalPreset, setCampaignGoalPreset] = useState<
+    "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre"
+  >("promotion");
+  const [campaignGoalFreeText, setCampaignGoalFreeText] = useState("");
+  const [campaignSelectedGroupNames, setCampaignSelectedGroupNames] = useState<string[]>([]);
+  const [campaignSelectedContactIds, setCampaignSelectedContactIds] = useState<string[]>([]);
+  const campaignCreditsAvailable = 12000;
+
+  const campaignSelectedContacts = useMemo(() => {
+    const fromGroups = new Set<string>();
+    if (campaignSelectedGroupNames.length > 0) {
+      for (const c of contacts) {
+        if (
+          c.groups.some((g) =>
+            campaignSelectedGroupNames.some(
+              (x) => x.trim().toLowerCase() === g.trim().toLowerCase(),
+            ),
+          )
+        ) {
+          fromGroups.add(c.id);
+        }
+      }
+    }
+    for (const id of campaignSelectedContactIds) {
+      fromGroups.add(id);
+    }
+    return contacts.filter((c) => fromGroups.has(c.id));
+  }, [contacts, campaignSelectedGroupNames, campaignSelectedContactIds]);
+
+  const campaignExcludedStop = useMemo(
+    () => campaignSelectedContacts.filter((c) => c.stopSms).length,
+    [campaignSelectedContacts],
+  );
+  const campaignExcludedInvalid = useMemo(
+    () =>
+      campaignSelectedContacts.filter(
+        (c) => !isValidFrMobile(c.phone) || !c.optIn,
+      ).length,
+    [campaignSelectedContacts],
+  );
   const campaignRecipientCount = useMemo(
-    () => contacts.filter((c) => isCampaignEligibleContact(c)).length,
-    [contacts],
+    () =>
+      campaignSelectedContacts.filter(
+        (c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone),
+      ).length,
+    [campaignSelectedContacts],
   );
 
   const [acFirst, setAcFirst] = useState("");
@@ -161,6 +220,8 @@ export function PrototypeApp() {
   useEffect(() => {
     const anyModal =
       groupModalOpen ||
+      groupEditOpen ||
+      groupQuickAddOpen ||
       contactModalOpen ||
       creditsModalOpen ||
       importContactsOpen;
@@ -168,7 +229,7 @@ export function PrototypeApp() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [groupModalOpen, contactModalOpen, creditsModalOpen, importContactsOpen]);
+  }, [groupModalOpen, groupEditOpen, groupQuickAddOpen, contactModalOpen, creditsModalOpen, importContactsOpen]);
 
   useEffect(() => {
     startTransition(() => {
@@ -185,6 +246,7 @@ export function PrototypeApp() {
     setCmFirst("");
     setCmLast("");
     setCmPhone("");
+    setCmNotes("");
     setCmGroups([]);
     setContactModalOpen(true);
   }, []);
@@ -195,6 +257,7 @@ export function PrototypeApp() {
     setCmFirst(row.firstName);
     setCmLast(row.lastName);
     setCmPhone(row.phone);
+    setCmNotes(row.notes);
     setCmGroups([...row.groups]);
     setContactModalOpen(true);
   }, []);
@@ -204,6 +267,22 @@ export function PrototypeApp() {
     const t = window.setTimeout(() => setToast(null), 2200);
     return () => window.clearTimeout(t);
   }, []);
+
+  const openCampaignComposer = useCallback(
+    (preselectedGroupName?: string) => {
+      const p = preselectedGroupName?.trim() ?? "";
+      setCampaignGoalPreset("promotion");
+      setCampaignGoalFreeText("");
+      setCampaignTitle("Campagne promotion");
+      setSmsBody("");
+      setSendMode("now");
+      setAiOpen(false);
+      setCampaignSelectedContactIds([]);
+      setCampaignSelectedGroupNames(p ? [p] : []);
+      go("nouvelle-campagne-1");
+    },
+    [go],
+  );
 
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
@@ -298,6 +377,56 @@ export function PrototypeApp() {
     [user, supabase, refreshGroups, refreshContacts, showToast],
   );
 
+  const openGroupEdit = useCallback((row: GroupRowData) => {
+    setGroupEditRow(row);
+    setGroupEditOpen(true);
+  }, []);
+
+  const handleGroupUpdate = useCallback(
+    async (payload: { id: string; name: string; description: string }) => {
+      if (!user?.id) {
+        throw new Error("Tu dois être connecté pour modifier un groupe.");
+      }
+      const { error } = await updateClientGroup(supabase, user.id, payload.id, {
+        name: payload.name,
+        description: payload.description,
+      });
+      if (error) throw error;
+      await refreshGroups();
+      showToast("Groupe modifié");
+    },
+    [user, supabase, refreshGroups, showToast],
+  );
+
+  const campaignWizardProps = {
+    go,
+    title: campaignTitle,
+    setTitle: setCampaignTitle,
+    sender: smsSender,
+    sms: smsBody,
+    setSms: setSmsBody,
+    sendMode,
+    setSendMode,
+    aiOpen,
+    setAiOpen,
+    goalPreset: campaignGoalPreset,
+    setGoalPreset: setCampaignGoalPreset,
+    goalFreeText: campaignGoalFreeText,
+    setGoalFreeText: setCampaignGoalFreeText,
+    groups: groupRows,
+    contacts,
+    selectedGroupNames: campaignSelectedGroupNames,
+    setSelectedGroupNames: setCampaignSelectedGroupNames,
+    selectedContactIds: campaignSelectedContactIds,
+    setSelectedContactIds: setCampaignSelectedContactIds,
+    recipientSelectedRaw: campaignSelectedContacts.length,
+    recipientExcludedStop: campaignExcludedStop,
+    recipientExcludedInvalid: campaignExcludedInvalid,
+    recipientCount: campaignRecipientCount,
+    creditsAvailable: campaignCreditsAvailable,
+    onConfirmCampaign: handleCampaignConfirm,
+  } as const;
+
   const renderRoute = (r: AppRoute) => {
     switch (r) {
       case "contacts":
@@ -318,6 +447,7 @@ export function PrototypeApp() {
             loading={groupsLoading}
             error={groupsError}
             onCreateGroup={() => setGroupModalOpen(true)}
+            onEditGroup={openGroupEdit}
           />
         );
       case "campagnes":
@@ -326,7 +456,7 @@ export function PrototypeApp() {
             rows={campaignRows}
             loading={campaignsLoading}
             error={campaignsError}
-            onNewCampaign={() => go("nouvelle-campagne-1")}
+            onNewCampaign={() => openCampaignComposer()}
           />
         );
       case "credits":
@@ -356,6 +486,10 @@ export function PrototypeApp() {
           <ParametresView
             smsSender={smsSender}
             onSmsSenderChange={setSmsSender}
+            qrPublicUrl={userQrPublicUrl}
+            qrLoading={userQrLoading}
+            qrError={userQrError}
+            onRegenerateQr={regenerateUserQr}
           />
         );
       case "deconnexion":
@@ -421,95 +555,15 @@ export function PrototypeApp() {
           />
         );
       case "nouvelle-campagne-1":
-        return (
-          <CampagneWizard
-            step={1}
-            go={go}
-            title={campaignTitle}
-            setTitle={setCampaignTitle}
-            sender={smsSender}
-            sms={smsBody}
-            setSms={setSmsBody}
-            sendMode={sendMode}
-            setSendMode={setSendMode}
-            aiOpen={aiOpen}
-            setAiOpen={setAiOpen}
-            recipientCount={campaignRecipientCount}
-            onConfirmCampaign={handleCampaignConfirm}
-          />
-        );
+        return <CampagneWizard step={1} {...campaignWizardProps} />;
       case "nouvelle-campagne-2":
-        return (
-          <CampagneWizard
-            step={2}
-            go={go}
-            title={campaignTitle}
-            setTitle={setCampaignTitle}
-            sender={smsSender}
-            sms={smsBody}
-            setSms={setSmsBody}
-            sendMode={sendMode}
-            setSendMode={setSendMode}
-            aiOpen={aiOpen}
-            setAiOpen={setAiOpen}
-            recipientCount={campaignRecipientCount}
-            onConfirmCampaign={handleCampaignConfirm}
-          />
-        );
+        return <CampagneWizard step={2} {...campaignWizardProps} />;
       case "nouvelle-campagne-3":
-        return (
-          <CampagneWizard
-            step={3}
-            go={go}
-            title={campaignTitle}
-            setTitle={setCampaignTitle}
-            sender={smsSender}
-            sms={smsBody}
-            setSms={setSmsBody}
-            sendMode={sendMode}
-            setSendMode={setSendMode}
-            aiOpen={aiOpen}
-            setAiOpen={setAiOpen}
-            recipientCount={campaignRecipientCount}
-            onConfirmCampaign={handleCampaignConfirm}
-          />
-        );
+        return <CampagneWizard step={3} {...campaignWizardProps} />;
       case "nouvelle-campagne-4":
-        return (
-          <CampagneWizard
-            step={4}
-            go={go}
-            title={campaignTitle}
-            setTitle={setCampaignTitle}
-            sender={smsSender}
-            sms={smsBody}
-            setSms={setSmsBody}
-            sendMode={sendMode}
-            setSendMode={setSendMode}
-            aiOpen={aiOpen}
-            setAiOpen={setAiOpen}
-            recipientCount={campaignRecipientCount}
-            onConfirmCampaign={handleCampaignConfirm}
-          />
-        );
+        return <CampagneWizard step={4} {...campaignWizardProps} />;
       case "nouvelle-campagne-5":
-        return (
-          <CampagneWizard
-            step={5}
-            go={go}
-            title={campaignTitle}
-            setTitle={setCampaignTitle}
-            sender={smsSender}
-            sms={smsBody}
-            setSms={setSmsBody}
-            sendMode={sendMode}
-            setSendMode={setSendMode}
-            aiOpen={aiOpen}
-            setAiOpen={setAiOpen}
-            recipientCount={campaignRecipientCount}
-            onConfirmCampaign={handleCampaignConfirm}
-          />
-        );
+        return <CampagneWizard step={5} {...campaignWizardProps} />;
       default:
         return (
           <ContactsView
@@ -540,7 +594,7 @@ export function PrototypeApp() {
         <AppShell
           route={route}
           go={go}
-          onNewCampaign={() => go("nouvelle-campagne-1")}
+          onNewCampaign={() => openCampaignComposer()}
         >
           {renderRoute(route)}
         </AppShell>
@@ -553,6 +607,54 @@ export function PrototypeApp() {
         contactsLoading={contactsLoading}
         onCreated={onGroupCreatedFromModal}
       />
+      <GroupEditModal
+        open={groupEditOpen}
+        group={groupEditRow}
+        onClose={() => {
+          setGroupEditOpen(false);
+          setGroupEditRow(null);
+        }}
+        onSave={handleGroupUpdate}
+        onImportToGroup={() => {
+          if (!groupEditRow) return;
+          setGroupQuickAddTarget(groupEditRow);
+          setGroupQuickAddOpen(true);
+          setGroupEditOpen(false);
+          setGroupEditRow(null);
+        }}
+        onLaunchCampaign={(groupName) => {
+          setGroupEditOpen(false);
+          setGroupEditRow(null);
+          openCampaignComposer(groupName);
+        }}
+      />
+      <GroupQuickAddContactsModal
+        open={groupQuickAddOpen}
+        groupName={groupQuickAddTarget?.name ?? ""}
+        contacts={groupModalContacts}
+        contactsLoading={contactsLoading}
+        onClose={() => {
+          setGroupQuickAddOpen(false);
+          setGroupQuickAddTarget(null);
+        }}
+        onConfirm={async (selectedIds) => {
+          if (!user?.id || !groupQuickAddTarget?.name) {
+            throw new Error("Groupe introuvable.");
+          }
+          const result = await addClientsToGroupByName(
+            supabase,
+            user.id,
+            selectedIds,
+            groupQuickAddTarget.name,
+          );
+          if (result.error) throw result.error;
+          await refreshGroups();
+          await refreshContacts();
+          showToast(
+            `${selectedIds.length} contact${selectedIds.length > 1 ? "s" : ""} ajouté${selectedIds.length > 1 ? "s" : ""} au groupe`,
+          );
+        }}
+      />
 
       <ContactModal
         open={contactModalOpen}
@@ -564,6 +666,8 @@ export function PrototypeApp() {
         setLast={setCmLast}
         phone={cmPhone}
         setPhone={setCmPhone}
+        notes={cmNotes}
+        setNotes={setCmNotes}
         groups={cmGroups}
         setGroups={setCmGroups}
         groupOptions={groupOptions}

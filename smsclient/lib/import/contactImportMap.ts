@@ -89,6 +89,7 @@ export function buildPayloadFromMappedRow(
     lastName,
     phoneDisplay,
     groupLabels: g ? [g] : [],
+    notes: "",
     optIn: true,
     stop: false,
   };

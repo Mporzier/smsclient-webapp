@@ -10,6 +10,7 @@ type GroupesProps = {
   loading: boolean;
   error: string | null;
   onCreateGroup: () => void;
+  onEditGroup: (row: GroupRowData) => void;
 };
 
 export function GroupesView({
@@ -17,6 +18,7 @@ export function GroupesView({
   loading,
   error,
   onCreateGroup,
+  onEditGroup,
 }: GroupesProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -24,7 +26,7 @@ export function GroupesView({
     const q = searchQuery.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((row) => {
-      const hay = [row.name, String(row.contactCount), row.lastCampaignLabel, row.createdLabel]
+      const hay = [row.name, row.description, String(row.contactCount), row.lastCampaignLabel, row.createdLabel]
         .join(" ")
         .toLowerCase();
       return hay.includes(q);
@@ -97,7 +99,7 @@ export function GroupesView({
       )}
 
       {!loading && !showBigEmpty && (
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+        <section className="flex w-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
           <div ref={tableScrollRef} className="relative min-h-0 overflow-x-auto">
             {tableScrollX && (
               <p className="m-0 border-b border-slate-200 bg-amber-50/90 px-3.5 py-1.5 text-center text-xs font-bold text-amber-900/80">
@@ -106,15 +108,19 @@ export function GroupesView({
             )}
             <table className="w-full min-w-0 table-fixed border-separate border-spacing-0 text-[15px]">
               <colgroup>
-                <col className="w-[34%]" />
+                <col className="w-[28%]" />
+                <col className="w-[28%]" />
                 <col className="w-[12%]" />
-                <col className="w-[30%]" />
-                <col className="w-[24%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
               </colgroup>
               <thead>
                 <tr>
                   <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Nom du groupe
+                  </th>
+                  <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
+                    Description
                   </th>
                   <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Contacts
@@ -131,7 +137,7 @@ export function GroupesView({
                 {searchNoResults ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="border-b border-slate-100 px-[18px] py-8 text-center text-sm font-bold text-slate-600"
                     >
                       Aucun groupe ne correspond à ta recherche.
@@ -139,10 +145,27 @@ export function GroupesView({
                   </tr>
                 ) : (
                   filtered.map((row) => (
-                    <tr key={row.id}>
+                    <tr
+                      key={row.id}
+                      className="cursor-pointer hover:bg-indigo-50/60"
+                      tabIndex={0}
+                      role="button"
+                      onClick={() => onEditGroup(row)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onEditGroup(row);
+                        }
+                      }}
+                    >
                       <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top font-extrabold text-slate-900">
                         <CellTruncate as="div" title={row.name}>
                           {row.name}
+                        </CellTruncate>
+                      </td>
+                      <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-800">
+                        <CellTruncate as="div" title={row.description.trim() || "—"}>
+                          {row.description.trim() || "—"}
                         </CellTruncate>
                       </td>
                       <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-800">

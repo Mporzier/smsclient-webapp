@@ -188,11 +188,11 @@ export function AppShell({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] p-6">
+    <div className="h-screen w-screen bg-[#f5f7fb]">
       <div
-        className="flex w-full max-w-[1400px] flex-col overflow-hidden rounded-[22px] border border-[#d6deeb] bg-white shadow-[0_18px_40px_rgba(15,23,42,0.10)] max-[1100px]:aspect-auto max-[1100px]:h-auto max-[860px]:rounded-[18px] aspect-[16/9]"
+        className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-white"
         role="application"
-        aria-label="SMSClient.fr (prototype)"
+        aria-label="SMSClient.fr"
       >
         <header className="flex h-[78px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-[22px] py-[18px]">
           <div className="flex items-center gap-3.5 text-2xl font-extrabold tracking-wide text-slate-900">
@@ -248,8 +248,8 @@ export function AppShell({
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[290px_1fr] max-[860px]:grid-cols-1">
-          <aside className="flex flex-col gap-3.5 border-r border-slate-200/80 bg-white p-[18px] max-[860px]:hidden">
+        <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1fr)] max-[860px]:grid-cols-1">
+          <aside className="flex min-h-0 flex-col gap-3.5 border-r border-slate-200/80 bg-white p-[18px] max-[860px]:hidden">
             <button
               type="button"
               onClick={onNewCampaign}
@@ -316,7 +316,7 @@ export function AppShell({
             </div>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-col gap-[18px] overflow-auto px-7 py-6 max-[1100px]:px-5">
+          <main className="flex min-h-0 min-w-0 flex-col gap-[18px] overflow-auto px-4 py-4 md:px-5 md:py-5">
             {children}
           </main>
         </div>

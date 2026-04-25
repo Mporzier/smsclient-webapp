@@ -84,6 +84,7 @@ export function ContactsView({
         row.firstName,
         row.lastName,
         row.phone,
+        row.notes,
         formatContactGroups(row.groups),
         ...row.groups,
         row.source,
@@ -191,7 +192,7 @@ export function ContactsView({
         </p>
       )}
 
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+      <section className="flex w-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
         <div ref={tableScrollRef} className="relative min-h-0 overflow-x-auto">
           {tableScrollX && !showBigEmpty && !loading && (
             <p className="m-0 border-b border-slate-200 bg-amber-50/90 px-3.5 py-1.5 text-center text-xs font-bold text-amber-900/80">
@@ -218,10 +219,10 @@ export function ContactsView({
                 <col className="w-[10%]" />
                 <col className="w-[10%]" />
                 <col className="w-[11%]" />
-                <col className="w-[23%]" />
-                <col className="w-[11%]" />
-                <col className="w-[11%]" />
-                <col className="w-[14%]" />
+                <col className="w-[22%]" />
+                <col className="w-[18%]" />
+                <col className="w-[10%]" />
+                <col className="w-[9%]" />
               </colgroup>
               <thead>
                 <tr>
@@ -241,7 +242,7 @@ export function ContactsView({
                     Groupes
                   </th>
                   <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
-                    Statut SMS
+                    Notes
                   </th>
                   <th className="min-w-0 border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900">
                     Dernier SMS envoyé
@@ -354,7 +355,12 @@ export function ContactsView({
                         </div>
                       </td>
                       <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-900">
-                        {smsStatusCell(row)}
+                        <CellTruncate
+                          as="div"
+                          title={row.notes.trim() || "—"}
+                        >
+                          {row.notes.trim() || "—"}
+                        </CellTruncate>
                       </td>
                       <td className="min-w-0 max-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-900">
                         <CellTruncate as="div">{row.lastSms}</CellTruncate>
