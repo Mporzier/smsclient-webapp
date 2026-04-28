@@ -1,0 +1,4 @@
+first_name;last_name;phone;group_label;opt_in;stop_sms;notes
+Nora;Petit;06 10 20 30 40;Clients VIP;true;true;STOP
+Yanis;Morel;06 11 22 33 44;Clients inactifs;true;true;STOP
+Lea;Roux;06 55 66 77 88;Prospects;false;true;STOP

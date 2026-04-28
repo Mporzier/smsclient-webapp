@@ -7,6 +7,91 @@ import type { AppRoute } from "@/lib/proto/routes";
 import { navOverrideForRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
 
+function polygonToRoundedPath(points: string, radius: number): string {
+  const coords = points.split(" ").map((p) => {
+    const [x, y] = p.split(",").map(Number);
+    return { x, y };
+  });
+  if (coords.length < 3) return "";
+
+  const getVector = (
+    from: { x: number; y: number },
+    to: { x: number; y: number }
+  ) => {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    return { dx: dx / len, dy: dy / len, len };
+  };
+
+  let path = "";
+  for (let i = 0; i < coords.length; i++) {
+    const prev = coords[(i - 1 + coords.length) % coords.length];
+    const curr = coords[i];
+    const next = coords[(i + 1) % coords.length];
+    const v1 = getVector(curr, prev);
+    const v2 = getVector(curr, next);
+    const r = Math.min(radius, v1.len / 2, v2.len / 2);
+    const p1 = { x: curr.x + v1.dx * r, y: curr.y + v1.dy * r };
+    const p2 = { x: curr.x + v2.dx * r, y: curr.y + v2.dy * r };
+    if (i === 0) {
+      path = `M ${p1.x},${p1.y}`;
+    } else {
+      path += ` L ${p1.x},${p1.y}`;
+    }
+    path += ` Q ${curr.x},${curr.y} ${p2.x},${p2.y}`;
+  }
+  return `${path} Z`;
+}
+
+function LogoMark() {
+  const starPoints =
+    "41,33 42.25,36.75 46,38 42.25,39.25 41,43 39.75,39.25 36,38 39.75,36.75";
+  return (
+    <svg viewBox="-2 -2 62 62" width="45" height="45" fill="none" aria-hidden>
+      <g>
+        <path
+          fill="#0ea5e9"
+          d={polygonToRoundedPath("0,22.032 17.064,31.032 58.064,10.032", 1.5)}
+        />
+        <path
+          fill="#38bdf8"
+          d={polygonToRoundedPath(
+            "24.064,35.032 20.064,48.032 58.064,10.032",
+            1.5
+          )}
+        />
+        <path
+          fill="#7dd3fc"
+          d={polygonToRoundedPath(
+            "17.064,31.032 24.064,35.032 44.064,48.032 58.064,10.032",
+            1.5
+          )}
+        />
+        <path
+          fill="#bae6fd"
+          d={polygonToRoundedPath(
+            "24.064,35.032 20.127,48.032 17.064,31.032 58.064,10.032",
+            1.5
+          )}
+        />
+      </g>
+      <defs>
+        <clipPath id="shell-star-tr-bl">
+          <polygon points="41,33 46,38 41,38" />
+          <polygon points="41,38 36,38 41,43" />
+        </clipPath>
+      </defs>
+      <polygon fill="#ffffff" points={starPoints} />
+      <polygon
+        fill="#ffffff"
+        points={starPoints}
+        clipPath="url(#shell-star-tr-bl)"
+      />
+    </svg>
+  );
+}
+
 function IconUsers() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -75,8 +160,18 @@ function IconCoins() {
 function IconChart() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M4 20V10" stroke="#2f6fed" strokeWidth="2" strokeLinecap="round" />
-      <path d="M10 20V4" stroke="#2f6fed" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M4 20V10"
+        stroke="#2f6fed"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10 20V4"
+        stroke="#2f6fed"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <path
         d="M16 20v-7"
         stroke="#2f6fed"
@@ -155,7 +250,12 @@ type ShellProps = {
 
 const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
   [
-    { id: "contacts", label: "Contacts", hash: "contacts", icon: <IconUsers /> },
+    {
+      id: "contacts",
+      label: "Contacts",
+      hash: "contacts",
+      icon: <IconUsers />,
+    },
     { id: "groupes", label: "Groupes", hash: "groupes", icon: <IconTag /> },
     {
       id: "campagnes",
@@ -172,12 +272,7 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
     },
   ];
 
-export function AppShell({
-  route,
-  go,
-  onNewCampaign,
-  children,
-}: ShellProps) {
+export function AppShell({ route, go, onNewCampaign, children }: ShellProps) {
   const { signOut } = useAuth();
   const router = useRouter();
   const active = navOverrideForRoute(route);
@@ -196,30 +291,8 @@ export function AppShell({
       >
         <header className="flex h-[78px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-[22px] py-[18px]">
           <div className="flex items-center gap-3.5 text-2xl font-extrabold tracking-wide text-slate-900">
-            <div
-              className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#7fb6ff] to-[#3c7dff] shadow-[0_10px_20px_rgba(47,111,237,0.25)]"
-              aria-hidden
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M7 18l-3 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H7z"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M8 8h8"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M8 12h6"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+            <div className="grid h-11 w-11 place-items-center" aria-hidden>
+              <LogoMark />
             </div>
             <div>SMSClient.fr</div>
           </div>
@@ -255,7 +328,7 @@ export function AppShell({
               onClick={onNewCampaign}
               className="flex cursor-pointer select-none items-center gap-2.5 rounded-2xl border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-4 py-3.5 font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_36px_rgba(47,111,237,0.32)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.99] active:brightness-100"
             >
-              <span className="text-lg font-black">＋</span>Nouvelle campagne
+              <span className="text-lg font-black">＋</span>Envoyer un SMS
             </button>
 
             <nav className="flex flex-col gap-2.5 pt-1" aria-label="Navigation">
@@ -272,7 +345,7 @@ export function AppShell({
                       "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
                       isActive
                         ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
-                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-100/80",
+                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-100/80"
                     )}
                   >
                     <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
@@ -295,7 +368,7 @@ export function AppShell({
                   "hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-100/80",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
                   active === "parametres" &&
-                    "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)]",
+                    "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)]"
                 )}
               >
                 <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110">

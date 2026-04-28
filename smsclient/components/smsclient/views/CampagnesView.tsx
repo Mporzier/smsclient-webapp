@@ -62,7 +62,7 @@ function downloadCampaignsCsv(rows: CampaignRowData[], filename: string) {
         r.creditsLabel,
       ]
         .map(esc)
-        .join(";"),
+        .join(";")
     ),
   ];
   const blob = new Blob([lines.join("\n")], {
@@ -137,7 +137,7 @@ export function CampagnesView({
             onClick={() =>
               downloadCampaignsCsv(
                 filtered,
-                `campagnes-sms-${new Date().toISOString().slice(0, 10)}.csv`,
+                `campagnes-sms-${new Date().toISOString().slice(0, 10)}.csv`
               )
             }
             disabled={loading || filtered.length === 0}
@@ -165,7 +165,9 @@ export function CampagnesView({
 
       {showBigEmpty && (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-12 text-center">
-          <p className="m-0 text-base font-extrabold text-slate-800">Aucune campagne</p>
+          <p className="m-0 text-base font-extrabold text-slate-800">
+            Aucune campagne
+          </p>
           <p className="mt-2 text-sm font-semibold text-slate-600">
             Crée une campagne avec « Nouvelle campagne ». Les envois enregistrés
             apparaissent ici (migration Supabase `sms_campaigns` requise).
@@ -244,8 +246,10 @@ export function CampagnesView({
               {rows.length === 0
                 ? "0 campagne"
                 : filtered.length === rows.length
-                  ? `${rows.length} campagne${rows.length > 1 ? "s" : ""}`
-                  : `${filtered.length} sur ${rows.length} campagne${rows.length > 1 ? "s" : ""}`}
+                ? `${rows.length} campagne${rows.length > 1 ? "s" : ""}`
+                : `${filtered.length} sur ${rows.length} campagne${
+                    rows.length > 1 ? "s" : ""
+                  }`}
             </span>
           </div>
         </section>

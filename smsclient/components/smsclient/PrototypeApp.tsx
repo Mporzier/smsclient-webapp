@@ -44,10 +44,7 @@ import { insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
-import {
-  isCampaignEligibleContact,
-  type ContactRowData,
-} from "@/lib/types/contact";
+import { type ContactRowData } from "@/lib/types/contact";
 import { isValidFrMobile } from "@/lib/proto/smsUtils";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
@@ -80,6 +77,20 @@ function monthRangeStrings() {
 function fmtFr(iso: string) {
   const [yy, mm, dd] = iso.split("-");
   return `${dd}/${mm}/${yy}`;
+}
+
+function plusTenMinutesLocalValue() {
+  const d = new Date(Date.now() + 10 * 60 * 1000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day}T${hh}:${mm}`;
+}
+
+function defaultCampaignTitle() {
+  return `Campagne · ${new Date().toLocaleDateString("fr-FR")}`;
 }
 
 function parseManualNumbers(raw: string): string[] {
@@ -266,9 +277,11 @@ export function PrototypeApp() {
   const [cgDesc, setCgDesc] = useState("");
   const [cgColor, setCgColor] = useState("blue");
 
-  const [campaignTitle, setCampaignTitle] = useState("Promo Janvier - VIP");
+  const [campaignTitle, setCampaignTitle] = useState(defaultCampaignTitle());
+  const [campaignSender, setCampaignSender] = useState(smsSender);
   const [smsBody, setSmsBody] = useState(DEFAULT_SMS);
   const [sendMode, setSendMode] = useState<"now" | "sched">("now");
+  const [scheduledAt, setScheduledAt] = useState(plusTenMinutesLocalValue());
   const [aiOpen, setAiOpen] = useState(false);
 
   const { from: mFrom, to: mTo } = useMemo(() => monthRangeStrings(), []);
@@ -346,16 +359,18 @@ export function PrototypeApp() {
       setCampaignGoalPreset("promotion");
       setCampaignGoalFreeText("");
       setCampaignRecipientMode(p ? "lists" : "manual");
-      setCampaignTitle("Campagne promotion");
+      setCampaignTitle(defaultCampaignTitle());
+      setCampaignSender(smsSender);
       setSmsBody("");
       setSendMode("now");
+      setScheduledAt(plusTenMinutesLocalValue());
       setAiOpen(false);
       setCampaignSelectedContactIds([]);
       setCampaignSelectedGroupNames(p ? [p] : []);
       setCampaignManualNumbers("");
       go("nouvelle-campagne-1");
     },
-    [go],
+    [go, smsSender],
   );
 
   const handleContactSave = useCallback(
@@ -400,10 +415,20 @@ export function PrototypeApp() {
     }
     const { error } = await insertSmsCampaign(supabase, user.id, {
       title: campaignTitle,
-      sender: smsSender,
+      sender: campaignSender,
       body: smsBody,
       sendMode,
       recipientCount: campaignRecipientCount,
+      scheduledAt:
+        sendMode === "sched"
+          ? (() => {
+              const d = new Date(scheduledAt);
+              if (Number.isNaN(d.getTime())) {
+                throw new Error("Date de programmation invalide.");
+              }
+              return d.toISOString();
+            })()
+          : null,
     });
     if (error) throw error;
     await refreshCampaigns();
@@ -412,9 +437,10 @@ export function PrototypeApp() {
     user,
     supabase,
     campaignTitle,
-    smsSender,
+    campaignSender,
     smsBody,
     sendMode,
+    scheduledAt,
     campaignRecipientCount,
     refreshCampaigns,
     showToast,
@@ -478,11 +504,14 @@ export function PrototypeApp() {
     go,
     title: campaignTitle,
     setTitle: setCampaignTitle,
-    sender: smsSender,
+    sender: campaignSender,
+    setSender: setCampaignSender,
     sms: smsBody,
     setSms: setSmsBody,
     sendMode,
     setSendMode,
+    scheduleAt: scheduledAt,
+    setScheduleAt: setScheduledAt,
     aiOpen,
     setAiOpen,
     goalPreset: campaignGoalPreset,

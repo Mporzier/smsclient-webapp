@@ -4,7 +4,6 @@ import { cn } from "@/lib/cn";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import {
   formatInt,
-  isValidFrMobile,
   normalizeFRPhone,
   sanitizeSender,
   smsPartsFor,
@@ -484,12 +483,14 @@ type CampProps = {
   go: (h: string) => void;
   title: string;
   setTitle: (v: string) => void;
-  /** Libellé expéditeur (préférences compte), affiché en aperçu uniquement. */
   sender: string;
+  setSender: (v: string) => void;
   sms: string;
   setSms: (v: string) => void;
   sendMode: "now" | "sched";
   setSendMode: (v: "now" | "sched") => void;
+  scheduleAt: string;
+  setScheduleAt: (v: string) => void;
   aiOpen: boolean;
   setAiOpen: (v: boolean) => void;
   goalPreset: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre";
@@ -517,38 +518,9 @@ type CampProps = {
   onConfirmCampaign?: () => void | Promise<void>;
 };
 
-const CAMPAIGN_GOAL_OPTIONS: Array<{
-  id: "promotion" | "relance" | "nouveaute" | "fidelisation";
-  label: string;
-}> = [
-  { id: "promotion", label: "Promotion" },
-  { id: "relance", label: "Relance" },
-  { id: "nouveaute", label: "Nouveauté" },
-  { id: "fidelisation", label: "Fidélisation" },
-];
-
-const GOAL_LABEL_BY_ID: Record<
-  "promotion" | "relance" | "nouveaute" | "fidelisation",
-  string
-> = {
-  promotion: "Promotion",
-  relance: "Relance",
-  nouveaute: "Nouveauté",
-  fidelisation: "Fidélisation",
-};
-
-function buildObjectiveLabel(
-  preset: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre",
-  freeText: string
-): string {
-  if (preset === "libre") return freeText.trim();
-  return GOAL_LABEL_BY_ID[preset];
-}
-
-function buildCampaignTitleFromObjective(objective: string): string {
-  if (!objective.trim()) return "Campagne SMS";
+function buildDefaultCampaignTitle(): string {
   const d = new Date().toLocaleDateString("fr-FR");
-  return `Campagne ${objective.trim()} · ${d}`.slice(0, 60);
+  return `Campagne · ${d}`.slice(0, 60);
 }
 
 function generateAiVariants(args: {
@@ -599,16 +571,15 @@ export function CampagneWizard({
   title,
   setTitle,
   sender,
+  setSender,
   sms,
   setSms,
   sendMode,
   setSendMode,
+  scheduleAt,
+  setScheduleAt,
   aiOpen,
   setAiOpen,
-  goalPreset,
-  setGoalPreset,
-  goalFreeText,
-  setGoalFreeText,
   groups,
   contacts,
   recipientMode,
@@ -638,6 +609,14 @@ export function CampagneWizard({
     null
   );
   const [messageUrl, setMessageUrl] = useState("");
+  const [settingsEditing, setSettingsEditing] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsFeedback, setSettingsFeedback] = useState<string | null>(null);
+  const [settingsDraft, setSettingsDraft] = useState({
+    sender,
+    sendMode,
+    scheduleAt,
+  });
 
   const unicode = isUnicode(sms);
   const parts = smsPartsFor(sms);
@@ -646,10 +625,12 @@ export function CampagneWizard({
   const totalCredits = parts * recipients;
 
   const displaySender = sanitizeSender(sender).trim() || "BOULANGERIE";
-  const objectiveLabel = buildObjectiveLabel(goalPreset, goalFreeText);
-  const displayTitle =
-    title.trim() || buildCampaignTitleFromObjective(objectiveLabel);
+  const displayTitle = title.trim() || buildDefaultCampaignTitle();
   const hasEnoughCredits = totalCredits <= creditsAvailable;
+  const settingsDirty =
+    settingsDraft.sender.trim() !== sender.trim() ||
+    settingsDraft.sendMode !== sendMode ||
+    settingsDraft.scheduleAt !== scheduleAt;
 
   const selectedIdsFromGroups = useMemo(() => {
     if (selectedGroupNames.length === 0) return new Set<string>();
@@ -665,14 +646,31 @@ export function CampagneWizard({
 
   const filteredContacts = useMemo(() => {
     const q = contactSearch.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) => {
-      const hay = `${c.name} ${c.phone} ${formatContactGroups(
-        c.groups
-      )}`.toLowerCase();
-      return hay.includes(q);
-    });
+    const base = !q
+      ? contacts
+      : contacts.filter((c) => {
+          const hay = `${c.name} ${c.phone} ${formatContactGroups(
+            c.groups
+          )}`.toLowerCase();
+          return hay.includes(q);
+        });
+
+    const subscribed: typeof base = [];
+    const unsubscribed: typeof base = [];
+    for (const c of base) {
+      if (c.stopSms || !c.optIn) {
+        unsubscribed.push(c);
+      } else {
+        subscribed.push(c);
+      }
+    }
+    return [...subscribed, ...unsubscribed];
   }, [contacts, contactSearch]);
+
+  const selectableFilteredContacts = useMemo(
+    () => filteredContacts.filter((c) => !c.stopSms && c.optIn),
+    [filteredContacts]
+  );
 
   useEffect(() => {
     setConfirmError(null);
@@ -682,6 +680,17 @@ export function CampagneWizard({
     const match = sms.match(/https?:\/\/[^\s]+/i);
     setMessageUrl(match?.[0] ?? "");
   }, [sms]);
+
+  useEffect(() => {
+    if (settingsEditing) return;
+    setSettingsDraft({ sender, sendMode, scheduleAt });
+  }, [sender, sendMode, scheduleAt, settingsEditing]);
+
+  useEffect(() => {
+    if (!settingsFeedback) return;
+    const t = window.setTimeout(() => setSettingsFeedback(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [settingsFeedback]);
 
   const toggleGroup = useCallback(
     (groupName: string) => {
@@ -703,9 +712,24 @@ export function CampagneWizard({
     [setSelectedContactIds]
   );
 
+  const selectAllVisibleContacts = useCallback(() => {
+    setSelectedContactIds((prev) => {
+      const next = new Set(prev);
+      for (const c of selectableFilteredContacts) {
+        next.add(c.id);
+      }
+      return Array.from(next);
+    });
+  }, [selectableFilteredContacts, setSelectedContactIds]);
+
+  const clearAllSelectedRecipients = useCallback(() => {
+    setSelectedContactIds([]);
+    setSelectedGroupNames([]);
+  }, [setSelectedContactIds, setSelectedGroupNames]);
+
   const generateWithAi = useCallback(() => {
     const variants = generateAiVariants({
-      objective: objectiveLabel,
+      objective: displayTitle,
       offer: aiOffer,
       duration: aiDuration,
       tone: aiTone,
@@ -716,7 +740,7 @@ export function CampagneWizard({
     if (!sms.trim()) {
       setSms(variants[0] ?? "");
     }
-  }, [objectiveLabel, aiOffer, aiDuration, aiTone, setAiOpen, sms, setSms]);
+  }, [displayTitle, aiOffer, aiDuration, aiTone, setAiOpen, sms, setSms]);
 
   const correctCurrentMessage = useCallback(() => {
     const text = (sms || "")
@@ -782,22 +806,49 @@ export function CampagneWizard({
     }
   }, [onConfirmCampaign, go]);
 
+  const saveSettings = useCallback(() => {
+    const nextSender = sanitizeSender(settingsDraft.sender).trim();
+    if (!nextSender) {
+      setSettingsError("L’expéditeur ne peut pas être vide.");
+      return;
+    }
+    if (settingsDraft.sendMode === "sched" && !settingsDraft.scheduleAt) {
+      setSettingsError("Sélectionne une date de programmation.");
+      return;
+    }
+    setSettingsError(null);
+    setSender(nextSender);
+    setSendMode(settingsDraft.sendMode);
+    setScheduleAt(settingsDraft.scheduleAt);
+    setSettingsEditing(false);
+    setSettingsFeedback("Paramètres enregistrés.");
+  }, [settingsDraft, setSender, setSendMode, setScheduleAt]);
+
+  const cancelSettingsEdit = useCallback(() => {
+    setSettingsDraft({ sender, sendMode, scheduleAt });
+    setSettingsError(null);
+    setSettingsEditing(false);
+    setSettingsFeedback("Modifications annulées.");
+  }, [sender, sendMode, scheduleAt]);
+
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="m-0 text-[34px] font-extrabold text-slate-900">
-            Nouvelle campagne
+            Créer une campagne SMS
           </h1>
-          <div className="mt-1 text-xs font-bold text-slate-600">
-            Configuration complète (défilement vertical)
-          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <ProtoBtn onClick={() => go("campagnes")}>Annuler</ProtoBtn>
           <ProtoBtn
             primary
-            disabled={confirmLoading || !hasEnoughCredits || recipients === 0}
+            disabled={
+              confirmLoading ||
+              !hasEnoughCredits ||
+              recipients === 0 ||
+              (settingsEditing && settingsDirty)
+            }
             onClick={handleConfirm}
           >
             {confirmLoading ? "Enregistrement…" : "Confirmer l'envoi"}
@@ -809,82 +860,26 @@ export function CampagneWizard({
         <div className="grid max-w-4xl grid-cols-1 gap-3">
           <div className={fieldBox}>
             <label className={fieldLabel}>
-              <span>Quel est votre objectif ?</span>
-              <span className="text-xs text-slate-500">
-                {Math.min(goalFreeText.length, 80)}/80
+              <span className="inline-flex items-center gap-2">
+                <span>Nom de la campagne</span>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-black text-blue-700">
+                  Pré-rempli
+                </span>
               </span>
-            </label>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {CAMPAIGN_GOAL_OPTIONS.map((o) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => {
-                    setGoalPreset(o.id);
-                    if (!title.trim() || title.startsWith("Campagne")) {
-                      setTitle(buildCampaignTitleFromObjective(o.label));
-                    }
-                  }}
-                  className={cn(
-                    "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
-                    goalPreset === o.id
-                      ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                  )}
-                >
-                  {o.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setGoalPreset("libre")}
-                className={cn(
-                  "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
-                  goalPreset === "libre"
-                    ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                )}
-              >
-                Champ libre
-              </button>
-            </div>
-            {goalPreset === "libre" && (
-              <div className={innerInput}>
-                <input
-                  className={innerInp}
-                  maxLength={80}
-                  value={goalFreeText}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setGoalFreeText(v);
-                    setTitle(buildCampaignTitleFromObjective(v));
-                  }}
-                  placeholder="Ex : vider le stock de printemps"
-                />
-              </div>
-            )}
-          </div>
-          <div className={fieldBox}>
-            <label className={fieldLabel}>
-              <span>Nom de campagne (pré-rempli automatiquement)</span>
               <span className="text-xs text-slate-500">
-                {Math.min(title.length, 60)}/60
+                {Math.min(title.length, 80)}/80
               </span>
             </label>
             <div className={innerInput}>
               <input
                 className={innerInp}
-                maxLength={60}
+                maxLength={80}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={buildCampaignTitleFromObjective(objectiveLabel)}
+                placeholder={buildDefaultCampaignTitle()}
               />
             </div>
           </div>
-          <p className="text-sm font-bold text-slate-500">
-            L&apos;expéditeur affiché sur les SMS se configure dans{" "}
-            <strong>Paramètres</strong> → Préférences.
-          </p>
         </div>
       }
 
@@ -969,40 +964,85 @@ export function CampagneWizard({
                   onChange={(e) => setManualNumbers(e.target.value)}
                 />
               ) : (
-                <div className="mt-3 max-h-[260px] overflow-auto rounded-xl border border-slate-200">
+                <>
+                  {recipientMode !== "all" && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <ProtoBtn
+                        className="h-9 px-3 text-xs"
+                        onClick={selectAllVisibleContacts}
+                        disabled={selectableFilteredContacts.length === 0}
+                      >
+                        Tout sélectionner
+                      </ProtoBtn>
+                      <ProtoBtn
+                        className="h-9 px-3 text-xs"
+                        onClick={clearAllSelectedRecipients}
+                        disabled={
+                          selectedContactIds.length === 0 &&
+                          selectedGroupNames.length === 0
+                        }
+                      >
+                        Tout désélectionner
+                      </ProtoBtn>
+                    </div>
+                  )}
+                  <div className="mt-3 max-h-[260px] overflow-auto rounded-xl border border-slate-200">
                   {filteredContacts.map((c) => {
+                    const isUnsubscribed = c.stopSms || !c.optIn;
                     const viaGroup = selectedIdsFromGroups.has(c.id);
                     const checked =
-                      recipientMode === "all" ||
-                      (recipientMode === "lists" && viaGroup) ||
-                      (recipientMode === "manual" &&
-                        selectedContactIds.includes(c.id)) ||
-                      (recipientMode === "lists" &&
-                        selectedContactIds.includes(c.id));
+                      !isUnsubscribed &&
+                      (recipientMode === "all" ||
+                        (recipientMode === "lists" && viaGroup) ||
+                        (recipientMode === "manual" &&
+                          selectedContactIds.includes(c.id)) ||
+                        (recipientMode === "lists" &&
+                          selectedContactIds.includes(c.id)));
                     return (
                       <label
                         key={c.id}
-                        className="flex cursor-pointer items-center justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2.5 text-sm"
+                        className={cn(
+                          "flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-sm",
+                          isUnsubscribed
+                            ? "cursor-not-allowed bg-slate-50 text-slate-400"
+                            : "cursor-pointer bg-white"
+                        )}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate font-extrabold text-slate-900">
+                          <span
+                            className={cn(
+                              "block truncate font-extrabold",
+                              isUnsubscribed
+                                ? "text-slate-400"
+                                : "text-slate-900"
+                            )}
+                          >
                             {c.name}
                           </span>
-                          <span className="block truncate text-xs font-semibold text-slate-500">
+                          <span
+                            className={cn(
+                              "block truncate text-xs font-semibold",
+                              isUnsubscribed
+                                ? "text-slate-400"
+                                : "text-slate-500"
+                            )}
+                          >
                             {c.phone} · {formatContactGroups(c.groups)}
+                            {isUnsubscribed ? " · Désabonné" : ""}
                           </span>
                         </span>
                         <input
                           type="checkbox"
                           className="h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
                           checked={checked}
-                          disabled={recipientMode === "all"}
+                          disabled={recipientMode === "all" || isUnsubscribed}
                           onChange={() => toggleContact(c.id)}
                         />
                       </label>
                     );
                   })}
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -1233,9 +1273,6 @@ export function CampagneWizard({
           <div className={fieldBox}>
             <h2 className="m-0 text-base font-black">Aperçu complet</h2>
             <p className="mt-3 text-sm font-bold text-slate-600">
-              Objectif : <strong>{objectiveLabel || "—"}</strong>
-            </p>
-            <p className="mt-1 text-sm font-bold text-slate-600">
               Campagne : <strong>{displayTitle}</strong>
             </p>
             <p className="mt-1 text-sm font-bold text-slate-600">
@@ -1263,18 +1300,83 @@ export function CampagneWizard({
             </div>
           )}
           <div className={fieldBox}>
-            <h2 className="m-0 text-base font-black">Mode d&apos;envoi</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="m-0 text-base font-black">
+                Paramètres d&apos;envoi
+              </h2>
+              {!settingsEditing ? (
+                <ProtoBtn
+                  className="h-9 px-3 text-xs"
+                  onClick={() => setSettingsEditing(true)}
+                >
+                  Modifier
+                </ProtoBtn>
+              ) : (
+                <div className="flex gap-2">
+                  <ProtoBtn
+                    className="h-9 px-3 text-xs"
+                    onClick={cancelSettingsEdit}
+                  >
+                    Annuler
+                  </ProtoBtn>
+                  <ProtoBtn
+                    primary
+                    className="h-9 px-3 text-xs"
+                    onClick={saveSettings}
+                  >
+                    Enregistrer
+                  </ProtoBtn>
+                </div>
+              )}
+            </div>
+            {settingsFeedback && (
+              <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+                {settingsFeedback}
+              </p>
+            )}
+            {settingsError && (
+              <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800">
+                {settingsError}
+              </p>
+            )}
+            {settingsEditing && settingsDirty && (
+              <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                Modifications en cours : enregistre ou annule avant
+                confirmation.
+              </p>
+            )}
+            <div className="mt-3">
+              <label className="text-xs font-bold text-slate-500">
+                Expéditeur
+              </label>
+              <input
+                className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                value={settingsDraft.sender}
+                onChange={(e) =>
+                  setSettingsDraft((prev) => ({
+                    ...prev,
+                    sender: e.target.value,
+                  }))
+                }
+                disabled={!settingsEditing}
+                maxLength={11}
+              />
+            </div>
             <div className="mt-3 flex flex-wrap gap-2.5">
               <button
                 type="button"
-                onClick={() => setSendMode("now")}
+                onClick={() =>
+                  settingsEditing &&
+                  setSettingsDraft((prev) => ({ ...prev, sendMode: "now" }))
+                }
                 className={cn(
                   "flex min-w-[220px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                  sendMode === "now" && "ring-2 ring-[#2f6fed]"
+                  settingsDraft.sendMode === "now" && "ring-2 ring-[#2f6fed]",
+                  !settingsEditing && "cursor-default opacity-80"
                 )}
               >
                 <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
-                  {sendMode === "now" && (
+                  {settingsDraft.sendMode === "now" && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fed]" />
                   )}
                 </span>
@@ -1287,14 +1389,18 @@ export function CampagneWizard({
               </button>
               <button
                 type="button"
-                onClick={() => setSendMode("sched")}
+                onClick={() =>
+                  settingsEditing &&
+                  setSettingsDraft((prev) => ({ ...prev, sendMode: "sched" }))
+                }
                 className={cn(
                   "flex min-w-[220px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                  sendMode === "sched" && "ring-2 ring-[#2f6fed]"
+                  settingsDraft.sendMode === "sched" && "ring-2 ring-[#2f6fed]",
+                  !settingsEditing && "cursor-default opacity-80"
                 )}
               >
                 <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
-                  {sendMode === "sched" && (
+                  {settingsDraft.sendMode === "sched" && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fed]" />
                   )}
                 </span>
@@ -1306,6 +1412,25 @@ export function CampagneWizard({
                 </span>
               </button>
             </div>
+            {settingsDraft.sendMode === "sched" && (
+              <div className="mt-3">
+                <label className="text-xs font-bold text-slate-500">
+                  Date de programmation
+                </label>
+                <input
+                  type="datetime-local"
+                  className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                  value={settingsDraft.scheduleAt}
+                  onChange={(e) =>
+                    setSettingsDraft((prev) => ({
+                      ...prev,
+                      scheduleAt: e.target.value,
+                    }))
+                  }
+                  disabled={!settingsEditing}
+                />
+              </div>
+            )}
           </div>
           <div className={fieldBox}>
             <p className="text-sm font-bold text-slate-600">
