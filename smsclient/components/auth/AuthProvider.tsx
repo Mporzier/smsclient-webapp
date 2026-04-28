@@ -28,21 +28,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    const getSessionWithTimeout = async () => {
+      const timeoutMs = 5000;
+      const timeout = new Promise<null>((resolve) => {
+        window.setTimeout(() => resolve(null), timeoutMs);
+      });
+      const sessionPromise = supabase.auth
+        .getSession()
+        .then(({ data: { session: nextSession } }) => nextSession);
+      return Promise.race([sessionPromise, timeout]);
+    };
+    const syncSession = async () => {
+      try {
+        const nextSession = await getSessionWithTimeout();
+        if (!active) {
+          return;
+        }
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setSession(null);
+        setUser(null);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (!active) {
+        return;
+      }
       setSession(next);
       setUser(next?.user ?? null);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      setLoading(false);
-    });
+    const onPageShow = () => {
+      void syncSession();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncSession();
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    void syncSession();
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [supabase]);
 
   const signOut = useCallback(async () => {

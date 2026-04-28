@@ -10,4 +10,10 @@ export type CampaignRowData = {
   /** Texte d’affichage : date d’envoi, programmation, ou "—" */
   sendLabel: string;
   creditsLabel: string;
+  sender?: string;
+  body?: string;
+  sendMode?: "now" | "sched";
+  createdAt?: string;
+  sentAt?: string | null;
+  scheduledAt?: string | null;
 };

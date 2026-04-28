@@ -1,5 +1,3 @@
-export type LandingScreen = "home" | "features";
-
 export type AppRoute =
   | "contacts"
   | "groupes"
@@ -69,12 +67,12 @@ export function navOverrideForRoute(route: AppRoute): string {
 }
 
 export function parseHash(raw: string): {
-  landing: LandingScreen | null;
+  landing: null;
   route: AppRoute;
 } {
   const h = raw.replace(/^#/, "").trim();
-  if (h === "" || h === "home") return { landing: "home", route: "contacts" };
-  if (h === "features") return { landing: "features", route: "contacts" };
+  if (h === "" || h === "home") return { landing: null, route: "contacts" };
+  if (h === "features") return { landing: null, route: "contacts" };
   if (h === "ajouter-contact-3")
     return { landing: null, route: "ajouter-contact-2" };
   if (isAppRoute(h)) return { landing: null, route: h };

@@ -53,6 +53,12 @@ function recordToRow(r: SmsCampaignRecord): CampaignRowData {
     status: r.status,
     sendLabel,
     creditsLabel: r.credits_estimated > 0 ? String(r.credits_estimated) : "—",
+    sender: r.sender,
+    body: r.body,
+    sendMode: r.send_mode,
+    createdAt: r.created_at,
+    sentAt: r.sent_at,
+    scheduledAt: r.scheduled_at,
   };
 }
 
@@ -79,6 +85,7 @@ export type NewSmsCampaignInput = {
   body: string;
   sendMode: "now" | "sched";
   recipientCount: number;
+  scheduledAt?: string | null;
 };
 
 /**
@@ -93,6 +100,38 @@ export async function insertSmsCampaign(
   const credits = parts * Math.max(0, input.recipientCount);
   const isNow = input.sendMode === "now";
   const nowIso = new Date().toISOString();
+  const defaultScheduledAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const scheduledAt = input.scheduledAt ?? defaultScheduledAt;
+
+  const { error: ensureAccountError } = await supabase
+    .from("sms_credits_accounts")
+    .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+  if (ensureAccountError) {
+    return { error: new Error(ensureAccountError.message) };
+  }
+
+  const { data: accountRow, error: accountError } = await supabase
+    .from("sms_credits_accounts")
+    .select("balance")
+    .eq("user_id", userId)
+    .single();
+
+  if (accountError) {
+    return { error: new Error(accountError.message) };
+  }
+
+  const previousBalance = (accountRow as { balance: number }).balance ?? 0;
+  if (previousBalance < credits) {
+    return { error: new Error("Crédits insuffisants pour envoyer cette campagne.") };
+  }
+  const nextBalance = Math.max(0, previousBalance - credits);
+  const { error: setBalanceError } = await supabase
+    .from("sms_credits_accounts")
+    .update({ balance: nextBalance })
+    .eq("user_id", userId);
+  if (setBalanceError) {
+    return { error: new Error(setBalanceError.message) };
+  }
 
   const { error } = await supabase.from("sms_campaigns").insert({
     user_id: userId,
@@ -105,10 +144,14 @@ export async function insertSmsCampaign(
     credits_estimated: credits,
     status: isNow ? "sent" : "scheduled",
     sent_at: isNow ? nowIso : null,
-    scheduled_at: isNow ? null : null,
+    scheduled_at: isNow ? null : scheduledAt,
   });
 
   if (error) {
+    await supabase
+      .from("sms_credits_accounts")
+      .update({ balance: previousBalance })
+      .eq("user_id", userId);
     return { error: new Error(error.message) };
   }
   return { error: null };

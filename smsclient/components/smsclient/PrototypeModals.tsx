@@ -3,6 +3,7 @@
 import { cn } from "@/lib/cn";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import type { GroupRowData } from "@/lib/types/group";
 import { formatContactGroups } from "@/lib/types/contact";
 import { isValidFrMobile, normalizeFRPhone } from "@/lib/proto/smsUtils";
@@ -19,6 +20,23 @@ const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
 const modalCard =
   "max-h-[min(82vh,760px)] w-full max-w-[980px] overflow-auto rounded-[22px] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.20)]";
+
+function campaignStatusLabel(status: SmsCampaignStatus): string {
+  switch (status) {
+    case "sent":
+      return "Envoyée";
+    case "scheduled":
+      return "Programmée";
+    case "draft":
+      return "Brouillon";
+    case "failed":
+      return "Échec";
+    case "cancelled":
+      return "Annulée";
+    default:
+      return status;
+  }
+}
 
 export type GroupModalContactRow = {
   id: string;
@@ -502,29 +520,48 @@ export function GroupModal({
 }
 
 const PACKS = [
-  { pack: "Starter", credits: "500", price: "39", badge: "Idéal pour tester", best: false },
   {
+    code: "starter",
+    pack: "Starter",
+    credits: 500,
+    price: 39,
+    badge: "Idéal pour tester",
+    best: false,
+  },
+  {
+    code: "business",
     pack: "Business",
-    credits: "2 000",
-    price: "129",
+    credits: 2000,
+    price: 129,
     badge: "Le plus populaire",
     best: true,
   },
-  { pack: "Pro", credits: "5 000", price: "299", badge: "Meilleur ratio", best: false },
+  {
+    code: "pro",
+    pack: "Pro",
+    credits: 5000,
+    price: 299,
+    badge: "Meilleur ratio",
+    best: false,
+  },
 ] as const;
 
 type CreditsModalProps = {
   open: boolean;
   onClose: () => void;
-  onBought?: () => void;
+  onBought?: (selection: (typeof PACKS)[number]) => Promise<void> | void;
 };
 
 export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
   const [sel, setSel] = useState<(typeof PACKS)[number] | null>(null);
   const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) setSel(null);
+    if (!open) {
+      setSel(null);
+      setBuyError(null);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -536,14 +573,18 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const handleBuy = useCallback(() => {
+  const handleBuy = useCallback(async () => {
     if (!sel) return;
+    setBuyError(null);
     setBuying(true);
-    setTimeout(() => {
-      setBuying(false);
-      onBought?.();
+    try {
+      await onBought?.(sel);
       onClose();
-    }, 900);
+    } catch (e) {
+      setBuyError(e instanceof Error ? e.message : "Achat impossible.");
+    } finally {
+      setBuying(false);
+    }
   }, [sel, onBought, onClose]);
 
   if (!open) return null;
@@ -581,32 +622,49 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
                 key={p.pack}
                 type="button"
                 onClick={() => setSel(p)}
+                aria-pressed={sel?.pack === p.pack}
                 className={cn(
                   "cursor-pointer rounded-[18px] border border-slate-300/50 bg-white p-3.5 text-left transition hover:-translate-y-px hover:shadow-[0_16px_34px_rgba(15,23,42,0.10)]",
                   sel?.pack === p.pack &&
-                    "border-blue-500 shadow-[0_18px_40px_rgba(59,130,246,0.18)]",
+                    "border-blue-500 bg-blue-50/60 shadow-[0_18px_40px_rgba(59,130,246,0.18)] ring-2 ring-blue-300/60",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="text-lg font-black">{p.pack}</div>
-                  <span
-                    className={cn(
-                      "whitespace-nowrap rounded-full border border-slate-300/60 bg-slate-200/70 px-2.5 py-1.5 text-xs font-black text-slate-800",
-                      p.best && "border-blue-300/70 bg-blue-500/10 text-blue-800",
+                  <div>
+                    <div className="text-lg font-black">{p.pack}</div>
+                    {sel?.pack === p.pack && (
+                      <div className="mt-1 text-xs font-black text-blue-700">
+                        Pack sélectionné
+                      </div>
                     )}
-                  >
-                    {p.badge}
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "whitespace-nowrap rounded-full border border-slate-300/60 bg-slate-200/70 px-2.5 py-1.5 text-xs font-black text-slate-800",
+                        p.best && "border-blue-300/70 bg-blue-500/10 text-blue-800",
+                      )}
+                    >
+                      {p.badge}
+                    </span>
+                    {sel?.pack === p.pack && (
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-blue-300 bg-blue-600 text-xs font-black text-white">
+                        ✓
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-3.5 flex items-baseline gap-2">
                   <span className="text-[34px] font-black leading-none tracking-tight">
-                    {p.credits}
+                    {new Intl.NumberFormat("fr-FR").format(p.credits)}
                   </span>
                   <span className="font-black text-slate-600">crédits</span>
                 </div>
                 <div className="mt-2.5 flex items-baseline justify-between">
                   <span className="text-lg font-black">{p.price} €</span>
-                  <span className="text-xs font-extrabold text-slate-500">≈ {p.credits} SMS</span>
+                  <span className="text-xs font-extrabold text-slate-500">
+                    ≈ {new Intl.NumberFormat("fr-FR").format(p.credits)} SMS
+                  </span>
                 </div>
               </button>
             ))}
@@ -615,6 +673,11 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
           <div className="mt-4 flex flex-wrap items-end justify-between gap-3 rounded-[18px] border border-slate-300/40 bg-slate-50/80 p-3.5">
             <div>
               <div className="font-black">Récap</div>
+              {!sel && (
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  Sélectionne un pack pour afficher le récapitulatif.
+                </p>
+              )}
               <div className="mt-2 flex justify-between gap-3 text-sm font-extrabold text-slate-600">
                 <span>Pack</span>
                 <strong className="text-slate-900">{sel?.pack ?? "—"}</strong>
@@ -622,7 +685,9 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
               <div className="mt-1 flex justify-between gap-3 text-sm font-extrabold text-slate-600">
                 <span>Crédits</span>
                 <strong className="text-slate-900">
-                  {sel ? `${sel.credits} crédits` : "—"}
+                  {sel
+                    ? `${new Intl.NumberFormat("fr-FR").format(sel.credits)} crédits`
+                    : "—"}
                 </strong>
               </div>
             </div>
@@ -635,6 +700,11 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
               </div>
             </div>
           </div>
+          {buyError && (
+            <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+              {buyError}
+            </p>
+          )}
         </div>
 
         <div className="sticky bottom-0 flex justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
@@ -642,6 +712,113 @@ export function CreditsModal({ open, onClose, onBought }: CreditsModalProps) {
           <ProtoBtn primary disabled={!sel || buying} onClick={handleBuy}>
             {buying ? "Achat…" : "Acheter"}
           </ProtoBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type CampaignDetailsModalProps = {
+  open: boolean;
+  campaign: CampaignRowData | null;
+  onClose: () => void;
+};
+
+export function CampaignDetailsModal({
+  open,
+  campaign,
+  onClose,
+}: CampaignDetailsModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open || !campaign) return null;
+
+  return (
+    <div
+      className={overlayCls}
+      role="dialog"
+      aria-modal
+      aria-label="Détails de la campagne"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className={cn(modalCard, "max-w-[860px]")}>
+        <div className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
+          <div>
+            <div className="text-lg font-black text-slate-900">Détails de campagne</div>
+            <div className="text-xs font-bold text-slate-500">
+              Consultation uniquement (lecture seule)
+            </div>
+          </div>
+          <button
+            type="button"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+            aria-label="Fermer"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-3 bg-slate-50 p-[18px]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <div className="text-[11px] font-black uppercase tracking-widest text-slate-500/90">
+              Campagne
+            </div>
+            <div className="mt-2 text-lg font-black text-slate-900">{campaign.name}</div>
+            <div className="mt-2 text-sm font-semibold text-slate-600">
+              Statut : <strong>{campaignStatusLabel(campaign.status)}</strong>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 max-[900px]:grid-cols-1">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <div className="text-xs font-bold text-slate-500">Date de création</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.createdLabel}
+              </div>
+              <div className="mt-3 text-xs font-bold text-slate-500">Envoi</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.sendLabel}
+              </div>
+              <div className="mt-3 text-xs font-bold text-slate-500">Mode</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.sendMode === "sched" ? "Programmé" : "Immédiat"}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+              <div className="text-xs font-bold text-slate-500">Expéditeur</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.sender?.trim() || "—"}
+              </div>
+              <div className="mt-3 text-xs font-bold text-slate-500">Destinataires</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.recipients}
+              </div>
+              <div className="mt-3 text-xs font-bold text-slate-500">Crédits estimés</div>
+              <div className="mt-1 text-sm font-black text-slate-900">
+                {campaign.creditsLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <div className="text-xs font-bold text-slate-500">Message</div>
+            <div className="mt-2 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-800">
+              {campaign.body?.trim() || "—"}
+            </div>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 flex justify-end border-t border-slate-200 bg-white px-[18px] py-3.5">
+          <ProtoBtn onClick={onClose}>Fermer</ProtoBtn>
         </div>
       </div>
     </div>

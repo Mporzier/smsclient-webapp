@@ -2,7 +2,6 @@
 
 import { AppShell } from "@/components/smsclient/Shell";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { LandingScreens } from "@/components/smsclient/Landing";
 import {
   CampagnesView,
   ContactsView,
@@ -19,6 +18,7 @@ import {
 } from "@/components/smsclient/FlowViews";
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
+  CampaignDetailsModal,
   ContactModal,
   CreditsModal,
   GroupEditModal,
@@ -27,7 +27,9 @@ import {
 } from "@/components/smsclient/PrototypeModals";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
+import { useCredits } from "@/hooks/useCredits";
 import { useGroups } from "@/hooks/useGroups";
+import { useStatistics } from "@/hooks/useStatistics";
 import { usePersistedSmsSender } from "@/hooks/usePersistedSmsSender";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
 import { useUserQrCode } from "@/hooks/useUserQrCode";
@@ -41,6 +43,7 @@ import { insertSmsCampaign } from "@/lib/supabase/campaigns";
 import { insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
+import type { CampaignRowData } from "@/lib/types/campaign";
 import {
   isCampaignEligibleContact,
   type ContactRowData,
@@ -79,8 +82,15 @@ function fmtFr(iso: string) {
   return `${dd}/${mm}/${yy}`;
 }
 
+function parseManualNumbers(raw: string): string[] {
+  return raw
+    .split(/[\n,;]+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
 export function PrototypeApp() {
-  const { landing, route, go } = useProtoNavigation();
+  const { route, go } = useProtoNavigation();
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const {
@@ -103,6 +113,14 @@ export function PrototypeApp() {
     error: campaignsError,
     refresh: refreshCampaigns,
   } = useCampaigns();
+  const {
+    balance: creditsBalance,
+    balanceLabel: creditsBalanceLabel,
+    purchases: creditPurchases,
+    loading: creditsLoading,
+    error: creditsError,
+    buy: buyCredits,
+  } = useCredits();
 
   const { sender: smsSender, setSender: setSmsSender } = usePersistedSmsSender();
   const {
@@ -122,6 +140,8 @@ export function PrototypeApp() {
   const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [importContactsOpen, setImportContactsOpen] = useState(false);
+  const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
+  const [campaignDetailsRow, setCampaignDetailsRow] = useState<CampaignRowData | null>(null);
 
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
@@ -152,12 +172,26 @@ export function PrototypeApp() {
     "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre"
   >("promotion");
   const [campaignGoalFreeText, setCampaignGoalFreeText] = useState("");
+  const [campaignRecipientMode, setCampaignRecipientMode] = useState<
+    "manual" | "lists" | "all" | "numbers"
+  >("manual");
   const [campaignSelectedGroupNames, setCampaignSelectedGroupNames] = useState<string[]>([]);
   const [campaignSelectedContactIds, setCampaignSelectedContactIds] = useState<string[]>([]);
-  const campaignCreditsAvailable = 12000;
+  const [campaignManualNumbers, setCampaignManualNumbers] = useState("");
+  const campaignCreditsAvailable = creditsBalance;
 
   const campaignSelectedContacts = useMemo(() => {
-    const fromGroups = new Set<string>();
+    if (campaignRecipientMode === "all") {
+      return contacts;
+    }
+    if (campaignRecipientMode === "manual") {
+      const ids = new Set(campaignSelectedContactIds);
+      return contacts.filter((c) => ids.has(c.id));
+    }
+    if (campaignRecipientMode === "numbers") {
+      return [];
+    }
+    const ids = new Set<string>(campaignSelectedContactIds);
     if (campaignSelectedGroupNames.length > 0) {
       for (const c of contacts) {
         if (
@@ -167,33 +201,61 @@ export function PrototypeApp() {
             ),
           )
         ) {
-          fromGroups.add(c.id);
+          ids.add(c.id);
         }
       }
     }
-    for (const id of campaignSelectedContactIds) {
-      fromGroups.add(id);
-    }
-    return contacts.filter((c) => fromGroups.has(c.id));
-  }, [contacts, campaignSelectedGroupNames, campaignSelectedContactIds]);
+    return contacts.filter((c) => ids.has(c.id));
+  }, [
+    contacts,
+    campaignRecipientMode,
+    campaignSelectedContactIds,
+    campaignSelectedGroupNames,
+  ]);
+
+  const campaignManualNumberStats = useMemo(() => {
+    const numbers = parseManualNumbers(campaignManualNumbers);
+    const invalid = numbers.filter((n) => !isValidFrMobile(n)).length;
+    const eligible = Math.max(0, numbers.length - invalid);
+    return {
+      raw: numbers.length,
+      stop: 0,
+      invalid,
+      eligible,
+    };
+  }, [campaignManualNumbers]);
 
   const campaignExcludedStop = useMemo(
-    () => campaignSelectedContacts.filter((c) => c.stopSms).length,
-    [campaignSelectedContacts],
+    () =>
+      campaignRecipientMode === "numbers"
+        ? campaignManualNumberStats.stop
+        : campaignSelectedContacts.filter((c) => c.stopSms).length,
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
   );
   const campaignExcludedInvalid = useMemo(
     () =>
-      campaignSelectedContacts.filter(
-        (c) => !isValidFrMobile(c.phone) || !c.optIn,
-      ).length,
-    [campaignSelectedContacts],
+      campaignRecipientMode === "numbers"
+        ? campaignManualNumberStats.invalid
+        : campaignSelectedContacts.filter(
+            (c) => !isValidFrMobile(c.phone) || !c.optIn,
+          ).length,
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
   );
   const campaignRecipientCount = useMemo(
     () =>
-      campaignSelectedContacts.filter(
-        (c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone),
-      ).length,
-    [campaignSelectedContacts],
+      campaignRecipientMode === "numbers"
+        ? campaignManualNumberStats.eligible
+        : campaignSelectedContacts.filter(
+            (c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone),
+          ).length,
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
+  );
+  const campaignRecipientSelectedRaw = useMemo(
+    () =>
+      campaignRecipientMode === "numbers"
+        ? campaignManualNumberStats.raw
+        : campaignSelectedContacts.length,
+    [campaignRecipientMode, campaignManualNumberStats, campaignSelectedContacts],
   );
 
   const [acFirst, setAcFirst] = useState("");
@@ -213,7 +275,17 @@ export function PrototypeApp() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState(mFrom);
   const [dateTo, setDateTo] = useState(mTo);
+  const [appliedStatsFrom, setAppliedStatsFrom] = useState(mFrom);
+  const [appliedStatsTo, setAppliedStatsTo] = useState(mTo);
   const [chipLabel, setChipLabel] = useState("Ce mois");
+  const {
+    data: statisticsData,
+    loading: statisticsLoading,
+    error: statisticsError,
+  } = useStatistics({
+    from: appliedStatsFrom,
+    to: appliedStatsTo,
+  });
 
   const [toast, setToast] = useState<string | null>(null);
 
@@ -273,12 +345,14 @@ export function PrototypeApp() {
       const p = preselectedGroupName?.trim() ?? "";
       setCampaignGoalPreset("promotion");
       setCampaignGoalFreeText("");
+      setCampaignRecipientMode(p ? "lists" : "manual");
       setCampaignTitle("Campagne promotion");
       setSmsBody("");
       setSendMode("now");
       setAiOpen(false);
       setCampaignSelectedContactIds([]);
       setCampaignSelectedGroupNames(p ? [p] : []);
+      setCampaignManualNumbers("");
       go("nouvelle-campagne-1");
     },
     [go],
@@ -315,6 +389,8 @@ export function PrototypeApp() {
   );
 
   const applyStatsRange = useCallback(() => {
+    setAppliedStatsFrom(dateFrom);
+    setAppliedStatsTo(dateTo);
     setChipLabel(`Période · ${fmtFr(dateFrom)} → ${fmtFr(dateTo)}`);
   }, [dateFrom, dateTo]);
 
@@ -417,9 +493,13 @@ export function PrototypeApp() {
     contacts,
     selectedGroupNames: campaignSelectedGroupNames,
     setSelectedGroupNames: setCampaignSelectedGroupNames,
+    recipientMode: campaignRecipientMode,
+    setRecipientMode: setCampaignRecipientMode,
+    manualNumbers: campaignManualNumbers,
+    setManualNumbers: setCampaignManualNumbers,
     selectedContactIds: campaignSelectedContactIds,
     setSelectedContactIds: setCampaignSelectedContactIds,
-    recipientSelectedRaw: campaignSelectedContacts.length,
+    recipientSelectedRaw: campaignRecipientSelectedRaw,
     recipientExcludedStop: campaignExcludedStop,
     recipientExcludedInvalid: campaignExcludedInvalid,
     recipientCount: campaignRecipientCount,
@@ -457,12 +537,26 @@ export function PrototypeApp() {
             loading={campaignsLoading}
             error={campaignsError}
             onNewCampaign={() => openCampaignComposer()}
+            onOpenDetails={(row) => {
+              setCampaignDetailsRow(row);
+              setCampaignDetailsOpen(true);
+            }}
           />
         );
       case "credits":
         return (
           <CreditsView
+            balanceLabel={creditsBalanceLabel}
+            purchases={creditPurchases}
+            loading={creditsLoading}
+            error={creditsError}
             onBuyCredits={() => setCreditsModalOpen(true)}
+            onEditBillingInfo={() =>
+              showToast("Edition de l’adresse de facturation (à implémenter).")
+            }
+            onEditPaymentMethod={() =>
+              showToast("Edition de la carte bancaire (à implémenter).")
+            }
             onInvoiceClick={(id: string) =>
               showToast(`Téléchargement de la facture ${id} (prototype)`)
             }
@@ -479,6 +573,10 @@ export function PrototypeApp() {
             setDateFrom={setDateFrom}
             setDateTo={setDateTo}
             applyRange={applyStatsRange}
+            loading={statisticsLoading}
+            error={statisticsError}
+            data={statisticsData}
+            onExport={() => showToast("Export des statistiques (à implémenter).")}
           />
         );
       case "parametres":
@@ -555,15 +653,11 @@ export function PrototypeApp() {
           />
         );
       case "nouvelle-campagne-1":
-        return <CampagneWizard step={1} {...campaignWizardProps} />;
       case "nouvelle-campagne-2":
-        return <CampagneWizard step={2} {...campaignWizardProps} />;
       case "nouvelle-campagne-3":
-        return <CampagneWizard step={3} {...campaignWizardProps} />;
       case "nouvelle-campagne-4":
-        return <CampagneWizard step={4} {...campaignWizardProps} />;
       case "nouvelle-campagne-5":
-        return <CampagneWizard step={5} {...campaignWizardProps} />;
+        return <CampagneWizard step={1} {...campaignWizardProps} />;
       default:
         return (
           <ContactsView
@@ -580,25 +674,13 @@ export function PrototypeApp() {
 
   return (
     <>
-      {landing && (
-        <LandingScreens
-          screen={landing}
-          onOpenFeatures={() => go("features")}
-          onOpenMvp={() => go("contacts")}
-          onBackHome={() => go("home")}
-          onMvpFromFeatures={() => go("contacts")}
-        />
-      )}
-
-      {!landing && (
-        <AppShell
-          route={route}
-          go={go}
-          onNewCampaign={() => openCampaignComposer()}
-        >
-          {renderRoute(route)}
-        </AppShell>
-      )}
+      <AppShell
+        route={route}
+        go={go}
+        onNewCampaign={() => openCampaignComposer()}
+      >
+        {renderRoute(route)}
+      </AppShell>
 
       <GroupModal
         open={groupModalOpen}
@@ -686,7 +768,32 @@ export function PrototypeApp() {
       <CreditsModal
         open={creditsModalOpen}
         onClose={() => setCreditsModalOpen(false)}
-        onBought={() => showToast("Achat confirmé (prototype).")}
+        onBought={async (selection) => {
+          if (!user?.id) {
+            throw new Error("Tu dois être connecté pour acheter des crédits.");
+          }
+          const { invoiceRef, error } = await buyCredits({
+            packCode: selection.code,
+            packLabel: selection.pack,
+            credits: selection.credits,
+            amountEur: selection.price,
+          });
+          if (error) {
+            throw error;
+          }
+          showToast(
+            `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(selection.credits)} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`,
+          );
+        }}
+      />
+
+      <CampaignDetailsModal
+        open={campaignDetailsOpen}
+        campaign={campaignDetailsRow}
+        onClose={() => {
+          setCampaignDetailsOpen(false);
+          setCampaignDetailsRow(null);
+        }}
       />
 
       {user?.id && (

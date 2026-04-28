@@ -80,6 +80,7 @@ type CampagnesProps = {
   loading: boolean;
   error: string | null;
   onNewCampaign: () => void;
+  onOpenDetails: (row: CampaignRowData) => void;
 };
 
 export function CampagnesView({
@@ -87,6 +88,7 @@ export function CampagnesView({
   loading,
   error,
   onNewCampaign,
+  onOpenDetails,
 }: CampagnesProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -210,7 +212,8 @@ export function CampagnesView({
                   filtered.map((row) => (
                     <tr
                       key={row.id}
-                      className="hover:bg-slate-50/60"
+                      className="cursor-pointer hover:bg-slate-50/60"
+                      onClick={() => onOpenDetails(row)}
                     >
                       <td className="whitespace-nowrap border-b border-slate-100 px-[18px] py-3.5 text-slate-900">
                         {row.createdLabel}

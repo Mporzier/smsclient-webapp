@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type AppRoute,
-  type LandingScreen,
   parseHash,
   ROUTE_TITLES,
 } from "@/lib/proto/routes";
@@ -26,19 +25,12 @@ export function useProtoNavigation() {
   const parsed = useMemo(() => parseHash(`#${hashPath}`), [hashPath]);
 
   useEffect(() => {
-    if (parsed.landing) {
-      document.title =
-        parsed.landing === "home"
-          ? "SMSClient.fr — Accueil"
-          : "SMSClient.fr — Features";
-      return;
-    }
     document.title = `SMSClient.fr — ${ROUTE_TITLES[parsed.route]}`;
-  }, [parsed.landing, parsed.route]);
+  }, [parsed.route]);
 
   return {
     hashPath,
-    landing: parsed.landing as LandingScreen | null,
+    landing: parsed.landing,
     route: parsed.route as AppRoute,
     go,
   };

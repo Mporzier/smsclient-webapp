@@ -3,6 +3,8 @@
 import { SearchBar } from "@/components/smsclient/Shell";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
+import { formatStatsNumber } from "@/lib/supabase/statistics";
+import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import { useCallback, useEffect, useRef } from "react";
 
 type StatsProps = {
@@ -14,6 +16,10 @@ type StatsProps = {
   setDateFrom: (v: string) => void;
   setDateTo: (v: string) => void;
   applyRange: () => void;
+  loading: boolean;
+  error: string | null;
+  data: StatisticsSnapshot;
+  onExport: () => void;
 };
 
 export function StatistiquesView(props: StatsProps) {
@@ -26,9 +32,45 @@ export function StatistiquesView(props: StatsProps) {
     setDateFrom,
     setDateTo,
     applyRange,
+    loading,
+    error,
+    data,
+    onExport,
   } = props;
   const chipRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
+
+  const kpis = [
+    {
+      label: "SMS envoyés",
+      value: formatStatsNumber(data.kpis.smsSent),
+      hint: "campagnes envoyées sur la période",
+    },
+    {
+      label: "Taux délivré",
+      value:
+        data.kpis.deliveryRate === null
+          ? "—"
+          : `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(data.kpis.deliveryRate)}%`,
+      hint: "ratio envoyé / (envoyé + échec)",
+    },
+    {
+      label: "Désinscriptions",
+      value: formatStatsNumber(data.kpis.stopCount),
+      hint: "contacts en statut STOP",
+    },
+    {
+      label: "Crédits consommés",
+      value: formatStatsNumber(data.kpis.creditsConsumed),
+      hint: "sur la période sélectionnée",
+    },
+  ] as const;
+
+  const maxSeriesValue =
+    data.campaignSeries.reduce(
+      (max, p) => Math.max(max, p.sent + p.failed + p.scheduled),
+      0,
+    ) || 1;
 
   const positionPop = useCallback(() => {
     const chip = chipRef.current;
@@ -86,7 +128,9 @@ export function StatistiquesView(props: StatsProps) {
           >
             {chipLabel}
           </button>
-          <ProtoBtn primary>Exporter</ProtoBtn>
+          <ProtoBtn primary onClick={onExport}>
+            Exporter
+          </ProtoBtn>
         </div>
       </div>
 
@@ -142,19 +186,18 @@ export function StatistiquesView(props: StatsProps) {
       )}
 
       <div className="mt-3.5 grid grid-cols-4 gap-3.5 max-[1100px]:grid-cols-2">
-        {[
-          ["SMS envoyés", "1 240", "sur 30 jours"],
-          ["Taux délivré", "97%", "moyenne"],
-          ["Désinscriptions", "14", "STOP"],
-          ["Crédits consommés", "1 240", "équivalent SMS"],
-        ].map(([label, val, hint]) => (
+        {kpis.map((kpi) => (
           <div
-            key={label}
+            key={kpi.label}
             className="min-h-[92px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
           >
-            <div className="text-[13px] font-bold text-slate-500">{label}</div>
-            <div className="mt-2 text-2xl font-black text-slate-900">{val}</div>
-            <div className="mt-1.5 text-xs font-semibold text-slate-600">{hint}</div>
+            <div className="text-[13px] font-bold text-slate-500">{kpi.label}</div>
+            <div className="mt-2 text-2xl font-black text-slate-900">
+              {loading ? "…" : kpi.value}
+            </div>
+            <div className="mt-1.5 text-xs font-semibold text-slate-600">
+              {kpi.hint}
+            </div>
           </div>
         ))}
       </div>
@@ -162,8 +205,43 @@ export function StatistiquesView(props: StatsProps) {
       <div className="mt-3.5 grid grid-cols-[1.2fr_0.8fr] gap-3.5 max-[1100px]:grid-cols-1">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
           <h2 className="m-0 text-base font-black text-slate-900">Évolution des campagnes</h2>
-          <div className="mt-2.5 grid h-[220px] place-items-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50 text-sm font-bold text-slate-500">
-            Graphique (mock)
+          <div className="mt-2.5 rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+            {loading && (
+              <div className="grid h-[200px] place-items-center text-sm font-bold text-slate-500">
+                Chargement des statistiques…
+              </div>
+            )}
+            {!loading && data.campaignSeries.length === 0 && (
+              <div className="grid h-[200px] place-items-center text-sm font-bold text-slate-500">
+                Aucune campagne sur cette période.
+              </div>
+            )}
+            {!loading && data.campaignSeries.length > 0 && (
+              <div className="space-y-2">
+                {data.campaignSeries.map((point) => {
+                  const total = point.sent + point.failed + point.scheduled;
+                  const sentWidth = `${(point.sent / maxSeriesValue) * 100}%`;
+                  const failedWidth = `${(point.failed / maxSeriesValue) * 100}%`;
+                  const scheduledWidth = `${(point.scheduled / maxSeriesValue) * 100}%`;
+                  return (
+                    <div key={point.label} className="grid grid-cols-[52px_1fr_60px] items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500">{point.label}</span>
+                      <div className="flex h-3 overflow-hidden rounded-full bg-slate-200">
+                        <div className="bg-emerald-500/90" style={{ width: sentWidth }} />
+                        <div className="bg-rose-500/90" style={{ width: failedWidth }} />
+                        <div className="bg-blue-500/80" style={{ width: scheduledWidth }} />
+                      </div>
+                      <span className="text-right text-xs font-black text-slate-600">
+                        {formatStatsNumber(total)}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div className="pt-1 text-[11px] font-bold text-slate-500">
+                  Vert: envoyés · Rouge: échecs · Bleu: programmés
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
@@ -176,19 +254,29 @@ export function StatistiquesView(props: StatsProps) {
                     Groupe
                   </th>
                   <th className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-extrabold">
-                    SMS
+                    Contacts
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {[
-                  ["Clients Fidèles", "520"],
-                  ["Prospects", "410"],
-                  ["Clients VIP", "310"],
-                ].map(([g, n]) => (
-                  <tr key={g}>
-                    <td className="border-b border-slate-100 px-3 py-3 font-extrabold">{g}</td>
-                    <td className="border-b border-slate-100 px-3 py-3">{n}</td>
+                {!loading && data.topGroups.length === 0 && (
+                  <tr>
+                    <td
+                      className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-500"
+                      colSpan={2}
+                    >
+                      Aucun groupe disponible.
+                    </td>
+                  </tr>
+                )}
+                {data.topGroups.map((group) => (
+                  <tr key={group.groupName}>
+                    <td className="border-b border-slate-100 px-3 py-3 font-extrabold">
+                      {group.groupName}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      {formatStatsNumber(group.contacts)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -196,6 +284,11 @@ export function StatistiquesView(props: StatsProps) {
           </div>
         </div>
       </div>
+      {error && (
+        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

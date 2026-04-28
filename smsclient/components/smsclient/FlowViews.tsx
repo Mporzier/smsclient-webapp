@@ -17,13 +17,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 const fieldBox =
   "rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]";
-const fieldLabel = "flex justify-between gap-2 text-[13px] font-black text-slate-900";
+const fieldLabel =
+  "flex justify-between gap-2 text-[13px] font-black text-slate-900";
 const innerInput =
   "mt-2.5 flex h-[46px] items-center gap-2.5 rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5";
 const innerInp =
   "w-full border-none bg-transparent text-sm font-extrabold text-slate-900 outline-none";
 
-type StepTabProps = { active: boolean; num: string; label: string; onClick?: () => void };
+type StepTabProps = {
+  active: boolean;
+  num: string;
+  label: string;
+  onClick?: () => void;
+};
 
 function StepTab({ active, num, label, onClick }: StepTabProps) {
   return (
@@ -32,14 +38,15 @@ function StepTab({ active, num, label, onClick }: StepTabProps) {
       onClick={onClick}
       className={cn(
         "flex cursor-pointer items-center gap-2.5 rounded-2xl border border-transparent bg-slate-100 px-3 py-2.5 text-[13px] font-extrabold text-slate-700",
-        active && "border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
+        active &&
+          "border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
       )}
     >
       <span
         className={cn(
           "grid h-[26px] w-[26px] place-items-center rounded-[10px] bg-slate-200 text-xs font-black text-slate-900",
           active &&
-            "bg-[#2f6fed] text-white shadow-[0_10px_18px_rgba(47,111,237,0.25)]",
+            "bg-[#2f6fed] text-white shadow-[0_10px_18px_rgba(47,111,237,0.25)]"
         )}
       >
         {num}
@@ -81,10 +88,10 @@ export function AjouterContactFlow({
   const toggleGroup = useCallback(
     (g: string) => {
       setGroups((prev) =>
-        prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
+        prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
       );
     },
-    [setGroups],
+    [setGroups]
   );
 
   const preview = useMemo(() => {
@@ -106,7 +113,9 @@ export function AjouterContactFlow({
     <div className="flex min-h-0 flex-col gap-3.5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">Ajouter un contact</h1>
+          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">
+            Ajouter un contact
+          </h1>
           <div className="mt-1.5 text-xs font-bold text-slate-600">
             {step === 1 && "Étape 1/2 — Informations"}
             {step === 2 && "Étape 2/2 — Vérification"}
@@ -123,7 +132,9 @@ export function AjouterContactFlow({
           )}
           {step === 2 && (
             <>
-              <ProtoBtn onClick={() => go("ajouter-contact-1")}>Retour</ProtoBtn>
+              <ProtoBtn onClick={() => go("ajouter-contact-1")}>
+                Retour
+              </ProtoBtn>
               <ProtoBtn primary onClick={() => go("contacts")}>
                 Enregistrer le contact
               </ProtoBtn>
@@ -133,8 +144,18 @@ export function AjouterContactFlow({
       </div>
 
       <div className="flex flex-wrap gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-        <StepTab active={step === 1} num="1" label="Infos" onClick={() => go("ajouter-contact-1")} />
-        <StepTab active={step === 2} num="2" label="Vérification" onClick={() => go("ajouter-contact-2")} />
+        <StepTab
+          active={step === 1}
+          num="1"
+          label="Infos"
+          onClick={() => go("ajouter-contact-1")}
+        />
+        <StepTab
+          active={step === 2}
+          num="2"
+          label="Vérification"
+          onClick={() => go("ajouter-contact-2")}
+        />
       </div>
 
       {step === 1 && (
@@ -144,7 +165,9 @@ export function AjouterContactFlow({
               <span>
                 Prénom <span className="text-red-500">*</span>
               </span>
-              <span className="text-xs font-extrabold text-slate-500">{first.length}/30</span>
+              <span className="text-xs font-extrabold text-slate-500">
+                {first.length}/30
+              </span>
             </label>
             <div className={innerInput}>
               <input
@@ -162,7 +185,9 @@ export function AjouterContactFlow({
           <div className={fieldBox}>
             <label className={fieldLabel}>
               <span>Nom (optionnel)</span>
-              <span className="text-xs font-extrabold text-slate-500">{last.length}/30</span>
+              <span className="text-xs font-extrabold text-slate-500">
+                {last.length}/30
+              </span>
             </label>
             <div className={innerInput}>
               <input
@@ -180,7 +205,9 @@ export function AjouterContactFlow({
               <span>
                 Téléphone <span className="text-red-500">*</span>
               </span>
-              <span className="text-xs font-extrabold text-slate-500">{preview.phoneHint}</span>
+              <span className="text-xs font-extrabold text-slate-500">
+                {preview.phoneHint}
+              </span>
             </label>
             <div className={innerInput}>
               <input
@@ -192,13 +219,16 @@ export function AjouterContactFlow({
               />
             </div>
             <p className="mt-2 text-xs font-bold leading-snug text-slate-500">
-              Astuce : on peut accepter +33… (conversion automatique en maquette).
+              Astuce : on peut accepter +33… (conversion automatique en
+              maquette).
             </p>
           </div>
           <div className={fieldBox}>
             <label className={fieldLabel}>
               <span>Groupes</span>
-              <span className="text-xs font-extrabold text-slate-500">Optionnel</span>
+              <span className="text-xs font-extrabold text-slate-500">
+                Optionnel
+              </span>
             </label>
             <div className="mt-2.5 max-h-[200px] space-y-2 overflow-auto rounded-[14px] border border-[#dfe6f2] bg-slate-50 p-3">
               {groupOptions.length === 0 ? (
@@ -229,7 +259,9 @@ export function AjouterContactFlow({
           <div className={cn(fieldBox, "col-span-2 max-[900px]:col-span-1")}>
             <label className={fieldLabel}>
               <span>Source</span>
-              <span className="text-xs font-extrabold text-slate-500">Auto</span>
+              <span className="text-xs font-extrabold text-slate-500">
+                Auto
+              </span>
             </label>
             <div className={innerInput}>
               <input className={innerInp} readOnly value="Ajout manuel" />
@@ -241,8 +273,8 @@ export function AjouterContactFlow({
       {step === 2 && (
         <>
           <p className="text-sm font-bold text-slate-600">
-            Le statut SMS (opt-in, STOP) se mettra à jour après les envois de campagnes et est
-            visible dans la colonne « Statut SMS » de la liste.
+            Le statut SMS (opt-in, STOP) se mettra à jour après les envois de
+            campagnes et est visible dans la colonne « Statut SMS » de la liste.
           </p>
           <div className="grid grid-cols-2 gap-3.5 max-[600px]:grid-cols-1">
             {[
@@ -258,12 +290,13 @@ export function AjouterContactFlow({
             ))}
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black">Ce que ça fera (prototype)</h2>
+            <h2 className="m-0 text-base font-black">
+              Ce que ça fera (prototype)
+            </h2>
             <p className="mt-2 text-xs font-bold leading-relaxed text-slate-600">
               • Ajoute une entrée dans la liste Contacts.
-              <br />
-              • Le contact pourra être ciblé comme destinataire une fois enregistré (flux modale
-              + Supabase).
+              <br />• Le contact pourra être ciblé comme destinataire une fois
+              enregistré (flux modale + Supabase).
             </p>
           </div>
         </>
@@ -308,7 +341,9 @@ export function CreerGroupeFlow({
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">Créer un groupe</h1>
+          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">
+            Créer un groupe
+          </h1>
           <div className="mt-1.5 text-xs font-bold text-slate-600">
             {step === 1 ? "Étape 1/2 — Informations" : "Étape 2/2 — Contacts"}
           </div>
@@ -358,7 +393,8 @@ export function CreerGroupeFlow({
               />
             </div>
             <p className="mt-2 text-xs font-bold text-slate-500">
-              Utilisé pour segmenter tes contacts et lancer des campagnes plus vite.
+              Utilisé pour segmenter tes contacts et lancer des campagnes plus
+              vite.
             </p>
           </div>
           <div className={fieldBox}>
@@ -386,13 +422,13 @@ export function CreerGroupeFlow({
                 className={cn(
                   "flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-black text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
                   colorId === c.id &&
-                    "border-blue-200 shadow-[0_16px_26px_rgba(47,111,237,0.12)]",
+                    "border-blue-200 shadow-[0_16px_26px_rgba(47,111,237,0.12)]"
                 )}
               >
                 <span
                   className={cn(
                     "h-3.5 w-3.5 rounded-md shadow-[inset_0_0_0_2px_rgba(15,23,42,0.06)]",
-                    c.bg,
+                    c.bg
                   )}
                 />
                 Couleur
@@ -409,7 +445,12 @@ export function CreerGroupeFlow({
             (Design prototype) Choisis ta source :
           </p>
           <div className="mt-3 flex flex-wrap gap-2.5">
-            {["Liste / segment", "Filtrer", "Import CSV", "Sélection manuelle"].map((t) => (
+            {[
+              "Liste / segment",
+              "Filtrer",
+              "Import CSV",
+              "Sélection manuelle",
+            ].map((t) => (
               <span
                 key={t}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold"
@@ -420,7 +461,8 @@ export function CreerGroupeFlow({
             ))}
           </div>
           <p className="mt-3 min-w-0 break-words text-xs font-bold text-slate-500">
-            Groupe : <strong className="text-slate-800">{name.trim() || "—"}</strong>
+            Groupe :{" "}
+            <strong className="text-slate-800">{name.trim() || "—"}</strong>
             <br />
             <span className="inline-block min-w-0 max-w-full">
               Description :{" "}
@@ -452,12 +494,16 @@ type CampProps = {
   setAiOpen: (v: boolean) => void;
   goalPreset: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre";
   setGoalPreset: (
-    v: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre",
+    v: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre"
   ) => void;
   goalFreeText: string;
   setGoalFreeText: (v: string) => void;
   groups: GroupRowData[];
   contacts: ContactRowData[];
+  recipientMode: "manual" | "lists" | "all" | "numbers";
+  setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
+  manualNumbers: string;
+  setManualNumbers: (v: string) => void;
   selectedGroupNames: string[];
   setSelectedGroupNames: Dispatch<SetStateAction<string[]>>;
   selectedContactIds: string[];
@@ -493,7 +539,7 @@ const GOAL_LABEL_BY_ID: Record<
 
 function buildObjectiveLabel(
   preset: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre",
-  freeText: string,
+  freeText: string
 ): string {
   if (preset === "libre") return freeText.trim();
   return GOAL_LABEL_BY_ID[preset];
@@ -519,13 +565,32 @@ function generateAiVariants(args: {
     tone === "premium"
       ? "Bonjour {PRENOM},"
       : tone === "urgent"
-        ? "{PRENOM},"
-        : "Hello {PRENOM},";
+      ? "{PRENOM},"
+      : "Hello {PRENOM},";
   return [
     `${opener} ${objective} : ${offer}. Valable ${duration}. Réponds STOP pour ne plus recevoir nos SMS.`,
     `${opener} profite de ${offer} pour ${objective}. Fin de l’offre dans ${duration}.`,
     `${objective} 💬 ${offer} pendant ${duration}. Passe en boutique avec ce SMS !`,
   ].map((x) => x.slice(0, 320));
+}
+
+function normalizeUrl(url: string): string {
+  const t = url.trim();
+  if (!t) return "";
+  if (!/^https?:\/\//i.test(t)) {
+    return `https://${t}`;
+  }
+  return t;
+}
+
+function removeExistingUrl(text: string): string {
+  return text.replace(/\s?https?:\/\/[^\s]+/gi, "").trim();
+}
+
+function ensureStopMention(text: string): string {
+  return /stop/i.test(text)
+    ? text
+    : `${text.trim()} Répondez STOP pour ne plus recevoir nos SMS.`.trim();
 }
 
 export function CampagneWizard({
@@ -546,6 +611,10 @@ export function CampagneWizard({
   setGoalFreeText,
   groups,
   contacts,
+  recipientMode,
+  setRecipientMode,
+  manualNumbers,
+  setManualNumbers,
   selectedGroupNames,
   setSelectedGroupNames,
   selectedContactIds,
@@ -557,6 +626,7 @@ export function CampagneWizard({
   creditsAvailable,
   onConfirmCampaign,
 }: CampProps) {
+  void step;
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState("");
@@ -564,6 +634,10 @@ export function CampagneWizard({
   const [aiDuration, setAiDuration] = useState("");
   const [aiTone, setAiTone] = useState("amical");
   const [aiVariants, setAiVariants] = useState<string[]>([]);
+  const [selectedAiVariant, setSelectedAiVariant] = useState<string | null>(
+    null
+  );
+  const [messageUrl, setMessageUrl] = useState("");
 
   const unicode = isUnicode(sms);
   const parts = smsPartsFor(sms);
@@ -573,7 +647,8 @@ export function CampagneWizard({
 
   const displaySender = sanitizeSender(sender).trim() || "BOULANGERIE";
   const objectiveLabel = buildObjectiveLabel(goalPreset, goalFreeText);
-  const displayTitle = title.trim() || buildCampaignTitleFromObjective(objectiveLabel);
+  const displayTitle =
+    title.trim() || buildCampaignTitleFromObjective(objectiveLabel);
   const hasEnoughCredits = totalCredits <= creditsAvailable;
 
   const selectedIdsFromGroups = useMemo(() => {
@@ -592,33 +667,40 @@ export function CampagneWizard({
     const q = contactSearch.trim().toLowerCase();
     if (!q) return contacts;
     return contacts.filter((c) => {
-      const hay = `${c.name} ${c.phone} ${formatContactGroups(c.groups)}`.toLowerCase();
+      const hay = `${c.name} ${c.phone} ${formatContactGroups(
+        c.groups
+      )}`.toLowerCase();
       return hay.includes(q);
     });
   }, [contacts, contactSearch]);
 
   useEffect(() => {
-    if (step !== 5) setConfirmError(null);
-  }, [step]);
+    setConfirmError(null);
+  }, [sms, recipientCount, sendMode]);
+
+  useEffect(() => {
+    const match = sms.match(/https?:\/\/[^\s]+/i);
+    setMessageUrl(match?.[0] ?? "");
+  }, [sms]);
 
   const toggleGroup = useCallback(
     (groupName: string) => {
       setSelectedGroupNames((prev) =>
         prev.includes(groupName)
           ? prev.filter((x) => x !== groupName)
-          : [...prev, groupName],
+          : [...prev, groupName]
       );
     },
-    [setSelectedGroupNames],
+    [setSelectedGroupNames]
   );
 
   const toggleContact = useCallback(
     (id: string) => {
       setSelectedContactIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
       );
     },
-    [setSelectedContactIds],
+    [setSelectedContactIds]
   );
 
   const generateWithAi = useCallback(() => {
@@ -629,138 +711,108 @@ export function CampagneWizard({
       tone: aiTone,
     });
     setAiVariants(variants.slice(0, 3));
+    setSelectedAiVariant(null);
     setAiOpen(true);
     if (!sms.trim()) {
       setSms(variants[0] ?? "");
     }
   }, [objectiveLabel, aiOffer, aiDuration, aiTone, setAiOpen, sms, setSms]);
 
-  const goNext = useCallback(() => {
-    if (step === 1) {
-      const objective = buildObjectiveLabel(goalPreset, goalFreeText);
-      if (!objective.trim()) return;
-      if (!title.trim()) {
-        setTitle(buildCampaignTitleFromObjective(objective));
-      }
-      go("nouvelle-campagne-2");
+  const correctCurrentMessage = useCallback(() => {
+    const text = (sms || "")
+      .replace(/\s+/g, " ")
+      .replace(/-20%/g, "-20 %")
+      .replace(/bonjour/gi, "Bonjour")
+      .replace(/sms/gi, "SMS")
+      .trim();
+    setSms(text ? ensureStopMention(text) : "");
+  }, [sms, setSms]);
+
+  const reformulateMessage = useCallback(() => {
+    const base =
+      sms.trim() || "Bonjour {PRENOM}, profitez de notre offre en boutique.";
+    const next = base
+      .replace("profitez de", "bénéficiez de")
+      .replace("cette semaine", "en ce moment")
+      .replace("dans votre boulangerie", "dans notre boutique");
+    setSms(next.trim());
+  }, [sms, setSms]);
+
+  const insertOrUpdateUrl = useCallback(() => {
+    const normalized = normalizeUrl(messageUrl);
+    const next = removeExistingUrl(sms);
+    setSms(normalized ? `${next} ${normalized}`.trim() : next.trim());
+  }, [messageUrl, sms, setSms]);
+
+  const toggleStopText = useCallback(() => {
+    if (/Répondez STOP pour ne plus recevoir nos SMS\./i.test(sms)) {
+      setSms(
+        sms
+          .replace(/ ?Répondez STOP pour ne plus recevoir nos SMS\./i, "")
+          .trim()
+      );
       return;
     }
-    if (step === 2) {
-      go("nouvelle-campagne-3");
+    setSms(ensureStopMention(sms || ""));
+  }, [sms, setSms]);
+
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      setSms(`${sms}${emoji}`);
+    },
+    [sms, setSms]
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (!onConfirmCampaign) {
+      go("campagnes");
       return;
     }
-    if (step === 3) {
-      go("nouvelle-campagne-4");
-      return;
+    setConfirmError(null);
+    setConfirmLoading(true);
+    try {
+      await onConfirmCampaign();
+      go("campagnes");
+    } catch (e) {
+      setConfirmError(
+        e instanceof Error ? e.message : "Enregistrement impossible."
+      );
+    } finally {
+      setConfirmLoading(false);
     }
-    if (step === 4) {
-      go("nouvelle-campagne-5");
-    }
-  }, [step, goalPreset, goalFreeText, title, setTitle, go]);
+  }, [onConfirmCampaign, go]);
 
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">Nouvelle campagne</h1>
+          <h1 className="m-0 text-[34px] font-extrabold text-slate-900">
+            Nouvelle campagne
+          </h1>
           <div className="mt-1 text-xs font-bold text-slate-600">
-            Étape {step}/5 —{" "}
-            {["Objectif", "Destinataires", "IA + message", "Aperçu", "Envoi"][step - 1]}
+            Configuration complète (défilement vertical)
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {step === 1 && (
-            <>
-              <ProtoBtn onClick={() => go("campagnes")}>Annuler</ProtoBtn>
-              <ProtoBtn primary onClick={goNext} disabled={!objectiveLabel.trim()}>
-                Continuer
-              </ProtoBtn>
-            </>
-          )}
-          {step === 2 && (
-            <>
-              <ProtoBtn onClick={() => go("nouvelle-campagne-1")}>Retour</ProtoBtn>
-              <ProtoBtn primary onClick={goNext}>
-                Continuer
-              </ProtoBtn>
-            </>
-          )}
-          {step === 3 && (
-            <>
-              <ProtoBtn onClick={() => go("nouvelle-campagne-2")}>Retour</ProtoBtn>
-              <ProtoBtn primary onClick={goNext}>
-                Continuer
-              </ProtoBtn>
-            </>
-          )}
-          {step === 4 && (
-            <>
-              <ProtoBtn onClick={() => go("nouvelle-campagne-3")}>Retour</ProtoBtn>
-              <ProtoBtn primary onClick={goNext}>
-                Continuer
-              </ProtoBtn>
-            </>
-          )}
-          {step === 5 && (
-            <>
-              <ProtoBtn onClick={() => go("nouvelle-campagne-4")} disabled={confirmLoading}>
-                Retour
-              </ProtoBtn>
-              <ProtoBtn
-                primary
-                disabled={confirmLoading || !hasEnoughCredits || recipients === 0}
-                onClick={async () => {
-                  if (!onConfirmCampaign) {
-                    go("campagnes");
-                    return;
-                  }
-                  setConfirmError(null);
-                  setConfirmLoading(true);
-                  try {
-                    await onConfirmCampaign();
-                    go("campagnes");
-                  } catch (e) {
-                    setConfirmError(
-                      e instanceof Error ? e.message : "Enregistrement impossible.",
-                    );
-                  } finally {
-                    setConfirmLoading(false);
-                  }
-                }}
-              >
-                {confirmLoading ? "Enregistrement…" : "Confirmer l&apos;envoi"}
-              </ProtoBtn>
-            </>
-          )}
+          <ProtoBtn onClick={() => go("campagnes")}>Annuler</ProtoBtn>
+          <ProtoBtn
+            primary
+            disabled={confirmLoading || !hasEnoughCredits || recipients === 0}
+            onClick={handleConfirm}
+          >
+            {confirmLoading ? "Enregistrement…" : "Confirmer l'envoi"}
+          </ProtoBtn>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            "nouvelle-campagne-1",
-            "nouvelle-campagne-2",
-            "nouvelle-campagne-3",
-            "nouvelle-campagne-4",
-            "nouvelle-campagne-5",
-          ] as const
-        ).map((h, i) => (
-          <StepTab
-            key={h}
-            active={step === i + 1}
-            num={String(i + 1)}
-            label={["Objectif", "Dest.", "IA", "Aperçu", "Envoi"][i]}
-            onClick={() => go(h)}
-          />
-        ))}
-      </div>
-
-      {step === 1 && (
+      {
         <div className="grid max-w-4xl grid-cols-1 gap-3">
           <div className={fieldBox}>
             <label className={fieldLabel}>
               <span>Quel est votre objectif ?</span>
-              <span className="text-xs text-slate-500">{Math.min(goalFreeText.length, 80)}/80</span>
+              <span className="text-xs text-slate-500">
+                {Math.min(goalFreeText.length, 80)}/80
+              </span>
             </label>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {CAMPAIGN_GOAL_OPTIONS.map((o) => (
@@ -777,7 +829,7 @@ export function CampagneWizard({
                     "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
                     goalPreset === o.id
                       ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   )}
                 >
                   {o.label}
@@ -790,7 +842,7 @@ export function CampagneWizard({
                   "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
                   goalPreset === "libre"
                     ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                 )}
               >
                 Champ libre
@@ -815,7 +867,9 @@ export function CampagneWizard({
           <div className={fieldBox}>
             <label className={fieldLabel}>
               <span>Nom de campagne (pré-rempli automatiquement)</span>
-              <span className="text-xs text-slate-500">{Math.min(title.length, 60)}/60</span>
+              <span className="text-xs text-slate-500">
+                {Math.min(title.length, 60)}/60
+              </span>
             </label>
             <div className={innerInput}>
               <input
@@ -832,67 +886,124 @@ export function CampagneWizard({
             <strong>Paramètres</strong> → Préférences.
           </p>
         </div>
-      )}
+      }
 
-      {step === 2 && (
+      {
         <div className="grid grid-cols-[1.1fr_0.9fr] gap-3.5 max-[1100px]:grid-cols-1">
           <div className="space-y-3">
             <div className={fieldBox}>
-              <h2 className="m-0 text-base font-black">Sélection par groupes</h2>
+              <h2 className="m-0 text-base font-black">
+                Choix des destinataires
+              </h2>
               <div className="mt-3 flex flex-wrap gap-2">
-                {groups.map((g) => (
+                {[
+                  { id: "manual", label: "Sélection manuelle" },
+                  { id: "lists", label: "Listes" },
+                  { id: "all", label: "Tous les contacts" },
+                  { id: "numbers", label: "Entrer vos numéros" },
+                ].map((m) => (
                   <button
-                    key={g.id}
+                    key={m.id}
                     type="button"
-                    onClick={() => toggleGroup(g.name)}
+                    onClick={() =>
+                      setRecipientMode(
+                        m.id as "manual" | "lists" | "all" | "numbers"
+                      )
+                    }
                     className={cn(
                       "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
-                      selectedGroupNames.includes(g.name)
+                      recipientMode === m.id
                         ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                     )}
                   >
-                    {g.name} · {g.contactCount}
+                    {m.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {recipientMode === "lists" && (
+              <div className={fieldBox}>
+                <h2 className="m-0 text-base font-black">Listes</h2>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {groups.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => toggleGroup(g.name)}
+                      className={cn(
+                        "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
+                        selectedGroupNames.includes(g.name)
+                          ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      )}
+                    >
+                      {g.name} · {g.contactCount}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className={fieldBox}>
-              <h2 className="m-0 text-base font-black">Sélection manuelle de contacts</h2>
+              <h2 className="m-0 text-base font-black">
+                {recipientMode === "numbers"
+                  ? "Numéros saisis"
+                  : "Sélection de contacts"}
+              </h2>
               <div className="mt-2.5 flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500">
                 <input
                   className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
                   placeholder="Rechercher un contact..."
                   value={contactSearch}
                   onChange={(e) => setContactSearch(e.target.value)}
+                  disabled={recipientMode === "numbers"}
                 />
               </div>
-              <div className="mt-3 max-h-[260px] overflow-auto rounded-xl border border-slate-200">
-                {filteredContacts.map((c) => {
-                  const viaGroup = selectedIdsFromGroups.has(c.id);
-                  const checked = viaGroup || selectedContactIds.includes(c.id);
-                  return (
-                    <label
-                      key={c.id}
-                      className="flex cursor-pointer items-center justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2.5 text-sm"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-extrabold text-slate-900">{c.name}</span>
-                        <span className="block truncate text-xs font-semibold text-slate-500">
-                          {c.phone} · {formatContactGroups(c.groups)}
+              {recipientMode === "numbers" ? (
+                <textarea
+                  className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-900 outline-none"
+                  placeholder="Ex : 0612457890, 0677123456 ou un numéro par ligne"
+                  value={manualNumbers}
+                  onChange={(e) => setManualNumbers(e.target.value)}
+                />
+              ) : (
+                <div className="mt-3 max-h-[260px] overflow-auto rounded-xl border border-slate-200">
+                  {filteredContacts.map((c) => {
+                    const viaGroup = selectedIdsFromGroups.has(c.id);
+                    const checked =
+                      recipientMode === "all" ||
+                      (recipientMode === "lists" && viaGroup) ||
+                      (recipientMode === "manual" &&
+                        selectedContactIds.includes(c.id)) ||
+                      (recipientMode === "lists" &&
+                        selectedContactIds.includes(c.id));
+                    return (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2.5 text-sm"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-extrabold text-slate-900">
+                            {c.name}
+                          </span>
+                          <span className="block truncate text-xs font-semibold text-slate-500">
+                            {c.phone} · {formatContactGroups(c.groups)}
+                          </span>
                         </span>
-                      </span>
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
-                        checked={checked}
-                        disabled={viaGroup}
-                        onChange={() => toggleContact(c.id)}
-                      />
-                    </label>
-                  );
-                })}
-              </div>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
+                          checked={checked}
+                          disabled={recipientMode === "all"}
+                          onChange={() => toggleContact(c.id)}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <div className={fieldBox}>
@@ -904,7 +1015,8 @@ export function CampagneWizard({
               Exclus STOP : <strong>{recipientExcludedStop}</strong>
             </p>
             <p className="mt-1 text-sm font-bold text-slate-600">
-              Exclus invalides/non opt-in : <strong>{recipientExcludedInvalid}</strong>
+              Exclus invalides/non opt-in :{" "}
+              <strong>{recipientExcludedInvalid}</strong>
             </p>
             <p className="mt-2 text-base font-black text-slate-900">
               Destinataires éligibles : {recipients}
@@ -916,63 +1028,128 @@ export function CampagneWizard({
             )}
           </div>
         </div>
-      )}
+      }
 
-      {step === 3 && (
+      {
         <div className="grid grid-cols-[1.35fr_0.65fr] gap-3.5 max-[1100px]:grid-cols-1">
           <div className="space-y-3">
             <div className={fieldBox}>
-              <h2 className="m-0 text-base font-black">Générer votre SMS avec l&apos;IA</h2>
-              <div className="mt-3 grid grid-cols-3 gap-2 max-[900px]:grid-cols-1">
-                <input
-                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                  value={aiOffer}
-                  onChange={(e) => setAiOffer(e.target.value)}
-                  placeholder="Offre (optionnel)"
-                />
-                <input
-                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                  value={aiDuration}
-                  onChange={(e) => setAiDuration(e.target.value)}
-                  placeholder="Durée (optionnel)"
-                />
-                <select
-                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                  value={aiTone}
-                  onChange={(e) => setAiTone(e.target.value)}
+              <h2 className="m-0 text-base font-black">Message</h2>
+              <div className="mt-3 grid grid-cols-2 gap-2 max-[700px]:grid-cols-1">
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(false)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2 text-left text-sm font-extrabold transition-colors",
+                    !aiOpen
+                      ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                      : "border-slate-200 bg-white text-slate-700"
+                  )}
                 >
-                  <option value="amical">Ton amical</option>
-                  <option value="premium">Ton premium</option>
-                  <option value="urgent">Ton urgent</option>
-                </select>
+                  Écrire mon SMS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(true)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2 text-left text-sm font-extrabold transition-colors",
+                    aiOpen
+                      ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                      : "border-slate-200 bg-white text-slate-700"
+                  )}
+                >
+                  Créer avec l&apos;IA
+                </button>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <ProtoBtn className="h-9 px-3 text-xs" onClick={generateWithAi}>
-                  Générer 1 à 3 variantes
-                </ProtoBtn>
-                <ProtoBtn className="h-9 px-3 text-xs" onClick={generateWithAi}>
-                  Régénérer
-                </ProtoBtn>
-              </div>
-            </div>
-            {aiOpen && aiVariants.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <h3 className="m-0 text-sm font-black">Variantes générées</h3>
-                <div className="mt-3 grid grid-cols-3 gap-3 max-[900px]:grid-cols-1">
-                  {aiVariants.map((v, idx) => (
-                    <div
-                      key={`${idx}-${v.slice(0, 20)}`}
-                      className="flex min-h-[150px] flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3"
-                    >
-                      <p className="text-[13px] font-extrabold leading-snug text-slate-900">{v}</p>
-                      <ProtoBtn className="mt-auto h-9 text-xs" onClick={() => setSms(v)}>
-                        Utiliser
-                      </ProtoBtn>
-                    </div>
-                  ))}
+
+              {!aiOpen && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <ProtoBtn
+                    className="h-9 px-3 text-xs"
+                    onClick={correctCurrentMessage}
+                  >
+                    Corriger
+                  </ProtoBtn>
+                  <ProtoBtn
+                    className="h-9 px-3 text-xs"
+                    onClick={reformulateMessage}
+                  >
+                    Reformuler
+                  </ProtoBtn>
                 </div>
-              </div>
-            )}
+              )}
+
+              {aiOpen && (
+                <div className="mt-3">
+                  <div className="grid grid-cols-3 gap-2 max-[900px]:grid-cols-1">
+                    <input
+                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
+                      value={aiOffer}
+                      onChange={(e) => setAiOffer(e.target.value)}
+                      placeholder="Offre (optionnel)"
+                    />
+                    <input
+                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
+                      value={aiDuration}
+                      onChange={(e) => setAiDuration(e.target.value)}
+                      placeholder="Durée (optionnel)"
+                    />
+                    <select
+                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
+                      value={aiTone}
+                      onChange={(e) => setAiTone(e.target.value)}
+                    >
+                      <option value="amical">Ton amical</option>
+                      <option value="premium">Ton premium</option>
+                      <option value="urgent">Ton urgent</option>
+                    </select>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <ProtoBtn
+                      className="h-9 px-3 text-xs"
+                      onClick={generateWithAi}
+                    >
+                      Générer 1 à 3 variantes
+                    </ProtoBtn>
+                    <ProtoBtn
+                      className="h-9 px-3 text-xs"
+                      onClick={generateWithAi}
+                    >
+                      Régénérer
+                    </ProtoBtn>
+                  </div>
+                  {aiVariants.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-3 max-[900px]:grid-cols-1">
+                      {aiVariants.map((v, idx) => (
+                        <div
+                          key={`${idx}-${v.slice(0, 20)}`}
+                          className={cn(
+                            "flex min-h-[140px] flex-col gap-2 rounded-2xl border bg-white p-3",
+                            selectedAiVariant === v || sms === v
+                              ? "border-[#2f6fed] bg-[#eef4ff] ring-2 ring-[#2f6fed]/30"
+                              : "border-slate-200"
+                          )}
+                        >
+                          <p className="text-[13px] font-extrabold leading-snug text-slate-900">
+                            {v}
+                          </p>
+                          <ProtoBtn
+                            className="mt-auto h-9 text-xs"
+                            onClick={() => {
+                              setSms(v);
+                              setSelectedAiVariant(v);
+                            }}
+                          >
+                            Utiliser
+                          </ProtoBtn>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className={fieldBox}>
               <label className={fieldLabel}>
                 <span>Message final (modifiable)</span>
@@ -983,6 +1160,35 @@ export function CampagneWizard({
                 value={sms}
                 onChange={(e) => setSms(e.target.value)}
               />
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  className="h-10 min-w-[260px] flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
+                  placeholder="Ajouter un lien URL (optionnel)"
+                  value={messageUrl}
+                  onChange={(e) => setMessageUrl(e.target.value)}
+                />
+                <ProtoBtn
+                  className="h-10 px-3 text-xs"
+                  onClick={insertOrUpdateUrl}
+                >
+                  Ajouter le lien
+                </ProtoBtn>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {["🔥", "🎁", "⭐", "❤️", "🎉", "⏰"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="h-9 w-9 rounded-xl border border-slate-200 bg-white text-lg"
+                    onClick={() => insertEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+                <ProtoBtn className="h-9 px-3 text-xs" onClick={toggleStopText}>
+                  Ajouter / retirer STOP
+                </ProtoBtn>
+              </div>
               <div className="mt-2.5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
                 <span className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5">
                   Encodage : {unicode ? "Unicode" : "GSM-7"}
@@ -1007,9 +1213,9 @@ export function CampagneWizard({
             </div>
           </div>
         </div>
-      )}
+      }
 
-      {step === 4 && (
+      {
         <div className="grid grid-cols-[0.9fr_1.1fr] gap-3.5 max-[1100px]:grid-cols-1">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
             <div className="mx-auto max-w-[360px] rounded-[26px] border border-slate-300 bg-white p-3 shadow-[0_14px_28px_rgba(15,23,42,0.08)]">
@@ -1039,16 +1245,17 @@ export function CampagneWizard({
               Destinataires éligibles : <strong>{recipients}</strong>
             </p>
             <p className="mt-1 text-sm font-bold text-slate-600">
-              Coût total estimé : <strong>{formatInt(totalCredits)} crédits</strong>
+              Coût total estimé :{" "}
+              <strong>{formatInt(totalCredits)} crédits</strong>
             </p>
             <p className="mt-2 text-xs font-bold text-slate-500">
               {len} car. · {unicode ? "Unicode" : "GSM-7"} · {parts} segments
             </p>
           </div>
         </div>
-      )}
+      }
 
-      {step === 5 && (
+      {
         <div className="max-w-xl space-y-3">
           {confirmError && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
@@ -1063,7 +1270,7 @@ export function CampagneWizard({
                 onClick={() => setSendMode("now")}
                 className={cn(
                   "flex min-w-[220px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                  sendMode === "now" && "ring-2 ring-[#2f6fed]",
+                  sendMode === "now" && "ring-2 ring-[#2f6fed]"
                 )}
               >
                 <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
@@ -1083,7 +1290,7 @@ export function CampagneWizard({
                 onClick={() => setSendMode("sched")}
                 className={cn(
                   "flex min-w-[220px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                  sendMode === "sched" && "ring-2 ring-[#2f6fed]",
+                  sendMode === "sched" && "ring-2 ring-[#2f6fed]"
                 )}
               >
                 <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
@@ -1123,7 +1330,7 @@ export function CampagneWizard({
             )}
           </div>
         </div>
-      )}
+      }
     </div>
   );
 }
