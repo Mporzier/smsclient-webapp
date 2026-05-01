@@ -22,15 +22,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: smsclient/package-lock.json
+          cache: pnpm
+          cache-dependency-path: smsclient/pnpm-lock.yaml
 
       - name: Install
         working-directory: smsclient
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Secrets : Settings → Secrets and variables → Actions → Repository secrets
       # (pas seulement « Environment » : le job build n’utilise pas environment:)
@@ -59,7 +63,7 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        run: npm run build
+        run: pnpm run build
 
       - uses: actions/upload-pages-artifact@v3
         with:

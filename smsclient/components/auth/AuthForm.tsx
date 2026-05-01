@@ -194,7 +194,7 @@ export function AuthForm({ mode }: Props) {
             dans GitHub → Settings → Secrets → Actions, puis relance le
             déploiement. Les variables{" "}
             <code className="text-xs">NEXT_PUBLIC_*</code> sont figées au moment
-            du <code className="text-xs">npm run build</code>, pas à l’ouverture
+            du <code className="text-xs">pnpm run build</code>, pas à l’ouverture
             de la page.
           </div>
         )}
