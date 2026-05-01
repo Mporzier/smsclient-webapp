@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import { useCallback, useEffect, useRef } from "react";
+import { X } from "lucide-react";
 
 type StatsProps = {
   chipLabel: string;
@@ -147,7 +148,7 @@ export function StatistiquesView(props: StatsProps) {
               className="grid h-[42px] w-[42px] place-items-center rounded-[14px] border border-slate-300/40 bg-white text-lg font-black"
               onClick={() => setStatsOpen(false)}
             >
-              ✕
+              <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">

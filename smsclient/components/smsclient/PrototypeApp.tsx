@@ -12,18 +12,18 @@ import {
   StatistiquesView,
 } from "./MainViews";
 import {
-  AjouterContactFlow,
-  CampagneWizard,
-  CreerGroupeFlow,
+  AddContactFlow,
+  CampaignWizard,
+  CreateGroupFlow,
 } from "@/components/smsclient/FlowViews";
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
-  ContactModal,
+  ContactCreateModal,
   CreditsModal,
   GroupEditModal,
   GroupQuickAddContactsModal,
-  GroupModal,
+  GroupCreateModal,
 } from "@/components/smsclient/PrototypeModals";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
@@ -133,7 +133,8 @@ export function PrototypeApp() {
     buy: buyCredits,
   } = useCredits();
 
-  const { sender: smsSender, setSender: setSmsSender } = usePersistedSmsSender();
+  const { sender: smsSender, setSender: setSmsSender } =
+    usePersistedSmsSender();
   const {
     publicUrl: userQrPublicUrl,
     loading: userQrLoading,
@@ -145,14 +146,20 @@ export function PrototypeApp() {
   const [groupEditOpen, setGroupEditOpen] = useState(false);
   const [groupEditRow, setGroupEditRow] = useState<GroupRowData | null>(null);
   const [groupQuickAddOpen, setGroupQuickAddOpen] = useState(false);
-  const [groupQuickAddTarget, setGroupQuickAddTarget] = useState<GroupRowData | null>(null);
+  const [groupQuickAddTarget, setGroupQuickAddTarget] =
+    useState<GroupRowData | null>(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [contactModalMode, setContactModalMode] = useState<"add" | "edit">("add");
-  const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(null);
+  const [contactModalMode, setContactModalMode] = useState<"add" | "edit">(
+    "add"
+  );
+  const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(
+    null
+  );
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [importContactsOpen, setImportContactsOpen] = useState(false);
   const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
-  const [campaignDetailsRow, setCampaignDetailsRow] = useState<CampaignRowData | null>(null);
+  const [campaignDetailsRow, setCampaignDetailsRow] =
+    useState<CampaignRowData | null>(null);
 
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
@@ -162,9 +169,7 @@ export function PrototypeApp() {
 
   const groupOptions = useMemo(() => {
     const fromDb = groupRows.map((g) => g.name);
-    const fromContacts = [
-      ...new Set(contacts.flatMap((c) => c.groups)),
-    ];
+    const fromContacts = [...new Set(contacts.flatMap((c) => c.groups))];
     return [...new Set([...fromDb, ...fromContacts])];
   }, [contacts, groupRows]);
 
@@ -176,7 +181,7 @@ export function PrototypeApp() {
         phone: c.phone,
         groups: c.groups,
       })),
-    [contacts],
+    [contacts]
   );
 
   const [campaignGoalPreset, setCampaignGoalPreset] = useState<
@@ -186,8 +191,12 @@ export function PrototypeApp() {
   const [campaignRecipientMode, setCampaignRecipientMode] = useState<
     "manual" | "lists" | "all" | "numbers"
   >("manual");
-  const [campaignSelectedGroupNames, setCampaignSelectedGroupNames] = useState<string[]>([]);
-  const [campaignSelectedContactIds, setCampaignSelectedContactIds] = useState<string[]>([]);
+  const [campaignSelectedGroupNames, setCampaignSelectedGroupNames] = useState<
+    string[]
+  >([]);
+  const [campaignSelectedContactIds, setCampaignSelectedContactIds] = useState<
+    string[]
+  >([]);
   const [campaignManualNumbers, setCampaignManualNumbers] = useState("");
   const campaignCreditsAvailable = creditsBalance;
 
@@ -208,8 +217,8 @@ export function PrototypeApp() {
         if (
           c.groups.some((g) =>
             campaignSelectedGroupNames.some(
-              (x) => x.trim().toLowerCase() === g.trim().toLowerCase(),
-            ),
+              (x) => x.trim().toLowerCase() === g.trim().toLowerCase()
+            )
           )
         ) {
           ids.add(c.id);
@@ -241,32 +250,32 @@ export function PrototypeApp() {
       campaignRecipientMode === "numbers"
         ? campaignManualNumberStats.stop
         : campaignSelectedContacts.filter((c) => c.stopSms).length,
-    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats]
   );
   const campaignExcludedInvalid = useMemo(
     () =>
       campaignRecipientMode === "numbers"
         ? campaignManualNumberStats.invalid
         : campaignSelectedContacts.filter(
-            (c) => !isValidFrMobile(c.phone) || !c.optIn,
+            (c) => !isValidFrMobile(c.phone) || !c.optIn
           ).length,
-    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats]
   );
   const campaignRecipientCount = useMemo(
     () =>
       campaignRecipientMode === "numbers"
         ? campaignManualNumberStats.eligible
         : campaignSelectedContacts.filter(
-            (c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone),
+            (c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone)
           ).length,
-    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats],
+    [campaignRecipientMode, campaignSelectedContacts, campaignManualNumberStats]
   );
   const campaignRecipientSelectedRaw = useMemo(
     () =>
       campaignRecipientMode === "numbers"
         ? campaignManualNumberStats.raw
         : campaignSelectedContacts.length,
-    [campaignRecipientMode, campaignManualNumberStats, campaignSelectedContacts],
+    [campaignRecipientMode, campaignManualNumberStats, campaignSelectedContacts]
   );
 
   const [acFirst, setAcFirst] = useState("");
@@ -314,7 +323,14 @@ export function PrototypeApp() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [groupModalOpen, groupEditOpen, groupQuickAddOpen, contactModalOpen, creditsModalOpen, importContactsOpen]);
+  }, [
+    groupModalOpen,
+    groupEditOpen,
+    groupQuickAddOpen,
+    contactModalOpen,
+    creditsModalOpen,
+    importContactsOpen,
+  ]);
 
   useEffect(() => {
     startTransition(() => {
@@ -370,7 +386,7 @@ export function PrototypeApp() {
       setCampaignManualNumbers("");
       go("nouvelle-campagne-1");
     },
-    [go, smsSender],
+    [go, smsSender]
   );
 
   const handleContactSave = useCallback(
@@ -383,7 +399,7 @@ export function PrototypeApp() {
           supabase,
           user.id,
           contactEditRow.id,
-          payload,
+          payload
         );
         if (error) throw error;
       } else {
@@ -400,7 +416,7 @@ export function PrototypeApp() {
       contactEditRow,
       refreshContacts,
       showToast,
-    ],
+    ]
   );
 
   const applyStatsRange = useCallback(() => {
@@ -459,7 +475,7 @@ export function PrototypeApp() {
           supabase,
           user.id,
           selectedContactIds,
-          trimmed,
+          trimmed
         );
         if (assign.error) throw assign.error;
       }
@@ -467,16 +483,18 @@ export function PrototypeApp() {
       await refreshContacts();
       if (trimmed) {
         setCmGroups((prev) =>
-          prev.includes(trimmed) ? prev : [...prev, trimmed],
+          prev.includes(trimmed) ? prev : [...prev, trimmed]
         );
       }
       showToast(
         selectedContactIds.length > 0
-          ? `Groupe créé · ${selectedContactIds.length} contact${selectedContactIds.length > 1 ? "s" : ""} rattaché${selectedContactIds.length > 1 ? "s" : ""}`
-          : "Groupe créé",
+          ? `Groupe créé · ${selectedContactIds.length} contact${
+              selectedContactIds.length > 1 ? "s" : ""
+            } rattaché${selectedContactIds.length > 1 ? "s" : ""}`
+          : "Groupe créé"
       );
     },
-    [user, supabase, refreshGroups, refreshContacts, showToast],
+    [user, supabase, refreshGroups, refreshContacts, showToast]
   );
 
   const openGroupEdit = useCallback((row: GroupRowData) => {
@@ -497,7 +515,7 @@ export function PrototypeApp() {
       await refreshGroups();
       showToast("Groupe modifié");
     },
-    [user, supabase, refreshGroups, showToast],
+    [user, supabase, refreshGroups, showToast]
   );
 
   const campaignWizardProps = {
@@ -605,7 +623,9 @@ export function PrototypeApp() {
             loading={statisticsLoading}
             error={statisticsError}
             data={statisticsData}
-            onExport={() => showToast("Export des statistiques (à implémenter).")}
+            onExport={() =>
+              showToast("Export des statistiques (à implémenter).")
+            }
           />
         );
       case "parametres":
@@ -623,7 +643,7 @@ export function PrototypeApp() {
         return <DeconnexionView onBackContacts={() => go("contacts")} />;
       case "ajouter-contact-1":
         return (
-          <AjouterContactFlow
+          <AddContactFlow
             step={1}
             go={go}
             first={acFirst}
@@ -639,7 +659,7 @@ export function PrototypeApp() {
         );
       case "ajouter-contact-2":
         return (
-          <AjouterContactFlow
+          <AddContactFlow
             step={2}
             go={go}
             first={acFirst}
@@ -655,7 +675,7 @@ export function PrototypeApp() {
         );
       case "creer-groupe-1":
         return (
-          <CreerGroupeFlow
+          <CreateGroupFlow
             step={1}
             go={go}
             name={cgName}
@@ -669,7 +689,7 @@ export function PrototypeApp() {
         );
       case "creer-groupe-2":
         return (
-          <CreerGroupeFlow
+          <CreateGroupFlow
             step={2}
             go={go}
             name={cgName}
@@ -686,7 +706,7 @@ export function PrototypeApp() {
       case "nouvelle-campagne-3":
       case "nouvelle-campagne-4":
       case "nouvelle-campagne-5":
-        return <CampagneWizard step={1} {...campaignWizardProps} />;
+        return <CampaignWizard step={1} {...campaignWizardProps} />;
       default:
         return (
           <ContactsView
@@ -711,7 +731,7 @@ export function PrototypeApp() {
         {renderRoute(route)}
       </AppShell>
 
-      <GroupModal
+      <GroupCreateModal
         open={groupModalOpen}
         onClose={() => setGroupModalOpen(false)}
         contacts={groupModalContacts}
@@ -756,18 +776,20 @@ export function PrototypeApp() {
             supabase,
             user.id,
             selectedIds,
-            groupQuickAddTarget.name,
+            groupQuickAddTarget.name
           );
           if (result.error) throw result.error;
           await refreshGroups();
           await refreshContacts();
           showToast(
-            `${selectedIds.length} contact${selectedIds.length > 1 ? "s" : ""} ajouté${selectedIds.length > 1 ? "s" : ""} au groupe`,
+            `${selectedIds.length} contact${
+              selectedIds.length > 1 ? "s" : ""
+            } ajouté${selectedIds.length > 1 ? "s" : ""} au groupe`
           );
         }}
       />
 
-      <ContactModal
+      <ContactCreateModal
         open={contactModalOpen}
         onClose={() => setContactModalOpen(false)}
         mode={contactModalMode}
@@ -811,7 +833,9 @@ export function PrototypeApp() {
             throw error;
           }
           showToast(
-            `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(selection.credits)} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`,
+            `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(
+              selection.credits
+            )} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`
           );
         }}
       />

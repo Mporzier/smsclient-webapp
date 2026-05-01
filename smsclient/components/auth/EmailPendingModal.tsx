@@ -21,9 +21,9 @@ const defaultTitle = "Confirmation d’e-mail requise";
 
 const defaultBody = (
   <>
-    Tu dois valider ton adresse e-mail avant d’accéder au tableau de bord. Ouvre le
-    message que nous t’avons envoyé (pense à vérifier les indésirables) et clique
-    sur le lien de confirmation.
+    Tu dois valider ton adresse e-mail avant d’accéder au tableau de bord. Ouvre
+    le message que nous t’avons envoyé (pense à vérifier les indésirables) et
+    clique sur le lien de confirmation.
   </>
 );
 
@@ -71,7 +71,9 @@ export function EmailPendingModal({
         >
           {title}
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600">{defaultBody}</p>
+        <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          {defaultBody}
+        </p>
         {email && (
           <p className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 text-center text-xs font-semibold text-slate-800">
             {email}
@@ -91,7 +93,9 @@ export function EmailPendingModal({
             </button>
             {resendMessage && (
               <p
-                className={`mt-2 text-center text-xs ${resendIsError ? "text-rose-700" : "text-emerald-700"}`}
+                className={`mt-2 text-center text-xs ${
+                  resendIsError ? "text-rose-700" : "text-emerald-700"
+                }`}
               >
                 {resendMessage}
               </p>

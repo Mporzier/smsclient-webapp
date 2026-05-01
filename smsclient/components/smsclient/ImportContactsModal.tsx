@@ -12,6 +12,7 @@ import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { insertClientsFromImport } from "@/lib/supabase/clients";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -362,7 +363,7 @@ export function ImportContactsModal({
             aria-label="Fermer"
             onClick={onClose}
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
 

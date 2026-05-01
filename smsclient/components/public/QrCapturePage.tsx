@@ -99,20 +99,26 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
   return (
     <main className="min-h-screen bg-[#f5f7fb] px-4 py-10">
       <div className="mx-auto w-full max-w-[560px] rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_22px_50px_rgba(15,23,42,0.10)]">
-        <h1 className="m-0 text-3xl font-extrabold text-slate-900">Reste en contact</h1>
+        <h1 className="m-0 text-3xl font-extrabold text-slate-900">
+          Reste en contact
+        </h1>
         <p className="mt-2 text-sm font-semibold text-slate-600">
           Laisse tes coordonnées pour recevoir les actus et offres par SMS.
         </p>
 
         {loading ? (
-          <p className="mt-6 text-sm font-bold text-slate-500">Chargement du formulaire…</p>
+          <p className="mt-6 text-sm font-bold text-slate-500">
+            Chargement du formulaire…
+          </p>
         ) : invalidSlug ? (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
             Ce QR code n&apos;est pas valide ou n&apos;est plus actif.
           </div>
         ) : success ? (
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-            <p className="m-0 text-base font-extrabold text-emerald-900">Merci 🎉</p>
+            <p className="m-0 text-base font-extrabold text-emerald-900">
+              Merci 🎉
+            </p>
             <p className="mt-1 text-sm font-semibold text-emerald-900/90">
               Tes informations ont bien été enregistrées.
             </p>
@@ -120,7 +126,9 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
         ) : (
           <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">Prénom *</label>
+              <label className="mb-1.5 block text-xs font-black text-slate-600">
+                Prénom *
+              </label>
               <input
                 className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 maxLength={30}
@@ -130,7 +138,9 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">Nom</label>
+              <label className="mb-1.5 block text-xs font-black text-slate-600">
+                Nom
+              </label>
               <input
                 className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 maxLength={30}
@@ -140,7 +150,9 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">Téléphone *</label>
+              <label className="mb-1.5 block text-xs font-black text-slate-600">
+                Téléphone *
+              </label>
               <input
                 className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 inputMode="tel"
@@ -156,7 +168,8 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 checked={optIn}
                 onChange={(e) => setOptIn(e.target.checked)}
               />
-              J&apos;accepte de recevoir des SMS d&apos;information et d&apos;offres.
+              J&apos;accepte de recevoir des SMS d&apos;information et
+              d&apos;offres.
             </label>
 
             {error && (

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Plus } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 /** Texte sur une ligne dans une cellule de liste : tronqué, survol = texte complet (attribut title). */
@@ -19,7 +20,10 @@ export function CellTruncate({
       ? children
       : undefined);
   return (
-    <Tag className={cn("min-w-0 max-w-full truncate", className)} title={titleText}>
+    <Tag
+      className={cn("min-w-0 max-w-full truncate", className)}
+      title={titleText}
+    >
       {children}
     </Tag>
   );
@@ -44,7 +48,7 @@ export function ProtoBtn({
           "border-transparent bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-[18px] text-white shadow-[0_18px_30px_rgba(47,111,237,0.22)]",
         green &&
           "border-emerald-500/85 bg-emerald-500/85 text-white hover:brightness-[0.98]",
-        className,
+        className
       )}
       {...rest}
     >
@@ -55,14 +59,11 @@ export function ProtoBtn({
 
 export function PlusIcon({ className }: { className?: string }) {
   return (
-    <span
-      className={cn(
-        "mr-2 inline-block -translate-y-px text-lg font-black",
-        className,
-      )}
-    >
-      +
-    </span>
+    <Plus
+      className={cn("mr-2 h-[1.125rem] w-[1.125rem] shrink-0", className)}
+      strokeWidth={2.5}
+      aria-hidden
+    />
   );
 }
 

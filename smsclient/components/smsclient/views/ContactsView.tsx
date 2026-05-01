@@ -9,6 +9,7 @@ import {
   isCampaignEligibleContact,
 } from "@/lib/types/contact";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { UserRound } from "lucide-react";
 
 const tagCls =
   "inline-flex items-center rounded-[10px] border border-indigo-100 bg-indigo-50 px-2.5 py-1.5 text-[13px] font-bold text-[#1f3b77]";
@@ -59,6 +60,10 @@ export function ContactsView({
 
   const nDesabonnes = useMemo(
     () => rows.filter((r) => r.stopSms).length,
+    [rows],
+  );
+  const nCibles = useMemo(
+    () => rows.filter((r) => isCampaignEligibleContact(r)).length,
     [rows],
   );
   const nTous = rows.length;
@@ -138,29 +143,60 @@ export function ContactsView({
         <div className="mt-0.5 flex flex-wrap items-center gap-3">
           <ProtoBtn onClick={onImport}>Importer</ProtoBtn>
           {nTous > 0 && (
-            <button
-              type="button"
-              aria-pressed={viewMode === "desabonnes"}
-              onClick={() => {
-                setViewMode((m) => (m === "cibles" ? "desabonnes" : "cibles"));
-              }}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl border-2 px-3.5 py-2.5 text-[13px] font-extrabold transition-colors",
-                viewMode === "desabonnes"
-                  ? "border-rose-600 bg-rose-600 text-white shadow-[0_8px_20px_rgba(225,29,72,0.3)]"
-                  : "border-rose-300 bg-rose-50 text-rose-900 hover:border-rose-500 hover:bg-rose-100",
-              )}
+            <div
+              role="group"
+              aria-label="Vue contacts : cibles campagne ou désabonnés STOP"
+              className="inline-flex flex-wrap items-stretch gap-0 rounded-2xl border border-slate-200 bg-slate-100/90 p-1"
             >
-              Désabonnés
-              <span
+              <button
+                type="button"
+                aria-pressed={viewMode === "cibles"}
+                title="Contacts opt-in et sans STOP — seuls numéros utilisables pour l’envoi de campagnes."
+                onClick={() => setViewMode("cibles")}
                 className={cn(
-                  "rounded-lg px-2 py-0.5 text-xs font-black tabular-nums",
-                  viewMode === "desabonnes" ? "bg-white/20" : "bg-rose-200/60",
+                  "inline-flex min-h-[40px] items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-extrabold transition-colors",
+                  viewMode === "cibles"
+                    ? "border border-[#2f6fed] bg-white text-[#1f3b77] shadow-[0_4px_12px_rgba(47,111,237,0.12)]"
+                    : "border border-transparent text-slate-600 hover:text-slate-900",
                 )}
               >
-                {nDesabonnes}
-              </span>
-            </button>
+                Cibles campagne
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-[11px] font-black tabular-nums",
+                    viewMode === "cibles"
+                      ? "bg-[#eef4ff] text-[#1f3b77]"
+                      : "bg-slate-200/80 text-slate-700",
+                  )}
+                >
+                  {nCibles}
+                </span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={viewMode === "desabonnes"}
+                title="STOP : ne plus contacter par SMS. Vue à des fins de conformité ou de vérification."
+                onClick={() => setViewMode("desabonnes")}
+                className={cn(
+                  "inline-flex min-h-[40px] items-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-extrabold transition-colors",
+                  viewMode === "desabonnes"
+                    ? "border border-rose-500 bg-white text-rose-900 shadow-[0_4px_12px_rgba(225,29,72,0.12)]"
+                    : "border border-transparent text-slate-600 hover:text-slate-900",
+                )}
+              >
+                Désabonnés
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-[11px] font-black tabular-nums",
+                    viewMode === "desabonnes"
+                      ? "bg-rose-100 text-rose-900"
+                      : "bg-slate-200/80 text-slate-700",
+                  )}
+                >
+                  {nDesabonnes}
+                </span>
+              </button>
+            </div>
           )}
           <ProtoBtn primary onClick={onAddContact}>
             <PlusIcon />
@@ -175,23 +211,6 @@ export function ContactsView({
         </div>
       )}
 
-      {!showBigEmpty && !loading && nTous > 0 && (
-        <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-          {viewMode === "cibles" ? (
-            <>
-              Cibles campagne : contacts opt-in, sans STOP — seuls numéros utilisables
-              pour l’envoi.
-            </>
-          ) : (
-            <>
-              Désabonnés (STOP) : ces personnes ne doivent plus être
-              recontactées par SMS. Clic de nouveau sur « Désabonnés » pour
-              revenir à la liste des cibles.
-            </>
-          )}
-        </p>
-      )}
-
       <section className="flex w-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
         <div ref={tableScrollRef} className="relative min-h-0 overflow-x-auto">
           {tableScrollX && !showBigEmpty && !loading && (
@@ -201,9 +220,11 @@ export function ContactsView({
           )}
           {showBigEmpty ? (
             <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-              <div className="text-5xl opacity-40" aria-hidden>
-                👤
-              </div>
+              <UserRound
+                className="h-14 w-14 text-slate-400"
+                strokeWidth={1.25}
+                aria-hidden
+              />
               <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
                 Aucun contact pour l’instant
               </p>
@@ -270,8 +291,8 @@ export function ContactsView({
                     >
                       {viewMode === "cibles" ? (
                         <>
-                          Aucune cible : ajoute un contact, ou clique sur «
-                          Désabonnés » s’il y a des fiches en STOP ailleurs.
+                          Aucune cible : ajoute un contact, ou ouvre la vue
+                          « Désabonnés » s’il y a des fiches en STOP.
                         </>
                       ) : (
                         "Aucun contact avec STOP (désabonné)."

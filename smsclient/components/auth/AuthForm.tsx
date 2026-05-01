@@ -43,7 +43,7 @@ export function AuthForm({ mode }: Props) {
     e.preventDefault();
     if (!isSupabaseConfigured()) {
       setError(
-        "Supabase n’est pas configuré dans ce déploiement (variables manquantes au build).",
+        "Supabase n’est pas configuré dans ce déploiement (variables manquantes au build)."
       );
       return;
     }
@@ -159,11 +159,13 @@ export function AuthForm({ mode }: Props) {
           Vérifie ta boîte mail
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
-          Si cette adresse n’était pas déjà inscrite, nous t’avons envoyé un lien
-          pour confirmer ton e-mail. Clique dessus pour activer ton compte, puis
-          connecte-toi.
+          Si cette adresse n’était pas déjà inscrite, nous t’avons envoyé un
+          lien pour confirmer ton e-mail. Clique dessus pour activer ton compte,
+          puis connecte-toi.
         </p>
-        <p className="mt-2 text-sm font-semibold text-slate-500">{email.trim()}</p>
+        <p className="mt-2 text-sm font-semibold text-slate-500">
+          {email.trim()}
+        </p>
         <p className="mt-6 text-center text-sm text-slate-600">
           <Link href="/auth/login" className="font-bold text-blue-600">
             Aller à la connexion
@@ -178,7 +180,9 @@ export function AuthForm({ mode }: Props) {
       <div className="mx-auto w-full max-w-[400px] rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
         {!configured && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-relaxed text-amber-950">
-            <strong className="block font-black">Configuration manquante</strong>
+            <strong className="block font-black">
+              Configuration manquante
+            </strong>
             Le site a été construit sans les clés Supabase. Ajoute les secrets{" "}
             <code className="rounded bg-amber-100/80 px-1 text-xs">
               NEXT_PUBLIC_SUPABASE_URL
@@ -190,8 +194,8 @@ export function AuthForm({ mode }: Props) {
             dans GitHub → Settings → Secrets → Actions, puis relance le
             déploiement. Les variables{" "}
             <code className="text-xs">NEXT_PUBLIC_*</code> sont figées au moment
-            du <code className="text-xs">npm run build</code>, pas à
-            l’ouverture de la page.
+            du <code className="text-xs">npm run build</code>, pas à l’ouverture
+            de la page.
           </div>
         )}
         <h1 className="text-2xl font-black text-slate-900">
@@ -279,11 +283,7 @@ export function AuthForm({ mode }: Props) {
             className="w-full rounded-xl bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(47,111,237,0.25)] disabled:opacity-60"
             data-cy="authForm-submit"
           >
-            {pending
-              ? "…"
-              : mode === "login"
-                ? "Se connecter"
-                : "S'inscrire"}
+            {pending ? "…" : mode === "login" ? "Se connecter" : "S'inscrire"}
           </button>
         </form>
 
