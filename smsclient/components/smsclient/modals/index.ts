@@ -5,7 +5,6 @@ export {
   ContactCreateModal,
   type ContactCreateModalProps,
 } from "./ContactCreateModal";
-export { CreditsModal } from "./CreditsModal";
 export { GroupEditModal } from "./GroupEditModal";
 export {
   GroupCreateModal,

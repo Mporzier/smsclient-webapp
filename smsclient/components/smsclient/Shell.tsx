@@ -4,7 +4,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/cn";
 import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
-import { navOverrideForRoute } from "@/lib/proto/routes";
+import { navOverrideForRoute, ROUTE_TITLES } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
 import {
   BarChart3,
@@ -111,7 +111,6 @@ type NavKey =
   | "contacts"
   | "groupes"
   | "campagnes"
-  | "credits"
   | "statistiques"
   | "parametres"
   | "deconnexion";
@@ -120,6 +119,8 @@ type ShellProps = {
   route: AppRoute;
   go: (path: string) => void;
   onNewCampaign: () => void;
+  creditsLabel?: string;
+  onBuyCredits?: () => void;
   children: ReactNode;
 };
 
@@ -144,12 +145,6 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
       icon: <Send className={navMainIconClass} aria-hidden />,
     },
     {
-      id: "credits",
-      label: "Crédits",
-      hash: "credits",
-      icon: <Coins className={navMainIconClass} aria-hidden />,
-    },
-    {
       id: "statistiques",
       label: "Statistiques",
       hash: "statistiques",
@@ -163,7 +158,7 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
     },
   ];
 
-export function AppShell({ route, go, onNewCampaign, children }: ShellProps) {
+export function AppShell({ route, go, onNewCampaign, creditsLabel, onBuyCredits, children }: ShellProps) {
   const { signOut } = useAuth();
   const router = useRouter();
   const active = navOverrideForRoute(route);
@@ -181,13 +176,35 @@ export function AppShell({ route, go, onNewCampaign, children }: ShellProps) {
         aria-label="SMSClient.fr"
       >
         <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-[22px] py-[18px]">
-          <div className="flex items-center gap-3.5 text-2xl font-extrabold tracking-wide text-slate-900">
-            <div className="grid h-11 w-11 place-items-center" aria-hidden>
-              <LogoMark />
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-3.5 text-2xl font-extrabold tracking-wide text-slate-900">
+              <div className="grid h-11 w-11 place-items-center" aria-hidden>
+                <LogoMark />
+              </div>
+              <div>SMSClient.fr</div>
             </div>
-            <div>SMSClient.fr</div>
+            <div className="h-6 w-px bg-slate-200" />
+            <h1 className="m-0 text-lg font-extrabold text-slate-700">
+              {ROUTE_TITLES[route]}
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {creditsLabel && (
+              <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">
+                <Coins className="h-4 w-4 text-[#2f6fed]" aria-hidden />
+                {creditsLabel}
+              </div>
+            )}
+            {onBuyCredits && (
+              <button
+                type="button"
+                onClick={onBuyCredits}
+                className="flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3.5 py-1.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(47,111,237,0.2)] transition-all hover:brightness-[1.03]"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Acheter des crédits
+              </button>
+            )}
             <button
               type="button"
               className="grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
@@ -245,21 +262,23 @@ export function AppShell({ route, go, onNewCampaign, children }: ShellProps) {
 
             <div className="flex-1" />
 
-            <div className="flex flex-col gap-2.5 border-t border-slate-200/80 pt-3.5">
+            <div className="group/logout flex items-center gap-2.5 border-t border-slate-200/80 pt-3.5">
               <button
                 type="button"
                 onClick={handleLogout}
-                className="group flex w-full cursor-pointer select-none items-center gap-3 rounded-2xl border border-transparent px-3.5 py-3 text-left font-semibold text-slate-600 transition-all duration-200 ease-out hover:translate-x-0.5 hover:border-slate-200/80 hover:bg-slate-50 hover:shadow-[0_6px_16px_rgba(15,23,42,0.05)] active:scale-[0.99] active:bg-rose-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500/40"
+                title="Déconnexion"
+                aria-label="Déconnexion"
+                className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-rose-200 bg-white text-rose-500 transition-all duration-200 ease-out hover:bg-rose-50 hover:shadow-[0_6px_16px_rgba(225,29,72,0.12)] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500/40"
               >
-                <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110">
-                  <LogOut className={navSubIconClass} aria-hidden />
-                </span>
-                Déconnexion
+                <LogOut className="h-[18px] w-[18px] transition-transform duration-200 group-hover/logout:scale-110" aria-hidden />
               </button>
+              <span className="pointer-events-none select-none text-sm font-bold text-rose-500 opacity-0 transition-opacity duration-200 group-hover/logout:opacity-100">
+                Déconnexion
+              </span>
             </div>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-col gap-[18px] overflow-auto px-4 py-4 md:px-5 md:py-5">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-[18px] overflow-auto px-4 py-4 md:px-5 md:py-5">
             {children}
           </main>
         </div>

@@ -3,9 +3,9 @@
 import { AppShell } from "@/components/smsclient/Shell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
+  AcheterCreditsView,
   CampagnesView,
   ContactsView,
-  CreditsView,
   DeconnexionView,
   GroupesView,
   ParametresView,
@@ -20,9 +20,7 @@ import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
   ContactCreateModal,
-  CreditsModal,
   GroupEditModal,
-  GroupQuickAddContactsModal,
   GroupCreateModal,
 } from "@/components/smsclient/PrototypeModals";
 import { useCampaigns } from "@/hooks/useCampaigns";
@@ -37,6 +35,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   addClientsToGroupByName,
   insertClient,
+  replaceGroupMembers,
   updateClient,
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
@@ -46,6 +45,7 @@ import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
 import { type ContactRowData } from "@/lib/types/contact";
 import { isValidFrMobile } from "@/lib/proto/smsUtils";
+import { parisLocalToISO, plusTenMinutesParis } from "@/lib/proto/timezone";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
   startTransition,
@@ -80,13 +80,7 @@ function fmtFr(iso: string) {
 }
 
 function plusTenMinutesLocalValue() {
-  const d = new Date(Date.now() + 10 * 60 * 1000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${y}-${m}-${day}T${hh}:${mm}`;
+  return plusTenMinutesParis();
 }
 
 function defaultCampaignTitle() {
@@ -142,12 +136,10 @@ export function PrototypeApp() {
     regenerate: regenerateUserQr,
   } = useUserQrCode();
 
+
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupEditOpen, setGroupEditOpen] = useState(false);
   const [groupEditRow, setGroupEditRow] = useState<GroupRowData | null>(null);
-  const [groupQuickAddOpen, setGroupQuickAddOpen] = useState(false);
-  const [groupQuickAddTarget, setGroupQuickAddTarget] =
-    useState<GroupRowData | null>(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactModalMode, setContactModalMode] = useState<"add" | "edit">(
     "add"
@@ -155,7 +147,6 @@ export function PrototypeApp() {
   const [contactEditRow, setContactEditRow] = useState<ContactRowData | null>(
     null
   );
-  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [importContactsOpen, setImportContactsOpen] = useState(false);
   const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
   const [campaignDetailsRow, setCampaignDetailsRow] =
@@ -184,10 +175,6 @@ export function PrototypeApp() {
     [contacts]
   );
 
-  const [campaignGoalPreset, setCampaignGoalPreset] = useState<
-    "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre"
-  >("promotion");
-  const [campaignGoalFreeText, setCampaignGoalFreeText] = useState("");
   const [campaignRecipientMode, setCampaignRecipientMode] = useState<
     "manual" | "lists" | "all" | "numbers"
   >("manual");
@@ -315,9 +302,7 @@ export function PrototypeApp() {
     const anyModal =
       groupModalOpen ||
       groupEditOpen ||
-      groupQuickAddOpen ||
       contactModalOpen ||
-      creditsModalOpen ||
       importContactsOpen;
     document.body.style.overflow = anyModal ? "hidden" : "";
     return () => {
@@ -326,17 +311,12 @@ export function PrototypeApp() {
   }, [
     groupModalOpen,
     groupEditOpen,
-    groupQuickAddOpen,
     contactModalOpen,
-    creditsModalOpen,
     importContactsOpen,
   ]);
 
   useEffect(() => {
     startTransition(() => {
-      if (route !== "credits" && route !== "statistiques") {
-        setCreditsModalOpen(false);
-      }
       if (route !== "statistiques") setStatsOpen(false);
     });
   }, [route]);
@@ -372,8 +352,6 @@ export function PrototypeApp() {
   const openCampaignComposer = useCallback(
     (preselectedGroupName?: string) => {
       const p = preselectedGroupName?.trim() ?? "";
-      setCampaignGoalPreset("promotion");
-      setCampaignGoalFreeText("");
       setCampaignRecipientMode(p ? "lists" : "manual");
       setCampaignTitle(defaultCampaignTitle());
       setCampaignSender(smsSender);
@@ -438,11 +416,11 @@ export function PrototypeApp() {
       scheduledAt:
         sendMode === "sched"
           ? (() => {
-              const d = new Date(scheduledAt);
-              if (Number.isNaN(d.getTime())) {
+              const iso = parisLocalToISO(scheduledAt);
+              if (Number.isNaN(new Date(iso).getTime())) {
                 throw new Error("Date de programmation invalide.");
               }
-              return d.toISOString();
+              return iso;
             })()
           : null,
     });
@@ -503,7 +481,12 @@ export function PrototypeApp() {
   }, []);
 
   const handleGroupUpdate = useCallback(
-    async (payload: { id: string; name: string; description: string }) => {
+    async (payload: {
+      id: string;
+      name: string;
+      description: string;
+      selectedContactIds: string[];
+    }) => {
       if (!user?.id) {
         throw new Error("Tu dois être connecté pour modifier un groupe.");
       }
@@ -512,10 +495,18 @@ export function PrototypeApp() {
         description: payload.description,
       });
       if (error) throw error;
+      const { error: memErr } = await replaceGroupMembers(
+        supabase,
+        user.id,
+        payload.id,
+        payload.selectedContactIds
+      );
+      if (memErr) throw memErr;
       await refreshGroups();
+      await refreshContacts();
       showToast("Groupe modifié");
     },
-    [user, supabase, refreshGroups, showToast]
+    [user, supabase, refreshGroups, refreshContacts, showToast]
   );
 
   const campaignWizardProps = {
@@ -532,10 +523,6 @@ export function PrototypeApp() {
     setScheduleAt: setScheduledAt,
     aiOpen,
     setAiOpen,
-    goalPreset: campaignGoalPreset,
-    setGoalPreset: setCampaignGoalPreset,
-    goalFreeText: campaignGoalFreeText,
-    setGoalFreeText: setCampaignGoalFreeText,
     groups: groupRows,
     contacts,
     selectedGroupNames: campaignSelectedGroupNames,
@@ -590,25 +577,6 @@ export function PrototypeApp() {
             }}
           />
         );
-      case "credits":
-        return (
-          <CreditsView
-            balanceLabel={creditsBalanceLabel}
-            purchases={creditPurchases}
-            loading={creditsLoading}
-            error={creditsError}
-            onBuyCredits={() => setCreditsModalOpen(true)}
-            onEditBillingInfo={() =>
-              showToast("Edition de l’adresse de facturation (à implémenter).")
-            }
-            onEditPaymentMethod={() =>
-              showToast("Edition de la carte bancaire (à implémenter).")
-            }
-            onInvoiceClick={(id: string) =>
-              showToast(`Téléchargement de la facture ${id} (prototype)`)
-            }
-          />
-        );
       case "statistiques":
         return (
           <StatistiquesView
@@ -637,6 +605,34 @@ export function PrototypeApp() {
             qrLoading={userQrLoading}
             qrError={userQrError}
             onRegenerateQr={regenerateUserQr}
+            purchases={creditPurchases}
+            purchasesLoading={creditsLoading}
+            onInvoiceClick={(id: string) =>
+              showToast(`Téléchargement de la facture ${id} (prototype)`)
+            }
+          />
+        );
+      case "acheter-credits":
+        return (
+          <AcheterCreditsView
+            balanceLabel={creditsBalanceLabel}
+            creditsAvailable={campaignCreditsAvailable}
+            onCancel={() => go("campagnes")}
+            onBuy={async (selection) => {
+              if (!user?.id) {
+                throw new Error("Tu dois être connecté pour acheter des crédits.");
+              }
+              const { invoiceRef, error } = await buyCredits({
+                packCode: selection.code,
+                packLabel: selection.pack,
+                credits: selection.credits,
+                amountEur: Math.round((selection.priceHT + selection.priceHT * 0.2) * 100) / 100,
+              });
+              if (error) throw error;
+              showToast(
+                `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(selection.credits)} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`,
+              );
+            }}
           />
         );
       case "deconnexion":
@@ -702,11 +698,11 @@ export function PrototypeApp() {
           />
         );
       case "nouvelle-campagne-1":
-      case "nouvelle-campagne-2":
-      case "nouvelle-campagne-3":
-      case "nouvelle-campagne-4":
-      case "nouvelle-campagne-5":
         return <CampaignWizard step={1} {...campaignWizardProps} />;
+      case "nouvelle-campagne-2":
+        return <CampaignWizard step={2} {...campaignWizardProps} />;
+      case "nouvelle-campagne-3":
+        return <CampaignWizard step={3} {...campaignWizardProps} />;
       default:
         return (
           <ContactsView
@@ -727,6 +723,8 @@ export function PrototypeApp() {
         route={route}
         go={go}
         onNewCampaign={() => openCampaignComposer()}
+        creditsLabel={creditsLoading ? "…" : creditsBalanceLabel}
+        onBuyCredits={() => go("acheter-credits")}
       >
         {renderRoute(route)}
       </AppShell>
@@ -741,51 +739,17 @@ export function PrototypeApp() {
       <GroupEditModal
         open={groupEditOpen}
         group={groupEditRow}
+        contacts={groupModalContacts}
+        contactsLoading={contactsLoading}
         onClose={() => {
           setGroupEditOpen(false);
           setGroupEditRow(null);
         }}
         onSave={handleGroupUpdate}
-        onImportToGroup={() => {
-          if (!groupEditRow) return;
-          setGroupQuickAddTarget(groupEditRow);
-          setGroupQuickAddOpen(true);
-          setGroupEditOpen(false);
-          setGroupEditRow(null);
-        }}
         onLaunchCampaign={(groupName) => {
           setGroupEditOpen(false);
           setGroupEditRow(null);
           openCampaignComposer(groupName);
-        }}
-      />
-      <GroupQuickAddContactsModal
-        open={groupQuickAddOpen}
-        groupName={groupQuickAddTarget?.name ?? ""}
-        contacts={groupModalContacts}
-        contactsLoading={contactsLoading}
-        onClose={() => {
-          setGroupQuickAddOpen(false);
-          setGroupQuickAddTarget(null);
-        }}
-        onConfirm={async (selectedIds) => {
-          if (!user?.id || !groupQuickAddTarget?.name) {
-            throw new Error("Groupe introuvable.");
-          }
-          const result = await addClientsToGroupByName(
-            supabase,
-            user.id,
-            selectedIds,
-            groupQuickAddTarget.name
-          );
-          if (result.error) throw result.error;
-          await refreshGroups();
-          await refreshContacts();
-          showToast(
-            `${selectedIds.length} contact${
-              selectedIds.length > 1 ? "s" : ""
-            } ajouté${selectedIds.length > 1 ? "s" : ""} au groupe`
-          );
         }}
       />
 
@@ -814,30 +778,6 @@ export function PrototypeApp() {
             : null
         }
         onSaveContact={handleContactSave}
-      />
-
-      <CreditsModal
-        open={creditsModalOpen}
-        onClose={() => setCreditsModalOpen(false)}
-        onBought={async (selection) => {
-          if (!user?.id) {
-            throw new Error("Tu dois être connecté pour acheter des crédits.");
-          }
-          const { invoiceRef, error } = await buyCredits({
-            packCode: selection.code,
-            packLabel: selection.pack,
-            credits: selection.credits,
-            amountEur: selection.price,
-          });
-          if (error) {
-            throw error;
-          }
-          showToast(
-            `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(
-              selection.credits
-            )} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`
-          );
-        }}
       />
 
       <CampaignDetailsModal

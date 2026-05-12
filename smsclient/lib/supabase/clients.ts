@@ -302,6 +302,56 @@ export async function addClientsToGroupByName(
   return { error: null };
 }
 
+/**
+ * Remplace la liste des contacts d’un segment (supprime les anciennes
+ * liaisons pour ce groupe, puis insère les nouvelles).
+ */
+export async function replaceGroupMembers(
+  supabase: SupabaseClient,
+  userId: string,
+  groupId: string,
+  clientIds: string[],
+): Promise<{ error: Error | null }> {
+  const { data: g, error: findErr } = await supabase
+    .from("client_groups")
+    .select("id")
+    .eq("id", groupId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (findErr) {
+    return { error: new Error(findErr.message) };
+  }
+  if (!g) {
+    return { error: new Error("Groupe introuvable.") };
+  }
+
+  const { error: delErr } = await supabase
+    .from("client_group_members")
+    .delete()
+    .eq("group_id", groupId);
+  if (delErr) {
+    return { error: new Error(delErr.message) };
+  }
+
+  const uniqueClientIds = [...new Set(clientIds)];
+  if (uniqueClientIds.length === 0) {
+    return { error: null };
+  }
+
+  const rows = uniqueClientIds.map((client_id) => ({
+    client_id,
+    group_id: groupId,
+  }));
+  const { error: insErr } = await supabase
+    .from("client_group_members")
+    .insert(rows);
+  if (insErr) {
+    return { error: new Error(insErr.message) };
+  }
+  return { error: null };
+}
+
 export type ImportBatchResult = {
   inserted: number;
   skippedDuplicateInFile: number;

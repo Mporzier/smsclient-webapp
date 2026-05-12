@@ -2,37 +2,33 @@ export type AppRoute =
   | "contacts"
   | "groupes"
   | "campagnes"
-  | "credits"
   | "statistiques"
   | "parametres"
   | "deconnexion"
   | "nouvelle-campagne-1"
   | "nouvelle-campagne-2"
   | "nouvelle-campagne-3"
-  | "nouvelle-campagne-4"
-  | "nouvelle-campagne-5"
   | "ajouter-contact-1"
   | "ajouter-contact-2"
   | "creer-groupe-1"
-  | "creer-groupe-2";
+  | "creer-groupe-2"
+  | "acheter-credits";
 
 export const APP_ROUTES: AppRoute[] = [
   "contacts",
   "groupes",
   "campagnes",
-  "credits",
   "statistiques",
   "parametres",
   "deconnexion",
   "nouvelle-campagne-1",
   "nouvelle-campagne-2",
   "nouvelle-campagne-3",
-  "nouvelle-campagne-4",
-  "nouvelle-campagne-5",
   "ajouter-contact-1",
   "ajouter-contact-2",
   "creer-groupe-1",
   "creer-groupe-2",
+  "acheter-credits",
 ];
 
 export function isAppRoute(s: string): s is AppRoute {
@@ -43,19 +39,17 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   contacts: "Contacts",
   groupes: "Groupes",
   campagnes: "Campagnes",
-  credits: "Crédits",
   statistiques: "Statistiques",
   parametres: "Paramètres",
   deconnexion: "Déconnexion",
-  "nouvelle-campagne-1": "Nouvelle campagne — Infos",
-  "nouvelle-campagne-2": "Nouvelle campagne — Destinataires",
-  "nouvelle-campagne-3": "Nouvelle campagne — Message",
-  "nouvelle-campagne-4": "Nouvelle campagne — Prévisualisation",
-  "nouvelle-campagne-5": "Nouvelle campagne — Envoi",
+  "nouvelle-campagne-1": "Nouvelle campagne — Destinataires",
+  "nouvelle-campagne-2": "Nouvelle campagne — Message",
+  "nouvelle-campagne-3": "Nouvelle campagne — Confirmation",
   "ajouter-contact-1": "Ajouter un contact — Informations",
   "ajouter-contact-2": "Ajouter un contact — Vérification",
   "creer-groupe-1": "Créer un groupe — Informations",
   "creer-groupe-2": "Créer un groupe — Contacts",
+  "acheter-credits": "Acheter des crédits",
 };
 
 /** Nav item highlight: which sidebar key is “active” */

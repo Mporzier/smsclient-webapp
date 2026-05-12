@@ -3,7 +3,6 @@
 export {
   CampaignDetailsModal,
   ContactCreateModal,
-  CreditsModal,
   GroupEditModal,
   GroupCreateModal,
   GroupQuickAddContactsModal,

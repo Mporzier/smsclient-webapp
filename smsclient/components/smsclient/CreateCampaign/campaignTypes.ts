@@ -3,7 +3,7 @@ import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 
 export type CampaignWizardProps = {
-  step: 1 | 2 | 3 | 4 | 5;
+  step: 1 | 2 | 3;
   go: (h: string) => void;
   title: string;
   setTitle: (v: string) => void;
@@ -17,12 +17,6 @@ export type CampaignWizardProps = {
   setScheduleAt: (v: string) => void;
   aiOpen: boolean;
   setAiOpen: (v: boolean) => void;
-  goalPreset: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre";
-  setGoalPreset: (
-    v: "promotion" | "relance" | "nouveaute" | "fidelisation" | "libre",
-  ) => void;
-  goalFreeText: string;
-  setGoalFreeText: (v: string) => void;
   groups: GroupRowData[];
   contacts: ContactRowData[];
   recipientMode: "manual" | "lists" | "all" | "numbers";
@@ -38,6 +32,5 @@ export type CampaignWizardProps = {
   recipientExcludedInvalid: number;
   recipientCount: number;
   creditsAvailable: number;
-  /** Étape 5 : enregistrement en base puis retour liste. */
   onConfirmCampaign?: () => void | Promise<void>;
 };
