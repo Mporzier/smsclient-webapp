@@ -12,7 +12,7 @@ import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { insertClientsFromImport } from "@/lib/supabase/clients";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { CloudUpload, FileSpreadsheet, Upload, X } from "lucide-react";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -250,10 +250,7 @@ export function ImportContactsModal({
           continue;
         }
         if (defaultGroupLabel?.trim()) {
-          const merged = new Set([
-            ...p.groupLabels,
-            defaultGroupLabel.trim(),
-          ]);
+          const merged = new Set([...p.groupLabels, defaultGroupLabel.trim()]);
           p.groupLabels = Array.from(merged);
         }
         payloads.push(p);
@@ -263,12 +260,11 @@ export function ImportContactsModal({
 
       if (batch.inserted === 0) {
         const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
-        const dupes =
-          batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
+        const dupes = batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
         const reasons: string[] = [];
         if (invalidTotal > 0) {
           reasons.push(
-            "numéros non reconnus — utilise 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78",
+            "numéros non reconnus — utilise 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78"
           );
         }
         if (dupes > 0) {
@@ -279,8 +275,10 @@ export function ImportContactsModal({
         }
         setImportError(
           reasons.length > 0
-            ? `Aucun contact n’a été importé. ${reasons.join(" · ")}. Corrige le CSV puis réessaie — la modale reste ouverte.`
-            : "Aucun contact n’a été enregistré. Réessaie (la modale reste ouverte).",
+            ? `Aucun contact n’a été importé. ${reasons.join(
+                " · "
+              )}. Corrige le CSV puis réessaie — la modale reste ouverte.`
+            : "Aucun contact n’a été enregistré. Réessaie (la modale reste ouverte)."
         );
         return;
       }
@@ -303,14 +301,14 @@ export function ImportContactsModal({
       const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
       if (invalidTotal > 0) {
         parts.push(
-          `${invalidTotal} ligne${
+          `${invalidTotal} ligne${invalidTotal > 1 ? "s" : ""} ignorée${
             invalidTotal > 1 ? "s" : ""
-          } ignorée${invalidTotal > 1 ? "s" : ""} (numéro non valide)`,
+          } (numéro non valide)`
         );
       }
       if (batch.otherErrors > 0) {
         parts.push(
-          `${batch.otherErrors} erreur${batch.otherErrors > 1 ? "s" : ""}`,
+          `${batch.otherErrors} erreur${batch.otherErrors > 1 ? "s" : ""}`
         );
       }
 
@@ -349,11 +347,11 @@ export function ImportContactsModal({
       <div className={modalCard}>
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
           <div>
-            <div className="text-lg font-black text-slate-900">
+            <div className="flex items-center gap-2.5 text-xl font-black text-slate-900">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-blue-100 bg-blue-50">
+                <CloudUpload className="h-6 w-6 text-blue-500" aria-hidden />
+              </div>
               Importer des contacts
-            </div>
-            <div className="text-xs font-bold text-slate-500">
-              Fichier CSV (UTF-8) — mappe chaque colonne vers un champ de l’app.
             </div>
           </div>
           <button
@@ -370,7 +368,7 @@ export function ImportContactsModal({
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-[18px]">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
             <div className="text-[13px] font-black text-slate-800">
-              1. Fichier et séparateur
+              Fichier CSV
             </div>
             <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end">
               <div className="min-w-0 flex-1">
@@ -388,45 +386,47 @@ export function ImportContactsModal({
                   }}
                 />
                 <div
-                  role="button"
-                  tabIndex={0}
                   aria-label="Zone de dépôt pour fichier CSV"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
                   onDragEnter={onDragEnter}
                   onDragLeave={onDragLeave}
                   onDragOver={onDragOver}
                   onDrop={onDrop}
-                  onClick={() => {
-                    if (importing || suppressPickerClickRef.current) return;
-                    fileInputRef.current?.click();
-                  }}
                   className={cn(
-                    "cursor-pointer rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed] focus-visible:ring-offset-2",
+                    "rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed] focus-visible:ring-offset-2",
                     dragActive
                       ? "border-[#2f6fed] bg-[#eef4ff]"
-                      : "border-slate-300 bg-slate-50/80 hover:border-slate-400 hover:bg-slate-50",
+                      : "border-slate-300 bg-slate-50/80",
                     importing &&
                       "pointer-events-none cursor-not-allowed opacity-60"
                   )}
                 >
-                  <div className="pointer-events-none">
-                    <div className="text-2xl" aria-hidden>
-                      📄
-                    </div>
-                    <p className="mt-2 text-sm font-extrabold text-slate-800">
-                      {dragActive
-                        ? "Dépose le fichier ici…"
-                        : "Glisse-dépose un fichier CSV ici"}
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">
-                      ou clique pour parcourir ton ordinateur
-                    </p>
+                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-emerald-100 bg-emerald-50">
+                    <FileSpreadsheet
+                      className="h-6 w-6 text-emerald-500"
+                      aria-hidden
+                    />
                   </div>
+                  <p className="mt-2 text-sm font-extrabold text-slate-800">
+                    {dragActive
+                      ? "Dépose le fichier ici…"
+                      : "Glissez-déposez un fichier CSV ici"}
+                  </p>
+                  <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                    ou
+                  </p>
+                  <button
+                    type="button"
+                    disabled={importing}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (importing || suppressPickerClickRef.current) return;
+                      fileInputRef.current?.click();
+                    }}
+                    className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(47,111,237,0.25)] transition-all hover:bg-[#2560d4] hover:shadow-[0_6px_16px_rgba(47,111,237,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Upload className="h-4 w-4" aria-hidden />
+                    Choisir un fichier CSV
+                  </button>
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-1 lg:w-[220px]">

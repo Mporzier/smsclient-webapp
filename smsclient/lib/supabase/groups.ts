@@ -126,3 +126,12 @@ export async function updateClientGroup(
   }
   return { error: null };
 }
+
+export async function deleteGroups(
+  supabase: SupabaseClient,
+  ids: string[],
+): Promise<{ error: Error | null }> {
+  if (ids.length === 0) return { error: null };
+  const { error } = await supabase.from("client_groups").delete().in("id", ids);
+  return { error: error ? new Error(error.message) : null };
+}

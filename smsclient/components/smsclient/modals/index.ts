@@ -11,3 +11,4 @@ export {
   type GroupCreateModalContactRow as GroupModalContactRow,
 } from "./GroupCreateModal";
 export { GroupQuickAddContactsModal } from "./GroupQuickAddContactsModal";
+export { ConfirmDeleteModal } from "./ConfirmDeleteModal";

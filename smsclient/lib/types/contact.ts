@@ -11,6 +11,7 @@ export type ContactRowData = {
   groups: string[];
   notes: string;
   lastSms: string;
+  lastSmsBody: string;
   source: string;
   optIn: boolean;
   stopSms: boolean;

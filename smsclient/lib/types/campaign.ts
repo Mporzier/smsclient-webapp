@@ -1,5 +1,11 @@
 export type SmsCampaignStatus = "draft" | "scheduled" | "sent" | "failed" | "cancelled";
 
+export type CampaignTargetContact = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+};
+
 /** Ligne liste Campagnes (dérivée de `public.sms_campaigns`). */
 export type CampaignRowData = {
   id: string;
@@ -7,7 +13,7 @@ export type CampaignRowData = {
   name: string;
   recipients: number;
   status: SmsCampaignStatus;
-  /** Texte d’affichage : date d’envoi, programmation, ou "—" */
+  /** Texte d'affichage : date d'envoi, programmation, ou "—" */
   sendLabel: string;
   creditsLabel: string;
   sender?: string;
@@ -16,4 +22,6 @@ export type CampaignRowData = {
   createdAt?: string;
   sentAt?: string | null;
   scheduledAt?: string | null;
+  targetContacts?: CampaignTargetContact[];
+  targetGroups?: string[];
 };

@@ -18,6 +18,7 @@ export type ClientRecord = {
   opt_in: boolean;
   stop_sms: boolean;
   last_sms_sent_at: string | null;
+  last_sms_body: string | null;
   created_at: string;
 };
 
@@ -94,6 +95,7 @@ export function clientRecordToRow(
     groups: mergedGroups,
     notes: row.notes?.trim() ?? "",
     lastSms: formatLastSms(row.last_sms_sent_at),
+    lastSmsBody: row.last_sms_body?.trim() ?? "",
     source: row.source,
     optIn: row.opt_in,
     stopSms: row.stop_sms,
@@ -159,8 +161,26 @@ export async function fetchClients(
   if (e2) {
     return { data: [], error: e2 };
   }
+
+  // Fallback : si last_sms_body est vide, on récupère la dernière campagne envoyée par le user
+  const needsFallback = rows.some((r) => !r.last_sms_body && r.last_sms_sent_at);
+  let fallbackBody: string | null = null;
+  if (needsFallback) {
+    const { data: campaign } = await supabase
+      .from("sms_campaigns")
+      .select("body")
+      .in("status", ["sent", "scheduled"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+    fallbackBody = (campaign as { body: string } | null)?.body ?? null;
+  }
+
   return {
-    data: rows.map((r) => clientRecordToRow(r, memMap.get(r.id) ?? [])),
+    data: rows.map((r) => {
+      const row = r.last_sms_body ? r : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
+      return clientRecordToRow(row, memMap.get(r.id) ?? []);
+    }),
     error: null,
   };
 }
@@ -444,4 +464,33 @@ export async function updateClient(
     return { error: new Error(error.message) };
   }
   return syncClientGroupMemberships(supabase, userId, clientId, labels);
+}
+
+/**
+ * Met à jour `last_sms_sent_at` et `last_sms_body` sur les contacts ciblés par une campagne.
+ */
+export async function stampLastSmsOnContacts(
+  supabase: SupabaseClient,
+  contactIds: string[],
+  smsBody: string,
+): Promise<void> {
+  if (contactIds.length === 0) return;
+  const now = new Date().toISOString();
+  const BATCH = 200;
+  for (let i = 0; i < contactIds.length; i += BATCH) {
+    const batch = contactIds.slice(i, i + BATCH);
+    await supabase
+      .from("clients")
+      .update({ last_sms_sent_at: now, last_sms_body: smsBody })
+      .in("id", batch);
+  }
+}
+
+export async function deleteClients(
+  supabase: SupabaseClient,
+  ids: string[],
+): Promise<{ error: Error | null }> {
+  if (ids.length === 0) return { error: null };
+  const { error } = await supabase.from("clients").delete().in("id", ids);
+  return { error: error ? new Error(error.message) : null };
 }

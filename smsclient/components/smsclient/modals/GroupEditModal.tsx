@@ -3,7 +3,7 @@
 import { ProtoBtn } from "@/components/smsclient/ui";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, Trash2, X } from "lucide-react";
 import type { GroupCreateModalContactRow } from "./GroupCreateModal";
 import { overlayCls } from "./modalChrome";
 
@@ -20,6 +20,7 @@ type GroupEditModalProps = {
     selectedContactIds: string[];
   }) => Promise<void>;
   onLaunchCampaign: (groupName: string) => void;
+  onDeleteGroup?: () => void;
 };
 
 const shellCls =
@@ -42,6 +43,7 @@ export function GroupEditModal({
   contactsLoading = false,
   onSave,
   onLaunchCampaign,
+  onDeleteGroup,
 }: GroupEditModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -430,7 +432,21 @@ export function GroupEditModal({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
+          <div className="flex items-center gap-2">
+            {onDeleteGroup && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={onDeleteGroup}
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Supprimer
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
           {error && (
             <p className="m-0 mr-auto max-w-full text-xs font-bold text-rose-600 sm:max-w-[min(100%,420px)]">
               {error}
@@ -450,6 +466,7 @@ export function GroupEditModal({
           <ProtoBtn primary disabled={saving} onClick={() => void handleSave()}>
             {saving ? "Enregistrement…" : "Enregistrer"}
           </ProtoBtn>
+          </div>
         </div>
       </div>
     </div>

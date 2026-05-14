@@ -6,7 +6,7 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { isValidFrMobile, normalizeFRPhone } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { overlayCls } from "./modalChrome";
 
 export type ContactCreateModalProps = {
@@ -27,6 +27,7 @@ export type ContactCreateModalProps = {
   onCreateGroupRequest: () => void;
   consentDefaults?: { optIn: boolean; stop: boolean } | null;
   onSaveContact?: (payload: ContactFormSubmitPayload) => Promise<void>;
+  onDeleteContact?: () => void;
 };
 
 const shellCls =
@@ -53,6 +54,7 @@ export function ContactCreateModal({
   onCreateGroupRequest,
   consentDefaults,
   onSaveContact,
+  onDeleteContact,
 }: ContactCreateModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -333,21 +335,36 @@ export function ContactCreateModal({
           </div>
         )}
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3">
-          <ProtoBtn disabled={saving} onClick={onClose}>
-            Annuler
-          </ProtoBtn>
-          <ProtoBtn
-            primary
-            disabled={saving}
-            onClick={() => void handleFinalSave()}
-          >
-            {saving
-              ? "Enregistrement…"
-              : mode === "edit"
-              ? "Enregistrer"
-              : "Enregistrer le contact"}
-          </ProtoBtn>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 py-3">
+          <div>
+            {mode === "edit" && onDeleteContact && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={onDeleteContact}
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Supprimer
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <ProtoBtn disabled={saving} onClick={onClose}>
+              Annuler
+            </ProtoBtn>
+            <ProtoBtn
+              primary
+              disabled={saving}
+              onClick={() => void handleFinalSave()}
+            >
+              {saving
+                ? "Enregistrement…"
+                : mode === "edit"
+                ? "Enregistrer"
+                : "Enregistrer le contact"}
+            </ProtoBtn>
+          </div>
         </div>
       </div>
     </div>

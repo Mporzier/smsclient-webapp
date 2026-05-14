@@ -5,6 +5,7 @@ import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import type { GroupRowData } from "@/lib/types/group";
 import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const columns: ColumnDef<GroupRowData, unknown>[] = [
@@ -45,6 +46,7 @@ type GroupesProps = {
   error: string | null;
   onCreateGroup: () => void;
   onEditGroup: (row: GroupRowData) => void;
+  onDeleteGroups: (ids: string[]) => void;
 };
 
 export function GroupesView({
@@ -53,14 +55,64 @@ export function GroupesView({
   error,
   onCreateGroup,
   onEditGroup,
+  onDeleteGroups,
 }: GroupesProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const showBigEmpty = !loading && !error && rows.length === 0;
 
   const footerLabel = useMemo(() => {
     return `${rows.length} groupe${rows.length > 1 ? "s" : ""}`;
   }, [rows]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === rows.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(rows.map((r) => r.id)));
+    }
+  };
+
+  const selectColumns: ColumnDef<GroupRowData, unknown>[] = [
+    {
+      id: "select",
+      size: 40,
+      header: () => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+          checked={selectedIds.size > 0 && selectedIds.size === rows.length}
+          ref={(el) => {
+            if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < rows.length;
+          }}
+          onChange={toggleAll}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+          checked={selectedIds.has(row.original.id)}
+          onChange={(e) => {
+            e.stopPropagation();
+            toggleSelect(row.original.id);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
+    ...columns,
+  ];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-hidden">
@@ -73,6 +125,19 @@ export function GroupesView({
           />
         </div>
         <div className="mt-0.5 flex flex-wrap gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                onDeleteGroups(Array.from(selectedIds));
+                setSelectedIds(new Set());
+              }}
+              className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              Supprimer ({selectedIds.size})
+            </button>
+          )}
           <ProtoBtn primary onClick={onCreateGroup}>
             <PlusIcon />
             Créer un groupe
@@ -95,7 +160,7 @@ export function GroupesView({
         </div>
       ) : (
         <DataTable
-          columns={columns}
+          columns={selectColumns}
           data={rows}
           loading={loading}
           pageSize={20}

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
+import type { CampaignRowData, CampaignTargetContact, SmsCampaignStatus } from "@/lib/types/campaign";
 import { smsPartsFor } from "@/lib/proto/smsUtils";
 
 export type SmsCampaignRecord = {
@@ -16,6 +16,8 @@ export type SmsCampaignRecord = {
   scheduled_at: string | null;
   sent_at: string | null;
   created_at: string;
+  target_contacts: CampaignTargetContact[] | null;
+  target_groups: string[] | null;
 };
 
 function formatFrDate(iso: string, withTime: boolean): string {
@@ -59,6 +61,8 @@ function recordToRow(r: SmsCampaignRecord): CampaignRowData {
     createdAt: r.created_at,
     sentAt: r.sent_at,
     scheduledAt: r.scheduled_at,
+    targetContacts: r.target_contacts ?? undefined,
+    targetGroups: r.target_groups ?? undefined,
   };
 }
 
@@ -86,6 +90,8 @@ export type NewSmsCampaignInput = {
   sendMode: "now" | "sched";
   recipientCount: number;
   scheduledAt?: string | null;
+  targetContacts?: CampaignTargetContact[];
+  targetGroups?: string[];
 };
 
 /**
@@ -145,6 +151,8 @@ export async function insertSmsCampaign(
     status: isNow ? "sent" : "scheduled",
     sent_at: isNow ? nowIso : null,
     scheduled_at: isNow ? null : scheduledAt,
+    target_contacts: input.targetContacts ?? null,
+    target_groups: input.targetGroups ?? null,
   });
 
   if (error) {

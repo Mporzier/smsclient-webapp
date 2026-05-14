@@ -8,6 +8,8 @@ import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import { useCallback, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
+type UnsubContact = { name: string; phone: string; date: string };
+
 type StatsProps = {
   chipLabel: string;
   statsOpen: boolean;
@@ -21,6 +23,7 @@ type StatsProps = {
   error: string | null;
   data: StatisticsSnapshot;
   onExport: () => void;
+  unsubscribedContacts?: UnsubContact[];
 };
 
 export function StatistiquesView(props: StatsProps) {
@@ -37,6 +40,7 @@ export function StatistiquesView(props: StatsProps) {
     error,
     data,
     onExport,
+    unsubscribedContacts = [],
   } = props;
   const chipRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -286,6 +290,49 @@ export function StatistiquesView(props: StatsProps) {
         <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
           {error}
         </p>
+      )}
+
+      {unsubscribedContacts.length > 0 && (
+        <div className="mt-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+          <h2 className="m-0 text-base font-black text-slate-900">
+            Contacts désabonnés ({unsubscribedContacts.length})
+          </h2>
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            Ces contacts ont demandé à ne plus recevoir de SMS. Liste en lecture seule.
+          </p>
+          <div className="mt-2.5 max-h-[300px] overflow-auto rounded-xl border border-slate-200">
+            <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
+              <thead className="sticky top-0 z-[1] bg-slate-100">
+                <tr>
+                  <th className="border-b border-slate-200 px-3 py-2.5 font-extrabold text-slate-700">
+                    Nom
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2.5 font-extrabold text-slate-700">
+                    Téléphone
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2.5 font-extrabold text-slate-700">
+                    Désinscrit le
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {unsubscribedContacts.map((c, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="px-3 py-2.5 font-semibold text-slate-900">
+                      {c.name || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 font-semibold text-slate-700">
+                      {c.phone}
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-500">
+                      {c.date}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );

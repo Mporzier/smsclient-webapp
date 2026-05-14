@@ -19,6 +19,7 @@ import {
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
+  ConfirmDeleteModal,
   ContactCreateModal,
   GroupEditModal,
   GroupCreateModal,
@@ -34,12 +35,14 @@ import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import {
   addClientsToGroupByName,
+  deleteClients,
   insertClient,
   replaceGroupMembers,
+  stampLastSmsOnContacts,
   updateClient,
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
-import { insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
+import { deleteGroups, insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
@@ -158,6 +161,11 @@ export function PrototypeApp() {
   const [cmNotes, setCmNotes] = useState("");
   const [cmGroups, setCmGroups] = useState<string[]>([]);
 
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState("");
+  const [confirmDeleteDesc, setConfirmDeleteDesc] = useState("");
+  const [confirmDeleteAction, setConfirmDeleteAction] = useState<(() => Promise<void>) | null>(null);
+
   const groupOptions = useMemo(() => {
     const fromDb = groupRows.map((g) => g.name);
     const fromContacts = [...new Set(contacts.flatMap((c) => c.groups))];
@@ -173,6 +181,18 @@ export function PrototypeApp() {
         groups: c.groups,
       })),
     [contacts]
+  );
+
+  const unsubscribedContacts = useMemo(
+    () =>
+      contacts
+        .filter((c) => c.stopSms)
+        .map((c) => ({
+          name: c.name,
+          phone: c.phone,
+          date: c.lastSms !== "—" ? c.lastSms : c.created,
+        })),
+    [contacts],
   );
 
   const [campaignRecipientMode, setCampaignRecipientMode] = useState<
@@ -349,6 +369,65 @@ export function PrototypeApp() {
     return () => window.clearTimeout(t);
   }, []);
 
+  const openConfirmDelete = useCallback(
+    (title: string, desc: string, action: () => Promise<void>) => {
+      setConfirmDeleteTitle(title);
+      setConfirmDeleteDesc(desc);
+      setConfirmDeleteAction(() => action);
+      setConfirmDeleteOpen(true);
+    },
+    [],
+  );
+
+  const handleDeleteContacts = useCallback(
+    (ids: string[]) => {
+      const n = ids.length;
+      openConfirmDelete(
+        `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
+        `Cette action est irréversible. ${n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"} définitivement supprimé${n > 1 ? "s" : ""}.`,
+        async () => {
+          const { error } = await deleteClients(supabase, ids);
+          if (error) throw error;
+          setConfirmDeleteOpen(false);
+          refreshContacts();
+          showToast(`${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
+        },
+      );
+    },
+    [openConfirmDelete, supabase, refreshContacts, showToast],
+  );
+
+  const handleDeleteContactFromModal = useCallback(() => {
+    if (!contactEditRow) return;
+    setContactModalOpen(false);
+    handleDeleteContacts([contactEditRow.id]);
+  }, [contactEditRow, handleDeleteContacts]);
+
+  const handleDeleteGroups = useCallback(
+    (ids: string[]) => {
+      const n = ids.length;
+      openConfirmDelete(
+        `Supprimer ${n} groupe${n > 1 ? "s" : ""} ?`,
+        `Cette action est irréversible. ${n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"} définitivement supprimé${n > 1 ? "s" : ""}. Les contacts ne seront pas supprimés.`,
+        async () => {
+          const { error } = await deleteGroups(supabase, ids);
+          if (error) throw error;
+          setConfirmDeleteOpen(false);
+          refreshGroups();
+          showToast(`${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
+        },
+      );
+    },
+    [openConfirmDelete, supabase, refreshGroups, showToast],
+  );
+
+  const handleDeleteGroupFromModal = useCallback(() => {
+    if (!groupEditRow) return;
+    setGroupEditOpen(false);
+    setGroupEditRow(null);
+    handleDeleteGroups([groupEditRow.id]);
+  }, [groupEditRow, handleDeleteGroups]);
+
   const openCampaignComposer = useCallback(
     (preselectedGroupName?: string) => {
       const p = preselectedGroupName?.trim() ?? "";
@@ -407,6 +486,12 @@ export function PrototypeApp() {
     if (!user?.id) {
       throw new Error("Tu dois être connecté pour enregistrer une campagne.");
     }
+    const targetContacts = campaignRecipientMode !== "numbers"
+      ? campaignSelectedContacts
+          .filter((c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone))
+          .map((c) => ({ firstName: c.firstName, lastName: c.lastName, phone: c.phone }))
+      : undefined;
+
     const { error } = await insertSmsCampaign(supabase, user.id, {
       title: campaignTitle,
       sender: campaignSender,
@@ -423,9 +508,18 @@ export function PrototypeApp() {
               return iso;
             })()
           : null,
+      targetContacts,
+      targetGroups: campaignSelectedGroupNames.length > 0 ? campaignSelectedGroupNames : undefined,
     });
     if (error) throw error;
+    if (campaignRecipientMode !== "numbers") {
+      const ids = campaignSelectedContacts
+        .filter((c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone))
+        .map((c) => c.id);
+      await stampLastSmsOnContacts(supabase, ids, smsBody);
+    }
     await refreshCampaigns();
+    await refreshContacts();
     showToast("Campagne enregistrée");
   }, [
     user,
@@ -436,7 +530,10 @@ export function PrototypeApp() {
     sendMode,
     scheduledAt,
     campaignRecipientCount,
+    campaignRecipientMode,
+    campaignSelectedContacts,
     refreshCampaigns,
+    refreshContacts,
     showToast,
   ]);
 
@@ -552,6 +649,7 @@ export function PrototypeApp() {
             onImport={() => setImportContactsOpen(true)}
             onAddContact={openContactAdd}
             onRowClick={openContactEdit}
+            onDeleteContacts={handleDeleteContacts}
           />
         );
       case "groupes":
@@ -562,6 +660,7 @@ export function PrototypeApp() {
             error={groupsError}
             onCreateGroup={() => setGroupModalOpen(true)}
             onEditGroup={openGroupEdit}
+            onDeleteGroups={handleDeleteGroups}
           />
         );
       case "campagnes":
@@ -594,6 +693,7 @@ export function PrototypeApp() {
             onExport={() =>
               showToast("Export des statistiques (à implémenter).")
             }
+            unsubscribedContacts={unsubscribedContacts}
           />
         );
       case "parametres":
@@ -712,6 +812,7 @@ export function PrototypeApp() {
             onImport={() => setImportContactsOpen(true)}
             onAddContact={openContactAdd}
             onRowClick={openContactEdit}
+            onDeleteContacts={handleDeleteContacts}
           />
         );
     }
@@ -751,6 +852,7 @@ export function PrototypeApp() {
           setGroupEditRow(null);
           openCampaignComposer(groupName);
         }}
+        onDeleteGroup={handleDeleteGroupFromModal}
       />
 
       <ContactCreateModal
@@ -778,6 +880,7 @@ export function PrototypeApp() {
             : null
         }
         onSaveContact={handleContactSave}
+        onDeleteContact={handleDeleteContactFromModal}
       />
 
       <CampaignDetailsModal
@@ -799,6 +902,14 @@ export function PrototypeApp() {
           onNotify={showToast}
         />
       )}
+
+      <ConfirmDeleteModal
+        open={confirmDeleteOpen}
+        title={confirmDeleteTitle}
+        description={confirmDeleteDesc}
+        onConfirm={confirmDeleteAction ?? (async () => {})}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
 
       {toast && (
         <div
