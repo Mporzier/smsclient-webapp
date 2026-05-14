@@ -34,6 +34,27 @@ const GROUP_COLORS: { bg: string; border: string; text: string }[] = [
   { bg: "bg-lime-50", border: "border-lime-100", text: "text-lime-700" },
 ];
 
+const AVATAR_COLORS: { bg: string; text: string }[] = [
+  { bg: "bg-indigo-100", text: "text-indigo-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
+  { bg: "bg-amber-100", text: "text-amber-700" },
+  { bg: "bg-rose-100", text: "text-rose-700" },
+  { bg: "bg-sky-100", text: "text-sky-700" },
+  { bg: "bg-violet-100", text: "text-violet-700" },
+  { bg: "bg-orange-100", text: "text-orange-700" },
+  { bg: "bg-cyan-100", text: "text-cyan-700" },
+  { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+  { bg: "bg-teal-100", text: "text-teal-700" },
+];
+
+function avatarColor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 function groupColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -57,12 +78,26 @@ type ContactsProps = {
 
 const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
-    accessorKey: "created",
-    header: "Date d'ajout",
-    size: 100,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-    ),
+    id: "avatar",
+    size: 44,
+    header: "",
+    cell: ({ row }) => {
+      const f = (row.original.firstName || "").trim();
+      const l = (row.original.lastName || "").trim();
+      const initials = ((f[0] ?? "") + (l[0] ?? "")).toUpperCase() || "?";
+      const c = avatarColor(row.original.id);
+      return (
+        <div
+          className={cn(
+            "grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold",
+            c.bg,
+            c.text,
+          )}
+        >
+          {initials}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "firstName",
@@ -178,6 +213,14 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
   },
+  {
+    accessorKey: "created",
+    header: "Date d'ajout",
+    size: 100,
+    cell: ({ getValue }) => (
+      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+    ),
+  },
 ];
 
 export function ContactsView({
@@ -227,27 +270,31 @@ export function ContactsView({
       id: "select",
       size: 40,
       header: () => (
-        <input
-          type="checkbox"
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-          checked={selectedIds.size > 0 && selectedIds.size === eligibleRows.length}
-          ref={(el) => {
-            if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < eligibleRows.length;
-          }}
-          onChange={toggleAll}
-        />
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+            checked={selectedIds.size > 0 && selectedIds.size === eligibleRows.length}
+            ref={(el) => {
+              if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < eligibleRows.length;
+            }}
+            onChange={toggleAll}
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <input
-          type="checkbox"
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-          checked={selectedIds.has(row.original.id)}
-          onChange={(e) => {
-            e.stopPropagation();
-            toggleSelect(row.original.id);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+            checked={selectedIds.has(row.original.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleSelect(row.original.id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       ),
     },
     ...columns,

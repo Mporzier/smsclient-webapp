@@ -4,15 +4,17 @@ import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import {
   buildPayloadFromMappedRow,
+  formatFrPhoneDisplay,
   type ImportColumnRole,
   IMPORT_ROLE_LABELS,
+  looksLikeFrPhone,
   suggestColumnRoles,
 } from "@/lib/import/contactImportMap";
 import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { insertClientsFromImport } from "@/lib/supabase/clients";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CloudUpload, FileSpreadsheet, Upload, X } from "lucide-react";
+import { CloudUpload, FileSpreadsheet, Info, Loader2, Upload, X } from "lucide-react";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -24,10 +26,8 @@ const ROLE_OPTIONS: ImportColumnRole[] = [
   "phone",
   "first_name",
   "last_name",
-  "group",
 ];
 
-type DelimChoice = "auto" | "," | ";" | "\t";
 
 /** Chrome / WebKit envoient souvent un clic juste après le drop : évite d’ouvrir le file picker et d’écraser l’import. */
 function fileFromDataTransfer(dt: DataTransfer): File | null {
@@ -65,7 +65,7 @@ export function ImportContactsModal({
 }: ImportContactsModalProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string | null>(null);
-  const [delimChoice, setDelimChoice] = useState<DelimChoice>("auto");
+  const [fileLoading, setFileLoading] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
   const [roles, setRoles] = useState<ImportColumnRole[]>([]);
@@ -79,6 +79,7 @@ export function ImportContactsModal({
   const reset = useCallback(() => {
     setFileName(null);
     setRawText(null);
+    setFileLoading(false);
     setParseError(null);
     setParsed(null);
     setRoles([]);
@@ -106,6 +107,7 @@ export function ImportContactsModal({
     setRoles([]);
     setRawText(null);
     setImportError(null);
+    setFileLoading(false);
     if (!file) {
       setFileName(null);
       return;
@@ -124,15 +126,18 @@ export function ImportContactsModal({
       return;
     }
     setFileName(file.name);
+    setFileLoading(true);
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === "string" ? reader.result : "";
       setRawText(text);
+      setFileLoading(false);
     };
     reader.onerror = () => {
       setParseError("Lecture du fichier impossible.");
       setFileName(null);
       setRawText(null);
+      setFileLoading(false);
     };
     reader.readAsText(file, "UTF-8");
   }, []);
@@ -186,13 +191,7 @@ export function ImportContactsModal({
       return;
     }
     try {
-      const delim =
-        delimChoice === "auto"
-          ? undefined
-          : delimChoice === "\t"
-          ? "\t"
-          : delimChoice;
-      const p = parseCsvText(rawText, delim);
+      const p = parseCsvText(rawText);
       if (p.headers.length === 0) {
         setParseError("Le fichier ne contient pas d’en-têtes de colonnes.");
         setParsed(null);
@@ -201,7 +200,7 @@ export function ImportContactsModal({
       }
       setParseError(null);
       setParsed(p);
-      setRoles(suggestColumnRoles(p.headers));
+      setRoles(suggestColumnRoles(p.headers, p.rows));
     } catch {
       setParseError(
         "Impossible d’analyser ce fichier. Vérifie l’encodage (UTF-8 recommandé)."
@@ -209,14 +208,14 @@ export function ImportContactsModal({
       setParsed(null);
       setRoles([]);
     }
-  }, [rawText, delimChoice]);
+  }, [rawText]);
 
   const setRole = useCallback((index: number, role: ImportColumnRole) => {
     setRoles((prev) => {
       const next = [...prev];
-      if (role === "phone") {
+      if (role !== "skip") {
         for (let j = 0; j < next.length; j++) {
-          if (j !== index && next[j] === "phone") next[j] = "skip";
+          if (j !== index && next[j] === role) next[j] = "skip";
         }
       }
       next[index] = role;
@@ -366,103 +365,87 @@ export function ImportContactsModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-[18px]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-            <div className="text-[13px] font-black text-slate-800">
-              Fichier CSV
-            </div>
-            <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end">
-              <div className="min-w-0 flex-1">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  disabled={importing}
-                  className="sr-only"
-                  id="import-contacts-csv-input"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onPickFile(f);
-                    e.target.value = "";
-                  }}
-                />
-                <div
-                  aria-label="Zone de dépôt pour fichier CSV"
-                  onDragEnter={onDragEnter}
-                  onDragLeave={onDragLeave}
-                  onDragOver={onDragOver}
-                  onDrop={onDrop}
-                  className={cn(
-                    "rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed] focus-visible:ring-offset-2",
-                    dragActive
-                      ? "border-[#2f6fed] bg-[#eef4ff]"
-                      : "border-slate-300 bg-slate-50/80",
-                    importing &&
-                      "pointer-events-none cursor-not-allowed opacity-60"
-                  )}
-                >
-                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-emerald-100 bg-emerald-50">
-                    <FileSpreadsheet
-                      className="h-6 w-6 text-emerald-500"
-                      aria-hidden
-                    />
-                  </div>
-                  <p className="mt-2 text-sm font-extrabold text-slate-800">
-                    {dragActive
-                      ? "Dépose le fichier ici…"
-                      : "Glissez-déposez un fichier CSV ici"}
-                  </p>
-                  <p className="mt-1.5 text-xs font-semibold text-slate-500">
-                    ou
-                  </p>
-                  <button
-                    type="button"
-                    disabled={importing}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (importing || suppressPickerClickRef.current) return;
-                      fileInputRef.current?.click();
-                    }}
-                    className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(47,111,237,0.25)] transition-all hover:bg-[#2560d4] hover:shadow-[0_6px_16px_rgba(47,111,237,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Upload className="h-4 w-4" aria-hidden />
-                    Choisir un fichier CSV
-                  </button>
-                </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            disabled={importing}
+            className="sr-only"
+            id="import-contacts-csv-input"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onPickFile(f);
+              e.target.value = "";
+            }}
+          />
+
+          {!parsed && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+              <div
+                aria-label="Zone de dépôt pour fichier CSV"
+                onDragEnter={onDragEnter}
+                onDragLeave={onDragLeave}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                className={cn(
+                  "rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors",
+                  dragActive
+                    ? "border-[#2f6fed] bg-[#eef4ff]"
+                    : "border-slate-300 bg-slate-50/80",
+                  importing &&
+                    "pointer-events-none cursor-not-allowed opacity-60"
+                )}
+              >
+                {fileLoading ? (
+                  <>
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#2f6fed]" aria-hidden />
+                    <p className="mt-3 text-sm font-extrabold text-slate-800">
+                      Analyse du fichier en cours…
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                      {fileName}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-emerald-100 bg-emerald-50">
+                      <FileSpreadsheet
+                        className="h-6 w-6 text-emerald-500"
+                        aria-hidden
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-extrabold text-slate-800">
+                      {dragActive
+                        ? "Dépose le fichier ici…"
+                        : "Glissez-déposez un fichier CSV ici"}
+                    </p>
+                    <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                      ou
+                    </p>
+                    <button
+                      type="button"
+                      disabled={importing}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (importing || suppressPickerClickRef.current) return;
+                        fileInputRef.current?.click();
+                      }}
+                      className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(47,111,237,0.25)] transition-all hover:bg-[#2560d4] hover:shadow-[0_6px_16px_rgba(47,111,237,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Upload className="h-4 w-4" aria-hidden />
+                      Choisir un fichier CSV
+                    </button>
+                  </>
+                )}
               </div>
-              <div className="flex shrink-0 flex-col gap-1 lg:w-[220px]">
-                <label
-                  htmlFor="import-delim-select"
-                  className="text-xs font-bold text-slate-500"
-                >
-                  Séparateur de colonnes
-                </label>
-                <select
-                  id="import-delim-select"
-                  className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-extrabold text-slate-800"
-                  value={delimChoice}
-                  disabled={importing}
-                  onChange={(e) =>
-                    setDelimChoice(e.target.value as DelimChoice)
-                  }
-                >
-                  <option value="auto">Auto (détection)</option>
-                  <option value=";">Point-virgule (;)</option>
-                  <option value=",">Virgule (,)</option>
-                  <option value="\t">Tabulation</option>
-                </select>
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
+                <Info className="h-4 w-4 shrink-0 text-blue-500" aria-hidden />
+                <p className="m-0 text-center text-xs font-semibold leading-relaxed text-slate-700">
+                  Depuis Excel : Fichier → Enregistrer sous → Format CSV UTF-8
+                </p>
               </div>
             </div>
-            {fileName && (
-              <p className="mt-2 text-xs font-semibold text-slate-600">
-                Fichier : {fileName}
-              </p>
-            )}
-            <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500">
-              Astuce : sous Excel, « Enregistrer sous » → CSV UTF-8 (séparateur
-              point-virgule souvent en France). Si l’aperçu est incorrect,
-              change le séparateur puis recharge le fichier.
-            </p>
-          </div>
+          )}
 
           {parseError && (
             <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
@@ -472,9 +455,26 @@ export function ImportContactsModal({
 
           {parsed && parsed.headers.length > 0 && (
             <>
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+              {fileName && (
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+                  <span className="text-sm font-bold text-slate-800">{fileName}</span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    — {parsed.rows.length} ligne{parsed.rows.length > 1 ? "s" : ""} détectée{parsed.rows.length > 1 ? "s" : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={reset}
+                    disabled={importing}
+                    className="ml-auto cursor-pointer text-xs font-bold text-slate-500 hover:text-slate-800 disabled:opacity-50"
+                  >
+                    Changer de fichier
+                  </button>
+                </div>
+              )}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
                 <div className="text-[13px] font-black text-slate-800">
-                  2. Correspondance des colonnes
+                  Correspondance des colonnes
                 </div>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
                   Une colonne doit être mappée sur{" "}
@@ -541,38 +541,57 @@ export function ImportContactsModal({
 
               <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
                 <div className="text-[13px] font-black text-slate-800">
-                  3. Aperçu des lignes ({rowCount} ligne
+                  Aperçu des lignes ({rowCount} ligne
                   {rowCount > 1 ? "s" : ""})
                 </div>
                 <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full min-w-[520px] text-[12px]">
                     <thead>
                       <tr className="bg-slate-50">
-                        {parsed.headers.map((h, i) => (
-                          <th
-                            key={`ph-${i}`}
-                            className="border-b border-slate-200 px-2 py-2 text-left font-extrabold text-slate-700"
-                          >
-                            {h || `…${i}`}
-                          </th>
-                        ))}
+                        {parsed.headers.map((h, i) => {
+                          const role = roles[i];
+                          const label = role && role !== "skip" ? IMPORT_ROLE_LABELS[role] : (h || `Colonne ${i + 1}`);
+                          return (
+                            <th
+                              key={`ph-${i}`}
+                              className={cn(
+                                "border-b border-slate-200 px-2 py-2 text-left font-extrabold",
+                                role && role !== "skip" ? "text-[#2f6fed]" : "text-slate-500"
+                              )}
+                            >
+                              {label}
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody>
-                      {previewRows.map((cells, ri) => (
-                        <tr key={ri}>
-                          {parsed.headers.map((_, ci) => (
-                            <td
-                              key={ci}
-                              className="border-b border-slate-100 px-2 py-1.5 font-semibold text-slate-600"
-                            >
-                              <span className="line-clamp-2 break-all">
-                                {cells[ci] ?? ""}
-                              </span>
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                      {previewRows.map((cells, ri) => {
+                        const phoneColIdx = roles.indexOf("phone");
+                        const phoneVal = phoneColIdx >= 0 ? (cells[phoneColIdx] ?? "") : "";
+                        const isInvalid = phoneColIdx >= 0 && !looksLikeFrPhone(phoneVal);
+                        return (
+                          <tr key={ri} className={isInvalid ? "bg-rose-50/60" : ""}>
+                            {parsed.headers.map((_, ci) => {
+                              const raw = cells[ci] ?? "";
+                              const display = ci === phoneColIdx && raw ? formatFrPhoneDisplay(raw) : raw;
+                              return (
+                                <td
+                                  key={ci}
+                                  className={cn(
+                                    "border-b border-slate-100 px-2 py-1.5 font-semibold",
+                                    isInvalid ? "text-rose-600" : "text-slate-600"
+                                  )}
+                                >
+                                  <span className="line-clamp-2 break-all">
+                                    {display}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

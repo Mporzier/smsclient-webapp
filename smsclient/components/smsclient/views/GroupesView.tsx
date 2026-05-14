@@ -88,27 +88,31 @@ export function GroupesView({
       id: "select",
       size: 40,
       header: () => (
-        <input
-          type="checkbox"
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-          checked={selectedIds.size > 0 && selectedIds.size === rows.length}
-          ref={(el) => {
-            if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < rows.length;
-          }}
-          onChange={toggleAll}
-        />
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+            checked={selectedIds.size > 0 && selectedIds.size === rows.length}
+            ref={(el) => {
+              if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < rows.length;
+            }}
+            onChange={toggleAll}
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <input
-          type="checkbox"
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-          checked={selectedIds.has(row.original.id)}
-          onChange={(e) => {
-            e.stopPropagation();
-            toggleSelect(row.original.id);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+            checked={selectedIds.has(row.original.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleSelect(row.original.id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       ),
     },
     ...columns,

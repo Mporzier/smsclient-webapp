@@ -61,17 +61,23 @@ export function DataTable<T>({
         <table className="w-full border-separate border-spacing-0 text-[15px]">
           <thead className="sticky top-0 z-10">
             <tr>
-              {table.getHeaderGroups()[0].headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-[18px] py-3.5 text-left text-sm font-extrabold text-slate-900"
-                  style={header.column.getSize() !== 150 ? { width: `${header.column.getSize()}px` } : undefined}
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
+              {table.getHeaderGroups()[0].headers.map((header) => {
+                const isSelectCol = header.column.id === "select";
+                return (
+                  <th
+                    key={header.id}
+                    className={cn(
+                      "whitespace-nowrap border-b border-slate-200 bg-slate-50 py-3.5 text-sm font-extrabold text-slate-900",
+                      isSelectCol ? "w-10 px-3 text-center" : "px-[18px] text-left",
+                    )}
+                    style={header.column.getSize() !== 150 ? { width: `${header.column.getSize()}px` } : undefined}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -126,14 +132,29 @@ export function DataTable<T>({
                       : undefined
                   }
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="min-w-0 border-b border-slate-100 px-[18px] py-3.5 align-top text-slate-900"
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const isSelectCol = cell.column.id === "select";
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "min-w-0 border-b border-slate-100 py-3.5 align-middle text-slate-900",
+                          isSelectCol ? "w-10 px-3 text-center" : "px-[18px]",
+                        )}
+                        onClick={
+                          isSelectCol
+                            ? (e) => {
+                                e.stopPropagation();
+                                const input = e.currentTarget.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+                                if (input) input.click();
+                              }
+                            : undefined
+                        }
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
           </tbody>
