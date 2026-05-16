@@ -114,8 +114,7 @@ type NavKey =
   | "groupes"
   | "campagnes"
   | "statistiques"
-  | "parametres"
-  | "deconnexion";
+  | "parametres";
 
 type ShellProps = {
   route: AppRoute;

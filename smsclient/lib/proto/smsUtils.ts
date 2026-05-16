@@ -1,5 +1,3 @@
-export const SELECTED_CONTACTS = 1284;
-
 export function isUnicode(str: string): boolean {
   for (const ch of str) {
     if ((ch.codePointAt(0) ?? 0) > 127) return true;

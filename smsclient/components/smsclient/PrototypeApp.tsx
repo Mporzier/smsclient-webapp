@@ -6,16 +6,11 @@ import {
   AcheterCreditsView,
   CampagnesView,
   ContactsView,
-  DeconnexionView,
   GroupesView,
   ParametresView,
   StatistiquesView,
 } from "./MainViews";
-import {
-  AddContactFlow,
-  CampaignWizard,
-  CreateGroupFlow,
-} from "@/components/smsclient/FlowViews";
+import { CampaignWizard } from "@/components/smsclient/FlowViews";
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
@@ -284,14 +279,6 @@ export function PrototypeApp() {
         : campaignSelectedContacts.length,
     [campaignRecipientMode, campaignManualNumberStats, campaignSelectedContacts]
   );
-
-  const [acFirst, setAcFirst] = useState("");
-  const [acLast, setAcLast] = useState("");
-  const [acPhone, setAcPhone] = useState("");
-  const [acGroups, setAcGroups] = useState<string[]>([]);
-  const [cgName, setCgName] = useState("");
-  const [cgDesc, setCgDesc] = useState("");
-  const [cgColor, setCgColor] = useState("blue");
 
   const [campaignTitle, setCampaignTitle] = useState(defaultCampaignTitle());
   const [campaignSender, setCampaignSender] = useState(smsSender);
@@ -733,68 +720,6 @@ export function PrototypeApp() {
                 `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(selection.credits)} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`,
               );
             }}
-          />
-        );
-      case "deconnexion":
-        return <DeconnexionView onBackContacts={() => go("contacts")} />;
-      case "ajouter-contact-1":
-        return (
-          <AddContactFlow
-            step={1}
-            go={go}
-            first={acFirst}
-            setFirst={setAcFirst}
-            last={acLast}
-            setLast={setAcLast}
-            phone={acPhone}
-            setPhone={setAcPhone}
-            groups={acGroups}
-            setGroups={setAcGroups}
-            groupOptions={groupOptions}
-          />
-        );
-      case "ajouter-contact-2":
-        return (
-          <AddContactFlow
-            step={2}
-            go={go}
-            first={acFirst}
-            setFirst={setAcFirst}
-            last={acLast}
-            setLast={setAcLast}
-            phone={acPhone}
-            setPhone={setAcPhone}
-            groups={acGroups}
-            setGroups={setAcGroups}
-            groupOptions={groupOptions}
-          />
-        );
-      case "creer-groupe-1":
-        return (
-          <CreateGroupFlow
-            step={1}
-            go={go}
-            name={cgName}
-            setName={setCgName}
-            desc={cgDesc}
-            setDesc={setCgDesc}
-            colorId={cgColor}
-            setColorId={setCgColor}
-            onOpenGroupModal={() => setGroupModalOpen(true)}
-          />
-        );
-      case "creer-groupe-2":
-        return (
-          <CreateGroupFlow
-            step={2}
-            go={go}
-            name={cgName}
-            setName={setCgName}
-            desc={cgDesc}
-            setDesc={setCgDesc}
-            colorId={cgColor}
-            setColorId={setCgColor}
-            onOpenGroupModal={() => setGroupModalOpen(true)}
           />
         );
       case "nouvelle-campagne-1":

@@ -6,6 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Trash2, X } from "lucide-react";
 import type { GroupCreateModalContactRow } from "./GroupCreateModal";
 import { overlayCls } from "./modalChrome";
+import {
+  groupFormSnapshotsEqual,
+  handleModalBackdropClick,
+  type GroupFormSnapshot,
+} from "./modalFormGuard";
 
 type GroupEditModalProps = {
   open: boolean;
@@ -53,6 +58,9 @@ export function GroupEditModal({
   const [error, setError] = useState<string | null>(null);
   const selectAllHeaderRef = useRef<HTMLInputElement>(null);
   const selectionSyncRef = useRef<{ key: string; contactCount: number } | null>(
+    null,
+  );
+  const [formBaseline, setFormBaseline] = useState<GroupFormSnapshot | null>(
     null,
   );
 
@@ -135,11 +143,25 @@ export function GroupEditModal({
     if (!prev || prev.key !== key) {
       selectionSyncRef.current = { key, contactCount: contacts.length };
       setSelectedIds(ids);
+      setFormBaseline({
+        name: group.name,
+        description: group.description ?? "",
+        selectedIds: [...ids],
+      });
       return;
     }
     if (prev.contactCount === 0 && contacts.length > 0 && ids.length > 0) {
       selectionSyncRef.current = { key, contactCount: contacts.length };
       setSelectedIds(ids);
+      setFormBaseline((prev) =>
+        prev
+          ? { ...prev, selectedIds: [...ids] }
+          : {
+              name: group.name,
+              description: group.description ?? "",
+              selectedIds: [...ids],
+            },
+      );
     } else {
       selectionSyncRef.current = { key, contactCount: contacts.length };
     }
@@ -152,6 +174,7 @@ export function GroupEditModal({
       setError(null);
       setSelectedIds([]);
       selectionSyncRef.current = null;
+      setFormBaseline(null);
     }
   }, [open]);
 
@@ -192,6 +215,13 @@ export function GroupEditModal({
     onLaunchCampaign(name.trim() || group.name);
   }, [group, name, onLaunchCampaign]);
 
+  const isDirty =
+    formBaseline !== null &&
+    !groupFormSnapshotsEqual(
+      { name, description, selectedIds },
+      formBaseline,
+    );
+
   if (!open || !group) return null;
 
   return (
@@ -200,7 +230,9 @@ export function GroupEditModal({
       role="dialog"
       aria-modal
       aria-label="Modifier le groupe"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) =>
+        handleModalBackdropClick(e, onClose, isDirty, !saving)
+      }
     >
       <div className={shellCls}>
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">

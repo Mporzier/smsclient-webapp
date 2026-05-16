@@ -1,5 +1,5 @@
 /** Parse une ligne CSV avec guillemets RFC-style (séparateur , ; ou tab). */
-export function parseCsvLine(line: string, delimiter: string): string[] {
+function parseCsvLine(line: string, delimiter: string): string[] {
   const out: string[] = [];
   let i = 0;
   let field = "";
@@ -44,7 +44,7 @@ function stripBom(text: string): string {
   return text;
 }
 
-export function detectDelimiter(firstLine: string): "," | ";" | "\t" {
+function detectDelimiter(firstLine: string): "," | ";" | "\t" {
   const comma = (firstLine.match(/,/g) ?? []).length;
   const semi = (firstLine.match(/;/g) ?? []).length;
   const tab = (firstLine.match(/\t/g) ?? []).length;

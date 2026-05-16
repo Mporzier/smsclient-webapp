@@ -22,16 +22,14 @@ export function useProtoNavigation() {
     window.location.hash = p;
   }, []);
 
-  const parsed = useMemo(() => parseHash(`#${hashPath}`), [hashPath]);
+  const route = useMemo(
+    () => parseHash(`#${hashPath}`) as AppRoute,
+    [hashPath],
+  );
 
   useEffect(() => {
-    document.title = `SMSClient.fr — ${ROUTE_TITLES[parsed.route]}`;
-  }, [parsed.route]);
+    document.title = `SMSClient.fr — ${ROUTE_TITLES[route]}`;
+  }, [route]);
 
-  return {
-    hashPath,
-    landing: parsed.landing,
-    route: parsed.route as AppRoute,
-    go,
-  };
+  return { route, go };
 }

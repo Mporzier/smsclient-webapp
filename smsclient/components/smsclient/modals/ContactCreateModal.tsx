@@ -8,6 +8,12 @@ import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Trash2, X } from "lucide-react";
 import { overlayCls } from "./modalChrome";
+import {
+  contactFormSnapshotsEqual,
+  handleModalBackdropClick,
+  useModalFormDirty,
+  type ContactFormSnapshot,
+} from "./modalFormGuard";
 
 export type ContactCreateModalProps = {
   open: boolean;
@@ -60,24 +66,29 @@ export function ContactCreateModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setSaveError(null);
+      setValidationError(null);
+    }
+  }
+
+  const handleClose = useCallback(() => {
     setSaveError(null);
     setValidationError(null);
-  }, [open]);
-
-  useEffect(() => {
-    setValidationError(null);
-  }, [first, phone]);
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
   const consentSnapshot = useCallback((): { optIn: boolean; stop: boolean } => {
     if (mode === "edit" && consentDefaults) {
@@ -108,7 +119,7 @@ export function ContactCreateModal({
     }
     setValidationError(null);
     if (!onSaveContact) {
-      onClose();
+      handleClose();
       return;
     }
     const { optIn, stop } = consentSnapshot();
@@ -124,7 +135,7 @@ export function ContactCreateModal({
         optIn,
         stop,
       });
-      onClose();
+      handleClose();
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Une erreur est survenue.");
     } finally {
@@ -132,7 +143,7 @@ export function ContactCreateModal({
     }
   }, [
     onSaveContact,
-    onClose,
+    handleClose,
     first,
     last,
     phone,
@@ -140,6 +151,15 @@ export function ContactCreateModal({
     groups,
     consentSnapshot,
   ]);
+
+  const formSnapshot: ContactFormSnapshot = {
+    first,
+    last,
+    phone,
+    notes,
+    groups,
+  };
+  const isDirty = useModalFormDirty(open, formSnapshot, contactFormSnapshotsEqual);
 
   if (!open) return null;
 
@@ -155,7 +175,9 @@ export function ContactCreateModal({
       role="dialog"
       aria-modal
       aria-label={dialogLabel}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) =>
+        handleModalBackdropClick(e, handleClose, isDirty, !saving)
+      }
     >
       <div className={shellCls}>
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
@@ -168,7 +190,7 @@ export function ContactCreateModal({
             type="button"
             className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-base font-black shadow-[0_8px_16px_rgba(15,23,42,0.08)]"
             aria-label="Fermer"
-            onClick={onClose}
+            onClick={handleClose}
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -197,7 +219,10 @@ export function ContactCreateModal({
                     className="w-full border-none bg-transparent text-[13px] font-extrabold outline-none"
                     maxLength={30}
                     value={first}
-                    onChange={(e) => setFirst(e.target.value)}
+                    onChange={(e) => {
+                      setFirst(e.target.value);
+                      setValidationError(null);
+                    }}
                   />
                 </div>
               </div>
@@ -252,7 +277,10 @@ export function ContactCreateModal({
                   placeholder="06 12 34 56 78"
                   className="w-full min-w-0 border-none bg-transparent text-[13px] font-extrabold text-slate-900 outline-none placeholder:text-slate-400"
                   value={phone}
-                  onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}
+                  onChange={(e) => {
+                    setPhone(normalizeFRPhone(e.target.value));
+                    setValidationError(null);
+                  }}
                   aria-invalid={phoneInvalid}
                   aria-describedby={
                     phoneInvalid ? "contact-create-phone-err" : undefined
@@ -350,7 +378,7 @@ export function ContactCreateModal({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ProtoBtn disabled={saving} onClick={onClose}>
+            <ProtoBtn disabled={saving} onClick={handleClose}>
               Annuler
             </ProtoBtn>
             <ProtoBtn

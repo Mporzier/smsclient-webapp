@@ -14,7 +14,15 @@ import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { insertClientsFromImport } from "@/lib/supabase/clients";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CloudUpload, FileSpreadsheet, Info, Loader2, Upload, X } from "lucide-react";
+import {
+  CloudUpload,
+  FileSpreadsheet,
+  Info,
+  Loader2,
+  Upload,
+  X,
+} from "lucide-react";
+import { handleModalBackdropClick } from "./modals/modalFormGuard";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -27,7 +35,6 @@ const ROLE_OPTIONS: ImportColumnRole[] = [
   "first_name",
   "last_name",
 ];
-
 
 /** Chrome / WebKit envoient souvent un clic juste après le drop : évite d’ouvrir le file picker et d’écraser l’import. */
 function fileFromDataTransfer(dt: DataTransfer): File | null {
@@ -333,6 +340,8 @@ export function ImportContactsModal({
     onClose,
   ]);
 
+  const isDirty = fileName !== null || parsed !== null;
+
   if (!open) return null;
 
   return (
@@ -341,7 +350,9 @@ export function ImportContactsModal({
       role="dialog"
       aria-modal
       aria-label="Importer des contacts"
-      onClick={(e) => e.target === e.currentTarget && !importing && onClose()}
+      onClick={(e) =>
+        handleModalBackdropClick(e, onClose, isDirty, !importing)
+      }
     >
       <div className={modalCard}>
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
@@ -398,7 +409,10 @@ export function ImportContactsModal({
               >
                 {fileLoading ? (
                   <>
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#2f6fed]" aria-hidden />
+                    <Loader2
+                      className="mx-auto h-8 w-8 animate-spin text-[#2f6fed]"
+                      aria-hidden
+                    />
                     <p className="mt-3 text-sm font-extrabold text-slate-800">
                       Analyse du fichier en cours…
                     </p>
@@ -441,7 +455,7 @@ export function ImportContactsModal({
               <div className="mt-3 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
                 <Info className="h-4 w-4 shrink-0 text-blue-500" aria-hidden />
                 <p className="m-0 text-center text-xs font-semibold leading-relaxed text-slate-700">
-                  Depuis Excel : Fichier → Enregistrer sous → Format CSV UTF-8
+                  Depuis Excel : Fichier → Enregistrer sous → Format CSV
                 </p>
               </div>
             </div>
@@ -457,10 +471,17 @@ export function ImportContactsModal({
             <>
               {fileName && (
                 <div className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
-                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
-                  <span className="text-sm font-bold text-slate-800">{fileName}</span>
+                  <FileSpreadsheet
+                    className="h-4 w-4 shrink-0 text-emerald-500"
+                    aria-hidden
+                  />
+                  <span className="text-sm font-bold text-slate-800">
+                    {fileName}
+                  </span>
                   <span className="text-xs font-semibold text-slate-500">
-                    — {parsed.rows.length} ligne{parsed.rows.length > 1 ? "s" : ""} détectée{parsed.rows.length > 1 ? "s" : ""}
+                    — {parsed.rows.length} ligne
+                    {parsed.rows.length > 1 ? "s" : ""} détectée
+                    {parsed.rows.length > 1 ? "s" : ""}
                   </span>
                   <button
                     type="button"
@@ -550,13 +571,18 @@ export function ImportContactsModal({
                       <tr className="bg-slate-50">
                         {parsed.headers.map((h, i) => {
                           const role = roles[i];
-                          const label = role && role !== "skip" ? IMPORT_ROLE_LABELS[role] : (h || `Colonne ${i + 1}`);
+                          const label =
+                            role && role !== "skip"
+                              ? IMPORT_ROLE_LABELS[role]
+                              : h || `Colonne ${i + 1}`;
                           return (
                             <th
                               key={`ph-${i}`}
                               className={cn(
                                 "border-b border-slate-200 px-2 py-2 text-left font-extrabold",
-                                role && role !== "skip" ? "text-[#2f6fed]" : "text-slate-500"
+                                role && role !== "skip"
+                                  ? "text-[#2f6fed]"
+                                  : "text-slate-500"
                               )}
                             >
                               {label}
@@ -568,19 +594,29 @@ export function ImportContactsModal({
                     <tbody>
                       {previewRows.map((cells, ri) => {
                         const phoneColIdx = roles.indexOf("phone");
-                        const phoneVal = phoneColIdx >= 0 ? (cells[phoneColIdx] ?? "") : "";
-                        const isInvalid = phoneColIdx >= 0 && !looksLikeFrPhone(phoneVal);
+                        const phoneVal =
+                          phoneColIdx >= 0 ? cells[phoneColIdx] ?? "" : "";
+                        const isInvalid =
+                          phoneColIdx >= 0 && !looksLikeFrPhone(phoneVal);
                         return (
-                          <tr key={ri} className={isInvalid ? "bg-rose-50/60" : ""}>
+                          <tr
+                            key={ri}
+                            className={isInvalid ? "bg-rose-50/60" : ""}
+                          >
                             {parsed.headers.map((_, ci) => {
                               const raw = cells[ci] ?? "";
-                              const display = ci === phoneColIdx && raw ? formatFrPhoneDisplay(raw) : raw;
+                              const display =
+                                ci === phoneColIdx && raw
+                                  ? formatFrPhoneDisplay(raw)
+                                  : raw;
                               return (
                                 <td
                                   key={ci}
                                   className={cn(
                                     "border-b border-slate-100 px-2 py-1.5 font-semibold",
-                                    isInvalid ? "text-rose-600" : "text-slate-600"
+                                    isInvalid
+                                      ? "text-rose-600"
+                                      : "text-slate-600"
                                   )}
                                 >
                                   <span className="line-clamp-2 break-all">

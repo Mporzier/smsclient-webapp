@@ -4,14 +4,9 @@ export type AppRoute =
   | "campagnes"
   | "statistiques"
   | "parametres"
-  | "deconnexion"
   | "nouvelle-campagne-1"
   | "nouvelle-campagne-2"
   | "nouvelle-campagne-3"
-  | "ajouter-contact-1"
-  | "ajouter-contact-2"
-  | "creer-groupe-1"
-  | "creer-groupe-2"
   | "acheter-credits";
 
 export const APP_ROUTES: AppRoute[] = [
@@ -20,14 +15,9 @@ export const APP_ROUTES: AppRoute[] = [
   "campagnes",
   "statistiques",
   "parametres",
-  "deconnexion",
   "nouvelle-campagne-1",
   "nouvelle-campagne-2",
   "nouvelle-campagne-3",
-  "ajouter-contact-1",
-  "ajouter-contact-2",
-  "creer-groupe-1",
-  "creer-groupe-2",
   "acheter-credits",
 ];
 
@@ -41,34 +31,21 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   campagnes: "Campagnes",
   statistiques: "Statistiques",
   parametres: "Paramètres",
-  deconnexion: "Déconnexion",
   "nouvelle-campagne-1": "Nouvelle campagne — Destinataires",
   "nouvelle-campagne-2": "Nouvelle campagne — Message",
   "nouvelle-campagne-3": "Nouvelle campagne — Confirmation",
-  "ajouter-contact-1": "Ajouter un contact — Informations",
-  "ajouter-contact-2": "Ajouter un contact — Vérification",
-  "creer-groupe-1": "Créer un groupe — Informations",
-  "creer-groupe-2": "Créer un groupe — Contacts",
   "acheter-credits": "Acheter des crédits",
 };
 
 /** Nav item highlight: which sidebar key is “active” */
 export function navOverrideForRoute(route: AppRoute): string {
   if (route.startsWith("nouvelle-campagne-")) return "campagnes";
-  if (route.startsWith("ajouter-contact-")) return "contacts";
-  if (route.startsWith("creer-groupe-")) return "groupes";
   return route;
 }
 
-export function parseHash(raw: string): {
-  landing: null;
-  route: AppRoute;
-} {
+export function parseHash(raw: string): AppRoute {
   const h = raw.replace(/^#/, "").trim();
-  if (h === "" || h === "home") return { landing: null, route: "contacts" };
-  if (h === "features") return { landing: null, route: "contacts" };
-  if (h === "ajouter-contact-3")
-    return { landing: null, route: "ajouter-contact-2" };
-  if (isAppRoute(h)) return { landing: null, route: h };
-  return { landing: null, route: "contacts" };
+  if (h === "" || h === "home" || h === "features") return "contacts";
+  if (isAppRoute(h)) return h;
+  return "contacts";
 }

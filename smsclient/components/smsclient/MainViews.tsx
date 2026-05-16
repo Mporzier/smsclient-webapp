@@ -7,7 +7,6 @@ export {
   AcheterCreditsView,
   CampagnesView,
   ContactsView,
-  DeconnexionView,
   GroupesView,
   ParametresView,
   StatistiquesView,

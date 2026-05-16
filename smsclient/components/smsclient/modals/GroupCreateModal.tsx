@@ -4,6 +4,12 @@ import { ProtoBtn } from "@/components/smsclient/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { overlayCls } from "./modalChrome";
+import {
+  groupFormSnapshotsEqual,
+  handleModalBackdropClick,
+  useModalFormDirty,
+  type GroupFormSnapshot,
+} from "./modalFormGuard";
 
 export type GroupCreateModalContactRow = {
   id: string;
@@ -141,6 +147,13 @@ export function GroupCreateModal({
     }
   }, [name, desc, selectedIds, onCreated, onClose]);
 
+  const formSnapshot: GroupFormSnapshot = {
+    name,
+    description: desc,
+    selectedIds,
+  };
+  const isDirty = useModalFormDirty(open, formSnapshot, groupFormSnapshotsEqual);
+
   if (!open) return null;
 
   return (
@@ -149,7 +162,9 @@ export function GroupCreateModal({
       role="dialog"
       aria-modal
       aria-label="Créer un groupe"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) =>
+        handleModalBackdropClick(e, onClose, isDirty, !saving)
+      }
     >
       <div className={shellCls}>
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
