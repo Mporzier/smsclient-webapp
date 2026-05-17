@@ -42,7 +42,7 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
 import { type ContactRowData } from "@/lib/types/contact";
-import { isValidFrMobile } from "@/lib/proto/smsUtils";
+import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import { parisLocalToISO, plusTenMinutesParis } from "@/lib/proto/timezone";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
@@ -344,7 +344,7 @@ export function PrototypeApp() {
     setContactEditRow(row);
     setCmFirst(row.firstName);
     setCmLast(row.lastName);
-    setCmPhone(row.phone);
+    setCmPhone(formatFrPhoneInput(row.phone));
     setCmNotes(row.notes);
     setCmGroups([...row.groups]);
     setContactModalOpen(true);

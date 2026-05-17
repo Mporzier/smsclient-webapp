@@ -16,8 +16,8 @@ import {
   Plus,
   Search,
   Send,
+  Contact,
   Settings,
-  Tags,
   Users,
 } from "lucide-react";
 
@@ -131,13 +131,13 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
       id: "contacts",
       label: "Contacts",
       hash: "contacts",
-      icon: <Users className={navMainIconClass} aria-hidden />,
+      icon: <Contact className={navMainIconClass} aria-hidden />,
     },
     {
       id: "groupes",
       label: "Groupes",
       hash: "groupes",
-      icon: <Tags className={navMainIconClass} aria-hidden />,
+      icon: <Users className={navMainIconClass} aria-hidden />,
     },
     {
       id: "campagnes",

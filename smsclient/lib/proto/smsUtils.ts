@@ -47,25 +47,31 @@ export function coerceFrPhoneForImport(raw: unknown): string {
   return t;
 }
 
+function frPhoneDigitsOnly(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0033")) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith("33") && digits.length > 2) digits = `0${digits.slice(2)}`;
+  else if (digits.length === 9 && /^[67]/.test(digits)) digits = `0${digits}`;
+  return digits.slice(0, 10);
+}
+
+/** Saisie progressive : 10 chiffres max, espaces tous les 2 (ex. 06 12 34 56 78). */
+export function formatFrPhoneInput(raw: string): string {
+  const digits = frPhoneDigitsOnly(raw);
+  if (!digits) return "";
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ");
+}
+
 export function normalizeFRPhone(v: string): string {
+  const formatted = formatFrPhoneInput(v);
+  if (formatted) return formatted;
+
   let s = v.trim().replace(/^\uFEFF/, "");
+  if (!s) return "";
   s = s.replace(/[\s\u00a0\u2007\u202f]/g, " ");
   s = s.replace(/[.\-]/g, " ");
   s = s.replace(/\((\s*0\s*)\)/g, " ");
-  s = s.replace(/[^0-9+]/g, "");
-  if (s.startsWith("0033")) s = "0" + s.slice(4);
-  else if (s.startsWith("+33")) s = "0" + s.slice(3);
-
-  let digits = s.replace(/[^0-9]/g, "");
-  if (digits.length === 11 && digits.startsWith("33")) {
-    digits = "0" + digits.slice(2);
-  } else if (digits.length === 9 && /^[6-7]/.test(digits)) {
-    digits = "0" + digits;
-  }
-  if (digits.length === 10 && digits.startsWith("0")) {
-    return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
-  }
-  return s.length > 0 ? s : v.trim();
+  return s.replace(/[^0-9+]/g, "").length > 0 ? s : v.trim();
 }
 
 /** Mobile FR affiché (ex. 06 …) → +33… pour stockage / unique constraint */

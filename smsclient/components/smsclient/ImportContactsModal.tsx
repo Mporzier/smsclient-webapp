@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { handleModalBackdropClick } from "./modals/modalFormGuard";
+import { modalCloseBtn } from "./modals/modalChrome";
 
 const overlayCls =
   "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
@@ -367,7 +368,7 @@ export function ImportContactsModal({
           <button
             type="button"
             disabled={importing}
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)] disabled:opacity-50"
+            className={modalCloseBtn}
             aria-label="Fermer"
             onClick={onClose}
           >
@@ -536,7 +537,7 @@ export function ImportContactsModal({
                           <td className="border-b border-slate-100 px-2 py-2">
                             <select
                               className={cn(
-                                "w-full max-w-[260px] rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm font-extrabold",
+                                "w-full max-w-[260px] rounded-xl border border-slate-200 bg-transparent px-2 py-2 text-sm font-extrabold",
                                 roles[i] === "phone" &&
                                   "border-[#2f6fed] ring-2 ring-[#2f6fed]/20"
                               )}

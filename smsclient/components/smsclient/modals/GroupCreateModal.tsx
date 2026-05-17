@@ -3,7 +3,7 @@
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
-import { overlayCls } from "./modalChrome";
+import { modalCloseBtn, overlayCls } from "./modalChrome";
 import {
   groupFormSnapshotsEqual,
   handleModalBackdropClick,
@@ -175,7 +175,7 @@ export function GroupCreateModal({
           </div>
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+            className={modalCloseBtn}
             aria-label="Fermer"
             onClick={onClose}
           >
@@ -192,7 +192,7 @@ export function GroupCreateModal({
                 </span>
                 <span className="text-xs text-slate-500">{name.length}/40</span>
               </label>
-              <div className="mt-2.5 flex h-[46px] min-w-0 items-center rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5">
+              <div className="mt-2.5 flex h-[46px] min-w-0 items-center rounded-[14px] border border-[#dfe6f2] bg-transparent px-3.5">
                 <input
                   className="min-w-0 w-full border-none bg-transparent text-sm font-extrabold outline-none"
                   maxLength={40}
@@ -212,7 +212,7 @@ export function GroupCreateModal({
                   {desc.length}/120
                 </span>
               </label>
-              <div className="mt-2.5 flex min-h-[88px] min-w-0 items-start rounded-[14px] border border-[#dfe6f2] bg-slate-50 px-3.5 py-2">
+              <div className="mt-2.5 flex min-h-[88px] min-w-0 items-start rounded-[14px] border border-[#dfe6f2] bg-transparent px-3.5 py-2">
                 <textarea
                   className="min-h-[72px] w-full min-w-0 resize-y border-none bg-transparent text-sm font-extrabold leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
                   maxLength={120}
@@ -255,7 +255,7 @@ export function GroupCreateModal({
               </div>
             </div>
 
-            <div className="flex h-10 shrink-0 max-w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500 shadow-[0_6px_14px_rgba(15,23,42,0.06)]">
+            <div className="flex h-10 shrink-0 max-w-full items-center gap-2 rounded-2xl border border-slate-200 bg-transparent px-3 text-sm font-semibold text-slate-500 shadow-[0_6px_14px_rgba(15,23,42,0.06)]">
               <Search className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
               <input
                 className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"

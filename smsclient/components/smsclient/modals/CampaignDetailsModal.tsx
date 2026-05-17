@@ -5,7 +5,7 @@ import { ProtoBtn } from "@/components/smsclient/ui";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { useEffect } from "react";
 import { Users, X } from "lucide-react";
-import { overlayCls } from "./modalChrome";
+import { modalCloseBtn, overlayCls } from "./modalChrome";
 
 const GROUP_COLORS: { bg: string; border: string; text: string }[] = [
   { bg: "bg-indigo-50", border: "border-indigo-100", text: "text-indigo-700" },
@@ -93,7 +93,7 @@ export function CampaignDetailsModal({
           </div>
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-lg font-black shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+            className={modalCloseBtn}
             aria-label="Fermer"
             onClick={onClose}
           >

@@ -130,7 +130,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 Prénom *
               </label>
               <input
-                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
+                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 maxLength={30}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -142,7 +142,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 Nom
               </label>
               <input
-                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
+                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 maxLength={30}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -154,7 +154,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 Téléphone *
               </label>
               <input
-                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
+                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
                 inputMode="tel"
                 value={phone}
                 onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}

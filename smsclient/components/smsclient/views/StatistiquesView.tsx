@@ -146,7 +146,7 @@ export function StatistiquesView(props: StatsProps) {
             <div className="text-xl font-black text-slate-900">Choisir une période</div>
             <button
               type="button"
-              className="grid h-[42px] w-[42px] place-items-center rounded-[14px] border border-slate-300/40 bg-white text-lg font-black"
+              className="grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-[14px] border border-slate-300/40 bg-white text-lg font-black transition-colors hover:bg-slate-50"
               onClick={() => setStatsOpen(false)}
             >
               <X className="h-5 w-5" aria-hidden />
@@ -157,7 +157,7 @@ export function StatistiquesView(props: StatsProps) {
               <span className="text-base font-black text-slate-600">Du</span>
               <input
                 type="date"
-                className="h-[46px] rounded-[14px] border border-slate-300/40 bg-white px-3 text-base font-black"
+                className="h-[46px] rounded-[14px] border border-slate-300/40 bg-transparent px-3 text-base font-black"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
@@ -166,7 +166,7 @@ export function StatistiquesView(props: StatsProps) {
               <span className="text-base font-black text-slate-600">Au</span>
               <input
                 type="date"
-                className="h-[46px] rounded-[14px] border border-slate-300/40 bg-white px-3 text-base font-black"
+                className="h-[46px] rounded-[14px] border border-slate-300/40 bg-transparent px-3 text-base font-black"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />

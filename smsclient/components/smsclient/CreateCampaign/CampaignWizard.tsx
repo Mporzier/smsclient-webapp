@@ -750,7 +750,7 @@ export function CampaignWizard({
                     ? "Numéros saisis"
                     : "Sélection de contacts"}
                 </h2>
-                <div className="mt-2.5 flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500">
+                <div className="mt-2.5 flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-transparent px-3 text-sm font-semibold text-slate-500">
                   <input
                     className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
                     placeholder="Rechercher un contact par nom, téléphone ou groupe"
@@ -762,7 +762,7 @@ export function CampaignWizard({
                 </div>
                 {recipientMode === "numbers" ? (
                   <textarea
-                    className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-900 outline-none"
+                    className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-slate-200 bg-transparent p-3 text-sm font-semibold text-slate-900 outline-none"
                     placeholder="Ex : 0612457890, 0677123456 ou un numéro par ligne"
                     value={manualNumbers}
                     onChange={(e) => setManualNumbers(e.target.value)}
@@ -1003,7 +1003,7 @@ export function CampaignWizard({
               </label>
               <textarea
                 className={cn(
-                  "mt-2 min-h-[140px] w-full resize-none rounded-2xl border bg-slate-50 p-3.5 text-sm font-extrabold text-slate-900 outline-none",
+                  "mt-2 min-h-[140px] w-full resize-none rounded-2xl border bg-transparent p-3.5 text-sm font-extrabold text-slate-900 outline-none",
                   stepErrors.length > 0 && !sms.trim()
                     ? "border-rose-300 ring-2 ring-rose-100"
                     : "border-[#dfe6f2]",
@@ -1013,7 +1013,7 @@ export function CampaignWizard({
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 <input
-                  className="h-10 min-w-[260px] flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
+                  className="h-10 min-w-[260px] flex-1 rounded-xl border border-slate-200 bg-transparent px-3 text-sm font-semibold text-slate-900 outline-none"
                   placeholder="Ajouter un lien URL (optionnel)"
                   value={messageUrl}
                   onChange={(e) => setMessageUrl(e.target.value)}

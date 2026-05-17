@@ -101,7 +101,7 @@ export function ParametresView({
   onInvoiceClick,
 }: ParametresViewProps) {
   const inp =
-    "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
+    "h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
   const lbl = "mb-1.5 block text-xs font-black text-slate-600";
   const [qrImage, setQrImage] = useState<string>("");
   const [regenLoading, setRegenLoading] = useState(false);

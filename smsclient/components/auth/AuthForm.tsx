@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const inputCls =
-  "mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
+  "mt-2 w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
 
 const inputErrorCls = `${inputCls} border-rose-300 focus:border-rose-500 focus:ring-rose-500/20`;
 
