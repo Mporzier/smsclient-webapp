@@ -6,15 +6,7 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Check,
-  GroupIcon,
-  Phone,
-  Trash2,
-  UserPlus,
-  Users,
-  X,
-} from "lucide-react";
+import { Check, Phone, Plus, Trash2, UserPlus, Users, X } from "lucide-react";
 import {
   innerInputSm,
   innerTextareaSm,
@@ -56,6 +48,16 @@ const fieldShell =
 
 const inpText =
   "w-full border-none bg-transparent text-[13px] font-normal text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal";
+
+const modalTitleCls = "text-base font-semibold tracking-tight text-slate-900";
+const fieldLabelCls = "text-xs font-semibold text-slate-700";
+const fieldMetaCls = "text-[11px] font-normal text-slate-500";
+const labelIconBadgeCls =
+  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed]";
+const hintTextCls = "text-[11px] font-normal leading-snug text-slate-600";
+const errorTextCls = "text-xs font-medium text-rose-800";
+const newGroupBtnCls =
+  "w-full !h-9 !justify-center !gap-2 !text-xs !font-medium !border-[#2f6fed]/50 !bg-gradient-to-br !from-blue-50 !via-indigo-50/80 !to-blue-50/60 !text-[#2f6fed] !shadow-[0_0_0_1px_rgba(47,111,237,0.12),0_6px_18px_rgba(47,111,237,0.16)] hover:!border-[#2f6fed] hover:!from-blue-50 hover:!to-indigo-50 hover:!shadow-[0_0_0_1px_rgba(47,111,237,0.2),0_8px_22px_rgba(47,111,237,0.22)]";
 
 function FrFlagIcon({ className }: { className?: string }) {
   return (
@@ -227,9 +229,9 @@ export function ContactCreateModal({
             >
               <UserPlus className="h-5 w-5" strokeWidth={2.25} />
             </div>
-            <div className="min-w-0 text-base font-black text-slate-900">
+            <h2 className={cn("m-0 min-w-0", modalTitleCls)}>
               {mode === "edit" ? "Modifier le contact" : "Ajouter un contact"}
-            </div>
+            </h2>
           </div>
           <button
             type="button"
@@ -244,20 +246,23 @@ export function ContactCreateModal({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50">
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
             {validationError && (
-              <p className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-900">
+              <p
+                className={cn(
+                  "rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5",
+                  errorTextCls
+                )}
+              >
                 {validationError}
               </p>
             )}
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className={fieldShell}>
-                <label className="flex justify-between text-[12px] font-black">
-                  <span>
+                <label className="flex justify-between gap-2">
+                  <span className={fieldLabelCls}>
                     Prénom <span className="text-red-500">*</span>
                   </span>
-                  <span className="text-[11px] text-slate-500">
-                    {first.length}/30
-                  </span>
+                  <span className={fieldMetaCls}>{first.length}/30</span>
                 </label>
                 <div className={cn(innerInputSm, "mt-1.5 h-9")}>
                   <input
@@ -272,13 +277,11 @@ export function ContactCreateModal({
                 </div>
               </div>
               <div className={fieldShell}>
-                <label className="flex justify-between text-[12px] font-black">
-                  <span>Nom</span>
-                  <span className="text-[11px] text-slate-500">
-                    {last.length}/30
-                  </span>
+                <label className="flex justify-between gap-2">
+                  <span className={fieldLabelCls}>Nom</span>
+                  <span className={fieldMetaCls}>{last.length}/30</span>
                 </label>
-                <div className="mt-1.5 flex h-9 items-center rounded-lg border border-[#dfe6f2] bg-transparent px-2.5">
+                <div className={cn(innerInputSm, "mt-1.5 h-9")}>
                   <input
                     className={inpText}
                     maxLength={30}
@@ -291,14 +294,11 @@ export function ContactCreateModal({
 
             <div className={fieldShell}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <label
-                  className="text-[12px] font-black"
-                  htmlFor="contact-create-phone"
-                >
+                <label className={fieldLabelCls} htmlFor="contact-create-phone">
                   Téléphone <span className="text-red-500">*</span>
                 </label>
                 <span
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600"
                   title="Numéro mobile français : 10 chiffres, commence par 0 (ex. 06 12 34 56 78)."
                 >
                   <FrFlagIcon />
@@ -347,7 +347,7 @@ export function ContactCreateModal({
               {phoneInvalid && (
                 <p
                   id="contact-create-phone-err"
-                  className="mt-1.5 text-[11px] font-bold leading-snug text-rose-700"
+                  className={cn("mt-1.5", hintTextCls, "text-rose-700")}
                 >
                   Indique un mobile à 10 chiffres (ex. 06 12 34 56 78).
                 </p>
@@ -355,11 +355,9 @@ export function ContactCreateModal({
             </div>
 
             <div className={fieldShell}>
-              <label className="flex justify-between text-[12px] font-black">
-                <span>Notes</span>
-                <span className="text-[11px] text-slate-500">
-                  {notes.length}/280
-                </span>
+              <label className="flex justify-between gap-2">
+                <span className={fieldLabelCls}>Notes</span>
+                <span className={fieldMetaCls}>{notes.length}/280</span>
               </label>
               <div className={cn(innerTextareaSm, "mt-1.5")}>
                 <textarea
@@ -375,24 +373,21 @@ export function ContactCreateModal({
 
             <div className={fieldShell}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="flex items-center gap-1.5 text-[12px] font-black text-slate-900">
-                  <span
-                    className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[#dfe6f2] bg-gradient-to-br from-violet-50 to-indigo-50 text-[#2f6fed] shadow-[0_2px_6px_rgba(47,111,237,0.08)]"
-                    aria-hidden
-                  >
-                    <Users className="h-3.5 w-3.5" strokeWidth={2.25} />
+                <label className="flex items-center gap-1.5">
+                  <span className={labelIconBadgeCls} aria-hidden>
+                    <Users className="h-3.5 w-3.5" strokeWidth={2} />
                   </span>
-                  Groupes
+                  <span className={fieldLabelCls}>Groupes</span>
                 </label>
                 {groups.length > 0 && (
-                  <span className="text-[11px] font-bold text-slate-500">
+                  <span className={fieldMetaCls}>
                     {groups.length} sélectionné{groups.length > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
               <div className="mt-1.5 max-h-[min(36vh,280px)] overflow-y-auto rounded-lg border border-[#dfe6f2] bg-slate-50/80 p-2.5">
                 {groupOptions.length === 0 ? (
-                  <p className="m-0 px-1 py-2 text-center text-[11px] font-bold text-slate-500">
+                  <p className={cn("m-0 px-1 py-2 text-center", hintTextCls)}>
                     Aucun groupe — crée-en un ci-dessous.
                   </p>
                 ) : (
@@ -410,10 +405,10 @@ export function ContactCreateModal({
                           aria-pressed={selected}
                           onClick={() => toggleContactGroup(g)}
                           className={cn(
-                            "relative flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-[12px] font-extrabold leading-snug transition-all",
+                            "relative flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs font-medium leading-snug transition-all",
                             selected
-                              ? "border-[#2f6fed] bg-blue-50/90 text-[#1e4fc4] shadow-[0_6px_14px_rgba(47,111,237,0.14)] ring-2 ring-blue-200/70"
-                              : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)]"
+                              ? "border-[#2f6fed] bg-blue-50/90 text-[#1e4fc4] shadow-[0_4px_14px_rgba(47,111,237,0.12)] ring-1 ring-blue-200/80"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/80"
                           )}
                         >
                           <span
@@ -440,12 +435,13 @@ export function ContactCreateModal({
               </div>
               <div className="mt-2">
                 <ProtoBtn
-                  className="w-full !h-9 !justify-center !text-[12px]"
+                  className={newGroupBtnCls}
                   onClick={() => {
                     onCreateGroupRequest();
                   }}
                 >
-                  + Nouveau groupe…
+                  <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                  Nouveau groupe…
                 </ProtoBtn>
               </div>
             </div>
@@ -453,7 +449,12 @@ export function ContactCreateModal({
         </div>
 
         {saveError && (
-          <div className="shrink-0 border-t border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-900">
+          <div
+            className={cn(
+              "shrink-0 border-t border-rose-200 bg-rose-50 px-4 py-2",
+              errorTextCls
+            )}
+          >
             {saveError}
           </div>
         )}
@@ -465,7 +466,7 @@ export function ContactCreateModal({
                 type="button"
                 disabled={saving}
                 onClick={onDeleteContact}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Supprimer

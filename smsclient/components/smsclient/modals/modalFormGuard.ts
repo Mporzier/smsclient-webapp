@@ -50,6 +50,18 @@ export function groupFormSnapshotsEqual(
   );
 }
 
+export type GroupQuickFormSnapshot = {
+  name: string;
+  description: string;
+};
+
+export function groupQuickFormSnapshotsEqual(
+  a: GroupQuickFormSnapshot,
+  b: GroupQuickFormSnapshot,
+): boolean {
+  return a.name === b.name && a.description === b.description;
+}
+
 /**
  * Ferme la modale au clic sur l’overlay uniquement si le formulaire n’a pas changé.
  */

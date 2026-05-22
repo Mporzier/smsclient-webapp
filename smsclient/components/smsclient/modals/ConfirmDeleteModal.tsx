@@ -1,7 +1,7 @@
 "use client";
 
 import { ProtoBtn } from "@/components/smsclient/ui";
-import { overlayCls } from "./modalChrome";
+import { overlayCls, overlayStackedCls } from "./modalChrome";
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
@@ -10,6 +10,8 @@ type ConfirmDeleteModalProps = {
   title: string;
   description: string;
   confirmLabel?: string;
+  /** Au-dessus d’une autre modale (ex. édition de groupe). */
+  stacked?: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 };
@@ -19,6 +21,7 @@ export function ConfirmDeleteModal({
   title,
   description,
   confirmLabel = "Supprimer",
+  stacked = false,
   onConfirm,
   onCancel,
 }: ConfirmDeleteModalProps) {
@@ -56,7 +59,7 @@ export function ConfirmDeleteModal({
 
   return (
     <div
-      className={overlayCls}
+      className={stacked ? overlayStackedCls : overlayCls}
       role="alertdialog"
       aria-modal
       aria-label={title}

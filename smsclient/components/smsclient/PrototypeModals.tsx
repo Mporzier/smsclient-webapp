@@ -4,6 +4,8 @@ export {
   CampaignDetailsModal,
   ConfirmDeleteModal,
   ContactCreateModal,
-  GroupEditModal,
+  GroupModal,
   GroupCreateModal,
+  GroupEditModal,
+  GroupQuickCreateModal,
 } from "./modals";

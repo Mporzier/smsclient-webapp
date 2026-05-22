@@ -13,7 +13,7 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
     accessorKey: "name",
     header: "Nom du groupe",
     cell: ({ getValue }) => (
-      <CellTruncate as="div" className="font-extrabold">
+      <CellTruncate as="div" className="font-semibold">
         {getValue<string>()}
       </CellTruncate>
     ),
@@ -30,13 +30,17 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
     accessorKey: "lastCampaignLabel",
     header: "Dernière campagne",
     size: 160,
-    cell: ({ getValue }) => <CellTruncate as="div">{getValue<string>()}</CellTruncate>,
+    cell: ({ getValue }) => (
+      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+    ),
   },
   {
     accessorKey: "createdLabel",
     header: "Création",
     size: 130,
-    cell: ({ getValue }) => <CellTruncate as="div">{getValue<string>()}</CellTruncate>,
+    cell: ({ getValue }) => (
+      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+    ),
   },
 ];
 
@@ -94,7 +98,9 @@ export function GroupesView({
             className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
             checked={selectedIds.size > 0 && selectedIds.size === rows.length}
             ref={(el) => {
-              if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < rows.length;
+              if (el)
+                el.indeterminate =
+                  selectedIds.size > 0 && selectedIds.size < rows.length;
             }}
             onChange={toggleAll}
           />
@@ -157,7 +163,9 @@ export function GroupesView({
 
       {showBigEmpty ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-12 text-center">
-          <p className="m-0 text-base font-extrabold text-slate-800">Aucun groupe</p>
+          <p className="m-0 text-base font-extrabold text-slate-800">
+            Aucun groupe
+          </p>
           <p className="mt-2 text-sm font-semibold text-slate-600">
             Crée ton premier segment avec « Créer un groupe ».
           </p>

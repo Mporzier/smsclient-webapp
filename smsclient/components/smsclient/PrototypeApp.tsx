@@ -16,8 +16,8 @@ import {
   CampaignDetailsModal,
   ConfirmDeleteModal,
   ContactCreateModal,
-  GroupEditModal,
-  GroupCreateModal,
+  GroupModal,
+  GroupQuickCreateModal,
 } from "@/components/smsclient/PrototypeModals";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
@@ -136,6 +136,8 @@ export function PrototypeApp() {
 
 
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupQuickFromContactOpen, setGroupQuickFromContactOpen] =
+    useState(false);
   const [groupEditOpen, setGroupEditOpen] = useState(false);
   const [groupEditRow, setGroupEditRow] = useState<GroupRowData | null>(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -172,6 +174,8 @@ export function PrototypeApp() {
       contacts.map((c) => ({
         id: c.id,
         name: c.name,
+        firstName: c.firstName,
+        lastName: c.lastName,
         phone: c.phone,
         groups: c.groups,
       })),
@@ -308,6 +312,7 @@ export function PrototypeApp() {
   useEffect(() => {
     const anyModal =
       groupModalOpen ||
+      groupQuickFromContactOpen ||
       groupEditOpen ||
       contactModalOpen ||
       importContactsOpen;
@@ -317,6 +322,7 @@ export function PrototypeApp() {
     };
   }, [
     groupModalOpen,
+    groupQuickFromContactOpen,
     groupEditOpen,
     contactModalOpen,
     importContactsOpen,
@@ -410,10 +416,28 @@ export function PrototypeApp() {
 
   const handleDeleteGroupFromModal = useCallback(() => {
     if (!groupEditRow) return;
-    setGroupEditOpen(false);
-    setGroupEditRow(null);
-    handleDeleteGroups([groupEditRow.id]);
-  }, [groupEditRow, handleDeleteGroups]);
+    const id = groupEditRow.id;
+    const groupName = groupEditRow.name;
+    openConfirmDelete(
+      "Supprimer ce groupe ?",
+      `Cette action est irréversible. Le groupe « ${groupName} » sera définitivement supprimé. Les contacts ne seront pas supprimés.`,
+      async () => {
+        const { error } = await deleteGroups(supabase, [id]);
+        if (error) throw error;
+        setConfirmDeleteOpen(false);
+        setGroupEditOpen(false);
+        setGroupEditRow(null);
+        refreshGroups();
+        showToast("Groupe supprimé.");
+      },
+    );
+  }, [
+    groupEditRow,
+    openConfirmDelete,
+    supabase,
+    refreshGroups,
+    showToast,
+  ]);
 
   const openCampaignComposer = useCallback(
     (preselectedGroupName?: string) => {
@@ -524,6 +548,14 @@ export function PrototypeApp() {
     showToast,
   ]);
 
+  const preselectGroupOnContactForm = useCallback((groupName: string) => {
+    const trimmed = groupName.trim();
+    if (!trimmed) return;
+    setCmGroups((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed]
+    );
+  }, []);
+
   const onGroupCreatedFromModal = useCallback(
     async (name: string, desc: string, selectedContactIds: string[]) => {
       if (!user?.id) {
@@ -543,10 +575,8 @@ export function PrototypeApp() {
       }
       await refreshGroups();
       await refreshContacts();
-      if (trimmed) {
-        setCmGroups((prev) =>
-          prev.includes(trimmed) ? prev : [...prev, trimmed]
-        );
+      if (contactModalOpen) {
+        preselectGroupOnContactForm(trimmed);
       }
       showToast(
         selectedContactIds.length > 0
@@ -556,7 +586,35 @@ export function PrototypeApp() {
           : "Groupe créé"
       );
     },
-    [user, supabase, refreshGroups, refreshContacts, showToast]
+    [
+      user,
+      supabase,
+      refreshGroups,
+      refreshContacts,
+      contactModalOpen,
+      preselectGroupOnContactForm,
+      showToast,
+    ]
+  );
+
+  const onGroupQuickCreatedFromContact = useCallback(
+    async (name: string, desc: string) => {
+      if (!user?.id) {
+        throw new Error("Tu dois être connecté pour créer un groupe.");
+      }
+      const trimmed = name.trim();
+      const { error } = await insertClientGroup(
+        supabase,
+        user.id,
+        trimmed,
+        desc
+      );
+      if (error) throw error;
+      await refreshGroups();
+      preselectGroupOnContactForm(trimmed);
+      showToast("Groupe créé");
+    },
+    [user, supabase, refreshGroups, preselectGroupOnContactForm, showToast]
   );
 
   const openGroupEdit = useCallback((row: GroupRowData) => {
@@ -755,18 +813,21 @@ export function PrototypeApp() {
         {renderRoute(route)}
       </AppShell>
 
-      <GroupCreateModal
+      <GroupModal
+        mode="create"
         open={groupModalOpen}
         onClose={() => setGroupModalOpen(false)}
         contacts={groupModalContacts}
         contactsLoading={contactsLoading}
         onCreated={onGroupCreatedFromModal}
       />
-      <GroupEditModal
+      <GroupModal
+        mode="edit"
         open={groupEditOpen}
         group={groupEditRow}
         contacts={groupModalContacts}
         contactsLoading={contactsLoading}
+        stackedDialogOpen={confirmDeleteOpen}
         onClose={() => {
           setGroupEditOpen(false);
           setGroupEditRow(null);
@@ -795,10 +856,7 @@ export function PrototypeApp() {
         groups={cmGroups}
         setGroups={setCmGroups}
         groupOptions={groupOptions}
-        onCreateGroupRequest={() => {
-          setContactModalOpen(false);
-          setGroupModalOpen(true);
-        }}
+        onCreateGroupRequest={() => setGroupQuickFromContactOpen(true)}
         consentDefaults={
           contactEditRow
             ? { optIn: contactEditRow.optIn, stop: contactEditRow.stopSms }
@@ -806,6 +864,12 @@ export function PrototypeApp() {
         }
         onSaveContact={handleContactSave}
         onDeleteContact={handleDeleteContactFromModal}
+      />
+
+      <GroupQuickCreateModal
+        open={groupQuickFromContactOpen}
+        onClose={() => setGroupQuickFromContactOpen(false)}
+        onCreated={onGroupQuickCreatedFromContact}
       />
 
       <CampaignDetailsModal
@@ -832,6 +896,7 @@ export function PrototypeApp() {
         open={confirmDeleteOpen}
         title={confirmDeleteTitle}
         description={confirmDeleteDesc}
+        stacked={confirmDeleteOpen && (groupEditOpen || contactModalOpen)}
         onConfirm={confirmDeleteAction ?? (async () => {})}
         onCancel={() => setConfirmDeleteOpen(false)}
       />

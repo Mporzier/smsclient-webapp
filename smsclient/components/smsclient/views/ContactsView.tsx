@@ -4,6 +4,12 @@ import { SearchBar } from "@/components/smsclient/Shell";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { cn } from "@/lib/cn";
+import {
+  avatarColor,
+  contactInitials,
+  groupColor,
+  groupTagBase,
+} from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import {
   formatContactGroups,
@@ -13,58 +19,7 @@ import { useMemo, useState } from "react";
 import { Phone, Trash2, UserRound } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const GROUP_COLORS: { bg: string; border: string; text: string }[] = [
-  { bg: "bg-indigo-50", border: "border-indigo-100", text: "text-indigo-700" },
-  {
-    bg: "bg-emerald-50",
-    border: "border-emerald-100",
-    text: "text-emerald-700",
-  },
-  { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-700" },
-  { bg: "bg-rose-50", border: "border-rose-100", text: "text-rose-700" },
-  { bg: "bg-sky-50", border: "border-sky-100", text: "text-sky-700" },
-  { bg: "bg-violet-50", border: "border-violet-100", text: "text-violet-700" },
-  { bg: "bg-orange-50", border: "border-orange-100", text: "text-orange-700" },
-  { bg: "bg-cyan-50", border: "border-cyan-100", text: "text-cyan-700" },
-  {
-    bg: "bg-fuchsia-50",
-    border: "border-fuchsia-100",
-    text: "text-fuchsia-700",
-  },
-  { bg: "bg-lime-50", border: "border-lime-100", text: "text-lime-700" },
-];
-
-const AVATAR_COLORS: { bg: string; text: string }[] = [
-  { bg: "bg-indigo-100", text: "text-indigo-700" },
-  { bg: "bg-emerald-100", text: "text-emerald-700" },
-  { bg: "bg-amber-100", text: "text-amber-700" },
-  { bg: "bg-rose-100", text: "text-rose-700" },
-  { bg: "bg-sky-100", text: "text-sky-700" },
-  { bg: "bg-violet-100", text: "text-violet-700" },
-  { bg: "bg-orange-100", text: "text-orange-700" },
-  { bg: "bg-cyan-100", text: "text-cyan-700" },
-  { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
-  { bg: "bg-teal-100", text: "text-teal-700" },
-];
-
-function avatarColor(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function groupColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  }
-  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
-}
-
-const tagBase =
-  "inline-flex items-center rounded-[10px] border px-2 py-1 text-[12px] font-bold";
+const tagBase = groupTagBase + " py-1 text-[12px] font-bold";
 
 type ContactsProps = {
   rows: ContactRowData[];
@@ -82,9 +37,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
     size: 44,
     header: "",
     cell: ({ row }) => {
-      const f = (row.original.firstName || "").trim();
-      const l = (row.original.lastName || "").trim();
-      const initials = ((f[0] ?? "") + (l[0] ?? "")).toUpperCase() || "?";
+      const initials = contactInitials(row.original);
       const c = avatarColor(row.original.id);
       return (
         <div
