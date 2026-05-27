@@ -9,6 +9,8 @@ export type ContactRowData = {
   phone: string;
   /** Segments (`client_groups`) auxquels le contact est rattaché */
   groups: string[];
+  /** YYYY-MM-DD pour le formulaire, vide si non renseigné */
+  birthday: string;
   notes: string;
   lastSms: string;
   lastSmsBody: string;

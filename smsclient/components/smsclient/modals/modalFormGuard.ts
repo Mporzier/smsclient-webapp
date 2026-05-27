@@ -16,6 +16,7 @@ export type ContactFormSnapshot = {
   first: string;
   last: string;
   phone: string;
+  birthday: string;
   notes: string;
   groups: string[];
 };
@@ -28,6 +29,7 @@ export function contactFormSnapshotsEqual(
     a.first === b.first &&
     a.last === b.last &&
     a.phone === b.phone &&
+    a.birthday === b.birthday &&
     a.notes === b.notes &&
     sortedStringArraysEqual(a.groups, b.groups)
   );

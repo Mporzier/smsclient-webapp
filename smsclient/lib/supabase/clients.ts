@@ -15,6 +15,7 @@ export type ClientRecord = {
   /** Rétrocompat / miroir d’affichage (liste des noms de segments). */
   group_label: string;
   notes: string;
+  birthday: string | null;
   source: string;
   opt_in: boolean;
   stop_sms: boolean;
@@ -30,6 +31,8 @@ export type ContactFormSubmitPayload = {
   phoneDisplay: string;
   /** Noms de segments (`client_groups.name`) — plusieurs possibles. */
   groupLabels: string[];
+  /** YYYY-MM-DD, vide pour effacer */
+  birthday: string;
   notes: string;
   optIn: boolean;
   stop: boolean;
@@ -43,6 +46,19 @@ export function normalizeGroupLabels(raw: string[]): string[] {
     if (t && t !== "Non classé") s.add(t);
   }
   return Array.from(s).sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/** Date ISO (YYYY-MM-DD) depuis la colonne Postgres `date`. */
+function birthdayFromDb(raw: string | null | undefined): string {
+  if (!raw?.trim()) return "";
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(raw.trim());
+  return m?.[1] ?? "";
+}
+
+function birthdayToDb(value: string): string | null {
+  const t = value.trim();
+  if (!t) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : null;
 }
 
 function mirrorGroupColumn(labels: string[]): string {
@@ -76,6 +92,7 @@ export function clientRecordToRow(
     name,
     phone: e164ToFrDisplay(row.phone_e164),
     groups: mergedGroups,
+    birthday: birthdayFromDb(row.birthday),
     notes: row.notes?.trim() ?? "",
     lastSms: formatParisCalendarDate(row.last_sms_sent_at),
     lastSmsBody: row.last_sms_body?.trim() ?? "",
@@ -244,6 +261,7 @@ export async function insertClient(
       last_name: payload.lastName.trim(),
       phone_e164,
       group_label,
+      birthday: birthdayToDb(payload.birthday),
       notes: payload.notes.trim(),
       source: options?.source ?? "Ajout manuel",
       opt_in: payload.optIn,
@@ -435,6 +453,7 @@ export async function updateClient(
       last_name: payload.lastName.trim(),
       phone_e164,
       group_label,
+      birthday: birthdayToDb(payload.birthday),
       notes: payload.notes.trim(),
       opt_in: payload.optIn,
       stop_sms: payload.stop,

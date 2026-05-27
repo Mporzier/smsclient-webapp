@@ -2,8 +2,10 @@ export type AppRoute =
   | "contacts"
   | "groupes"
   | "campagnes"
+  | "automatisations"
   | "statistiques"
   | "parametres"
+  | "qr-boutique"
   | "nouvelle-campagne-1"
   | "nouvelle-campagne-2"
   | "nouvelle-campagne-3"
@@ -13,8 +15,10 @@ export const APP_ROUTES: AppRoute[] = [
   "contacts",
   "groupes",
   "campagnes",
+  "automatisations",
   "statistiques",
   "parametres",
+  "qr-boutique",
   "nouvelle-campagne-1",
   "nouvelle-campagne-2",
   "nouvelle-campagne-3",
@@ -29,8 +33,10 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   contacts: "Contacts",
   groupes: "Groupes",
   campagnes: "Campagnes",
+  automatisations: "Automatisations",
   statistiques: "Statistiques",
   parametres: "Paramètres",
+  "qr-boutique": "QR code boutique",
   "nouvelle-campagne-1": "Nouvelle campagne — Destinataires",
   "nouvelle-campagne-2": "Nouvelle campagne — Message",
   "nouvelle-campagne-3": "Nouvelle campagne — Confirmation",

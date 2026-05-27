@@ -39,6 +39,8 @@ export type ContactCreateModalProps = {
   setLast: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  birthday: string;
+  setBirthday: (v: string) => void;
   notes: string;
   setNotes: (v: string) => void;
   groups: string[];
@@ -97,6 +99,8 @@ export function ContactCreateModal({
   setLast,
   phone,
   setPhone,
+  birthday,
+  setBirthday,
   notes,
   setNotes,
   groups,
@@ -181,6 +185,7 @@ export function ContactCreateModal({
         lastName: last.trim(),
         phoneDisplay: phone,
         groupLabels: groups,
+        birthday,
         notes,
         optIn,
         stop,
@@ -197,6 +202,7 @@ export function ContactCreateModal({
     first,
     last,
     phone,
+    birthday,
     notes,
     groups,
     consentSnapshot,
@@ -206,6 +212,7 @@ export function ContactCreateModal({
     first,
     last,
     phone,
+    birthday,
     notes,
     groups,
   };
@@ -392,6 +399,23 @@ export function ContactCreateModal({
                   Indique un mobile à 10 chiffres (ex. 06 12 34 56 78).
                 </p>
               )}
+            </div>
+
+            <div className={fieldShell}>
+              <label className={fieldLabelCls} htmlFor="contact-create-birthday">
+                Anniversaire
+              </label>
+              <div className={cn(innerInputSm, "mt-1.5 h-9")}>
+                <input
+                  id="contact-create-birthday"
+                  name="birthday"
+                  type="date"
+                  className={inpText}
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
+                />
+              </div>
+              <p className={cn("mt-1.5", hintTextCls)}>Optionnel</p>
             </div>
 
             <div className={fieldShell}>

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   getOrCreateUserQrCode,
   regenerateUserQrCode,
+  updateUserQrWelcomeSms,
   type UserQrCodeRecord,
 } from "@/lib/supabase/qrCodes";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -49,6 +50,24 @@ export function useUserQrCode() {
     setLoading(false);
   }, [userId, supabase]);
 
+  const setWelcomeSmsEnabled = useCallback(
+    async (enabled: boolean) => {
+      if (!userId) return;
+      setError(null);
+      const { data, error: err } = await updateUserQrWelcomeSms(
+        supabase,
+        userId,
+        enabled,
+      );
+      if (err) {
+        setError(err.message);
+        throw err;
+      }
+      setRecord(data);
+    },
+    [userId, supabase],
+  );
+
   useEffect(() => {
     if (authLoading) return;
     queueMicrotask(() => {
@@ -64,9 +83,11 @@ export function useUserQrCode() {
   return {
     record,
     publicUrl,
+    welcomeSmsEnabled: record?.welcome_sms_enabled ?? false,
     loading,
     error,
     refresh,
     regenerate,
+    setWelcomeSmsEnabled,
   };
 }

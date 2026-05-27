@@ -4,10 +4,12 @@ import { AppShell } from "@/components/smsclient/Shell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   AcheterCreditsView,
+  AutomatisationsView,
   CampagnesView,
   ContactsView,
   GroupesView,
   ParametresView,
+  QrCodeView,
   StatistiquesView,
 } from "./MainViews";
 import { CampaignWizard } from "@/components/smsclient/FlowViews";
@@ -19,6 +21,7 @@ import {
   GroupModal,
   GroupQuickCreateModal,
 } from "@/components/smsclient/PrototypeModals";
+import { useAutomations } from "@/hooks/useAutomations";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
 import { useCredits } from "@/hooks/useCredits";
@@ -40,7 +43,9 @@ import {
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
 import { deleteGroups, insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
+import { upsertAutomation } from "@/lib/supabase/automations";
 import { restoreClients, restoreGroups } from "@/lib/supabase/trash";
+import type { AutomationSavePayload } from "@/lib/types/automation";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
@@ -103,6 +108,15 @@ export function PrototypeApp() {
     error: campaignsError,
     refresh: refreshCampaigns,
   } = useCampaigns();
+
+  const automationsEnabled = route === "automatisations";
+  const {
+    rows: automationRows,
+    loading: automationsLoading,
+    error: automationsError,
+    refresh: refreshAutomations,
+  } = useAutomations(automationsEnabled);
+
   const {
     balance: creditsBalance,
     balanceLabel: creditsBalanceLabel,
@@ -121,9 +135,11 @@ export function PrototypeApp() {
   } = useUserProfile();
   const {
     publicUrl: userQrPublicUrl,
+    welcomeSmsEnabled: userQrWelcomeSmsEnabled,
     loading: userQrLoading,
     error: userQrError,
     regenerate: regenerateUserQr,
+    setWelcomeSmsEnabled: setUserQrWelcomeSms,
   } = useUserQrCode();
 
   const trashEnabled = route === "parametres";
@@ -155,6 +171,7 @@ export function PrototypeApp() {
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
   const [cmPhone, setCmPhone] = useState("");
+  const [cmBirthday, setCmBirthday] = useState("");
   const [cmNotes, setCmNotes] = useState("");
   const [cmGroups, setCmGroups] = useState<string[]>([]);
 
@@ -340,6 +357,7 @@ export function PrototypeApp() {
     setCmFirst("");
     setCmLast("");
     setCmPhone("");
+    setCmBirthday("");
     setCmNotes("");
     setCmGroups([]);
     setContactModalOpen(true);
@@ -351,6 +369,7 @@ export function PrototypeApp() {
     setCmFirst(row.firstName);
     setCmLast(row.lastName);
     setCmPhone(formatFrPhoneInput(row.phone));
+    setCmBirthday(row.birthday);
     setCmNotes(row.notes);
     setCmGroups([...row.groups]);
     setContactModalOpen(true);
@@ -517,6 +536,7 @@ export function PrototypeApp() {
       lastName: cmLast.trim() || contactEditRow.lastName,
       phoneDisplay: cmPhone,
       groupLabels: cmGroups,
+      birthday: cmBirthday,
       notes: cmNotes,
       optIn: false,
       stop: true,
@@ -532,10 +552,24 @@ export function PrototypeApp() {
     cmLast,
     cmPhone,
     cmGroups,
+    cmBirthday,
     cmNotes,
     refreshContacts,
     showToast,
   ]);
+
+  const handleAutomationSave = useCallback(
+    async (payload: AutomationSavePayload) => {
+      if (!user?.id) {
+        throw new Error("Tu dois être connecté pour enregistrer une automatisation.");
+      }
+      const { error } = await upsertAutomation(supabase, user.id, payload);
+      if (error) throw error;
+      await refreshAutomations();
+      showToast(payload.enabled ? "Automatisation activée." : "Automatisation enregistrée.");
+    },
+    [user?.id, supabase, refreshAutomations, showToast],
+  );
 
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
@@ -824,6 +858,16 @@ export function PrototypeApp() {
             }}
           />
         );
+      case "automatisations":
+        return (
+          <AutomatisationsView
+            rows={automationRows}
+            contacts={contacts}
+            loading={automationsLoading}
+            error={automationsError}
+            onSave={handleAutomationSave}
+          />
+        );
       case "statistiques":
         return (
           <StatistiquesView
@@ -847,16 +891,31 @@ export function PrototypeApp() {
             unsubscribedContacts={unsubscribedContacts}
           />
         );
+      case "qr-boutique":
+        return (
+          <QrCodeView
+            publicUrl={userQrPublicUrl}
+            loading={userQrLoading}
+            error={userQrError}
+            companyName={profile?.companyName}
+            welcomeSmsEnabled={userQrWelcomeSmsEnabled}
+            onWelcomeSmsChange={async (enabled) => {
+              await setUserQrWelcomeSms(enabled);
+              showToast(
+                enabled
+                  ? "SMS de bienvenue activé."
+                  : "SMS de bienvenue désactivé.",
+              );
+            }}
+            onRegenerate={regenerateUserQr}
+          />
+        );
       case "parametres":
         return (
           <ParametresView
             profileForm={profile ? profileToForm(profile) : null}
             profileLoading={profileLoading}
             onSaveProfile={saveProfile}
-            qrPublicUrl={userQrPublicUrl}
-            qrLoading={userQrLoading}
-            qrError={userQrError}
-            onRegenerateQr={regenerateUserQr}
             purchases={creditPurchases}
             purchasesLoading={creditsLoading}
             onInvoiceClick={(id: string) =>
@@ -968,6 +1027,8 @@ export function PrototypeApp() {
         setLast={setCmLast}
         phone={cmPhone}
         setPhone={setCmPhone}
+        birthday={cmBirthday}
+        setBirthday={setCmBirthday}
         notes={cmNotes}
         setNotes={setCmNotes}
         groups={cmGroups}

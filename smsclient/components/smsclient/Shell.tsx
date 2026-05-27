@@ -1,23 +1,25 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
 import { cn } from "@/lib/cn";
+import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
 import { navOverrideForRoute, ROUTE_TITLES } from "@/lib/proto/routes";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Bell,
   Coins,
   LogOut,
-  PanelLeft,
-  PanelLeftClose,
   Plus,
   Search,
   Send,
+  Zap,
   Contact,
+  QrCode,
   Settings,
   Users,
 } from "lucide-react";
@@ -59,11 +61,18 @@ function polygonToRoundedPath(points: string, radius: number): string {
   return `${path} Z`;
 }
 
-function LogoMark() {
+function LogoMark({ size = 45 }: { size?: number }) {
   const starPoints =
     "41,33 42.25,36.75 46,38 42.25,39.25 41,43 39.75,39.25 36,38 39.75,36.75";
   return (
-    <svg viewBox="-2 -2 62 62" width="45" height="45" fill="none" aria-hidden>
+    <svg
+      viewBox="-2 -2 62 62"
+      width={size}
+      height={size}
+      fill="none"
+      aria-hidden
+      className="shrink-0"
+    >
       <g>
         <path
           fill="#0ea5e9"
@@ -107,6 +116,9 @@ function LogoMark() {
   );
 }
 
+/** Largeur menu latéral + bandeau marque dans le header */
+const SIDEBAR_W = "w-[200px]";
+
 const navMainIconClass = "h-[22px] w-[22px] shrink-0 text-[#2f6fed]";
 const navSubIconClass = "h-[22px] w-[22px] shrink-0 text-[#475569]";
 
@@ -114,8 +126,10 @@ type NavKey =
   | "contacts"
   | "groupes"
   | "campagnes"
+  | "automatisations"
   | "statistiques"
-  | "parametres";
+  | "parametres"
+  | "qr-boutique";
 
 type ShellProps = {
   route: AppRoute;
@@ -147,6 +161,12 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
       icon: <Send className={navMainIconClass} aria-hidden />,
     },
     {
+      id: "automatisations",
+      label: "Automatisations",
+      hash: "automatisations",
+      icon: <Zap className={navMainIconClass} aria-hidden />,
+    },
+    {
       id: "statistiques",
       label: "Statistiques",
       hash: "statistiques",
@@ -168,12 +188,47 @@ export function AppShell({
   onBuyCredits,
   children,
 }: ShellProps) {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
   const router = useRouter();
   const active = navOverrideForRoute(route);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const email = user?.email ?? "";
+
+  const displayName = useMemo(() => {
+    const first = profile?.firstName?.trim() ?? "";
+    const last = profile?.lastName?.trim() ?? "";
+    const full = [first, last].filter(Boolean).join(" ");
+    if (full) return full;
+    const company = profile?.companyName?.trim();
+    if (company) return company;
+    const local = email.split("@")[0]?.trim();
+    return local || "Mon compte";
+  }, [profile, email]);
+
+  const initials = useMemo(() => {
+    if (profile?.firstName?.trim() || profile?.lastName?.trim()) {
+      return contactInitials({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+      });
+    }
+    const local = email.split("@")[0]?.trim();
+    return local ? local.slice(0, 2).toUpperCase() : "?";
+  }, [profile, email]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setProfileOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [profileOpen]);
 
   async function handleLogout() {
+    setProfileOpen(false);
     await signOut();
     router.replace("/auth/login");
   }
@@ -185,32 +240,25 @@ export function AppShell({
         role="application"
         aria-label="smsclient.fr - Application SMS"
       >
-        <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white pr-[22px] py-[18px]">
-          <div className="flex items-center gap-0">
-            {!sidebarOpen && (
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(true)}
-                title="Ouvrir le menu"
-                aria-label="Ouvrir le menu"
-                className="ml-4 mr-3 grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all duration-200 ease-out hover:bg-slate-50 hover:text-slate-700 hover:shadow-[0_6px_16px_rgba(15,23,42,0.08)] active:scale-95"
+        <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white pr-[22px]">
+          <div className="flex h-full min-w-0 flex-1 items-center">
+            <div
+              className={cn(
+                "flex h-full shrink-0 items-center gap-1.5 border-r border-slate-200/80 bg-slate-100/90 px-2 min-w-0 overflow-hidden max-[860px]:w-auto max-[860px]:border-r-0 max-[860px]:bg-white max-[860px]:pl-4",
+                SIDEBAR_W
+              )}
+            >
+              <div
+                className="grid h-10 w-10 shrink-0 place-items-center"
+                aria-hidden
               >
-                <PanelLeft className="h-4 w-4" aria-hidden />
-              </button>
-            )}
-            <div className={cn(
-              "flex shrink-0 items-center gap-3.5 px-[18px] tracking-wide transition-all duration-200",
-              sidebarOpen ? "w-[260px]" : "w-auto"
-            )}>
-              <div className="grid h-11 w-11 place-items-center" aria-hidden>
-                <LogoMark />
+                <LogoMark size={40} />
               </div>
-              <div className="inline-block font-semibold text-2xl text-slate-900">
+              <span className="min-w-0 flex-1 truncate text-lg font-semibold leading-none text-slate-900">
                 smsclient.fr
-              </div>
+              </span>
             </div>
-            <div className="h-6 w-px bg-slate-200" />
-            <h1 className="m-0 pl-5 text-lg font-extrabold text-slate-700">
+            <h1 className="m-0 min-w-0 flex-1 truncate pl-5 pr-3 text-lg font-extrabold text-slate-700">
               {ROUTE_TITLES[route]}
             </h1>
           </div>
@@ -246,18 +294,17 @@ export function AppShell({
           </div>
         </header>
 
-        <div className={cn(
-          "grid min-h-0 flex-1 max-[860px]:grid-cols-1",
-          sidebarOpen ? "grid-cols-[260px_minmax(0,1fr)]" : "grid-cols-[0px_minmax(0,1fr)]"
-        )}>
-          <aside className={cn(
-            "flex min-h-0 flex-col gap-2.5 border-r border-slate-200/80 bg-slate-100 transition-all duration-200 ease-out max-[860px]:hidden",
-            sidebarOpen ? "w-[260px] p-[14px] opacity-100" : "w-0 overflow-hidden p-0 opacity-0"
-          )}>
+        <div className="grid min-h-0 flex-1 grid-cols-[204px_minmax(0,1fr)] max-[860px]:grid-cols-1">
+          <aside
+            className={cn(
+              "flex min-h-0 shrink-0 flex-col gap-2 border-r border-slate-200/80 bg-slate-100 p-2.5 max-[860px]:hidden",
+              SIDEBAR_W
+            )}
+          >
             <button
               type="button"
               onClick={onNewCampaign}
-              className="flex cursor-pointer select-none items-center gap-2 rounded-xl border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3.5 py-2.5 text-sm font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_36px_rgba(47,111,237,0.32)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.99] active:brightness-100"
+              className="flex cursor-pointer select-none items-center gap-2 rounded-xl border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3 py-2 text-sm font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_36px_rgba(47,111,237,0.32)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.99] active:brightness-100"
             >
               <Plus
                 className="h-4.5 w-4.5 shrink-0"
@@ -277,7 +324,7 @@ export function AppShell({
                     onClick={() => go(item.hash)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex w-full cursor-pointer select-none items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
+                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
                       "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
                       isActive
                         ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
@@ -295,33 +342,104 @@ export function AppShell({
 
             <div className="flex-1" />
 
-            <div className="flex items-center justify-between border-t border-slate-200/80 pt-2.5">
-              <div className="group/logout flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  title="Déconnexion"
-                  aria-label="Déconnexion"
-                  className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-rose-200 bg-white text-rose-500 transition-all duration-200 ease-out hover:bg-rose-50 hover:shadow-[0_6px_16px_rgba(225,29,72,0.12)] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500/40"
-                >
-                  <LogOut
-                    className="h-4 w-4 transition-transform duration-200 group-hover/logout:scale-110"
+            <nav
+              className="flex flex-col gap-1 border-t border-slate-200/80 pt-2.5"
+              aria-label="Outils"
+            >
+              {(() => {
+                const isActive = active === "qr-boutique";
+                return (
+                  <button
+                    type="button"
+                    onClick={() => go("qr-boutique")}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
+                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
+                      isActive
+                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
+                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-white hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-50"
+                    )}
+                  >
+                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
+                      <QrCode className={navMainIconClass} aria-hidden />
+                    </span>
+                    QR code boutique
+                  </button>
+                );
+              })()}
+            </nav>
+
+            <div className="relative mt-auto flex flex-col gap-2 border-t border-slate-200/80 pt-3">
+              {profileOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40 cursor-default"
+                    onClick={() => setProfileOpen(false)}
                     aria-hidden
                   />
+                  <div
+                    className="absolute bottom-full left-0 z-50 mb-2 w-full rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_25px_-5px_rgba(15,23,42,0.1),0_8px_16px_-6px_rgba(15,23,42,0.1)] transition-opacity duration-150"
+                    role="dialog"
+                    aria-label="Menu du compte"
+                  >
+                    <div className="flex flex-col gap-1 border-b border-slate-100 pb-2.5">
+                      <p className="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Compte connecté
+                      </p>
+                      <p className="m-0 truncate text-sm font-bold text-slate-900">
+                        {displayName}
+                      </p>
+                      {email && (
+                        <p className="m-0 truncate text-xs text-slate-500">
+                          {email}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleLogout()}
+                      className="group mt-2.5 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-transparent bg-rose-50/50 px-2.5 py-2 text-left text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+                    >
+                      <LogOut
+                        className="h-4 w-4 text-rose-500 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
+                      Se déconnecter
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <div className="px-1">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((open) => !open)}
+                  aria-expanded={profileOpen}
+                  aria-haspopup="dialog"
+                  className={cn(
+                    "flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border p-1.5 text-left transition-all duration-200",
+                    profileOpen
+                      ? "border-slate-200 bg-white shadow-sm"
+                      : "border-transparent hover:bg-slate-200/50"
+                  )}
+                >
+                  <div
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] text-xs font-bold text-white shadow-sm"
+                    aria-hidden
+                  >
+                    {initials}
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-xs font-bold text-slate-700">
+                      {displayName}
+                    </span>
+                    <span className="truncate text-[11px] text-slate-400">
+                      Options
+                    </span>
+                  </div>
                 </button>
-                <span className="pointer-events-none select-none text-sm font-bold text-rose-500 opacity-0 transition-opacity duration-200 group-hover/logout:opacity-100">
-                  Déconnexion
-                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(false)}
-                title="Fermer le menu"
-                aria-label="Fermer le menu"
-                className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all duration-200 ease-out hover:bg-slate-50 hover:text-slate-700 hover:shadow-[0_6px_16px_rgba(15,23,42,0.08)] active:scale-95"
-              >
-                <PanelLeftClose className="h-4 w-4" aria-hidden />
-              </button>
             </div>
           </aside>
 

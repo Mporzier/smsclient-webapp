@@ -122,6 +122,7 @@ export function buildPayloadFromMappedRow(
     lastName,
     phoneDisplay,
     groupLabels: [],
+    birthday: "",
     notes: "",
     optIn: true,
     stop: false,

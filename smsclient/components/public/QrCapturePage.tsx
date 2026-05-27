@@ -37,6 +37,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [optIn, setOptIn] = useState(true);
 
   useEffect(() => {
@@ -75,12 +76,14 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
       return;
     }
     setSaving(true);
+    const birthdayValue = birthday.trim();
     const { data, error } = await supabase.rpc("submit_qr_lead", {
       p_slug: slug,
       p_first_name: first,
       p_last_name: lastName.trim(),
       p_phone_e164: e164,
       p_opt_in: optIn,
+      p_birthday: birthdayValue || null,
     });
     setSaving(false);
     if (error) {
@@ -160,6 +163,25 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}
                 placeholder="06 12 34 56 78"
               />
+            </div>
+            <div>
+              <label
+                className="mb-1.5 block text-xs font-black text-slate-600"
+                htmlFor="qr-capture-birthday"
+              >
+                Anniversaire
+              </label>
+              <input
+                id="qr-capture-birthday"
+                name="birthday"
+                type="date"
+                className="h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+              />
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Optionnel
+              </p>
             </div>
             <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
               <input

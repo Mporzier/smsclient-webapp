@@ -6,6 +6,7 @@ export type UserQrCodeRecord = {
   slug: string;
   public_label: string;
   is_active: boolean;
+  welcome_sms_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -79,4 +80,25 @@ export async function regenerateUserQrCode(
     data: null,
     error: new Error("Impossible de régénérer le QR code."),
   };
+}
+
+export async function updateUserQrWelcomeSms(
+  supabase: SupabaseClient,
+  userId: string,
+  enabled: boolean,
+): Promise<{ data: UserQrCodeRecord | null; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("user_qr_codes")
+    .update({
+      welcome_sms_enabled: enabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { data: null, error: new Error(error.message) };
+  }
+  return { data: data as UserQrCodeRecord, error: null };
 }
