@@ -7,6 +7,12 @@ export type UserQrCodeRecord = {
   public_label: string;
   is_active: boolean;
   welcome_sms_enabled: boolean;
+  wheel_enabled: boolean;
+  wheel_title: string;
+  wheel_subtitle: string;
+  wheel_allow_repeat: boolean;
+  wheel_prize_validity_days: number;
+  wheel_send_prize_sms: boolean;
   created_at: string;
   updated_at: string;
 };

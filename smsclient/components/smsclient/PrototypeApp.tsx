@@ -31,6 +31,7 @@ import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { profileToForm } from "@/lib/supabase/profile";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
 import { useTrashItems } from "@/hooks/useTrashItems";
+import { useQrWheel } from "@/hooks/useQrWheel";
 import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -134,6 +135,7 @@ export function PrototypeApp() {
     setSmsSender,
   } = useUserProfile();
   const {
+    record: userQrRecord,
     publicUrl: userQrPublicUrl,
     welcomeSmsEnabled: userQrWelcomeSmsEnabled,
     loading: userQrLoading,
@@ -141,6 +143,16 @@ export function PrototypeApp() {
     regenerate: regenerateUserQr,
     setWelcomeSmsEnabled: setUserQrWelcomeSms,
   } = useUserQrCode();
+
+  const qrWheelEnabled = route === "qr-boutique";
+  const {
+    config: qrWheelConfig,
+    loading: qrWheelLoading,
+    saveAll: saveQrWheel,
+    enableWithDefaults: enableQrWheelDefaults,
+  } = useQrWheel(qrWheelEnabled ? userQrRecord : null);
+
+  const [qrWheelSaving, setQrWheelSaving] = useState(false);
 
   const trashEnabled = route === "parametres";
   const {
@@ -906,6 +918,27 @@ export function PrototypeApp() {
                   ? "SMS de bienvenue activé."
                   : "SMS de bienvenue désactivé.",
               );
+            }}
+            wheelConfig={qrWheelConfig}
+            wheelLoading={qrWheelLoading}
+            wheelSaving={qrWheelSaving}
+            onWheelSave={async (config) => {
+              setQrWheelSaving(true);
+              try {
+                await saveQrWheel(config);
+                showToast("Roue des récompenses enregistrée.");
+              } finally {
+                setQrWheelSaving(false);
+              }
+            }}
+            onWheelEnableDefaults={async () => {
+              setQrWheelSaving(true);
+              try {
+                await enableQrWheelDefaults();
+                showToast("Roue activée avec des récompenses par défaut.");
+              } finally {
+                setQrWheelSaving(false);
+              }
             }}
             onRegenerate={regenerateUserQr}
           />

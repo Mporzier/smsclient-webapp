@@ -6,6 +6,8 @@ import { downloadShopQrPdf } from "@/lib/qr/downloadShopQrPdf";
 import QRCode from "qrcode";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { QrWheelSettings } from "@/components/smsclient/views/QrWheelSettings";
+import type { QrWheelConfig } from "@/lib/types/qrWheel";
 import { Download, MessageCircle, QrCode } from "lucide-react";
 
 type QrCodeViewProps = {
@@ -15,6 +17,11 @@ type QrCodeViewProps = {
   companyName?: string;
   welcomeSmsEnabled: boolean;
   onWelcomeSmsChange: (enabled: boolean) => Promise<void>;
+  wheelConfig: QrWheelConfig | null;
+  wheelLoading: boolean;
+  wheelSaving: boolean;
+  onWheelSave: (config: QrWheelConfig) => Promise<void>;
+  onWheelEnableDefaults: () => Promise<void>;
   onRegenerate: () => Promise<void>;
 };
 
@@ -25,6 +32,11 @@ export function QrCodeView({
   companyName,
   welcomeSmsEnabled,
   onWelcomeSmsChange,
+  wheelConfig,
+  wheelLoading,
+  wheelSaving,
+  onWheelSave,
+  onWheelEnableDefaults,
   onRegenerate,
 }: QrCodeViewProps) {
   const inp =
@@ -57,7 +69,7 @@ export function QrCodeView({
   }, [publicUrl]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[640px] flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
       <div className="flex items-start gap-3">
         <div
           className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed] shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
@@ -228,9 +240,18 @@ export function QrCodeView({
         </div>
       </div>
 
+      <QrWheelSettings
+        config={wheelConfig}
+        loading={wheelLoading}
+        saving={wheelSaving}
+        onSave={onWheelSave}
+        onEnableWithDefaults={onWheelEnableDefaults}
+      />
+
       <p className={cn("m-0 text-xs font-semibold leading-relaxed text-slate-500")}>
         Les contacts saisis via ce formulaire apparaissent dans ta liste avec la
-        source « QR boutique » (prénom, nom, téléphone, anniversaire optionnel).
+        source « QR boutique ». Les gains de la roue sont ajoutés aux notes du
+        contact.
       </p>
     </div>
   );
