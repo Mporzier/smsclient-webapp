@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
 import { cn } from "@/lib/cn";
 import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
@@ -230,6 +231,7 @@ export function AppShell({
                 Acheter des crédits
               </button>
             )}
+            <HeaderHelpMenu />
             <button
               type="button"
               className="grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"

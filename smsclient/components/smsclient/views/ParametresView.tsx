@@ -3,53 +3,20 @@
 import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { cn } from "@/lib/cn";
+import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { BUSINESS_ACTIVITIES } from "@/lib/types/businessActivity";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
+import type { UserProfileForm } from "@/lib/types/profile";
+import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import QRCode from "qrcode";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-type SettingsForm = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  companyName: string;
-  siret: string;
-  tva: string;
-  address: string;
-  zip: string;
-  city: string;
-  country: string;
-  billingContact: string;
-  sender: string;
-  notifyInvoices: boolean;
-  notifySummary: boolean;
-};
-
-function createInitialForm(sender: string): SettingsForm {
-  return {
-    firstName: "Sophie",
-    lastName: "Durand",
-    email: "Sophie.durand@gmail.com",
-    phone: "06 12 34 56 78",
-    companyName: "SMSClient",
-    siret: "912 345 678 00019",
-    tva: "FRXX123456789",
-    address: "56 Rue Labat",
-    zip: "75018",
-    city: "Paris",
-    country: "France",
-    billingContact: "facturation@smsclient.fr",
-    sender,
-    notifyInvoices: true,
-    notifySummary: true,
-  };
-}
-
 export type ParametresViewProps = {
-  smsSender: string;
-  onSmsSenderChange: (v: string) => void | Promise<void>;
+  profileForm: UserProfileForm | null;
+  profileLoading?: boolean;
+  onSaveProfile: (form: UserProfileForm) => Promise<void>;
   qrPublicUrl: string;
   qrLoading: boolean;
   qrError: string | null;
@@ -57,6 +24,13 @@ export type ParametresViewProps = {
   purchases?: CreditPurchaseRowData[];
   purchasesLoading?: boolean;
   onInvoiceClick?: (id: string) => void;
+  trashContacts?: DeletedContactRow[];
+  trashGroups?: DeletedGroupRow[];
+  trashLoading?: boolean;
+  trashError?: string | null;
+  onRestoreTrashContacts?: (ids: string[]) => Promise<void>;
+  onRestoreTrashGroups?: (ids: string[]) => Promise<void>;
+  onRefreshTrash?: () => Promise<void>;
 };
 
 const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
@@ -90,8 +64,9 @@ const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
 ];
 
 export function ParametresView({
-  smsSender,
-  onSmsSenderChange,
+  profileForm,
+  profileLoading = false,
+  onSaveProfile,
   qrPublicUrl,
   qrLoading,
   qrError,
@@ -99,34 +74,55 @@ export function ParametresView({
   purchases = [],
   purchasesLoading = false,
   onInvoiceClick,
+  trashContacts = [],
+  trashGroups = [],
+  trashLoading = false,
+  trashError = null,
+  onRestoreTrashContacts,
+  onRestoreTrashGroups,
+  onRefreshTrash,
 }: ParametresViewProps) {
   const inp =
     "h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
   const lbl = "mb-1.5 block text-xs font-black text-slate-600";
   const [qrImage, setQrImage] = useState<string>("");
   const [regenLoading, setRegenLoading] = useState(false);
-  const [savedForm, setSavedForm] = useState<SettingsForm>(() =>
-    createInitialForm(smsSender)
-  );
-  const [draftForm, setDraftForm] = useState<SettingsForm>(() =>
-    createInitialForm(smsSender)
-  );
+  const emptyForm: UserProfileForm = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    businessActivity: "",
+    siret: "",
+    tva: "",
+    address: "",
+    zip: "",
+    city: "",
+    country: "France",
+    billingContact: "",
+    sender: "",
+    notifyInvoices: true,
+    notifySummary: true,
+  };
+  const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyForm);
+  const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
-  const [section, setSection] = useState<"compte" | "facturation" | "preferences" | "avance">("compte");
+  const [section, setSection] = useState<
+    "compte" | "facturation" | "preferences" | "corbeille"
+  >("compte");
 
   const dirty = JSON.stringify(draftForm) !== JSON.stringify(savedForm);
-  const changed = <K extends keyof SettingsForm>(key: K) =>
+  const changed = <K extends keyof UserProfileForm>(key: K) =>
     draftForm[key] !== savedForm[key];
 
   useEffect(() => {
-    if (dirty) return;
-    const next = createInitialForm(smsSender);
-    setSavedForm(next);
-    setDraftForm(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smsSender]);
+    if (!profileForm || dirty) return;
+    setSavedForm(profileForm);
+    setDraftForm(profileForm);
+  }, [profileForm, dirty]);
 
   useEffect(() => {
     if (!saveFeedback) return;
@@ -134,9 +130,9 @@ export function ParametresView({
     return () => window.clearTimeout(t);
   }, [saveFeedback]);
 
-  const setField = <K extends keyof SettingsForm>(
+  const setField = <K extends keyof UserProfileForm>(
     key: K,
-    value: SettingsForm[K]
+    value: UserProfileForm[K],
   ) => {
     setDraftForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -150,17 +146,28 @@ export function ParametresView({
 
   const onSaveChanges = async () => {
     if (!dirty) return;
+    if (!draftForm.businessActivity) {
+      setSaveError("L'activité de l'entreprise est requise.");
+      return;
+    }
     const sender = draftForm.sender.trim();
     if (!sender) {
       setSaveError("Le nom d’expéditeur SMS est requis.");
       return;
     }
+    if (!draftForm.firstName.trim()) {
+      setSaveError("Le prénom est requis.");
+      return;
+    }
+    if (!draftForm.companyName.trim()) {
+      setSaveError("Le nom de l'entreprise est requis.");
+      return;
+    }
     setSaveError(null);
     setSaving(true);
     try {
-      await Promise.resolve(onSmsSenderChange(sender));
-      setSavedForm({ ...draftForm, sender });
-      setDraftForm((prev) => ({ ...prev, sender }));
+      await onSaveProfile(draftForm);
+      setSavedForm(draftForm);
       setSaveFeedback("Paramètres sauvegardés.");
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Sauvegarde impossible.");
@@ -198,12 +205,14 @@ export function ParametresView({
           role="tablist"
           aria-label="Sections des paramètres"
         >
-          {([
-            { id: "compte", label: "Compte" },
-            { id: "facturation", label: "Facturation" },
-            { id: "preferences", label: "Préférences" },
-            { id: "avance", label: "Avancé" },
-          ] as const).map((tab) => (
+          {(
+            [
+              { id: "compte", label: "Compte" },
+              { id: "facturation", label: "Facturation" },
+              { id: "preferences", label: "Préférences" },
+              { id: "corbeille", label: "Éléments supprimés" },
+            ] as const
+          ).map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -222,9 +231,11 @@ export function ParametresView({
           ))}
         </div>
 
-        {dirty && (
+        {dirty && section !== "corbeille" && (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-amber-700">Modifications non enregistrées</span>
+            <span className="text-xs font-bold text-amber-700">
+              Modifications non enregistrées
+            </span>
             <ProtoBtn
               onClick={onCancelChanges}
               disabled={saving}
@@ -257,13 +268,24 @@ export function ParametresView({
 
       {section === "compte" && (
         <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
+          {profileLoading && (
+            <p className="col-span-2 text-sm font-semibold text-slate-500">
+              Chargement du profil…
+            </p>
+          )}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">Informations personnelles</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              Informations personnelles
+            </h2>
             <div className="mt-3 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
               <div>
                 <label className={lbl}>Prénom</label>
                 <input
-                  className={cn(inp, changed("firstName") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("firstName") &&
+                      "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.firstName}
                   onChange={(e) => setField("firstName", e.target.value)}
                   placeholder="Ex : Patrick"
@@ -272,7 +294,11 @@ export function ParametresView({
               <div>
                 <label className={lbl}>Nom</label>
                 <input
-                  className={cn(inp, changed("lastName") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("lastName") &&
+                      "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.lastName}
                   onChange={(e) => setField("lastName", e.target.value)}
                   placeholder="Ex : Azevedo"
@@ -281,7 +307,10 @@ export function ParametresView({
               <div className="col-span-2 max-[600px]:col-span-1">
                 <label className={lbl}>Email</label>
                 <input
-                  className={cn(inp, changed("email") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("email") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.email}
                   onChange={(e) => setField("email", e.target.value)}
                   placeholder="email@domaine.fr"
@@ -290,7 +319,10 @@ export function ParametresView({
               <div className="col-span-2 max-[600px]:col-span-1">
                 <label className={lbl}>Téléphone</label>
                 <input
-                  className={cn(inp, changed("phone") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("phone") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.phone}
                   onChange={(e) => setField("phone", e.target.value)}
                   placeholder="06 00 00 00 00"
@@ -300,20 +332,54 @@ export function ParametresView({
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">Entreprise</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              Entreprise
+            </h2>
             <div className="mt-3 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
               <div className="col-span-2">
                 <label className={lbl}>Nom de l&apos;entreprise</label>
                 <input
-                  className={cn(inp, changed("companyName") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("companyName") &&
+                      "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.companyName}
                   onChange={(e) => setField("companyName", e.target.value)}
                 />
               </div>
+              <div className="col-span-2">
+                <label className={lbl}>Activité</label>
+                <select
+                  className={cn(
+                    inp,
+                    changed("businessActivity") &&
+                      "border-blue-400 ring-2 ring-blue-100",
+                  )}
+                  value={draftForm.businessActivity}
+                  onChange={(e) =>
+                    setField(
+                      "businessActivity",
+                      e.target
+                        .value as UserProfileForm["businessActivity"],
+                    )
+                  }
+                >
+                  <option value="">Sélectionner…</option>
+                  {BUSINESS_ACTIVITIES.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className={lbl}>SIRET</label>
                 <input
-                  className={cn(inp, changed("siret") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("siret") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.siret}
                   onChange={(e) => setField("siret", e.target.value)}
                 />
@@ -321,7 +387,10 @@ export function ParametresView({
               <div>
                 <label className={lbl}>TVA</label>
                 <input
-                  className={cn(inp, changed("tva") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("tva") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.tva}
                   onChange={(e) => setField("tva", e.target.value)}
                 />
@@ -330,12 +399,17 @@ export function ParametresView({
 
             <div className="my-4 h-px bg-slate-300/40" />
 
-            <h2 className="m-0 text-base font-black text-slate-900">Adresse de facturation</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              Adresse de facturation
+            </h2>
             <div className="mt-3 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
               <div className="col-span-2">
                 <label className={lbl}>Adresse</label>
                 <input
-                  className={cn(inp, changed("address") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("address") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.address}
                   onChange={(e) => setField("address", e.target.value)}
                 />
@@ -343,7 +417,10 @@ export function ParametresView({
               <div>
                 <label className={lbl}>Code postal</label>
                 <input
-                  className={cn(inp, changed("zip") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("zip") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.zip}
                   onChange={(e) => setField("zip", e.target.value)}
                 />
@@ -351,7 +428,10 @@ export function ParametresView({
               <div>
                 <label className={lbl}>Ville</label>
                 <input
-                  className={cn(inp, changed("city") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("city") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.city}
                   onChange={(e) => setField("city", e.target.value)}
                 />
@@ -359,7 +439,10 @@ export function ParametresView({
               <div>
                 <label className={lbl}>Pays</label>
                 <input
-                  className={cn(inp, changed("country") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("country") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.country}
                   onChange={(e) => setField("country", e.target.value)}
                 />
@@ -367,7 +450,11 @@ export function ParametresView({
               <div>
                 <label className={lbl}>Contact facturation</label>
                 <input
-                  className={cn(inp, changed("billingContact") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("billingContact") &&
+                      "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   value={draftForm.billingContact}
                   onChange={(e) => setField("billingContact", e.target.value)}
                 />
@@ -380,7 +467,9 @@ export function ParametresView({
       {section === "facturation" && (
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">Plan & sécurité</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              Plan & sécurité
+            </h2>
             <div className="mt-3 grid gap-2.5">
               <div className="flex justify-between gap-3 text-sm font-extrabold">
                 <span className="text-slate-600">Abonnement</span>
@@ -412,14 +501,19 @@ export function ParametresView({
       {section === "preferences" && (
         <div className="grid grid-cols-2 gap-4 max-[900px]:grid-cols-1">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">Expéditeur & notifications</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              Expéditeur & notifications
+            </h2>
             <div className="mt-3 grid gap-2.5">
               <div>
                 <label className={lbl}>
                   Nom d&apos;expéditeur SMS (11 car. max)
                 </label>
                 <input
-                  className={cn(inp, changed("sender") && "border-blue-400 ring-2 ring-blue-100")}
+                  className={cn(
+                    inp,
+                    changed("sender") && "border-blue-400 ring-2 ring-blue-100"
+                  )}
                   maxLength={11}
                   value={draftForm.sender}
                   onChange={(e) => setField("sender", e.target.value)}
@@ -427,7 +521,8 @@ export function ParametresView({
                   autoComplete="off"
                 />
                 <p className="mt-1.5 text-xs font-bold text-slate-500">
-                  Affiché comme expéditeur des campagnes. Modifiable ici à tout moment.
+                  Affiché comme expéditeur des campagnes. Modifiable ici à tout
+                  moment.
                 </p>
               </div>
               <label className="flex items-center gap-2.5 text-sm font-extrabold text-slate-600">
@@ -452,9 +547,12 @@ export function ParametresView({
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">QR code boutique</h2>
+            <h2 className="m-0 text-base font-black text-slate-900">
+              QR code boutique
+            </h2>
             <p className="mt-2 text-sm font-semibold text-slate-600">
-              Affiche ce QR en boutique pour collecter les contacts depuis un formulaire public.
+              Affiche ce QR en boutique pour collecter les contacts depuis un
+              formulaire public.
             </p>
             <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
               {qrLoading ? (
@@ -517,19 +615,16 @@ export function ParametresView({
         </div>
       )}
 
-      {section === "avance" && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <h2 className="m-0 text-base font-black text-slate-900">Zone sensible</h2>
-          <p className="mt-1.5 text-sm text-slate-600">
-            Ces actions sont irréversibles. Fais attention avant de continuer.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <ProtoBtn>Exporter mes données</ProtoBtn>
-            <ProtoBtn className="border-rose-200 text-rose-700">
-              Supprimer le compte
-            </ProtoBtn>
-          </div>
-        </div>
+      {section === "corbeille" && onRestoreTrashContacts && onRestoreTrashGroups && onRefreshTrash && (
+        <ParametresTrashSection
+          contacts={trashContacts}
+          groups={trashGroups}
+          loading={trashLoading}
+          error={trashError}
+          onRestoreContacts={onRestoreTrashContacts}
+          onRestoreGroups={onRestoreTrashGroups}
+          onRefresh={onRefreshTrash}
+        />
       )}
     </>
   );

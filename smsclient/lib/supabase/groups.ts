@@ -30,6 +30,7 @@ export async function fetchGroupsWithStats(
     .from("client_groups")
     .select("id,name,description,last_campaign_at,created_at")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (gErr) {
@@ -132,6 +133,11 @@ export async function deleteGroups(
   ids: string[],
 ): Promise<{ error: Error | null }> {
   if (ids.length === 0) return { error: null };
-  const { error } = await supabase.from("client_groups").delete().in("id", ids);
+  const deletedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("client_groups")
+    .update({ deleted_at: deletedAt })
+    .in("id", ids)
+    .is("deleted_at", null);
   return { error: error ? new Error(error.message) : null };
 }

@@ -64,7 +64,8 @@ export async function fetchStatisticsSnapshot(
     .from("clients")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("stop_sms", true);
+    .eq("stop_sms", true)
+    .is("deleted_at", null);
 
   if (stopsError) {
     return { data: emptySnapshot(), error: new Error(stopsError.message) };

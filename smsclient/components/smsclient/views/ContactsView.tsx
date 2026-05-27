@@ -16,7 +16,7 @@ import {
   isCampaignEligibleContact,
 } from "@/lib/types/contact";
 import { useMemo, useState } from "react";
-import { Phone, Trash2, UserRound } from "lucide-react";
+import { Phone, Send, Trash2, UserRound } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const tagBase = groupTagBase + " py-1 text-[12px] font-bold";
@@ -29,6 +29,7 @@ type ContactsProps = {
   onAddContact: () => void;
   onRowClick: (row: ContactRowData) => void;
   onDeleteContacts: (ids: string[]) => void;
+  onCreateCampaignFromContacts: (ids: string[]) => void;
 };
 
 const columns: ColumnDef<ContactRowData, unknown>[] = [
@@ -184,6 +185,7 @@ export function ContactsView({
   onAddContact,
   onRowClick,
   onDeleteContacts,
+  onCreateCampaignFromContacts,
 }: ContactsProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -193,6 +195,7 @@ export function ContactsView({
     [rows],
   );
 
+  const hasSelection = selectedIds.size > 0;
   const showBigEmpty = !loading && !error && rows.length === 0;
 
   const footerLabel = useMemo(() => {
@@ -264,24 +267,39 @@ export function ContactsView({
           />
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-3">
-          {selectedIds.size > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                onDeleteContacts(Array.from(selectedIds));
-                setSelectedIds(new Set());
-              }}
-              className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-              Supprimer ({selectedIds.size})
-            </button>
+          {hasSelection ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteContacts(Array.from(selectedIds));
+                  setSelectedIds(new Set());
+                }}
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Supprimer ({selectedIds.size})
+              </button>
+              <ProtoBtn
+                primary
+                onClick={() => {
+                  onCreateCampaignFromContacts(Array.from(selectedIds));
+                  setSelectedIds(new Set());
+                }}
+              >
+                <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden />
+                Créer une campagne
+              </ProtoBtn>
+            </>
+          ) : (
+            <>
+              <ProtoBtn onClick={onImport}>Importer</ProtoBtn>
+              <ProtoBtn primary onClick={onAddContact}>
+                <PlusIcon />
+                Ajouter un contact
+              </ProtoBtn>
+            </>
           )}
-          <ProtoBtn onClick={onImport}>Importer</ProtoBtn>
-          <ProtoBtn primary onClick={onAddContact}>
-            <PlusIcon />
-            Ajouter un contact
-          </ProtoBtn>
         </div>
       </div>
 

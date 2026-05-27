@@ -3,6 +3,7 @@ import {
   e164ToFrDisplay,
   frDisplayToE164,
 } from "@/lib/proto/smsUtils";
+import { formatParisCalendarDate } from "@/lib/proto/timezone";
 import type { ContactRowData } from "@/lib/types/contact";
 
 export type ClientRecord = {
@@ -19,6 +20,7 @@ export type ClientRecord = {
   stop_sms: boolean;
   last_sms_sent_at: string | null;
   last_sms_body: string | null;
+  unsubscribed_at: string | null;
   created_at: string;
 };
 
@@ -49,25 +51,6 @@ function mirrorGroupColumn(labels: string[]): string {
   return n.join(", ").slice(0, 500);
 }
 
-function formatCreatedFr(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    timeZone: "Europe/Paris",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatLastSms(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    timeZone: "Europe/Paris",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 export function clientRecordToRow(
   row: ClientRecord,
   groups: string[],
@@ -87,15 +70,16 @@ export function clientRecordToRow(
         : [];
   return {
     id: row.id,
-    created: formatCreatedFr(row.created_at),
+    created: formatParisCalendarDate(row.created_at),
     firstName,
     lastName,
     name,
     phone: e164ToFrDisplay(row.phone_e164),
     groups: mergedGroups,
     notes: row.notes?.trim() ?? "",
-    lastSms: formatLastSms(row.last_sms_sent_at),
+    lastSms: formatParisCalendarDate(row.last_sms_sent_at),
     lastSmsBody: row.last_sms_body?.trim() ?? "",
+    unsubscribed: formatParisCalendarDate(row.unsubscribed_at),
     source: row.source,
     optIn: row.opt_in,
     stopSms: row.stop_sms,
@@ -112,7 +96,7 @@ async function fetchMembershipsByClientIds(
   }
   const { data, error } = await supabase
     .from("client_group_members")
-    .select("client_id, client_groups(name)")
+    .select("client_id, client_groups(name, deleted_at)")
     .in("client_id", clientIds);
 
   if (error) {
@@ -122,14 +106,15 @@ async function fetchMembershipsByClientIds(
     const row = raw as {
       client_id: string;
       client_groups:
-        | { name: string }
-        | { name: string }[]
+        | { name: string; deleted_at: string | null }
+        | { name: string; deleted_at: string | null }[]
         | null
         | undefined;
     };
     const cg = row.client_groups;
-    const nameRaw = Array.isArray(cg) ? cg[0]?.name : cg?.name;
-    const name = nameRaw?.trim();
+    const group = Array.isArray(cg) ? cg[0] : cg;
+    if (group?.deleted_at) continue;
+    const name = group?.name?.trim();
     if (!name) continue;
     const list = map.get(row.client_id) ?? [];
     list.push(name);
@@ -147,6 +132,7 @@ export async function fetchClients(
   const { data, error } = await supabase
     .from("clients")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -213,7 +199,8 @@ async function syncClientGroupMemberships(
   const { data: groups, error: gErr } = await supabase
     .from("client_groups")
     .select("id,name")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("deleted_at", null);
   if (gErr) {
     return { error: new Error(gErr.message) };
   }
@@ -299,6 +286,7 @@ export async function addClientsToGroupByName(
     .select("id")
     .eq("user_id", userId)
     .eq("name", name)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (findErr) {
@@ -337,6 +325,7 @@ export async function replaceGroupMembers(
     .select("id")
     .eq("id", groupId)
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (findErr) {
@@ -491,6 +480,11 @@ export async function deleteClients(
   ids: string[],
 ): Promise<{ error: Error | null }> {
   if (ids.length === 0) return { error: null };
-  const { error } = await supabase.from("clients").delete().in("id", ids);
+  const deletedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("clients")
+    .update({ deleted_at: deletedAt })
+    .in("id", ids)
+    .is("deleted_at", null);
   return { error: error ? new Error(error.message) : null };
 }

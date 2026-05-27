@@ -1,5 +1,7 @@
 import { AuthGate } from "@/components/auth/AuthGate";
+import { OnboardingGate } from "@/components/auth/OnboardingGate";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { UserProfileProvider } from "@/components/auth/UserProfileProvider";
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -33,7 +35,11 @@ export default function RootLayout({
     >
       <body className="relative h-full w-full overflow-hidden">
         <AuthProvider>
-          <AuthGate>{children}</AuthGate>
+          <AuthGate>
+            <UserProfileProvider>
+              <OnboardingGate>{children}</OnboardingGate>
+            </UserProfileProvider>
+          </AuthGate>
         </AuthProvider>
       </body>
     </html>

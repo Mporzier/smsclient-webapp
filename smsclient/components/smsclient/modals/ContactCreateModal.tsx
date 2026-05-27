@@ -6,7 +6,17 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Check, Phone, Plus, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
+import {
+  BellOff,
+  Check,
+  Phone,
+  Plus,
+  Trash2,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import {
   innerInputSm,
   innerTextareaSm,
@@ -38,6 +48,7 @@ export type ContactCreateModalProps = {
   consentDefaults?: { optIn: boolean; stop: boolean } | null;
   onSaveContact?: (payload: ContactFormSubmitPayload) => Promise<void>;
   onDeleteContact?: () => void;
+  onUnsubscribeContact?: () => Promise<void>;
 };
 
 const shellCls =
@@ -95,11 +106,13 @@ export function ContactCreateModal({
   consentDefaults,
   onSaveContact,
   onDeleteContact,
+  onUnsubscribeContact,
 }: ContactCreateModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [phoneBlurred, setPhoneBlurred] = useState(false);
+  const [confirmUnsubscribeOpen, setConfirmUnsubscribeOpen] = useState(false);
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -108,6 +121,7 @@ export function ContactCreateModal({
       setSaveError(null);
       setValidationError(null);
       setPhoneBlurred(false);
+      setConfirmUnsubscribeOpen(false);
     }
   }
 
@@ -207,6 +221,14 @@ export function ContactCreateModal({
   const phoneInvalid =
     phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone);
 
+  const isUnsubscribed =
+    mode === "edit" &&
+    consentDefaults != null &&
+    (consentDefaults.stop || !consentDefaults.optIn);
+
+  const contactLabel =
+    [first.trim(), last.trim()].filter(Boolean).join(" ") || phone || "Contact";
+
   const dialogLabel =
     mode === "edit" ? "Modifier le contact" : "Ajouter un contact";
 
@@ -217,7 +239,12 @@ export function ContactCreateModal({
       aria-modal
       aria-label={dialogLabel}
       onClick={(e) =>
-        handleModalBackdropClick(e, handleClose, isDirty, !saving)
+        handleModalBackdropClick(
+          e,
+          handleClose,
+          isDirty,
+          !saving && !confirmUnsubscribeOpen,
+        )
       }
     >
       <div className={shellCls}>
@@ -254,6 +281,19 @@ export function ContactCreateModal({
               >
                 {validationError}
               </p>
+            )}
+
+            {isUnsubscribed && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+                <BellOff
+                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+                  aria-hidden
+                />
+                <p className={cn("m-0", hintTextCls, "text-amber-900")}>
+                  Ce contact est désabonné : il ne recevra plus vos campagnes
+                  SMS.
+                </p>
+              </div>
             )}
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -460,7 +500,7 @@ export function ContactCreateModal({
         )}
 
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 py-3">
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             {mode === "edit" && onDeleteContact && (
               <button
                 type="button"
@@ -470,6 +510,17 @@ export function ContactCreateModal({
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Supprimer
+              </button>
+            )}
+            {mode === "edit" && onUnsubscribeContact && !isUnsubscribed && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => setConfirmUnsubscribeOpen(true)}
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <BellOff className="h-4 w-4" aria-hidden />
+                Désabonner
               </button>
             )}
           </div>
@@ -491,6 +542,18 @@ export function ContactCreateModal({
           </div>
         </div>
       </div>
+
+      <ConfirmUnsubscribeModal
+        open={confirmUnsubscribeOpen}
+        contactLabel={contactLabel}
+        onCancel={() => setConfirmUnsubscribeOpen(false)}
+        onConfirm={async () => {
+          if (!onUnsubscribeContact) return;
+          await onUnsubscribeContact();
+          setConfirmUnsubscribeOpen(false);
+          handleClose();
+        }}
+      />
     </div>
   );
 }

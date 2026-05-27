@@ -24,8 +24,10 @@ import { useContacts } from "@/hooks/useContacts";
 import { useCredits } from "@/hooks/useCredits";
 import { useGroups } from "@/hooks/useGroups";
 import { useStatistics } from "@/hooks/useStatistics";
-import { usePersistedSmsSender } from "@/hooks/usePersistedSmsSender";
+import { useUserProfile } from "@/components/auth/UserProfileProvider";
+import { profileToForm } from "@/lib/supabase/profile";
 import { useProtoNavigation } from "@/hooks/useProtoNavigation";
+import { useTrashItems } from "@/hooks/useTrashItems";
 import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -38,6 +40,7 @@ import {
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
 import { deleteGroups, insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
+import { restoreClients, restoreGroups } from "@/lib/supabase/trash";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
@@ -45,6 +48,11 @@ import { type ContactRowData } from "@/lib/types/contact";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import { parisLocalToISO, plusTenMinutesParis } from "@/lib/proto/timezone";
 import type { AppRoute } from "@/lib/proto/routes";
+import {
+  statsMonthRange,
+  statsPeriodRange,
+  type StatsPeriodPreset,
+} from "@/lib/statsDateRanges";
 import {
   startTransition,
   useCallback,
@@ -55,27 +63,6 @@ import {
 
 const DEFAULT_SMS =
   "🎉 {PRENOM}, -20% aujourd'hui sur toute la boutique ! Offre valable jusqu'à 19h. Montrez ce SMS en caisse.";
-
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
-
-function monthRangeStrings() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const first = new Date(y, m, 1);
-  const last = new Date(y, m + 1, 0);
-  return {
-    from: `${y}-${pad(m + 1)}-${pad(first.getDate())}`,
-    to: `${y}-${pad(m + 1)}-${pad(last.getDate())}`,
-  };
-}
-
-function fmtFr(iso: string) {
-  const [yy, mm, dd] = iso.split("-");
-  return `${dd}/${mm}/${yy}`;
-}
 
 function plusTenMinutesLocalValue() {
   return plusTenMinutesParis();
@@ -125,8 +112,13 @@ export function PrototypeApp() {
     buy: buyCredits,
   } = useCredits();
 
-  const { sender: smsSender, setSender: setSmsSender } =
-    usePersistedSmsSender();
+  const {
+    profile,
+    loading: profileLoading,
+    saveProfile,
+    smsSender,
+    setSmsSender,
+  } = useUserProfile();
   const {
     publicUrl: userQrPublicUrl,
     loading: userQrLoading,
@@ -134,6 +126,14 @@ export function PrototypeApp() {
     regenerate: regenerateUserQr,
   } = useUserQrCode();
 
+  const trashEnabled = route === "parametres";
+  const {
+    contacts: trashContacts,
+    groups: trashGroups,
+    loading: trashLoading,
+    error: trashError,
+    refresh: refreshTrash,
+  } = useTrashItems(supabase, user?.id, trashEnabled);
 
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupQuickFromContactOpen, setGroupQuickFromContactOpen] =
@@ -189,7 +189,7 @@ export function PrototypeApp() {
         .map((c) => ({
           name: c.name,
           phone: c.phone,
-          date: c.lastSms !== "—" ? c.lastSms : c.created,
+          date: c.unsubscribed !== "—" ? c.unsubscribed : c.created,
         })),
     [contacts],
   );
@@ -291,13 +291,13 @@ export function PrototypeApp() {
   const [scheduledAt, setScheduledAt] = useState(plusTenMinutesLocalValue());
   const [aiOpen, setAiOpen] = useState(false);
 
-  const { from: mFrom, to: mTo } = useMemo(() => monthRangeStrings(), []);
+  const { from: mFrom, to: mTo } = useMemo(() => statsMonthRange(), []);
+  const [statsPeriod, setStatsPeriod] = useState<StatsPeriodPreset>("month");
   const [statsOpen, setStatsOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState(mFrom);
   const [dateTo, setDateTo] = useState(mTo);
   const [appliedStatsFrom, setAppliedStatsFrom] = useState(mFrom);
   const [appliedStatsTo, setAppliedStatsTo] = useState(mTo);
-  const [chipLabel, setChipLabel] = useState("Ce mois");
   const {
     data: statisticsData,
     loading: statisticsLoading,
@@ -377,17 +377,18 @@ export function PrototypeApp() {
       const n = ids.length;
       openConfirmDelete(
         `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
-        `Cette action est irréversible. ${n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"} définitivement supprimé${n > 1 ? "s" : ""}.`,
+        `${n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"} retiré${n > 1 ? "s" : ""} de tes listes. Tu pourras ${n > 1 ? "les" : "le"} restaurer dans Paramètres → Éléments supprimés.`,
         async () => {
           const { error } = await deleteClients(supabase, ids);
           if (error) throw error;
           setConfirmDeleteOpen(false);
           refreshContacts();
+          void refreshTrash();
           showToast(`${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
         },
       );
     },
-    [openConfirmDelete, supabase, refreshContacts, showToast],
+    [openConfirmDelete, supabase, refreshContacts, refreshTrash, showToast],
   );
 
   const handleDeleteContactFromModal = useCallback(() => {
@@ -401,17 +402,18 @@ export function PrototypeApp() {
       const n = ids.length;
       openConfirmDelete(
         `Supprimer ${n} groupe${n > 1 ? "s" : ""} ?`,
-        `Cette action est irréversible. ${n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"} définitivement supprimé${n > 1 ? "s" : ""}. Les contacts ne seront pas supprimés.`,
+        `${n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"} retiré${n > 1 ? "s" : ""} de tes listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
         async () => {
           const { error } = await deleteGroups(supabase, ids);
           if (error) throw error;
           setConfirmDeleteOpen(false);
           refreshGroups();
+          void refreshTrash();
           showToast(`${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
         },
       );
     },
-    [openConfirmDelete, supabase, refreshGroups, showToast],
+    [openConfirmDelete, supabase, refreshGroups, refreshTrash, showToast],
   );
 
   const handleDeleteGroupFromModal = useCallback(() => {
@@ -420,7 +422,7 @@ export function PrototypeApp() {
     const groupName = groupEditRow.name;
     openConfirmDelete(
       "Supprimer ce groupe ?",
-      `Cette action est irréversible. Le groupe « ${groupName} » sera définitivement supprimé. Les contacts ne seront pas supprimés.`,
+      `Le groupe « ${groupName} » sera retiré de tes listes. Les contacts ne sont pas supprimés. Tu pourras le restaurer dans Paramètres → Éléments supprimés.`,
       async () => {
         const { error } = await deleteGroups(supabase, [id]);
         if (error) throw error;
@@ -428,6 +430,7 @@ export function PrototypeApp() {
         setGroupEditOpen(false);
         setGroupEditRow(null);
         refreshGroups();
+        void refreshTrash();
         showToast("Groupe supprimé.");
       },
     );
@@ -436,26 +439,103 @@ export function PrototypeApp() {
     openConfirmDelete,
     supabase,
     refreshGroups,
+    refreshTrash,
     showToast,
   ]);
 
+  const handleRestoreTrashContacts = useCallback(
+    async (ids: string[]) => {
+      if (!user?.id) throw new Error("Tu dois être connecté.");
+      const { restored, error } = await restoreClients(supabase, user.id, ids);
+      if (error) throw error;
+      refreshContacts();
+      showToast(
+        `${restored} contact${restored > 1 ? "s" : ""} restauré${restored > 1 ? "s" : ""}.`,
+      );
+    },
+    [supabase, user?.id, refreshContacts, showToast],
+  );
+
+  const handleRestoreTrashGroups = useCallback(
+    async (ids: string[]) => {
+      if (!user?.id) throw new Error("Tu dois être connecté.");
+      const { restored, error } = await restoreGroups(supabase, user.id, ids);
+      if (error) throw error;
+      refreshGroups();
+      showToast(
+        `${restored} groupe${restored > 1 ? "s" : ""} restauré${restored > 1 ? "s" : ""}.`,
+      );
+    },
+    [supabase, user?.id, refreshGroups, showToast],
+  );
+
   const openCampaignComposer = useCallback(
-    (preselectedGroupName?: string) => {
-      const p = preselectedGroupName?.trim() ?? "";
-      setCampaignRecipientMode(p ? "lists" : "manual");
+    (
+      preset?:
+        | string
+        | { contactIds?: string[]; groupNames?: string[] },
+    ) => {
+      let recipientMode: "manual" | "lists" = "manual";
+      let contactIds: string[] = [];
+      let groupNames: string[] = [];
+
+      if (typeof preset === "string") {
+        const name = preset.trim();
+        if (name) {
+          recipientMode = "lists";
+          groupNames = [name];
+        }
+      } else if (preset?.groupNames?.length) {
+        recipientMode = "lists";
+        groupNames = preset.groupNames;
+      } else if (preset?.contactIds?.length) {
+        recipientMode = "manual";
+        contactIds = preset.contactIds;
+      }
+
+      setCampaignRecipientMode(recipientMode);
       setCampaignTitle(defaultCampaignTitle());
       setCampaignSender(smsSender);
       setSmsBody("");
       setSendMode("now");
       setScheduledAt(plusTenMinutesLocalValue());
       setAiOpen(false);
-      setCampaignSelectedContactIds([]);
-      setCampaignSelectedGroupNames(p ? [p] : []);
+      setCampaignSelectedContactIds(contactIds);
+      setCampaignSelectedGroupNames(groupNames);
       setCampaignManualNumbers("");
       go("nouvelle-campagne-1");
     },
-    [go, smsSender]
+    [go, smsSender],
   );
+
+  const handleUnsubscribeContact = useCallback(async () => {
+    if (!user?.id || !contactEditRow) {
+      throw new Error("Tu dois être connecté pour désabonner un contact.");
+    }
+    const { error } = await updateClient(supabase, user.id, contactEditRow.id, {
+      firstName: cmFirst.trim() || contactEditRow.firstName,
+      lastName: cmLast.trim() || contactEditRow.lastName,
+      phoneDisplay: cmPhone,
+      groupLabels: cmGroups,
+      notes: cmNotes,
+      optIn: false,
+      stop: true,
+    });
+    if (error) throw error;
+    await refreshContacts();
+    showToast("Contact désabonné.");
+  }, [
+    user?.id,
+    contactEditRow,
+    supabase,
+    cmFirst,
+    cmLast,
+    cmPhone,
+    cmGroups,
+    cmNotes,
+    refreshContacts,
+    showToast,
+  ]);
 
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
@@ -487,10 +567,24 @@ export function PrototypeApp() {
     ]
   );
 
+  const applyStatsPreset = useCallback(
+    (preset: Exclude<StatsPeriodPreset, "custom">) => {
+      const { from, to } = statsPeriodRange(preset);
+      setDateFrom(from);
+      setDateTo(to);
+      setAppliedStatsFrom(from);
+      setAppliedStatsTo(to);
+      setStatsPeriod(preset);
+      setStatsOpen(false);
+    },
+    [],
+  );
+
   const applyStatsRange = useCallback(() => {
     setAppliedStatsFrom(dateFrom);
     setAppliedStatsTo(dateTo);
-    setChipLabel(`Période · ${fmtFr(dateFrom)} → ${fmtFr(dateTo)}`);
+    setStatsPeriod("custom");
+    setStatsOpen(false);
   }, [dateFrom, dateTo]);
 
   const handleCampaignConfirm = useCallback(async () => {
@@ -695,6 +789,9 @@ export function PrototypeApp() {
             onAddContact={openContactAdd}
             onRowClick={openContactEdit}
             onDeleteContacts={handleDeleteContacts}
+            onCreateCampaignFromContacts={(ids) =>
+              openCampaignComposer({ contactIds: ids })
+            }
           />
         );
       case "groupes":
@@ -706,6 +803,12 @@ export function PrototypeApp() {
             onCreateGroup={() => setGroupModalOpen(true)}
             onEditGroup={openGroupEdit}
             onDeleteGroups={handleDeleteGroups}
+            onCreateCampaignFromGroups={(ids) => {
+              const names = groupRows
+                .filter((g) => ids.includes(g.id))
+                .map((g) => g.name);
+              openCampaignComposer({ groupNames: names });
+            }}
           />
         );
       case "campagnes":
@@ -724,7 +827,10 @@ export function PrototypeApp() {
       case "statistiques":
         return (
           <StatistiquesView
-            chipLabel={chipLabel}
+            statsPeriod={statsPeriod}
+            appliedDateFrom={appliedStatsFrom}
+            appliedDateTo={appliedStatsTo}
+            onSelectPeriod={applyStatsPreset}
             statsOpen={statsOpen}
             setStatsOpen={setStatsOpen}
             dateFrom={dateFrom}
@@ -744,8 +850,9 @@ export function PrototypeApp() {
       case "parametres":
         return (
           <ParametresView
-            smsSender={smsSender}
-            onSmsSenderChange={setSmsSender}
+            profileForm={profile ? profileToForm(profile) : null}
+            profileLoading={profileLoading}
+            onSaveProfile={saveProfile}
             qrPublicUrl={userQrPublicUrl}
             qrLoading={userQrLoading}
             qrError={userQrError}
@@ -755,6 +862,13 @@ export function PrototypeApp() {
             onInvoiceClick={(id: string) =>
               showToast(`Téléchargement de la facture ${id} (prototype)`)
             }
+            trashContacts={trashContacts}
+            trashGroups={trashGroups}
+            trashLoading={trashLoading}
+            trashError={trashError}
+            onRestoreTrashContacts={handleRestoreTrashContacts}
+            onRestoreTrashGroups={handleRestoreTrashGroups}
+            onRefreshTrash={refreshTrash}
           />
         );
       case "acheter-credits":
@@ -796,6 +910,9 @@ export function PrototypeApp() {
             onAddContact={openContactAdd}
             onRowClick={openContactEdit}
             onDeleteContacts={handleDeleteContacts}
+            onCreateCampaignFromContacts={(ids) =>
+              openCampaignComposer({ contactIds: ids })
+            }
           />
         );
     }
@@ -863,7 +980,12 @@ export function PrototypeApp() {
             : null
         }
         onSaveContact={handleContactSave}
-        onDeleteContact={handleDeleteContactFromModal}
+        onDeleteContact={
+          contactModalMode === "edit" ? handleDeleteContactFromModal : undefined
+        }
+        onUnsubscribeContact={
+          contactModalMode === "edit" ? handleUnsubscribeContact : undefined
+        }
       />
 
       <GroupQuickCreateModal

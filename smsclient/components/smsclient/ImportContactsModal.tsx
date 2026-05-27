@@ -496,97 +496,58 @@ export function ImportContactsModal({
               )}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
                 <div className="text-[13px] font-black text-slate-800">
-                  Correspondance des colonnes
+                  Aperçu des lignes ({rowCount} ligne
+                  {rowCount > 1 ? "s" : ""})
                 </div>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
-                  Une colonne doit être mappée sur{" "}
-                  <strong className="text-slate-700">Téléphone</strong> (06/07
-                  en 10 chiffres ou +33 6/7). Le reste est optionnel.
+                  Associe chaque colonne directement dans son en-tête. Le champ{" "}
+                  <strong className="text-slate-700">Téléphone</strong> est
+                  obligatoire.
                 </p>
                 {!hasPhoneColumn && (
                   <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
                     Choisis la colonne qui contient le numéro de téléphone.
                   </p>
                 )}
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-[13px]">
-                    <thead>
-                      <tr>
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-extrabold text-slate-800">
-                          Colonne dans le fichier
-                        </th>
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-extrabold text-slate-800">
-                          1ère valeur (aperçu)
-                        </th>
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-extrabold text-slate-800">
-                          Champ dans l’app
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsed.headers.map((h, i) => (
-                        <tr key={`${h}-${i}`}>
-                          <td className="border-b border-slate-100 px-2 py-2 font-bold text-slate-800">
-                            {h || `Colonne ${i + 1}`}
-                          </td>
-                          <td className="max-w-[220px] border-b border-slate-100 px-2 py-2 font-semibold text-slate-600">
-                            <span className="line-clamp-2 break-all">
-                              {parsed.rows[0]?.[i] ?? "—"}
-                            </span>
-                          </td>
-                          <td className="border-b border-slate-100 px-2 py-2">
-                            <select
-                              className={cn(
-                                "w-full max-w-[260px] rounded-xl border border-slate-200 bg-transparent px-2 py-2 text-sm font-extrabold",
-                                roles[i] === "phone" &&
-                                  "border-[#2f6fed] ring-2 ring-[#2f6fed]/20"
-                              )}
-                              value={roles[i] ?? "skip"}
-                              disabled={importing}
-                              onChange={(e) =>
-                                setRole(i, e.target.value as ImportColumnRole)
-                              }
-                            >
-                              {ROLE_OPTIONS.map((r) => (
-                                <option key={r} value={r}>
-                                  {IMPORT_ROLE_LABELS[r]}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-                <div className="text-[13px] font-black text-slate-800">
-                  Aperçu des lignes ({rowCount} ligne
-                  {rowCount > 1 ? "s" : ""})
-                </div>
                 <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full min-w-[520px] text-[12px]">
+                  <table className="w-full min-w-[760px] text-[12px]">
                     <thead>
                       <tr className="bg-slate-50">
                         {parsed.headers.map((h, i) => {
                           const role = roles[i];
-                          const label =
-                            role && role !== "skip"
-                              ? IMPORT_ROLE_LABELS[role]
-                              : h || `Colonne ${i + 1}`;
                           return (
                             <th
                               key={`ph-${i}`}
                               className={cn(
-                                "border-b border-slate-200 px-2 py-2 text-left font-extrabold",
+                                "border-b border-slate-200 px-2 py-2 text-left align-top",
                                 role && role !== "skip"
                                   ? "text-[#2f6fed]"
                                   : "text-slate-500"
                               )}
                             >
-                              {label}
+                              <div className="min-w-[170px] space-y-1.5">
+                                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                  {h || `Colonne ${i + 1}`}
+                                </div>
+                                <select
+                                  className={cn(
+                                    "w-full rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-[12px] font-extrabold text-slate-700",
+                                    role === "phone" &&
+                                      "border-[#2f6fed] ring-2 ring-[#2f6fed]/20"
+                                  )}
+                                  value={role ?? "skip"}
+                                  disabled={importing}
+                                  onChange={(e) =>
+                                    setRole(i, e.target.value as ImportColumnRole)
+                                  }
+                                >
+                                  {ROLE_OPTIONS.map((r) => (
+                                    <option key={r} value={r}>
+                                      {IMPORT_ROLE_LABELS[r]}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             </th>
                           );
                         })}

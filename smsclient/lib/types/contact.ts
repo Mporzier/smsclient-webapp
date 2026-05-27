@@ -12,6 +12,8 @@ export type ContactRowData = {
   notes: string;
   lastSms: string;
   lastSmsBody: string;
+  /** Date de désinscription (STOP), vide si abonné */
+  unsubscribed: string;
   source: string;
   optIn: boolean;
   stopSms: boolean;

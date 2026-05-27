@@ -14,3 +14,8 @@ export {
 } from "./GroupModal";
 export { GroupQuickCreateModal } from "./GroupQuickCreateModal";
 export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+export { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
+export {
+  UnsubscribedContactsModal,
+  type UnsubscribedContactRow,
+} from "./UnsubscribedContactsModal";

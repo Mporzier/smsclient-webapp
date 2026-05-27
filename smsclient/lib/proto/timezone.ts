@@ -63,3 +63,10 @@ export function isParisDateInPast(localStr: string): boolean {
   const iso = parisLocalToISO(localStr);
   return new Date(iso).getTime() < Date.now();
 }
+
+/** Date calendaire JJ/MM/AAAA en fuseau Europe/Paris (évite le décalage d’un jour). */
+export function formatParisCalendarDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const { day, month, year } = parisDateParts(new Date(iso));
+  return `${day}/${month}/${year}`;
+}

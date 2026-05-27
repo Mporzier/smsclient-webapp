@@ -38,45 +38,6 @@ function StatusBadge({ status }: { status: SmsCampaignStatus }) {
   }
 }
 
-function statusFr(s: SmsCampaignStatus) {
-  return statusLabel[s] ?? s;
-}
-
-function downloadCampaignsCsv(rows: CampaignRowData[], filename: string) {
-  const head = [
-    "Date création",
-    "Nom",
-    "Destinataires",
-    "Statut",
-    "Envoi",
-    "Crédit SMS",
-  ];
-  const esc = (v: string) => `"${v.replaceAll('"', '""')}"`;
-  const lines = [
-    head.join(";"),
-    ...rows.map((r) =>
-      [
-        r.createdLabel,
-        r.name,
-        String(r.recipients),
-        statusFr(r.status),
-        r.sendLabel,
-        r.creditsLabel,
-      ]
-        .map(esc)
-        .join(";"),
-    ),
-  ];
-  const blob = new Blob([lines.join("\n")], {
-    type: "text/csv;charset=utf-8;",
-  });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 const columns: ColumnDef<CampaignRowData, unknown>[] = [
   { accessorKey: "createdLabel", header: "Date", size: 120 },
   {
@@ -129,17 +90,6 @@ export function CampagnesView({
           />
         </div>
         <div className="mt-0.5 flex flex-wrap gap-3">
-          <ProtoBtn
-            onClick={() =>
-              downloadCampaignsCsv(
-                rows,
-                `campagnes-sms-${new Date().toISOString().slice(0, 10)}.csv`,
-              )
-            }
-            disabled={loading || rows.length === 0}
-          >
-            Exporter
-          </ProtoBtn>
           <ProtoBtn primary onClick={onNewCampaign}>
             <PlusIcon />
             Nouvelle campagne
