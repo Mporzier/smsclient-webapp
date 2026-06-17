@@ -9,10 +9,14 @@ import {
   ContactsView,
   GroupesView,
   ParametresView,
+  LiensView,
   QrCodeView,
+  ReglementationsSmsView,
+  SoumettreAvisView,
   StatistiquesView,
 } from "./MainViews";
 import { CampaignWizard } from "@/components/smsclient/FlowViews";
+import { buildDefaultCampaignTitle } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
@@ -26,6 +30,7 @@ import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
 import { useCredits } from "@/hooks/useCredits";
 import { useGroups } from "@/hooks/useGroups";
+import { useLinks } from "@/hooks/useLinks";
 import { useStatistics } from "@/hooks/useStatistics";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { profileToForm } from "@/lib/supabase/profile";
@@ -43,7 +48,11 @@ import {
   updateClient,
 } from "@/lib/supabase/clients";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
-import { deleteGroups, insertClientGroup, updateClientGroup } from "@/lib/supabase/groups";
+import {
+  deleteGroups,
+  insertClientGroup,
+  updateClientGroup,
+} from "@/lib/supabase/groups";
 import { upsertAutomation } from "@/lib/supabase/automations";
 import { restoreClients, restoreGroups } from "@/lib/supabase/trash";
 import type { AutomationSavePayload } from "@/lib/types/automation";
@@ -51,8 +60,19 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CampaignRowData } from "@/lib/types/campaign";
 import { type ContactRowData } from "@/lib/types/contact";
+import {
+  buildCampaignRecipientIdSet,
+  SMS_PRENOM_TAG,
+} from "@/lib/proto/smsPersonalization";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import { parisLocalToISO, plusTenMinutesParis } from "@/lib/proto/timezone";
+import {
+  clearCampaignWizardSession,
+  getStoredCampaignWizardStep,
+  resolveCampaignWizardStep,
+  setStoredCampaignWizardStep,
+  type CampaignWizardStep,
+} from "@/lib/proto/campaignWizardSession";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
   statsMonthRange,
@@ -63,19 +83,19 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useRef,
   useMemo,
   useState,
 } from "react";
 
-const DEFAULT_SMS =
-  "🎉 {PRENOM}, -20% aujourd'hui sur toute la boutique ! Offre valable jusqu'à 19h. Montrez ce SMS en caisse.";
+const DEFAULT_SMS = `🎉 ${SMS_PRENOM_TAG}, -20% aujourd'hui sur toute la boutique ! Offre valable jusqu'à 19h. Montrez ce SMS en caisse.`;
 
 function plusTenMinutesLocalValue() {
   return plusTenMinutesParis();
 }
 
 function defaultCampaignTitle() {
-  return `Campagne · ${new Date().toLocaleDateString("fr-FR")}`;
+  return `Campagne du ${new Date().toLocaleDateString("fr-FR")}`;
 }
 
 function parseManualNumbers(raw: string): string[] {
@@ -109,6 +129,15 @@ export function PrototypeApp() {
     error: campaignsError,
     refresh: refreshCampaigns,
   } = useCampaigns();
+
+  const {
+    rows: linkRows,
+    loading: linksLoading,
+    error: linksError,
+    refresh: refreshLinks,
+    supabase: linksSupabase,
+    userId: linksUserId,
+  } = useLinks();
 
   const automationsEnabled = route === "automatisations";
   const {
@@ -190,7 +219,9 @@ export function PrototypeApp() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeleteTitle, setConfirmDeleteTitle] = useState("");
   const [confirmDeleteDesc, setConfirmDeleteDesc] = useState("");
-  const [confirmDeleteAction, setConfirmDeleteAction] = useState<(() => Promise<void>) | null>(null);
+  const [confirmDeleteAction, setConfirmDeleteAction] = useState<
+    (() => Promise<void>) | null
+  >(null);
 
   const groupOptions = useMemo(() => {
     const fromDb = groupRows.map((g) => g.name);
@@ -220,7 +251,7 @@ export function PrototypeApp() {
           phone: c.phone,
           date: c.unsubscribed !== "—" ? c.unsubscribed : c.created,
         })),
-    [contacts],
+    [contacts]
   );
 
   const [campaignRecipientMode, setCampaignRecipientMode] = useState<
@@ -232,40 +263,27 @@ export function PrototypeApp() {
   const [campaignSelectedContactIds, setCampaignSelectedContactIds] = useState<
     string[]
   >([]);
+  const [campaignExcludedContactIds, setCampaignExcludedContactIds] = useState<
+    string[]
+  >([]);
   const [campaignManualNumbers, setCampaignManualNumbers] = useState("");
   const campaignCreditsAvailable = creditsBalance;
 
   const campaignSelectedContacts = useMemo(() => {
-    if (campaignRecipientMode === "all") {
-      return contacts;
-    }
-    if (campaignRecipientMode === "manual") {
-      const ids = new Set(campaignSelectedContactIds);
-      return contacts.filter((c) => ids.has(c.id));
-    }
-    if (campaignRecipientMode === "numbers") {
-      return [];
-    }
-    const ids = new Set<string>(campaignSelectedContactIds);
-    if (campaignSelectedGroupNames.length > 0) {
-      for (const c of contacts) {
-        if (
-          c.groups.some((g) =>
-            campaignSelectedGroupNames.some(
-              (x) => x.trim().toLowerCase() === g.trim().toLowerCase()
-            )
-          )
-        ) {
-          ids.add(c.id);
-        }
-      }
-    }
+    const ids = buildCampaignRecipientIdSet({
+      contacts,
+      recipientMode: campaignRecipientMode,
+      selectedContactIds: campaignSelectedContactIds,
+      selectedGroupNames: campaignSelectedGroupNames,
+      excludedContactIds: campaignExcludedContactIds,
+    });
     return contacts.filter((c) => ids.has(c.id));
   }, [
     contacts,
     campaignRecipientMode,
     campaignSelectedContactIds,
     campaignSelectedGroupNames,
+    campaignExcludedContactIds,
   ]);
 
   const campaignManualNumberStats = useMemo(() => {
@@ -319,6 +337,36 @@ export function PrototypeApp() {
   const [sendMode, setSendMode] = useState<"now" | "sched">("now");
   const [scheduledAt, setScheduledAt] = useState(plusTenMinutesLocalValue());
   const [aiOpen, setAiOpen] = useState(false);
+  const [campaignWizardStep, setCampaignWizardStep] =
+    useState<CampaignWizardStep>(1);
+  const wizardGuardRanRef = useRef(false);
+
+  const handleWizardStepChange = useCallback((step: CampaignWizardStep) => {
+    setCampaignWizardStep(step);
+    setStoredCampaignWizardStep(step);
+  }, []);
+
+  const handleWizardExit = useCallback(() => {
+    clearCampaignWizardSession();
+    setCampaignWizardStep(1);
+  }, []);
+
+  useEffect(() => {
+    if (route !== "nouvelle-campagne") {
+      wizardGuardRanRef.current = false;
+      return;
+    }
+    if (wizardGuardRanRef.current) return;
+    wizardGuardRanRef.current = true;
+
+    const { step } = resolveCampaignWizardStep({
+      storedStep: getStoredCampaignWizardStep(),
+      recipientCount: campaignRecipientCount,
+      sms: smsBody,
+    });
+    setCampaignWizardStep(step);
+    setStoredCampaignWizardStep(step);
+  }, [route, campaignRecipientCount, smsBody]);
 
   const { from: mFrom, to: mTo } = useMemo(() => statsMonthRange(), []);
   const [statsPeriod, setStatsPeriod] = useState<StatsPeriodPreset>("month");
@@ -400,7 +448,7 @@ export function PrototypeApp() {
       setConfirmDeleteAction(() => action);
       setConfirmDeleteOpen(true);
     },
-    [],
+    []
   );
 
   const handleDeleteContacts = useCallback(
@@ -408,18 +456,24 @@ export function PrototypeApp() {
       const n = ids.length;
       openConfirmDelete(
         `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
-        `${n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"} retiré${n > 1 ? "s" : ""} de tes listes. Tu pourras ${n > 1 ? "les" : "le"} restaurer dans Paramètres → Éléments supprimés.`,
+        `${
+          n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"
+        } retiré${n > 1 ? "s" : ""} de tes listes. Tu pourras ${
+          n > 1 ? "les" : "le"
+        } restaurer dans Paramètres → Éléments supprimés.`,
         async () => {
           const { error } = await deleteClients(supabase, ids);
           if (error) throw error;
           setConfirmDeleteOpen(false);
           refreshContacts();
           void refreshTrash();
-          showToast(`${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
-        },
+          showToast(
+            `${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
+          );
+        }
       );
     },
-    [openConfirmDelete, supabase, refreshContacts, refreshTrash, showToast],
+    [openConfirmDelete, supabase, refreshContacts, refreshTrash, showToast]
   );
 
   const handleDeleteContactFromModal = useCallback(() => {
@@ -433,18 +487,24 @@ export function PrototypeApp() {
       const n = ids.length;
       openConfirmDelete(
         `Supprimer ${n} groupe${n > 1 ? "s" : ""} ?`,
-        `${n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"} retiré${n > 1 ? "s" : ""} de tes listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
+        `${
+          n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"
+        } retiré${
+          n > 1 ? "s" : ""
+        } de tes listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
         async () => {
           const { error } = await deleteGroups(supabase, ids);
           if (error) throw error;
           setConfirmDeleteOpen(false);
           refreshGroups();
           void refreshTrash();
-          showToast(`${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
-        },
+          showToast(
+            `${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
+          );
+        }
       );
     },
-    [openConfirmDelete, supabase, refreshGroups, refreshTrash, showToast],
+    [openConfirmDelete, supabase, refreshGroups, refreshTrash, showToast]
   );
 
   const handleDeleteGroupFromModal = useCallback(() => {
@@ -463,7 +523,7 @@ export function PrototypeApp() {
         refreshGroups();
         void refreshTrash();
         showToast("Groupe supprimé.");
-      },
+      }
     );
   }, [
     groupEditRow,
@@ -481,10 +541,12 @@ export function PrototypeApp() {
       if (error) throw error;
       refreshContacts();
       showToast(
-        `${restored} contact${restored > 1 ? "s" : ""} restauré${restored > 1 ? "s" : ""}.`,
+        `${restored} contact${restored > 1 ? "s" : ""} restauré${
+          restored > 1 ? "s" : ""
+        }.`
       );
     },
-    [supabase, user?.id, refreshContacts, showToast],
+    [supabase, user?.id, refreshContacts, showToast]
   );
 
   const handleRestoreTrashGroups = useCallback(
@@ -494,18 +556,16 @@ export function PrototypeApp() {
       if (error) throw error;
       refreshGroups();
       showToast(
-        `${restored} groupe${restored > 1 ? "s" : ""} restauré${restored > 1 ? "s" : ""}.`,
+        `${restored} groupe${restored > 1 ? "s" : ""} restauré${
+          restored > 1 ? "s" : ""
+        }.`
       );
     },
-    [supabase, user?.id, refreshGroups, showToast],
+    [supabase, user?.id, refreshGroups, showToast]
   );
 
   const openCampaignComposer = useCallback(
-    (
-      preset?:
-        | string
-        | { contactIds?: string[]; groupNames?: string[] },
-    ) => {
+    (preset?: string | { contactIds?: string[]; groupNames?: string[] }) => {
       let recipientMode: "manual" | "lists" = "manual";
       let contactIds: string[] = [];
       let groupNames: string[] = [];
@@ -532,11 +592,14 @@ export function PrototypeApp() {
       setScheduledAt(plusTenMinutesLocalValue());
       setAiOpen(false);
       setCampaignSelectedContactIds(contactIds);
+      setCampaignExcludedContactIds([]);
       setCampaignSelectedGroupNames(groupNames);
       setCampaignManualNumbers("");
-      go("nouvelle-campagne-1");
+      setCampaignWizardStep(1);
+      setStoredCampaignWizardStep(1);
+      go("nouvelle-campagne");
     },
-    [go, smsSender],
+    [go, smsSender]
   );
 
   const handleUnsubscribeContact = useCallback(async () => {
@@ -573,14 +636,20 @@ export function PrototypeApp() {
   const handleAutomationSave = useCallback(
     async (payload: AutomationSavePayload) => {
       if (!user?.id) {
-        throw new Error("Tu dois être connecté pour enregistrer une automatisation.");
+        throw new Error(
+          "Tu dois être connecté pour enregistrer une automatisation."
+        );
       }
       const { error } = await upsertAutomation(supabase, user.id, payload);
       if (error) throw error;
       await refreshAutomations();
-      showToast(payload.enabled ? "Automatisation activée." : "Automatisation enregistrée.");
+      showToast(
+        payload.enabled
+          ? "Automatisation activée."
+          : "Automatisation enregistrée."
+      );
     },
-    [user?.id, supabase, refreshAutomations, showToast],
+    [user?.id, supabase, refreshAutomations, showToast]
   );
 
   const handleContactSave = useCallback(
@@ -623,7 +692,7 @@ export function PrototypeApp() {
       setStatsPeriod(preset);
       setStatsOpen(false);
     },
-    [],
+    []
   );
 
   const applyStatsRange = useCallback(() => {
@@ -637,14 +706,19 @@ export function PrototypeApp() {
     if (!user?.id) {
       throw new Error("Tu dois être connecté pour enregistrer une campagne.");
     }
-    const targetContacts = campaignRecipientMode !== "numbers"
-      ? campaignSelectedContacts
-          .filter((c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone))
-          .map((c) => ({ firstName: c.firstName, lastName: c.lastName, phone: c.phone }))
-      : undefined;
+    const targetContacts =
+      campaignRecipientMode !== "numbers"
+        ? campaignSelectedContacts
+            .filter((c) => c.optIn && !c.stopSms && isValidFrMobile(c.phone))
+            .map((c) => ({
+              firstName: c.firstName,
+              lastName: c.lastName,
+              phone: c.phone,
+            }))
+        : undefined;
 
     const { error } = await insertSmsCampaign(supabase, user.id, {
-      title: campaignTitle,
+      title: campaignTitle.trim() || buildDefaultCampaignTitle(),
       sender: campaignSender,
       body: smsBody,
       sendMode,
@@ -660,7 +734,10 @@ export function PrototypeApp() {
             })()
           : null,
       targetContacts,
-      targetGroups: campaignSelectedGroupNames.length > 0 ? campaignSelectedGroupNames : undefined,
+      targetGroups:
+        campaignSelectedGroupNames.length > 0
+          ? campaignSelectedGroupNames
+          : undefined,
     });
     if (error) throw error;
     if (campaignRecipientMode !== "numbers") {
@@ -691,9 +768,7 @@ export function PrototypeApp() {
   const preselectGroupOnContactForm = useCallback((groupName: string) => {
     const trimmed = groupName.trim();
     if (!trimmed) return;
-    setCmGroups((prev) =>
-      prev.includes(trimmed) ? prev : [...prev, trimmed]
-    );
+    setCmGroups((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
   }, []);
 
   const onGroupCreatedFromModal = useCallback(
@@ -792,6 +867,9 @@ export function PrototypeApp() {
   );
 
   const campaignWizardProps = {
+    step: campaignWizardStep,
+    onWizardStepChange: handleWizardStepChange,
+    onWizardExit: handleWizardExit,
     go,
     title: campaignTitle,
     setTitle: setCampaignTitle,
@@ -806,7 +884,9 @@ export function PrototypeApp() {
     aiOpen,
     setAiOpen,
     groups: groupRows,
+    groupsLoading,
     contacts,
+    contactsLoading,
     selectedGroupNames: campaignSelectedGroupNames,
     setSelectedGroupNames: setCampaignSelectedGroupNames,
     recipientMode: campaignRecipientMode,
@@ -815,6 +895,8 @@ export function PrototypeApp() {
     setManualNumbers: setCampaignManualNumbers,
     selectedContactIds: campaignSelectedContactIds,
     setSelectedContactIds: setCampaignSelectedContactIds,
+    excludedContactIds: campaignExcludedContactIds,
+    setExcludedContactIds: setCampaignExcludedContactIds,
     recipientSelectedRaw: campaignRecipientSelectedRaw,
     recipientExcludedStop: campaignExcludedStop,
     recipientExcludedInvalid: campaignExcludedInvalid,
@@ -903,6 +985,22 @@ export function PrototypeApp() {
             unsubscribedContacts={unsubscribedContacts}
           />
         );
+      case "liens":
+        return (
+          <LiensView
+            rows={linkRows}
+            loading={linksLoading}
+            error={linksError}
+            supabase={linksSupabase}
+            userId={linksUserId}
+            onRefresh={refreshLinks}
+            onToast={showToast}
+          />
+        );
+      case "reglementations-sms":
+        return <ReglementationsSmsView />;
+      case "soumettre-avis":
+        return <SoumettreAvisView onToast={showToast} />;
       case "qr-boutique":
         return (
           <QrCodeView
@@ -916,7 +1014,7 @@ export function PrototypeApp() {
               showToast(
                 enabled
                   ? "SMS de bienvenue activé."
-                  : "SMS de bienvenue désactivé.",
+                  : "SMS de bienvenue désactivé."
               );
             }}
             wheelConfig={qrWheelConfig}
@@ -971,27 +1069,30 @@ export function PrototypeApp() {
             onCancel={() => go("campagnes")}
             onBuy={async (selection) => {
               if (!user?.id) {
-                throw new Error("Tu dois être connecté pour acheter des crédits.");
+                throw new Error(
+                  "Tu dois être connecté pour acheter des crédits."
+                );
               }
               const { invoiceRef, error } = await buyCredits({
                 packCode: selection.code,
                 packLabel: selection.pack,
                 credits: selection.credits,
-                amountEur: Math.round((selection.priceHT + selection.priceHT * 0.2) * 100) / 100,
+                amountEur:
+                  Math.round(
+                    (selection.priceHT + selection.priceHT * 0.2) * 100
+                  ) / 100,
               });
               if (error) throw error;
               showToast(
-                `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(selection.credits)} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`,
+                `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(
+                  selection.credits
+                )} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`
               );
             }}
           />
         );
-      case "nouvelle-campagne-1":
-        return <CampaignWizard step={1} {...campaignWizardProps} />;
-      case "nouvelle-campagne-2":
-        return <CampaignWizard step={2} {...campaignWizardProps} />;
-      case "nouvelle-campagne-3":
-        return <CampaignWizard step={3} {...campaignWizardProps} />;
+      case "nouvelle-campagne":
+        return <CampaignWizard {...campaignWizardProps} />;
       default:
         return (
           <ContactsView
@@ -1018,6 +1119,9 @@ export function PrototypeApp() {
         onNewCampaign={() => openCampaignComposer()}
         creditsLabel={creditsLoading ? "…" : creditsBalanceLabel}
         onBuyCredits={() => go("acheter-credits")}
+        campaignWizardStep={
+          route === "nouvelle-campagne" ? campaignWizardStep : undefined
+        }
       >
         {renderRoute(route)}
       </AppShell>

@@ -4,6 +4,8 @@ import type { GroupRowData } from "@/lib/types/group";
 
 export type CampaignWizardProps = {
   step: 1 | 2 | 3;
+  onWizardStepChange: (step: 1 | 2 | 3) => void;
+  onWizardExit: () => void;
   go: (h: string) => void;
   title: string;
   setTitle: (v: string) => void;
@@ -18,7 +20,9 @@ export type CampaignWizardProps = {
   aiOpen: boolean;
   setAiOpen: (v: boolean) => void;
   groups: GroupRowData[];
+  groupsLoading: boolean;
   contacts: ContactRowData[];
+  contactsLoading: boolean;
   recipientMode: "manual" | "lists" | "all" | "numbers";
   setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
   manualNumbers: string;
@@ -27,6 +31,8 @@ export type CampaignWizardProps = {
   setSelectedGroupNames: Dispatch<SetStateAction<string[]>>;
   selectedContactIds: string[];
   setSelectedContactIds: Dispatch<SetStateAction<string[]>>;
+  excludedContactIds: string[];
+  setExcludedContactIds: Dispatch<SetStateAction<string[]>>;
   recipientSelectedRaw: number;
   recipientExcludedStop: number;
   recipientExcludedInvalid: number;

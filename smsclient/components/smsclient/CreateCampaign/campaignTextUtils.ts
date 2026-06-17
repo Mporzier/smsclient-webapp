@@ -1,6 +1,8 @@
+import { SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
+
 export function buildDefaultCampaignTitle(): string {
   const d = new Date().toLocaleDateString("fr-FR");
-  return `Campagne · ${d}`.slice(0, 60);
+  return `Campagne du ${d}`.slice(0, 80);
 }
 
 export function generateAiVariants(args: {
@@ -8,20 +10,31 @@ export function generateAiVariants(args: {
   offer: string;
   duration: string;
   tone: string;
+  includeFirstName?: boolean;
 }): string[] {
   const objective = args.objective.trim() || "offre boutique";
   const offer = args.offer.trim() || "une offre exclusive";
   const duration = args.duration.trim() || "48h";
   const tone = args.tone.trim().toLowerCase();
-  const opener =
-    tone === "premium"
-      ? "Bonjour {PRENOM},"
+  const includeFirstName = args.includeFirstName !== false;
+
+  const opener = includeFirstName
+    ? tone === "premium"
+      ? `Bonjour ${SMS_PRENOM_TAG},`
       : tone === "urgent"
-        ? "{PRENOM},"
-        : "Hello {PRENOM},";
+        ? `${SMS_PRENOM_TAG},`
+        : `Hello ${SMS_PRENOM_TAG},`
+    : tone === "premium"
+      ? "Bonjour,"
+      : tone === "urgent"
+        ? ""
+        : "Hello,";
+
+  const greet = opener ? `${opener} ` : "";
+
   return [
-    `${opener} ${objective} : ${offer}. Valable ${duration}. Réponds STOP pour ne plus recevoir nos SMS.`,
-    `${opener} profite de ${offer} pour ${objective}. Fin de l’offre dans ${duration}.`,
+    `${greet}${objective} : ${offer}. Valable ${duration}. Réponds STOP pour ne plus recevoir nos SMS.`,
+    `${greet}profite de ${offer} pour ${objective}. Fin de l’offre dans ${duration}.`,
     `${objective} 💬 ${offer} pendant ${duration}. Passe en boutique avec ce SMS !`,
   ].map((x) => x.slice(0, 320));
 }
@@ -33,6 +46,18 @@ export function normalizeUrl(url: string): string {
     return `https://${t}`;
   }
   return t;
+}
+
+/** Lien court prototype pour le suivi des clics (remplacé par l’API plus tard). */
+export function minifyCampaignLink(url: string): string {
+  const normalized = normalizeUrl(url);
+  if (!normalized) return "";
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+  }
+  const slug = hash.toString(36).slice(0, 7);
+  return `https://l.sms.fm/${slug}`;
 }
 
 export function removeExistingUrl(text: string): string {

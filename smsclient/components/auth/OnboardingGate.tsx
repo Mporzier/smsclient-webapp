@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { AppLoadingOverlay } from "@/components/ui/AppLoadingOverlay";
 import type { ReactNode } from "react";
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
@@ -11,14 +12,6 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
 
   if (!user || authLoading) {
     return <>{children}</>;
-  }
-
-  if (profileLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-600">
-        <p className="text-sm font-semibold">Chargement de ton compte…</p>
-      </div>
-    );
   }
 
   if (error) {
@@ -35,5 +28,10 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     return <OnboardingWizard />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {profileLoading ? <AppLoadingOverlay /> : null}
+    </>
+  );
 }

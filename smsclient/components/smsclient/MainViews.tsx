@@ -9,7 +9,10 @@ export {
   CampagnesView,
   ContactsView,
   GroupesView,
+  LiensView,
   ParametresView,
   QrCodeView,
+  ReglementationsSmsView,
+  SoumettreAvisView,
   StatistiquesView,
 } from "./views";

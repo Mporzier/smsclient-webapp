@@ -3,11 +3,12 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
+import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
 import { cn } from "@/lib/cn";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
-import { navOverrideForRoute, ROUTE_TITLES } from "@/lib/proto/routes";
+import { navOverrideForRoute, ROUTE_TITLES, isCampaignWizardRoute } from "@/lib/proto/routes";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
@@ -19,7 +20,10 @@ import {
   Send,
   Zap,
   Contact,
+  Link2,
+  MessageSquareText,
   QrCode,
+  Scale,
   Settings,
   Users,
 } from "lucide-react";
@@ -129,7 +133,10 @@ type NavKey =
   | "automatisations"
   | "statistiques"
   | "parametres"
-  | "qr-boutique";
+  | "qr-boutique"
+  | "reglementations-sms"
+  | "soumettre-avis"
+  | "liens";
 
 type ShellProps = {
   route: AppRoute;
@@ -137,6 +144,7 @@ type ShellProps = {
   onNewCampaign: () => void;
   creditsLabel?: string;
   onBuyCredits?: () => void;
+  campaignWizardStep?: 1 | 2 | 3;
   children: ReactNode;
 };
 
@@ -186,17 +194,21 @@ export function AppShell({
   onNewCampaign,
   creditsLabel,
   onBuyCredits,
+  campaignWizardStep,
   children,
 }: ShellProps) {
   const { user, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const active = navOverrideForRoute(route);
   const [profileOpen, setProfileOpen] = useState(false);
+  const isCampaignWizard = isCampaignWizardRoute(route);
 
   const email = user?.email ?? "";
 
   const displayName = useMemo(() => {
+    if (profileLoading) return null;
+
     const first = profile?.firstName?.trim() ?? "";
     const last = profile?.lastName?.trim() ?? "";
     const full = [first, last].filter(Boolean).join(" ");
@@ -205,9 +217,11 @@ export function AppShell({
     if (company) return company;
     const local = email.split("@")[0]?.trim();
     return local || "Mon compte";
-  }, [profile, email]);
+  }, [profile, profileLoading, email]);
 
   const initials = useMemo(() => {
+    if (profileLoading) return null;
+
     if (profile?.firstName?.trim() || profile?.lastName?.trim()) {
       return contactInitials({
         firstName: profile.firstName,
@@ -216,7 +230,7 @@ export function AppShell({
     }
     const local = email.split("@")[0]?.trim();
     return local ? local.slice(0, 2).toUpperCase() : "?";
-  }, [profile, email]);
+  }, [profile, profileLoading, email]);
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -258,9 +272,14 @@ export function AppShell({
                 smsclient.fr
               </span>
             </div>
-            <h1 className="m-0 min-w-0 flex-1 truncate pl-5 pr-3 text-lg font-extrabold text-slate-700">
-              {ROUTE_TITLES[route]}
-            </h1>
+            <div className="flex min-w-0 flex-1 items-center gap-3 pl-5 pr-3">
+              <h1 className="m-0 shrink-0 text-lg font-extrabold text-slate-700">
+                {ROUTE_TITLES[route]}
+              </h1>
+              {isCampaignWizard && campaignWizardStep != null && (
+                <CampaignWizardStepper current={campaignWizardStep} compact />
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2.5">
             {creditsLabel && (
@@ -346,12 +365,34 @@ export function AppShell({
               className="flex flex-col gap-1 border-t border-slate-200/80 pt-2.5"
               aria-label="Outils"
             >
-              {(() => {
-                const isActive = active === "qr-boutique";
+              {[
+                { id: "liens" as const, label: "Liens", hash: "liens", icon: Link2 },
+                {
+                  id: "qr-boutique" as const,
+                  label: "QR code boutique",
+                  hash: "qr-boutique",
+                  icon: QrCode,
+                },
+                {
+                  id: "reglementations-sms" as const,
+                  label: "Réglementations SMS",
+                  hash: "reglementations-sms",
+                  icon: Scale,
+                },
+                {
+                  id: "soumettre-avis" as const,
+                  label: "Soumettre un avis",
+                  hash: "soumettre-avis",
+                  icon: MessageSquareText,
+                },
+              ].map((item) => {
+                const isActive = active === item.id;
+                const Icon = item.icon;
                 return (
                   <button
+                    key={item.id}
                     type="button"
-                    onClick={() => go("qr-boutique")}
+                    onClick={() => go(item.hash)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
@@ -362,12 +403,12 @@ export function AppShell({
                     )}
                   >
                     <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
-                      <QrCode className={navMainIconClass} aria-hidden />
+                      <Icon className={navMainIconClass} aria-hidden />
                     </span>
-                    QR code boutique
+                    {item.label}
                   </button>
                 );
-              })()}
+              })}
             </nav>
 
             <div className="relative mt-auto flex flex-col gap-2 border-t border-slate-200/80 pt-3">
@@ -388,7 +429,7 @@ export function AppShell({
                         Compte connecté
                       </p>
                       <p className="m-0 truncate text-sm font-bold text-slate-900">
-                        {displayName}
+                        {displayName ?? "…"}
                       </p>
                       {email && (
                         <p className="m-0 truncate text-xs text-slate-500">
@@ -428,11 +469,15 @@ export function AppShell({
                     className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] text-xs font-bold text-white shadow-sm"
                     aria-hidden
                   >
-                    {initials}
+                    {initials ?? (
+                      <span className="text-[10px] font-bold opacity-80">…</span>
+                    )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-xs font-bold text-slate-700">
-                      {displayName}
+                      {displayName ?? (
+                        <span className="inline-block h-3 w-16 animate-pulse rounded bg-slate-200/80 align-middle" />
+                      )}
                     </span>
                     <span className="truncate text-[11px] text-slate-400">
                       Options
@@ -443,7 +488,14 @@ export function AppShell({
             </div>
           </aside>
 
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-[18px] overflow-auto bg-slate-50 px-4 py-4 md:px-5 md:py-5">
+          <main
+            className={cn(
+              "flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50 px-4 md:px-5",
+              route === "nouvelle-campagne" || route === "reglementations-sms"
+                ? "gap-2 overflow-hidden py-3"
+                : "gap-[18px] overflow-auto py-4 md:py-5",
+            )}
+          >
             {children}
           </main>
         </div>

@@ -1,15 +1,22 @@
+import {
+  analyzeSmsMessage,
+  isGsm7Message,
+  maxBillableCharacters,
+  SMS_LIMITS,
+  type SmsEncoding,
+  type SmsMessageStats,
+} from "@/lib/proto/smsEncoding";
+
+export type { SmsEncoding, SmsMessageStats };
+export { analyzeSmsMessage, isGsm7Message, maxBillableCharacters, SMS_LIMITS };
+
+/** @deprecated Préférer `analyzeSmsMessage(text).encoding === "UNICODE"`. */
 export function isUnicode(str: string): boolean {
-  for (const ch of str) {
-    if ((ch.codePointAt(0) ?? 0) > 127) return true;
-  }
-  return false;
+  return !isGsm7Message(str);
 }
 
 export function smsPartsFor(text: string): number {
-  const unicode = isUnicode(text);
-  const per = unicode ? 70 : 160;
-  const len = [...text].length;
-  return Math.max(1, Math.ceil(len / per));
+  return analyzeSmsMessage(text).smsCount;
 }
 
 export function formatInt(n: number): string {

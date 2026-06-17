@@ -5,32 +5,55 @@ import { ProtoBtn } from "@/components/smsclient/ui";
 import {
   formatInt,
   sanitizeSender,
-  smsPartsFor,
-  isUnicode,
+  analyzeSmsMessage,
+  maxBillableCharacters,
+  SMS_LIMITS,
 } from "@/lib/proto/smsUtils";
 import { isParisDateInPast } from "@/lib/proto/timezone";
-import { formatContactGroups, type ContactRowData } from "@/lib/types/contact";
+import {
+  containsPrenomTag,
+  definitiveCampaignCredits,
+  ensurePrenomInMessage,
+  estimateCampaignCredits,
+  expandPrenomTag,
+  longestFirstName,
+  removePrenomTag,
+  resolveEligibleCampaignRecipients,
+  SMS_PRENOM_TAG,
+} from "@/lib/proto/smsPersonalization";
+import { useLinks } from "@/hooks/useLinks";
+import type { LinkRowData } from "@/lib/types/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
-  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
-  Flame,
-  Gift,
-  Heart,
-  PartyPopper,
-  Star,
-  Users,
-  MessageSquare,
-  Send,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import type { CampaignWizardProps } from "./campaignTypes";
+import {
+  CampaignWizardStep1Provider,
+  CampaignWizardStep1Main,
+  CampaignWizardStep1Summary,
+} from "./CampaignWizardStep1";
+import { SmsMessageComposer } from "./SmsMessageComposer";
+import {
+  SmsComposeModeToggle,
+  type SmsComposeMode,
+} from "./SmsComposeModeToggle";
+import { SmsAiOptionCards, type SmsAiOptions } from "./SmsAiOptionCards";
+import { SmsManualComposeOptions } from "./SmsManualComposeOptions";
+import { CampaignWizardMessageSummary } from "./CampaignWizardMessageSummary";
+import {
+  SmsIphonePreview,
+  SMS_IPHONE_PREVIEW_COLUMN,
+} from "./SmsIphonePreview";
+import { CAMPAIGN_WIZARD_SUMMARY_COL } from "./campaignLayout";
 import {
   buildDefaultCampaignTitle,
   generateAiVariants,
-  normalizeUrl,
   removeExistingUrl,
   ensureStopMention,
 } from "./campaignTextUtils";
@@ -40,57 +63,6 @@ import {
   innerInput,
   innerInp,
 } from "@/components/smsclient/flowFieldStyles";
-
-function digitsOnly(s: string): string {
-  return s.replace(/\D/g, "");
-}
-
-function frPhoneSearchKey(s: string): string {
-  let d = digitsOnly(s);
-  if (d.startsWith("33")) {
-    const rest = d.slice(2);
-    if (rest.length > 0) {
-      d = `0${rest}`;
-    }
-  } else if (d.length === 9 && /^[67]/.test(d)) {
-    d = `0${d}`;
-  }
-  return d;
-}
-
-function contactMatchesSearch(c: ContactRowData, rawQuery: string): boolean {
-  const qTrim = rawQuery.trim();
-  if (!qTrim) return true;
-
-  const qLower = qTrim.toLowerCase();
-  const groupsText = formatContactGroups(c.groups).toLowerCase();
-  const nameHay = [c.name, c.firstName, c.lastName]
-    .join(" ")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-  const textHay = `${nameHay} ${c.phone.toLowerCase()} ${groupsText}`;
-
-  if (textHay.includes(qLower)) return true;
-
-  const terms = qLower.split(/\s+/).filter(Boolean);
-  if (terms.length > 1 && terms.every((t) => textHay.includes(t))) {
-    return true;
-  }
-
-  const qDigits = digitsOnly(qTrim);
-  const qPhoneKey = frPhoneSearchKey(qTrim);
-  const phoneKey = frPhoneSearchKey(c.phone);
-  if (
-    qDigits.length >= 2 &&
-    phoneKey.length > 0 &&
-    phoneKey.includes(qPhoneKey)
-  ) {
-    return true;
-  }
-
-  return false;
-}
 
 function parseScheduleValue(val: string): {
   day: string;
@@ -164,7 +136,7 @@ function SchedulePicker({
       setMinute(parsed.minute);
       onChange(buildScheduleValue(parsed));
     },
-    [onChange],
+    [onChange]
   );
 
   const numInput =
@@ -175,14 +147,18 @@ function SchedulePicker({
   return (
     <div className="mt-1 flex flex-wrap items-end gap-3">
       <div>
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">Date</span>
+        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+          Date
+        </span>
         <div className="flex items-center gap-1">
           <input
             className={cn(numInput, borderCls, "w-11")}
             maxLength={2}
             placeholder="JJ"
             value={day}
-            onChange={(e) => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onChange={(e) =>
+              setDay(e.target.value.replace(/\D/g, "").slice(0, 2))
+            }
             onBlur={flush}
           />
           <span className={sep}>/</span>
@@ -191,7 +167,9 @@ function SchedulePicker({
             maxLength={2}
             placeholder="MM"
             value={month}
-            onChange={(e) => setMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onChange={(e) =>
+              setMonth(e.target.value.replace(/\D/g, "").slice(0, 2))
+            }
             onBlur={flush}
           />
           <span className={sep}>/</span>
@@ -200,20 +178,26 @@ function SchedulePicker({
             maxLength={4}
             placeholder="AAAA"
             value={year}
-            onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            onChange={(e) =>
+              setYear(e.target.value.replace(/\D/g, "").slice(0, 4))
+            }
             onBlur={flush}
           />
         </div>
       </div>
       <div>
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">Heure</span>
+        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+          Heure
+        </span>
         <div className="flex items-center gap-1">
           <input
             className={cn(numInput, borderCls, "w-11")}
             maxLength={2}
             placeholder="HH"
             value={hour}
-            onChange={(e) => setHour(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onChange={(e) =>
+              setHour(e.target.value.replace(/\D/g, "").slice(0, 2))
+            }
             onBlur={flush}
           />
           <span className={sep}>:</span>
@@ -222,13 +206,17 @@ function SchedulePicker({
             maxLength={2}
             placeholder="MM"
             value={minute}
-            onChange={(e) => setMinute(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onChange={(e) =>
+              setMinute(e.target.value.replace(/\D/g, "").slice(0, 2))
+            }
             onBlur={flush}
           />
         </div>
       </div>
       <div className="self-end">
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">&nbsp;</span>
+        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+          &nbsp;
+        </span>
         <button
           type="button"
           title="Ouvrir le calendrier"
@@ -250,55 +238,40 @@ function SchedulePicker({
   );
 }
 
-const STEPS = [
-  { id: 1 as const, label: "Destinataires", icon: Users },
-  { id: 2 as const, label: "Message", icon: MessageSquare },
-  { id: 3 as const, label: "Confirmation", icon: Send },
-];
-
-function Stepper({ current }: { current: 1 | 2 | 3 }) {
+function AdvancedOptionsCollapsible({
+  open,
+  onToggle,
+  children,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-1">
-      {STEPS.map((s, idx) => {
-        const done = s.id < current;
-        const active = s.id === current;
-        const Icon = s.icon;
-        return (
-          <div key={s.id} className="flex items-center gap-1">
-            {idx > 0 && (
-              <div
-                className={cn(
-                  "h-px w-6 transition-colors",
-                  done ? "bg-[#2f6fed]" : "bg-slate-200",
-                )}
-              />
-            )}
-            <div
-              className={cn(
-                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
-                active
-                  ? "bg-[#eef4ff] text-[#1f3b77]"
-                  : done
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-slate-100 text-slate-400",
-              )}
-            >
-              {done ? (
-                <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-              ) : (
-                <Icon className="h-3.5 w-3.5" />
-              )}
-              <span className="hidden sm:inline">{s.label}</span>
-            </div>
-          </div>
-        );
-      })}
+    <div className="shrink-0 border-t border-slate-100 pt-2.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-800"
+      >
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 transition-transform",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+        Détails de l&apos;envoi
+      </button>
+      {open && <div className="mt-2.5 space-y-2.5">{children}</div>}
     </div>
   );
 }
 
 export function CampaignWizard({
   step,
+  onWizardStepChange,
+  onWizardExit,
   go,
   title,
   setTitle,
@@ -310,18 +283,22 @@ export function CampaignWizard({
   setSendMode,
   scheduleAt,
   setScheduleAt,
-  aiOpen,
-  setAiOpen,
+  aiOpen: _aiOpen,
+  setAiOpen: _setAiOpen,
   groups,
+  groupsLoading,
   contacts,
+  contactsLoading,
   recipientMode,
   setRecipientMode,
-  manualNumbers,
-  setManualNumbers,
+  manualNumbers: _manualNumbers,
+  setManualNumbers: _setManualNumbers,
   selectedGroupNames,
   setSelectedGroupNames,
   selectedContactIds,
   setSelectedContactIds,
+  excludedContactIds,
+  setExcludedContactIds,
   recipientSelectedRaw,
   recipientExcludedStop,
   recipientExcludedInvalid,
@@ -331,119 +308,120 @@ export function CampaignWizard({
 }: CampaignWizardProps) {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [contactSearch, setContactSearch] = useState("");
-  const [aiOffer, setAiOffer] = useState("");
-  const [aiDuration, setAiDuration] = useState("");
-  const [aiTone, setAiTone] = useState("amical");
   const [aiVariants, setAiVariants] = useState<string[]>([]);
   const [selectedAiVariant, setSelectedAiVariant] = useState<string | null>(
-    null,
+    null
   );
-  const [messageUrl, setMessageUrl] = useState("");
+  const [aiOptions, setAiOptions] = useState<SmsAiOptions>({
+    autoOptimize: false,
+    multiVersions: false,
+    includeFirstName: containsPrenomTag(sms),
+    allowSpecialChars: true,
+    linkTracking: false,
+  });
+  const [advancedOpenStep3, setAdvancedOpenStep3] = useState(false);
+  const [composeMode, setComposeMode] = useState<SmsComposeMode>("ai");
+  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
+  const { rows: savedLinks, loading: linksLoading } = useLinks();
 
-  const unicode = isUnicode(sms);
-  const parts = smsPartsFor(sms);
-  const len = [...sms].length;
   const recipients = Math.max(0, recipientCount);
-  const totalCredits = parts * recipients;
+
+  const eligibleRecipients = useMemo(
+    () =>
+      resolveEligibleCampaignRecipients({
+        contacts,
+        recipientMode,
+        selectedContactIds,
+        selectedGroupNames,
+        excludedContactIds,
+      }),
+    [
+      contacts,
+      recipientMode,
+      selectedContactIds,
+      selectedGroupNames,
+      excludedContactIds,
+    ]
+  );
+
+  const recipientFirstNames = useMemo(
+    () => eligibleRecipients.map((c) => c.firstName),
+    [eligibleRecipients]
+  );
+
+  const estimateLongestFirstName = useMemo(
+    () => longestFirstName(recipientFirstNames),
+    [recipientFirstNames]
+  );
+
+  const manualRecipientCount = recipientMode === "numbers" ? recipients : 0;
+
+  const estimatedCredits = useMemo(
+    () => estimateCampaignCredits(sms, recipients, recipientFirstNames),
+    [sms, recipients, recipientFirstNames]
+  );
+
+  const definitiveCredits = useMemo(
+    () =>
+      definitiveCampaignCredits(sms, eligibleRecipients, manualRecipientCount),
+    [sms, eligibleRecipients, manualRecipientCount]
+  );
+
+  const activeCredits = step === 3 ? definitiveCredits : estimatedCredits;
+  const totalCredits = activeCredits.totalCredits;
+  const parts = activeCredits.parts;
+  const hasPrenomTag = containsPrenomTag(sms);
+
+  const billingMessage = useMemo(() => {
+    if (hasPrenomTag) {
+      return expandPrenomTag(sms, estimateLongestFirstName);
+    }
+    return sms;
+  }, [sms, hasPrenomTag, estimateLongestFirstName]);
+
+  const smsStats = useMemo(
+    () => analyzeSmsMessage(billingMessage),
+    [billingMessage]
+  );
+  const unicode = smsStats.encoding === "UNICODE";
+  const len = smsStats.characterCount;
 
   const displaySender = sanitizeSender(sender).trim() || "BOULANGERIE";
-  const displayTitle = title.trim() || buildDefaultCampaignTitle();
+  const defaultCampaignTitle = buildDefaultCampaignTitle();
+  const displayTitle = title.trim() || defaultCampaignTitle;
   const hasEnoughCredits = totalCredits <= creditsAvailable;
-
-  const selectedIdsFromGroups = useMemo(() => {
-    if (selectedGroupNames.length === 0) return new Set<string>();
-    const wanted = selectedGroupNames.map((x) => x.trim().toLowerCase());
-    const ids = new Set<string>();
-    for (const c of contacts) {
-      if (c.groups.some((g) => wanted.includes(g.trim().toLowerCase()))) {
-        ids.add(c.id);
-      }
-    }
-    return ids;
-  }, [contacts, selectedGroupNames]);
-
-  const filteredContacts = useMemo(() => {
-    const q = contactSearch.trim();
-    const base = !q
-      ? contacts
-      : contacts.filter((c) => contactMatchesSearch(c, contactSearch));
-
-    const subscribed: typeof base = [];
-    const unsubscribed: typeof base = [];
-    for (const c of base) {
-      if (c.stopSms || !c.optIn) {
-        unsubscribed.push(c);
-      } else {
-        subscribed.push(c);
-      }
-    }
-    return [...subscribed, ...unsubscribed];
-  }, [contacts, contactSearch]);
-
-  const selectableFilteredContacts = useMemo(
-    () => filteredContacts.filter((c) => !c.stopSms && c.optIn),
-    [filteredContacts],
-  );
 
   useEffect(() => {
     setConfirmError(null);
   }, [sms, recipientCount, sendMode]);
 
-  useEffect(() => {
-    const match = sms.match(/https?:\/\/[^\s]+/i);
-    setMessageUrl(match?.[0] ?? "");
-  }, [sms]);
-
-  const toggleGroup = useCallback(
-    (groupName: string) => {
-      setSelectedGroupNames((prev) =>
-        prev.includes(groupName)
-          ? prev.filter((x) => x !== groupName)
-          : [...prev, groupName],
-      );
+  const handleSmsChange = useCallback(
+    (next: string) => {
+      setSms(next);
+      setAiOptions((prev) => {
+        const hasTag = containsPrenomTag(next);
+        return prev.includeFirstName === hasTag
+          ? prev
+          : { ...prev, includeFirstName: hasTag };
+      });
     },
-    [setSelectedGroupNames],
+    [setSms]
   );
-
-  const toggleContact = useCallback(
-    (id: string) => {
-      setSelectedContactIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-      );
-    },
-    [setSelectedContactIds],
-  );
-
-  const selectAllVisibleContacts = useCallback(() => {
-    setSelectedContactIds((prev) => {
-      const next = new Set(prev);
-      for (const c of selectableFilteredContacts) {
-        next.add(c.id);
-      }
-      return Array.from(next);
-    });
-  }, [selectableFilteredContacts, setSelectedContactIds]);
-
-  const clearAllSelectedRecipients = useCallback(() => {
-    setSelectedContactIds([]);
-    setSelectedGroupNames([]);
-  }, [setSelectedContactIds, setSelectedGroupNames]);
 
   const generateWithAi = useCallback(() => {
     const variants = generateAiVariants({
       objective: displayTitle,
-      offer: aiOffer,
-      duration: aiDuration,
-      tone: aiTone,
+      offer: "",
+      duration: "",
+      tone: "amical",
+      includeFirstName: aiOptions.includeFirstName,
     });
     setAiVariants(variants.slice(0, 3));
     setSelectedAiVariant(null);
-    setAiOpen(true);
     if (!sms.trim()) {
-      setSms(variants[0] ?? "");
+      handleSmsChange(variants[0] ?? "");
     }
-  }, [displayTitle, aiOffer, aiDuration, aiTone, setAiOpen, sms, setSms]);
+  }, [displayTitle, sms, handleSmsChange, aiOptions.includeFirstName]);
 
   const correctAndReformulateMessage = useCallback(() => {
     const corrected = (sms || "")
@@ -452,43 +430,95 @@ export function CampaignWizard({
       .replace(/bonjour/gi, "Bonjour")
       .replace(/sms/gi, "SMS")
       .trim();
-    const base =
-      corrected || "Bonjour {PRENOM}, profitez de notre offre en boutique.";
+    const defaultBase = aiOptions.includeFirstName
+      ? `Bonjour ${SMS_PRENOM_TAG}, profitez de notre offre en boutique.`
+      : "Bonjour, profitez de notre offre en boutique.";
+    const base = corrected || defaultBase;
     const reformulated = base
       .replace("profitez de", "bénéficiez de")
       .replace("cette semaine", "en ce moment")
       .replace("dans votre boulangerie", "dans notre boutique")
       .trim();
-    setSms(reformulated ? ensureStopMention(reformulated) : "");
-  }, [sms, setSms]);
+    const withPrenom = aiOptions.includeFirstName
+      ? ensurePrenomInMessage(reformulated)
+      : removePrenomTag(reformulated);
+    handleSmsChange(withPrenom ? ensureStopMention(withPrenom) : "");
+  }, [sms, handleSmsChange, aiOptions.includeFirstName]);
 
-  const insertOrUpdateUrl = useCallback(() => {
-    const normalized = normalizeUrl(messageUrl);
-    const next = removeExistingUrl(sms);
-    setSms(normalized ? `${next} ${normalized}`.trim() : next.trim());
-  }, [messageUrl, sms, setSms]);
-
-  const toggleStopText = useCallback(() => {
-    if (/Répondez STOP pour ne plus recevoir nos SMS\./i.test(sms)) {
-      setSms(
-        sms
-          .replace(/ ?Répondez STOP pour ne plus recevoir nos SMS\./i, "")
-          .trim(),
-      );
-      return;
-    }
-    setSms(ensureStopMention(sms || ""));
-  }, [sms, setSms]);
-
-  const insertEmoji = useCallback(
-    (emoji: string) => {
-      setSms(`${sms}${emoji}`);
+  const applyLinkToSms = useCallback(
+    (link: LinkRowData | null, forceShortUrl: boolean) => {
+      const next = removeExistingUrl(sms);
+      if (!link) {
+        handleSmsChange(next.trim());
+        return;
+      }
+      const urlForSms = forceShortUrl ? link.shortUrl : link.originalUrl;
+      handleSmsChange(`${next} ${urlForSms}`.trim());
     },
-    [sms, setSms],
+    [sms, handleSmsChange],
+  );
+
+  const handleAiOptionsChange = useCallback(
+    (patch: Partial<SmsAiOptions>) => {
+      let runOptimize = false;
+      let runGenerate = false;
+      let enablePrenom = false;
+      let disablePrenom = false;
+      let disableLinkTracking = false;
+
+      setAiOptions((prev) => {
+        runOptimize = patch.autoOptimize === true && !prev.autoOptimize;
+        runGenerate = patch.multiVersions === true && !prev.multiVersions;
+        enablePrenom =
+          patch.includeFirstName === true && !prev.includeFirstName;
+        disablePrenom =
+          patch.includeFirstName === false && prev.includeFirstName;
+        disableLinkTracking =
+          patch.linkTracking === false && prev.linkTracking;
+        return { ...prev, ...patch };
+      });
+
+      if (enablePrenom) handleSmsChange(ensurePrenomInMessage(sms));
+      if (disablePrenom) handleSmsChange(removePrenomTag(sms));
+      if (disableLinkTracking) {
+        setSelectedLinkId(null);
+        applyLinkToSms(null, true);
+      }
+      if (runOptimize) correctAndReformulateMessage();
+      if (runGenerate) generateWithAi();
+    },
+    [
+      correctAndReformulateMessage,
+      generateWithAi,
+      handleSmsChange,
+      sms,
+      applyLinkToSms,
+    ],
+  );
+
+  const handleAiLinkSelect = useCallback(
+    (link: LinkRowData) => {
+      if (selectedLinkId === link.id) {
+        setSelectedLinkId(null);
+        applyLinkToSms(null, true);
+        return;
+      }
+      setSelectedLinkId(link.id);
+      applyLinkToSms(link, true);
+    },
+    [selectedLinkId, applyLinkToSms],
+  );
+
+  const insertSavedLink = useCallback(
+    (link: LinkRowData) => {
+      applyLinkToSms(link, true);
+    },
+    [applyLinkToSms],
   );
 
   const handleConfirm = useCallback(async () => {
     if (!onConfirmCampaign) {
+      onWizardExit();
       go("campagnes");
       return;
     }
@@ -496,15 +526,16 @@ export function CampaignWizard({
     setConfirmLoading(true);
     try {
       await onConfirmCampaign();
+      onWizardExit();
       go("campagnes");
     } catch (e) {
       setConfirmError(
-        e instanceof Error ? e.message : "Enregistrement impossible.",
+        e instanceof Error ? e.message : "Enregistrement impossible."
       );
     } finally {
       setConfirmLoading(false);
     }
-  }, [onConfirmCampaign, go]);
+  }, [onConfirmCampaign, go, onWizardExit]);
 
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [stepWarnings, setStepWarnings] = useState<string[]>([]);
@@ -515,46 +546,56 @@ export function CampaignWizard({
       : `${formatInt(recipients)} destinataires`;
 
   const hasStopMention = /stop/i.test(sms);
-  const maxSmsLen = 918;
+  const maxSmsLen = maxBillableCharacters(smsStats.encoding);
   const scheduleInPast =
-    sendMode === "sched" &&
-    !!scheduleAt &&
-    isParisDateInPast(scheduleAt);
+    sendMode === "sched" && !!scheduleAt && isParisDateInPast(scheduleAt);
 
   useEffect(() => {
     setStepErrors([]);
     setStepWarnings([]);
   }, [step, recipients, sms, sender, sendMode, scheduleAt]);
 
+  useEffect(() => {
+    if (step < 2) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [step]);
+
   const validateStep1 = useCallback((): boolean => {
     const errors: string[] = [];
-    const warnings: string[] = [];
-    if (!title.trim()) errors.push("Le nom de la campagne est requis.");
     if (recipients === 0)
-      errors.push("Sélectionne au moins un destinataire éligible.");
+      errors.push("Sélectionnez au moins un destinataire éligible.");
     setStepErrors(errors);
-    setStepWarnings(warnings);
+    setStepWarnings([]);
     return errors.length === 0;
-  }, [title, recipients]);
+  }, [recipients]);
 
   const validateStep2 = useCallback((): boolean => {
     const errors: string[] = [];
     const warnings: string[] = [];
     if (!sms.trim()) errors.push("Le message SMS ne peut pas être vide.");
-    if ([...sms].length > maxSmsLen)
-      errors.push(`Le message dépasse la limite de ${maxSmsLen} caractères.`);
+    if (len > maxSmsLen)
+      errors.push(
+        `Le message dépasse la limite de ${formatInt(maxSmsLen)} caractères (${
+          SMS_LIMITS.MAX_SEGMENTS
+        } SMS max).`
+      );
+    if (smsStats.exceedsMaxSegments)
+      errors.push(
+        `Le message dépasse ${SMS_LIMITS.MAX_SEGMENTS} SMS — raccourcis-le ou envoie plusieurs campagnes.`
+      );
     if (!hasStopMention)
       warnings.push(
-        "Le message ne contient pas de mention STOP. Elle est obligatoire en France.",
-      );
-    if (!hasEnoughCredits)
-      errors.push(
-        `Crédits insuffisants : ${formatInt(totalCredits)} nécessaires, ${formatInt(creditsAvailable)} disponibles.`,
+        "Le message ne contient pas de mention STOP. Elle est obligatoire en France."
       );
     setStepErrors(errors);
     setStepWarnings(warnings);
     return errors.length === 0;
-  }, [sms, hasStopMention, hasEnoughCredits, totalCredits, creditsAvailable]);
+  }, [sms, len, maxSmsLen, smsStats.exceedsMaxSegments, hasStopMention]);
 
   const validateStep3 = useCallback((): boolean => {
     const errors: string[] = [];
@@ -564,7 +605,9 @@ export function CampaignWizard({
       errors.push("La date de programmation est dans le passé.");
     if (!hasEnoughCredits)
       errors.push(
-        `Crédits insuffisants : ${formatInt(totalCredits)} nécessaires, ${formatInt(creditsAvailable)} disponibles.`,
+        `Crédits insuffisants : ${formatInt(
+          totalCredits
+        )} nécessaires, ${formatInt(creditsAvailable)} disponibles.`
       );
     if (recipients === 0)
       errors.push("Aucun destinataire éligible sélectionné.");
@@ -582,688 +625,441 @@ export function CampaignWizard({
   ]);
 
   const handleNext = useCallback(() => {
-    if (step === 1 && validateStep1()) go("nouvelle-campagne-2");
-    if (step === 2 && validateStep2()) go("nouvelle-campagne-3");
-  }, [step, validateStep1, validateStep2, go]);
+    if (step === 1 && validateStep1()) onWizardStepChange(2);
+    if (step === 2 && validateStep2()) onWizardStepChange(3);
+  }, [step, validateStep1, validateStep2, onWizardStepChange]);
 
   const handleConfirmWithValidation = useCallback(async () => {
     if (!validateStep3()) return;
     await handleConfirm();
   }, [validateStep3, handleConfirm]);
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      {/* Header with stepper + nav */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Stepper current={step} />
-        <div className="flex items-center gap-2">
-          <ProtoBtn
-            onClick={() => {
-              if (step === 1) go("campagnes");
-              else go(`nouvelle-campagne-${step - 1}`);
-            }}
-          >
-            {step === 1 ? (
-              "Annuler"
-            ) : (
-              <>
-                <ChevronLeft className="h-4 w-4" />
-                Précédent
-              </>
-            )}
-          </ProtoBtn>
-          {step < 3 && (
-            <ProtoBtn primary onClick={handleNext}>
-              Suivant
-              <ChevronRight className="h-4 w-4" />
-            </ProtoBtn>
-          )}
-          {step === 3 && (
-            <ProtoBtn
-              primary
-              disabled={confirmLoading}
-              onClick={handleConfirmWithValidation}
-            >
-              {confirmLoading
-                ? "Envoi…"
-                : sendMode === "sched"
-                  ? "Programmer l\u0027envoi"
-                  : "Confirmer l\u0027envoi"}
-            </ProtoBtn>
-          )}
+  const step1Props = {
+    groups,
+    groupsLoading,
+    contacts,
+    contactsLoading,
+    recipientMode,
+    setRecipientMode,
+    selectedGroupNames,
+    setSelectedGroupNames,
+    selectedContactIds,
+    setSelectedContactIds,
+    excludedContactIds,
+    setExcludedContactIds,
+    recipientExcludedStop,
+    recipientExcludedInvalid,
+    recipientCount,
+  };
+
+  const wizardActions = (
+    <div className="flex w-full shrink-0 gap-2">
+      <ProtoBtn
+        className="min-w-0 flex-1"
+        onClick={() => {
+          if (step === 1) {
+            onWizardExit();
+            go("campagnes");
+            return;
+          }
+          onWizardStepChange((step - 1) as 1 | 2);
+        }}
+      >
+        {step === 1 ? (
+          "Annuler"
+        ) : (
+          <>
+            <ChevronLeft className="h-4 w-4" />
+            Précédent
+          </>
+        )}
+      </ProtoBtn>
+      {step < 3 && (
+        <ProtoBtn primary className="min-w-0 flex-1" onClick={handleNext}>
+          Continuer
+          <ChevronRight className="h-4 w-4" />
+        </ProtoBtn>
+      )}
+      {step === 3 && (
+        <ProtoBtn
+          primary
+          className="min-w-0 flex-1"
+          disabled={confirmLoading}
+          onClick={handleConfirmWithValidation}
+        >
+          {confirmLoading
+            ? "Envoi…"
+            : sendMode === "sched"
+            ? "Programmer l\u0027envoi"
+            : "Confirmer l\u0027envoi"}
+        </ProtoBtn>
+      )}
+    </div>
+  );
+
+  const campaignNameField = (
+    <div className={cn(fieldBox, "shrink-0 py-2.5")}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="text-[13px] font-black text-slate-900">
+            Nom de la campagne
+          </span>
         </div>
       </div>
+      <div className="mt-1.5 flex h-9 items-center rounded-xl border border-[#dfe6f2] bg-white px-3">
+        <input
+          className="w-full border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+          maxLength={80}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={defaultCampaignTitle}
+          aria-label="Nom de la campagne"
+        />
+      </div>
+    </div>
+  );
 
-      {/* Errors & warnings */}
-      {stepErrors.length > 0 && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
-          {stepErrors.map((e, i) => (
-            <p key={i} className="m-0 text-sm font-bold text-rose-800">
-              {e}
-            </p>
-          ))}
-        </div>
-      )}
-      {stepWarnings.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          {stepWarnings.map((w, i) => (
-            <p key={i} className="m-0 text-sm font-bold text-amber-800">
-              {w}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {/* Step 1 — Destinataires */}
-      {step === 1 && (
-        <div className="flex flex-col gap-3">
-          <div className="grid max-w-4xl grid-cols-1 gap-3">
-            <div className={fieldBox}>
-              <label className={fieldLabel}>
-                <span className="inline-flex items-center gap-2">
-                  <span>Nom de la campagne</span>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-black text-blue-700">
-                    Pré-rempli
-                  </span>
-                </span>
-                <span className="text-xs text-slate-500">
-                  {Math.min(title.length, 80)}/80
-                </span>
-              </label>
-              <div
-                className={cn(
-                  innerInput,
-                  stepErrors.length > 0 && !title.trim() && "border-rose-300 ring-2 ring-rose-100",
-                )}
-              >
-                <input
-                  className={innerInp}
-                  maxLength={80}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={buildDefaultCampaignTitle()}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-[1.1fr_0.9fr] gap-3.5 max-[1100px]:grid-cols-1">
-            <div className="space-y-3">
-              <div className={fieldBox}>
-                <h2 className="m-0 text-base font-black">
-                  Choix des destinataires
-                </h2>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[
-                    { id: "manual", label: "Sélection manuelle" },
-                    { id: "lists", label: "Listes" },
-                    { id: "all", label: "Tous les contacts" },
-                    { id: "numbers", label: "Entrer vos numéros" },
-                  ].map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() =>
-                        setRecipientMode(
-                          m.id as "manual" | "lists" | "all" | "numbers",
-                        )
-                      }
-                      className={cn(
-                        "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
-                        recipientMode === m.id
-                          ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
-                      )}
-                    >
-                      {m.label}
-                    </button>
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {step === 1 ? (
+        <CampaignWizardStep1Provider {...step1Props}>
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden",
+              CAMPAIGN_WIZARD_SUMMARY_COL
+            )}
+          >
+            <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+              {stepErrors.length > 0 && (
+                <div className="shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                  {stepErrors.map((e, i) => (
+                    <p key={i} className="m-0 text-sm font-bold text-rose-800">
+                      {e}
+                    </p>
                   ))}
                 </div>
-              </div>
-
-              {recipientMode === "lists" && (
-                <div className={fieldBox}>
-                  <h2 className="m-0 text-base font-black">Listes</h2>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {groups.map((g) => (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => toggleGroup(g.name)}
-                        className={cn(
-                          "cursor-pointer rounded-xl border px-3 py-2 text-sm font-extrabold transition-colors",
-                          selectedGroupNames.includes(g.name)
-                            ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
-                        )}
-                      >
-                        {g.name} · {g.contactCount}
-                      </button>
-                    ))}
-                  </div>
+              )}
+              {campaignNameField}
+              {stepWarnings.length > 0 && (
+                <div className="shrink-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  {stepWarnings.map((w, i) => (
+                    <p key={i} className="m-0 text-sm font-bold text-amber-800">
+                      {w}
+                    </p>
+                  ))}
                 </div>
               )}
-
-              <div className={fieldBox}>
-                <h2 className="m-0 text-base font-black">
-                  {recipientMode === "numbers"
-                    ? "Numéros saisis"
-                    : "Sélection de contacts"}
-                </h2>
-                <div className="mt-2.5 flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-transparent px-3 text-sm font-semibold text-slate-500">
-                  <input
-                    className="min-w-0 flex-1 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
-                    placeholder="Rechercher un contact par nom, téléphone ou groupe"
-                    value={contactSearch}
-                    onChange={(e) => setContactSearch(e.target.value)}
-                    disabled={recipientMode === "numbers"}
-                    aria-label="Rechercher par nom, téléphone ou groupe"
-                  />
-                </div>
-                {recipientMode === "numbers" ? (
-                  <textarea
-                    className="mt-3 min-h-[150px] w-full resize-y rounded-xl border border-slate-200 bg-transparent p-3 text-sm font-semibold text-slate-900 outline-none"
-                    placeholder="Ex : 0612457890, 0677123456 ou un numéro par ligne"
-                    value={manualNumbers}
-                    onChange={(e) => setManualNumbers(e.target.value)}
-                  />
-                ) : (
-                  <>
-                    {recipientMode !== "all" && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <ProtoBtn
-                          className="h-9 px-3 text-xs"
-                          onClick={selectAllVisibleContacts}
-                          disabled={selectableFilteredContacts.length === 0}
-                        >
-                          Tout sélectionner
-                        </ProtoBtn>
-                        <ProtoBtn
-                          className="h-9 px-3 text-xs"
-                          onClick={clearAllSelectedRecipients}
-                          disabled={
-                            selectedContactIds.length === 0 &&
-                            selectedGroupNames.length === 0
-                          }
-                        >
-                          Tout désélectionner
-                        </ProtoBtn>
-                      </div>
-                    )}
-                    <div className="mt-3 max-h-[320px] overflow-auto rounded-xl border border-slate-200">
-                      {filteredContacts.map((c) => {
-                        const isUnsubscribed = c.stopSms || !c.optIn;
-                        const viaGroup = selectedIdsFromGroups.has(c.id);
-                        const checked =
-                          !isUnsubscribed &&
-                          (recipientMode === "all" ||
-                            (recipientMode === "lists" && viaGroup) ||
-                            (recipientMode === "manual" &&
-                              selectedContactIds.includes(c.id)) ||
-                            (recipientMode === "lists" &&
-                              selectedContactIds.includes(c.id)));
-                        return (
-                          <label
-                            key={c.id}
-                            className={cn(
-                              "flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-sm",
-                              isUnsubscribed
-                                ? "cursor-not-allowed bg-slate-50 text-slate-400"
-                                : "cursor-pointer bg-white",
-                            )}
-                          >
-                            <span className="min-w-0">
-                              <span
-                                className={cn(
-                                  "block truncate font-extrabold",
-                                  isUnsubscribed
-                                    ? "text-slate-400"
-                                    : "text-slate-900",
-                                )}
-                              >
-                                {c.name}
-                              </span>
-                              <span
-                                className={cn(
-                                  "block truncate text-xs font-semibold",
-                                  isUnsubscribed
-                                    ? "text-slate-400"
-                                    : "text-slate-500",
-                                )}
-                              >
-                                {c.phone} · {formatContactGroups(c.groups)}
-                                {isUnsubscribed ? " · Désabonné" : ""}
-                              </span>
-                            </span>
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
-                              checked={checked}
-                              disabled={
-                                recipientMode === "all" || isUnsubscribed
-                              }
-                              onChange={() => toggleContact(c.id)}
-                            />
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
+              <CampaignWizardStep1Main />
             </div>
-            <div className={fieldBox}>
-              <h2 className="m-0 text-base font-black">
-                Confiance de ciblage
-              </h2>
-              <p className="mt-3 text-sm font-bold text-slate-600">
-                Sélection brute :{" "}
-                <strong>{recipientSelectedRaw}</strong>
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-600">
-                Exclus STOP :{" "}
-                <strong>{recipientExcludedStop}</strong>
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-600">
-                Exclus invalides/non opt-in :{" "}
-                <strong>{recipientExcludedInvalid}</strong>
-              </p>
-              <p className="mt-2 text-base font-black text-slate-900">
-                Destinataires éligibles : {recipients}
-              </p>
-              {recipients === 0 && (
-                <p className="mt-2 text-sm font-extrabold text-amber-800">
-                  Aucun destinataire éligible pour le moment.
-                </p>
-              )}
+            <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+              {wizardActions}
+              <CampaignWizardStep1Summary />
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Step 2 — Message */}
-      {step === 2 && (
-        <div className="grid grid-cols-[1.35fr_0.65fr] gap-3.5 max-[1100px]:grid-cols-1">
-          <div className="space-y-3">
-            <div className={fieldBox}>
-              <h2 className="m-0 text-base font-black">Message</h2>
-              <div className="mt-3 grid grid-cols-2 gap-2 max-[700px]:grid-cols-1">
-                <button
-                  type="button"
-                  onClick={() => setAiOpen(false)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2 text-left text-sm font-extrabold transition-colors",
-                    !aiOpen
-                      ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                      : "border-slate-200 bg-white text-slate-700",
-                  )}
-                >
-                  Écrire mon SMS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAiOpen(true)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2 text-left text-sm font-extrabold transition-colors",
-                    aiOpen
-                      ? "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
-                      : "border-slate-200 bg-white text-slate-700",
-                  )}
-                >
-                  Créer avec l&apos;IA
-                </button>
+        </CampaignWizardStep1Provider>
+      ) : (
+        <div
+          className={cn(
+            "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden",
+            CAMPAIGN_WIZARD_SUMMARY_COL
+          )}
+        >
+          <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+            {stepErrors.length > 0 && (
+              <div className="shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+                {stepErrors.map((e, i) => (
+                  <p key={i} className="m-0 text-sm font-bold text-rose-800">
+                    {e}
+                  </p>
+                ))}
               </div>
+            )}
+            {stepWarnings.length > 0 && (
+              <div className="shrink-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                {stepWarnings.map((w, i) => (
+                  <p key={i} className="m-0 text-sm font-bold text-amber-800">
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
 
-              {!aiOpen && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <ProtoBtn
-                    className="h-9 px-3 text-xs"
-                    onClick={correctAndReformulateMessage}
-                  >
-                    Corriger et reformuler
-                  </ProtoBtn>
-                </div>
-              )}
+            {/* Step 2 — Message */}
+            {step === 2 && (
+              <div
+                className="grid min-h-0 min-w-0 flex-1 gap-3 overflow-hidden max-[900px]:grid-cols-1"
+                style={{
+                  gridTemplateColumns: `minmax(0, 1fr) ${SMS_IPHONE_PREVIEW_COLUMN}px`,
+                }}
+              >
+                <div
+                  className={cn(
+                    fieldBox,
+                    "flex min-h-0 flex-col overflow-hidden"
+                  )}
+                >
+                  <div className="shrink-0">
+                    <h2 className="m-0 text-sm font-black leading-snug text-slate-900">
+                      Votre message
+                    </h2>
+                    <p className="m-0 mt-1 text-xs font-semibold text-slate-500">
+                      {composeMode === "ai"
+                        ? "Décrivez votre intention, l\u2019IA rédigera le SMS pour vous."
+                        : "Rédigez directement le texte de votre SMS."}
+                    </p>
+                  </div>
+                  <div className="mt-2 shrink-0">
+                    <SmsComposeModeToggle
+                      value={composeMode}
+                      onChange={setComposeMode}
+                    />
+                  </div>
+                  <SmsMessageComposer
+                    value={sms}
+                    onChange={handleSmsChange}
+                    hasError={stepErrors.length > 0 && !sms.trim()}
+                    allowSpecialChars={aiOptions.allowSpecialChars}
+                    estimateFirstName={estimateLongestFirstName}
+                    placeholder={
+                      composeMode === "ai"
+                        ? "Expliquez votre message avec vos propres mots"
+                        : "Écris ton SMS ici…"
+                    }
+                  />
 
-              {aiOpen && (
-                <div className="mt-3">
-                  <div className="grid grid-cols-3 gap-2 max-[900px]:grid-cols-1">
-                    <input
-                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                      value={aiOffer}
-                      onChange={(e) => setAiOffer(e.target.value)}
-                      placeholder="Offre (optionnel)"
+                  {composeMode === "ai" ? (
+                    <SmsAiOptionCards
+                      options={aiOptions}
+                      onChange={handleAiOptionsChange}
+                      savedLinks={savedLinks}
+                      linksLoading={linksLoading}
+                      selectedLinkId={selectedLinkId}
+                      onSelectLink={handleAiLinkSelect}
                     />
-                    <input
-                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                      value={aiDuration}
-                      onChange={(e) => setAiDuration(e.target.value)}
-                      placeholder="Durée (optionnel)"
+                  ) : (
+                    <SmsManualComposeOptions
+                      onCorrectAndReformulate={correctAndReformulateMessage}
+                      savedLinks={savedLinks}
+                      linksLoading={linksLoading}
+                      onSelectLink={insertSavedLink}
                     />
-                    <select
-                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none"
-                      value={aiTone}
-                      onChange={(e) => setAiTone(e.target.value)}
-                    >
-                      <option value="amical">Ton amical</option>
-                      <option value="premium">Ton premium</option>
-                      <option value="urgent">Ton urgent</option>
-                    </select>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <ProtoBtn
-                      className="h-9 px-3 text-xs"
-                      onClick={generateWithAi}
-                    >
-                      Générer 1 à 3 variantes
-                    </ProtoBtn>
-                    <ProtoBtn
-                      className="h-9 px-3 text-xs"
-                      onClick={generateWithAi}
-                    >
-                      Régénérer
-                    </ProtoBtn>
-                  </div>
-                  {aiVariants.length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-3 max-[900px]:grid-cols-1">
+                  )}
+
+                  {composeMode === "ai" && aiOptions.multiVersions && aiVariants.length > 0 && (
+                    <div className="mt-2.5 grid max-h-[140px] shrink-0 grid-cols-1 gap-2 overflow-auto sm:grid-cols-2">
                       {aiVariants.map((v, idx) => (
-                        <div
+                        <button
                           key={`${idx}-${v.slice(0, 20)}`}
+                          type="button"
+                          onClick={() => {
+                            handleSmsChange(v);
+                            setSelectedAiVariant(v);
+                          }}
                           className={cn(
-                            "flex min-h-[140px] flex-col gap-2 rounded-2xl border bg-white p-3",
+                            "cursor-pointer rounded-xl border p-2.5 text-left text-xs font-semibold leading-snug text-slate-900",
                             selectedAiVariant === v || sms === v
-                              ? "border-[#2f6fed] bg-[#eef4ff] ring-2 ring-[#2f6fed]/30"
-                              : "border-slate-200",
+                              ? "border-[#2f6fed] bg-[#eef4ff]"
+                              : "border-slate-200 bg-white hover:border-slate-300"
                           )}
                         >
-                          <p className="text-[13px] font-extrabold leading-snug text-slate-900">
-                            {v}
-                          </p>
-                          <ProtoBtn
-                            className="mt-auto h-9 text-xs"
-                            onClick={() => {
-                              setSms(v);
-                              setSelectedAiVariant(v);
-                            }}
-                          >
-                            Utiliser
-                          </ProtoBtn>
-                        </div>
+                          {v}
+                        </button>
                       ))}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className={fieldBox}>
-              <label className={fieldLabel}>
-                <span>Message final (modifiable)</span>
-                <span className="text-xs text-slate-500">{len} car.</span>
-              </label>
-              <textarea
-                className={cn(
-                  "mt-2 min-h-[140px] w-full resize-none rounded-2xl border bg-transparent p-3.5 text-sm font-extrabold text-slate-900 outline-none",
-                  stepErrors.length > 0 && !sms.trim()
-                    ? "border-rose-300 ring-2 ring-rose-100"
-                    : "border-[#dfe6f2]",
-                )}
-                value={sms}
-                onChange={(e) => setSms(e.target.value)}
-              />
-              <div className="mt-2 flex flex-wrap gap-2">
-                <input
-                  className="h-10 min-w-[260px] flex-1 rounded-xl border border-slate-200 bg-transparent px-3 text-sm font-semibold text-slate-900 outline-none"
-                  placeholder="Ajouter un lien URL (optionnel)"
-                  value={messageUrl}
-                  onChange={(e) => setMessageUrl(e.target.value)}
-                />
-                <ProtoBtn
-                  className="h-10 px-3 text-xs"
-                  onClick={insertOrUpdateUrl}
-                >
-                  Ajouter le lien
-                </ProtoBtn>
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(
-                  [
-                    { char: "🔥", Icon: Flame },
-                    { char: "🎁", Icon: Gift },
-                    { char: "⭐", Icon: Star },
-                    { char: "❤️", Icon: Heart },
-                    { char: "🎉", Icon: PartyPopper },
-                    { char: "⏰", Icon: Clock },
-                  ] as const
-                ).map(({ char, Icon }) => (
-                  <button
-                    key={char}
-                    type="button"
-                    title={char}
-                    className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700"
-                    onClick={() => insertEmoji(char)}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden />
-                  </button>
-                ))}
-                <ProtoBtn
-                  className="h-9 px-3 text-xs"
-                  onClick={toggleStopText}
-                >
-                  Ajouter / retirer STOP
-                </ProtoBtn>
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
-                <span className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5">
-                  Encodage : {unicode ? "Unicode" : "GSM-7"}
-                </span>
-                <span className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5">
-                  Segments : {parts}
-                </span>
-                <span className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5">
-                  Crédits estimés : {formatInt(totalCredits)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Phone preview */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="mx-auto max-w-[360px] rounded-[26px] border border-slate-300 bg-white p-3 shadow-[0_14px_28px_rgba(15,23,42,0.08)]">
-              <div className="mb-2 text-center text-[11px] font-black text-slate-400">
-                Aperçu
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-[#f8fbff] p-3 text-[13px] font-extrabold leading-snug text-slate-900">
-                {sms || "—"}
-              </div>
-              <div className="mt-2 text-center text-xs font-extrabold text-slate-500">
-                {displaySender}
-              </div>
-            </div>
-            <div className="mt-3 text-center text-sm font-bold text-slate-500">
-              {destinatairesLabel}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3 — Confirmation */}
-      {step === 3 && (
-        <div className="flex flex-col gap-3">
-          {confirmError && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
-              {confirmError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-[0.9fr_1.1fr] gap-3.5 max-[1100px]:grid-cols-1">
-            {/* Phone preview */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div className="mx-auto max-w-[360px] rounded-[26px] border border-slate-300 bg-white p-3 shadow-[0_14px_28px_rgba(15,23,42,0.08)]">
-                <div className="mb-2 text-center text-[11px] font-black text-slate-400">
-                  Smartphone preview
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-[#f8fbff] p-3 text-[13px] font-extrabold leading-snug text-slate-900">
-                  {sms || "—"}
-                </div>
-                <div className="mt-2 text-center text-xs font-extrabold text-slate-500">
-                  {displaySender}
+                <div className="flex min-h-0 shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 max-[900px]:hidden">
+                  <SmsIphonePreview message={sms} sender={displaySender} />
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Recap */}
-            <div className="space-y-3">
-              <div className={fieldBox}>
-                <h2 className="m-0 text-base font-black">Récapitulatif</h2>
-                <div className="mt-3 grid gap-2">
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Campagne</span>
-                    <strong className="text-right">{displayTitle}</strong>
-                  </div>
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Expéditeur</span>
-                    <strong>{displaySender}</strong>
-                  </div>
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Destinataires</span>
-                    <strong>{destinatairesLabel}</strong>
-                  </div>
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Segments / SMS</span>
-                    <strong>
-                      {parts} ({unicode ? "Unicode" : "GSM-7"})
-                    </strong>
-                  </div>
-                  <div className="my-1 h-px bg-slate-200" />
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Coût total</span>
-                    <strong
-                      className={cn(
-                        hasEnoughCredits ? "text-slate-900" : "text-rose-700",
-                      )}
-                    >
-                      {formatInt(totalCredits)} crédit{totalCredits !== 1 && "s"}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Solde disponible</span>
-                    <strong>{formatInt(creditsAvailable)} crédit{creditsAvailable !== 1 && "s"}</strong>
-                  </div>
-                  <div className="flex justify-between gap-3 text-sm font-extrabold">
-                    <span className="text-slate-600">Crédits restants après envoi</span>
-                    <strong
-                      className={cn(
-                        hasEnoughCredits ? "text-emerald-700" : "text-rose-700",
-                      )}
-                    >
-                      {formatInt(creditsAvailable - totalCredits)} crédit{(creditsAvailable - totalCredits) !== 1 && "s"}
-                    </strong>
-                  </div>
-                </div>
-                {!hasEnoughCredits && (
-                  <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-extrabold text-rose-800">
-                    Crédits insuffisants : recharge le compte avant
-                    l&apos;envoi.
-                  </p>
-                )}
-                {recipients === 0 && (
-                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-extrabold text-amber-800">
-                    Aucun destinataire éligible sélectionné.
-                  </p>
-                )}
-              </div>
-
-              {/* Send mode + scheduling */}
-              <div className={fieldBox}>
-                <h2 className="m-0 text-base font-black">
-                  Mode d&apos;envoi
-                </h2>
-                <div className="mt-3 flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setSendMode("now")}
-                    className={cn(
-                      "flex min-w-[200px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                      sendMode === "now" && "ring-2 ring-[#2f6fed]",
-                    )}
-                  >
-                    <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
-                      {sendMode === "now" && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fed]" />
-                      )}
-                    </span>
-                    <span>
-                      <span className="block font-black">Immédiat</span>
-                      <span className="mt-1 block text-xs font-bold text-slate-500">
-                        Envoi dès validation
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSendMode("sched")}
-                    className={cn(
-                      "flex min-w-[200px] flex-1 cursor-pointer items-start gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
-                      sendMode === "sched" && "ring-2 ring-[#2f6fed]",
-                    )}
-                  >
-                    <span className="mt-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border-2 border-[#2f6fed]">
-                      {sendMode === "sched" && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#2f6fed]" />
-                      )}
-                    </span>
-                    <span>
-                      <span className="block font-black">Programmé</span>
-                      <span className="mt-1 block text-xs font-bold text-slate-500">
-                        Choisir date et heure
-                      </span>
-                    </span>
-                  </button>
-                </div>
-                {sendMode === "sched" && (
-                  <div className="mt-3">
-                    <label className="text-xs font-bold text-slate-500">
-                      Date de programmation
-                    </label>
-                    <SchedulePicker
-                      value={scheduleAt}
-                      onChange={setScheduleAt}
-                      hasError={stepErrors.length > 0 && scheduleInPast}
-                    />
-                    {scheduleInPast && (
-                      <p className="mt-1.5 text-xs font-bold text-rose-600">
-                        Cette date est dans le passé.
-                      </p>
-                    )}
+            {/* Step 3 — Confirmation */}
+            {step === 3 && (
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden gap-2">
+                {confirmError && (
+                  <div className="shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+                    {confirmError}
                   </div>
                 )}
-              </div>
 
-              {/* Sender */}
-              <div className={fieldBox}>
-                <label className={fieldLabel}>
-                  <span>Expéditeur</span>
-                  <span className="text-xs text-slate-500">
-                    {sanitizeSender(sender).length}/11
-                  </span>
-                </label>
                 <div
-                  className={cn(
-                    innerInput,
-                    stepErrors.length > 0 && !sanitizeSender(sender).trim() && "border-rose-300 ring-2 ring-rose-100",
-                  )}
+                  className="grid min-h-0 flex-1 gap-3 overflow-hidden max-[900px]:grid-cols-1"
+                  style={{
+                    gridTemplateColumns: `${SMS_IPHONE_PREVIEW_COLUMN}px minmax(0, 1fr)`,
+                  }}
                 >
-                  <input
-                    className={innerInp}
-                    maxLength={11}
-                    value={sender}
-                    onChange={(e) => setSender(e.target.value)}
-                    placeholder="BOULANGERIE"
-                  />
+                  <div className="flex min-h-0 shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 max-[900px]:hidden">
+                    <SmsIphonePreview message={sms} sender={displaySender} />
+                  </div>
+
+                  <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+                    <div className={fieldBox}>
+                      <h2 className="m-0 text-base font-black">Envoi</h2>
+                      <p className="mt-2 text-sm font-bold text-slate-700">
+                        {destinatairesLabel}
+                        <span className="text-slate-400"> · </span>
+                        <span
+                          className={cn(!hasEnoughCredits && "text-rose-700")}
+                        >
+                          {formatInt(totalCredits)} crédit
+                          {totalCredits !== 1 ? "s" : ""}
+                          {hasPrenomTag ? " (définitif)" : ""}
+                        </span>
+                      </p>
+                      {hasPrenomTag ? (
+                        <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                          Coût calculé selon le prénom de chaque destinataire.
+                        </p>
+                      ) : null}
+                      {!hasEnoughCredits && (
+                        <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-extrabold text-rose-800">
+                          Crédits insuffisants — recharge ton compte avant
+                          l&apos;envoi.
+                        </p>
+                      )}
+                      {recipients === 0 && (
+                        <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-extrabold text-amber-800">
+                          Aucun destinataire éligible sélectionné.
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSendMode("now")}
+                          className={cn(
+                            "flex min-w-[140px] flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-extrabold",
+                            sendMode === "now" &&
+                              "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                          )}
+                        >
+                          <Calendar className="h-4 w-4 shrink-0" aria-hidden />
+                          Maintenant
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSendMode("sched")}
+                          className={cn(
+                            "flex min-w-[140px] flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-extrabold",
+                            sendMode === "sched" &&
+                              "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                          )}
+                        >
+                          <Clock className="h-4 w-4 shrink-0" aria-hidden />
+                          Programmer
+                        </button>
+                      </div>
+
+                      {sendMode === "sched" && (
+                        <div className="mt-3 shrink-0">
+                          <SchedulePicker
+                            value={scheduleAt}
+                            onChange={setScheduleAt}
+                            hasError={stepErrors.length > 0 && scheduleInPast}
+                          />
+                          {scheduleInPast && (
+                            <p className="mt-1.5 text-xs font-bold text-rose-600">
+                              Cette date est dans le passé.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <AdvancedOptionsCollapsible
+                        open={advancedOpenStep3}
+                        onToggle={() => setAdvancedOpenStep3((v) => !v)}
+                      >
+                        <div className="grid gap-2 text-sm font-extrabold">
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-600">Campagne</span>
+                            <strong className="text-right">
+                              {displayTitle}
+                            </strong>
+                          </div>
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-600">
+                              Segments / SMS
+                            </span>
+                            <strong>
+                              {definitiveCredits.hasPrenomTag &&
+                              definitiveCredits.partsMin != null &&
+                              definitiveCredits.partsMax != null &&
+                              definitiveCredits.partsMin !==
+                                definitiveCredits.partsMax
+                                ? `${definitiveCredits.partsMin}–${definitiveCredits.partsMax}`
+                                : parts}{" "}
+                              ({unicode ? "Unicode" : "GSM-7"})
+                            </strong>
+                          </div>
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-600">
+                              Solde disponible
+                            </span>
+                            <strong>
+                              {formatInt(creditsAvailable)} crédit
+                              {creditsAvailable !== 1 ? "s" : ""}
+                            </strong>
+                          </div>
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-600">Après envoi</span>
+                            <strong
+                              className={cn(
+                                hasEnoughCredits
+                                  ? "text-emerald-700"
+                                  : "text-rose-700"
+                              )}
+                            >
+                              {formatInt(creditsAvailable - totalCredits)}{" "}
+                              crédit
+                              {creditsAvailable - totalCredits !== 1 ? "s" : ""}
+                            </strong>
+                          </div>
+                        </div>
+                        <label className={fieldLabel}>
+                          <span>Expéditeur SMS</span>
+                          <span className="text-xs text-slate-500">
+                            {sanitizeSender(sender).length}/11
+                          </span>
+                        </label>
+                        <div
+                          className={cn(
+                            innerInput,
+                            stepErrors.length > 0 &&
+                              !sanitizeSender(sender).trim() &&
+                              "border-rose-300 ring-2 ring-rose-100"
+                          )}
+                        >
+                          <input
+                            className={innerInp}
+                            maxLength={11}
+                            value={sender}
+                            onChange={(e) => setSender(e.target.value)}
+                            placeholder="BOULANGERIE"
+                          />
+                        </div>
+                      </AdvancedOptionsCollapsible>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+          <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
+            {wizardActions}
+            {step === 2 && (
+              <CampaignWizardMessageSummary
+                destinatairesLabel={destinatairesLabel}
+                parts={parts}
+                unicode={unicode}
+                totalCredits={totalCredits}
+                creditsAvailable={creditsAvailable}
+                hasEnoughCredits={hasEnoughCredits}
+                indicative={estimatedCredits.indicative}
+                hasPrenomTag={hasPrenomTag}
+              />
+            )}
           </div>
         </div>
       )}

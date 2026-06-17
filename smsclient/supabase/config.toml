@@ -1,0 +1,3 @@
+# JWT désactivé : la redirection est publique (clic depuis SMS, sans token).
+[functions.redirect-short-link]
+verify_jwt = false

@@ -2,6 +2,7 @@
 
 import { EmailPendingModal } from "@/components/auth/EmailPendingModal";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { AppLoadingOverlay } from "@/components/ui/AppLoadingOverlay";
 import { mapAuthErrorToFrench } from "@/lib/auth/authErrors";
 import { getEmailRedirectTo } from "@/lib/auth/siteUrl";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -67,14 +68,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, isAuthPage, isPublicPage, router, pathname, unconfirmed]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-600">
-        <p className="text-sm font-semibold">Chargement…</p>
-      </div>
-    );
-  }
-
   if (unconfirmed && user) {
     return (
       <>
@@ -93,13 +86,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isPublicPage) {
-    return null;
-  }
+  const hideChildren =
+    !loading &&
+    ((!user && !isPublicPage) || Boolean(user && isAuthPage));
 
-  if (user && isAuthPage) {
-    return null;
-  }
-
-  return <>{children}</>;
+  return (
+    <>
+      {!hideChildren ? children : null}
+      {loading ? <AppLoadingOverlay /> : null}
+    </>
+  );
 }
