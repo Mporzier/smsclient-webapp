@@ -7,6 +7,7 @@ export type UserQrCodeRecord = {
   public_label: string;
   is_active: boolean;
   welcome_sms_enabled: boolean;
+  welcome_sms_template: string;
   wheel_enabled: boolean;
   wheel_title: string;
   wheel_subtitle: string;
@@ -88,17 +89,59 @@ export async function regenerateUserQrCode(
   };
 }
 
-export async function updateUserQrWelcomeSms(
+export type QrCaptureMode = "welcome" | "wheel" | "none";
+
+export type UserQrWelcomeSmsPatch = {
+  enabled?: boolean;
+  template?: string;
+};
+
+export function qrCaptureModeFromRecord(
+  record: Pick<UserQrCodeRecord, "welcome_sms_enabled" | "wheel_enabled"> | null,
+): QrCaptureMode {
+  if (!record) return "none";
+  if (record.wheel_enabled) return "wheel";
+  if (record.welcome_sms_enabled) return "welcome";
+  return "none";
+}
+
+export async function setQrCaptureMode(
   supabase: SupabaseClient,
   userId: string,
-  enabled: boolean,
+  mode: QrCaptureMode,
 ): Promise<{ data: UserQrCodeRecord | null; error: Error | null }> {
   const { data, error } = await supabase
     .from("user_qr_codes")
     .update({
-      welcome_sms_enabled: enabled,
+      welcome_sms_enabled: mode === "welcome",
+      wheel_enabled: mode === "wheel",
       updated_at: new Date().toISOString(),
     })
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { data: null, error: new Error(error.message) };
+  }
+
+  return { data: data as UserQrCodeRecord, error: null };
+}
+
+export async function updateUserQrWelcomeSms(
+  supabase: SupabaseClient,
+  userId: string,
+  patch: UserQrWelcomeSmsPatch,
+): Promise<{ data: UserQrCodeRecord | null; error: Error | null }> {
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (patch.enabled !== undefined) update.welcome_sms_enabled = patch.enabled;
+  if (patch.template !== undefined) update.welcome_sms_template = patch.template;
+
+  const { data, error } = await supabase
+    .from("user_qr_codes")
+    .update(update)
     .eq("user_id", userId)
     .select("*")
     .single();

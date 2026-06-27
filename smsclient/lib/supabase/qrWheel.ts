@@ -6,7 +6,6 @@ import type {
   QrWheelSpinResult,
 } from "@/lib/types/qrWheel";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { UserQrCodeRecord } from "@/lib/supabase/qrCodes";
 
 type SegmentRow = {
   id: string;
@@ -36,8 +35,22 @@ function rowToSegment(row: SegmentRow): QrWheelSegment {
 export async function fetchWheelConfig(
   supabase: SupabaseClient,
   userId: string,
-  qr: UserQrCodeRecord,
-): Promise<{ data: QrWheelConfig; error: Error | null }> {
+): Promise<{ data: QrWheelConfig | null; error: Error | null }> {
+  const { data: qrRow, error: qrErr } = await supabase
+    .from("user_qr_codes")
+    .select(
+      "wheel_enabled, wheel_title, wheel_subtitle, wheel_allow_repeat, wheel_prize_validity_days, wheel_send_prize_sms",
+    )
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (qrErr) {
+    return { data: null, error: new Error(qrErr.message) };
+  }
+  if (!qrRow) {
+    return { data: null, error: null };
+  }
+
   const { data, error } = await supabase
     .from("qr_wheel_segments")
     .select("*")
@@ -46,25 +59,32 @@ export async function fetchWheelConfig(
     .order("created_at");
 
   if (error) {
-    return { data: emptyConfig(qr), error: new Error(error.message) };
+    return {
+      data: wheelConfigFromQrRow(qrRow, []),
+      error: new Error(error.message),
+    };
   }
 
   const segments = (data as SegmentRow[]).map(rowToSegment);
   return {
-    data: {
-      enabled: qr.wheel_enabled ?? false,
-      title: qr.wheel_title ?? "Tournez la roue !",
-      subtitle: qr.wheel_subtitle ?? "",
-      allowRepeat: qr.wheel_allow_repeat ?? false,
-      prizeValidityDays: qr.wheel_prize_validity_days ?? 30,
-      sendPrizeSms: qr.wheel_send_prize_sms ?? true,
-      segments,
-    },
+    data: wheelConfigFromQrRow(qrRow, segments),
     error: null,
   };
 }
 
-function emptyConfig(qr: UserQrCodeRecord): QrWheelConfig {
+type QrWheelSettingsRow = {
+  wheel_enabled: boolean | null;
+  wheel_title: string | null;
+  wheel_subtitle: string | null;
+  wheel_allow_repeat: boolean | null;
+  wheel_prize_validity_days: number | null;
+  wheel_send_prize_sms: boolean | null;
+};
+
+function wheelConfigFromQrRow(
+  qr: QrWheelSettingsRow,
+  segments: QrWheelSegment[],
+): QrWheelConfig {
   return {
     enabled: qr.wheel_enabled ?? false,
     title: qr.wheel_title ?? "Tournez la roue !",
@@ -72,7 +92,7 @@ function emptyConfig(qr: UserQrCodeRecord): QrWheelConfig {
     allowRepeat: qr.wheel_allow_repeat ?? false,
     prizeValidityDays: qr.wheel_prize_validity_days ?? 30,
     sendPrizeSms: qr.wheel_send_prize_sms ?? true,
-    segments: [],
+    segments,
   };
 }
 

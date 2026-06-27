@@ -42,3 +42,11 @@ export type QrWheelSpinResult = {
   validUntil: string | null;
   sendPrizeSms: boolean;
 };
+
+export type QrSubmitResult = {
+  ok?: boolean;
+  error?: string;
+  clientId?: string;
+  sendWelcomeSms?: boolean;
+  welcomeSmsTemplate?: string | null;
+};

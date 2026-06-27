@@ -7,7 +7,7 @@ import {
   spinQrWheel,
 } from "@/lib/supabase/qrWheel";
 import { frDisplayToE164, normalizeFRPhone } from "@/lib/proto/smsUtils";
-import type { QrWheelPublicConfig, QrWheelSpinResult } from "@/lib/types/qrWheel";
+import type { QrSubmitResult, QrWheelPublicConfig, QrWheelSpinResult } from "@/lib/types/qrWheel";
 import { useEffect, useMemo, useState } from "react";
 
 type QrCapturePageProps = {
@@ -16,11 +16,18 @@ type QrCapturePageProps = {
 
 type Phase = "form" | "wheel" | "prize" | "thanks";
 
-type QrSubmitResult = {
-  ok?: boolean;
-  error?: string;
-  client_id?: string;
-};
+function parseQrSubmitResult(raw: unknown): QrSubmitResult | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  return {
+    ok: Boolean(o.ok),
+    error: typeof o.error === "string" ? o.error : undefined,
+    clientId: typeof o.client_id === "string" ? o.client_id : undefined,
+    sendWelcomeSms: Boolean(o.send_welcome_sms),
+    welcomeSmsTemplate:
+      typeof o.welcome_sms_template === "string" ? o.welcome_sms_template : null,
+  };
+}
 
 function messageForQrSubmitError(code: string | undefined): string {
   switch (code) {
@@ -126,7 +133,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
       setError(submitErr.message);
       return;
     }
-    const payload = data as QrSubmitResult | null;
+    const payload = parseQrSubmitResult(data);
     if (!payload?.ok) {
       setError(messageForQrSubmitError(payload?.error));
       return;

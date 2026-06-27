@@ -8,13 +8,16 @@ import { createClient } from "@/lib/supabase/client";
 import { submitUserFeedback } from "@/lib/supabase/feedback";
 import type { FeedbackCategory } from "@/lib/types/feedback";
 import {
+  Bug,
   CheckCircle2,
-  Lightbulb,
-  MessageSquareText,
+  Info,
+  Lock,
+  NotebookPen,
   MoreHorizontal,
+  PenLine,
+  Send,
   Sparkles,
   TrendingUp,
-  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -26,8 +29,8 @@ const CATEGORIES: {
   label: string;
   icon: LucideIcon;
 }[] = [
-  { id: "suggestion", label: "Suggestion", icon: Lightbulb },
-  { id: "technical", label: "Problème technique", icon: Wrench },
+  { id: "suggestion", label: "Suggestion", icon: PenLine },
+  { id: "technical", label: "Problème technique", icon: Bug },
   { id: "improvement", label: "Amélioration", icon: TrendingUp },
   { id: "feature", label: "Fonctionnalité", icon: Sparkles },
   { id: "other", label: "Autre", icon: MoreHorizontal },
@@ -76,14 +79,19 @@ export function SoumettreAvisView({ onToast }: SoumettreAvisViewProps) {
     setCategory("suggestion");
     setSubmitSuccess(true);
     onToast?.("Merci, votre avis a bien été envoyé.");
-  }, [category, message, user?.id, supabase, onToast]);
+  }, [category, message, user, supabase, onToast]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <div className={cn(fieldBox, "mx-auto w-full max-w-[640px] py-5")}>
-        <div className="mb-5 flex items-start gap-2.5">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
+      <div
+        className={cn(
+          fieldBox,
+          "flex w-full max-w-[720px] flex-col px-6 pt-7 pb-0"
+        )}
+      >
+        <div className="flex items-start gap-2.5">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
-            <MessageSquareText className="h-[18px] w-[18px]" aria-hidden />
+            <NotebookPen className="h-[18px] w-[18px]" aria-hidden />
           </span>
           <div className="min-w-0">
             <h1 className="m-0 text-base font-black leading-snug text-slate-900">
@@ -117,53 +125,57 @@ export function SoumettreAvisView({ onToast }: SoumettreAvisViewProps) {
           </p>
         ) : null}
 
-        <div className="mb-4">
-          <p className="m-0 mb-2 text-xs font-black text-slate-800">Catégorie</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {CATEGORIES.map((item) => {
-              const selected = category === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setCategory(item.id);
-                    setSubmitError(null);
-                    setSubmitSuccess(false);
-                  }}
-                  className={cn(
-                    "flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition-colors",
-                    selected
-                      ? "border-[#2f6fed] bg-[#eef4ff] shadow-[inset_0_0_0_1px_rgba(47,111,237,0.12)]"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80",
-                  )}
-                >
-                  <span
+        <div className="mb-4 mt-5 -mx-6 border-t border-slate-100">
+          <div className="px-6 pt-5">
+            <p className="m-0 mb-2 text-xs font-black text-slate-800">
+              Catégorie
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {CATEGORIES.map((item) => {
+                const selected = category === item.id;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setCategory(item.id);
+                      setSubmitError(null);
+                      setSubmitSuccess(false);
+                    }}
                     className={cn(
-                      "grid h-8 w-8 place-items-center rounded-lg border",
+                      "flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition-colors",
                       selected
-                        ? "border-[#2f6fed]/25 bg-white text-[#2f6fed]"
-                        : "border-slate-200 bg-slate-50 text-slate-500",
+                        ? "border-[#2f6fed] bg-[#eef4ff] shadow-[inset_0_0_0_1px_rgba(47,111,237,0.12)]"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
                     )}
                   >
-                    <Icon className="h-4 w-4" aria-hidden />
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[11px] font-bold leading-snug",
-                      selected ? "text-[#1f3b77]" : "text-slate-700",
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      className={cn(
+                        "grid h-8 w-8 place-items-center rounded-lg border",
+                        selected
+                          ? "border-[#2f6fed]/25 bg-white text-[#2f6fed]"
+                          : "border-slate-200 bg-slate-50 text-slate-500"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden />
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[11px] font-bold leading-snug",
+                        selected ? "text-[#1f3b77]" : "text-slate-700"
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="mb-2">
+        <div className="relative">
           <textarea
             id="feedback-message"
             value={message}
@@ -175,28 +187,49 @@ export function SoumettreAvisView({ onToast }: SoumettreAvisViewProps) {
             placeholder="Décrivez votre avis, votre idée, ou le problème rencontré…"
             rows={6}
             aria-label="Votre avis"
-            className="w-full resize-none rounded-xl border border-[#dfe6f2] bg-transparent px-3.5 py-3 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+            className="w-full resize-none rounded-xl border border-[#dfe6f2] bg-transparent px-3.5 pb-7 pt-3 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
           />
-          <p className="m-0 mt-1.5 text-right text-[10px] font-semibold tabular-nums text-slate-400">
+          <p
+            className="pointer-events-none absolute bottom-2.5 right-3.5 m-0 text-[10px] font-semibold tabular-nums text-slate-400"
+            aria-hidden
+          >
             {message.length}/{MAX_LENGTH}
           </p>
         </div>
 
-        <p className="m-0 text-[11px] font-semibold leading-snug text-slate-500">
-          Nous lisons tous les avis et y répondons si nécessaire.
-        </p>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="m-0 max-w-[280px] text-[10px] font-semibold leading-snug text-slate-500">
-            Aucune donnée personnelle n&apos;est collectée
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <Info className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+          <p className="m-0 text-[11px] font-semibold leading-snug text-slate-500">
+            Nous lisons tous les avis et y répondons si nécessaire.
           </p>
-          <ProtoBtn
-            primary
-            disabled={submitting}
-            onClick={() => void handleSubmit()}
-          >
-            {submitting ? "Envoi…" : "Envoyer"}
-          </ProtoBtn>
+        </div>
+
+        <div className="mt-3 -mx-6 border-t border-slate-100">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-2.5">
+            <div className="flex max-w-[280px] items-center gap-1.5">
+              <Lock
+                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                aria-hidden
+              />
+              <p className="m-0 text-[10px] font-semibold leading-snug text-slate-500">
+                Aucune donnée personnelle n&apos;est collectée
+              </p>
+            </div>
+            <ProtoBtn
+              primary
+              disabled={submitting}
+              onClick={() => void handleSubmit()}
+            >
+              {submitting ? (
+                "Envoi…"
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden />
+                  Envoyer l&apos;avis
+                </>
+              )}
+            </ProtoBtn>
+          </div>
         </div>
       </div>
     </div>

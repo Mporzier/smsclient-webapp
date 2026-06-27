@@ -164,13 +164,13 @@ export function PrototypeApp() {
     setSmsSender,
   } = useUserProfile();
   const {
-    record: userQrRecord,
     publicUrl: userQrPublicUrl,
-    welcomeSmsEnabled: userQrWelcomeSmsEnabled,
+    captureMode: userQrCaptureMode,
+    welcomeSmsTemplate: userQrWelcomeSmsTemplate,
     loading: userQrLoading,
     error: userQrError,
-    regenerate: regenerateUserQr,
-    setWelcomeSmsEnabled: setUserQrWelcomeSms,
+    setCaptureMode: setUserQrCaptureMode,
+    setWelcomeSmsTemplate: setUserQrWelcomeSmsTemplate,
   } = useUserQrCode();
 
   const qrWheelEnabled = route === "qr-boutique";
@@ -179,7 +179,8 @@ export function PrototypeApp() {
     loading: qrWheelLoading,
     saveAll: saveQrWheel,
     enableWithDefaults: enableQrWheelDefaults,
-  } = useQrWheel(qrWheelEnabled ? userQrRecord : null);
+    patchEnabled: patchQrWheelEnabled,
+  } = useQrWheel(qrWheelEnabled);
 
   const [qrWheelSaving, setQrWheelSaving] = useState(false);
 
@@ -1008,15 +1009,27 @@ export function PrototypeApp() {
             loading={userQrLoading}
             error={userQrError}
             companyName={profile?.companyName}
-            welcomeSmsEnabled={userQrWelcomeSmsEnabled}
-            onWelcomeSmsChange={async (enabled) => {
-              await setUserQrWelcomeSms(enabled);
-              showToast(
-                enabled
-                  ? "SMS de bienvenue activé."
-                  : "SMS de bienvenue désactivé."
-              );
+            captureMode={userQrCaptureMode}
+            onCaptureModeChange={async (mode) => {
+              if (mode === "wheel") {
+                patchQrWheelEnabled(true);
+              } else {
+                patchQrWheelEnabled(false);
+              }
+              try {
+                await setUserQrCaptureMode(mode);
+                if (
+                  mode === "wheel" &&
+                  (qrWheelConfig?.segments.length ?? 0) === 0
+                ) {
+                  await enableQrWheelDefaults();
+                }
+              } catch {
+                /* rollback optimiste géré par useUserQrCode */
+              }
             }}
+            welcomeSmsTemplate={userQrWelcomeSmsTemplate}
+            onWelcomeSmsTemplateChange={setUserQrWelcomeSmsTemplate}
             wheelConfig={qrWheelConfig}
             wheelLoading={qrWheelLoading}
             wheelSaving={qrWheelSaving}
@@ -1024,7 +1037,6 @@ export function PrototypeApp() {
               setQrWheelSaving(true);
               try {
                 await saveQrWheel(config);
-                showToast("Roue des récompenses enregistrée.");
               } finally {
                 setQrWheelSaving(false);
               }
@@ -1033,12 +1045,10 @@ export function PrototypeApp() {
               setQrWheelSaving(true);
               try {
                 await enableQrWheelDefaults();
-                showToast("Roue activée avec des récompenses par défaut.");
               } finally {
                 setQrWheelSaving(false);
               }
             }}
-            onRegenerate={regenerateUserQr}
           />
         );
       case "parametres":

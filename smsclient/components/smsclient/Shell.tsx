@@ -121,7 +121,7 @@ function LogoMark({ size = 45 }: { size?: number }) {
 }
 
 /** Largeur menu latéral + bandeau marque dans le header */
-const SIDEBAR_W = "w-[200px]";
+const SIDEBAR_W = "w-[240px]";
 
 const navMainIconClass = "h-[22px] w-[22px] shrink-0 text-[#2f6fed]";
 const navSubIconClass = "h-[22px] w-[22px] shrink-0 text-[#475569]";
@@ -180,11 +180,21 @@ const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
       hash: "statistiques",
       icon: <BarChart3 className={navMainIconClass} aria-hidden />,
     },
+  ];
+
+const bottomNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
+  [
     {
       id: "parametres",
       label: "Paramètres",
       hash: "parametres",
       icon: <Settings className={navMainIconClass} aria-hidden />,
+    },
+    {
+      id: "soumettre-avis",
+      label: "Soumettre un avis",
+      hash: "soumettre-avis",
+      icon: <MessageSquareText className={navMainIconClass} aria-hidden />,
     },
   ];
 
@@ -313,7 +323,7 @@ export function AppShell({
           </div>
         </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[204px_minmax(0,1fr)] max-[860px]:grid-cols-1">
+        <div className="grid min-h-0 flex-1 grid-cols-[244px_minmax(0,1fr)] max-[860px]:grid-cols-1">
           <aside
             className={cn(
               "flex min-h-0 shrink-0 flex-col gap-2 border-r border-slate-200/80 bg-slate-100 p-2.5 max-[860px]:hidden",
@@ -379,12 +389,6 @@ export function AppShell({
                   hash: "reglementations-sms",
                   icon: Scale,
                 },
-                {
-                  id: "soumettre-avis" as const,
-                  label: "Soumettre un avis",
-                  hash: "soumettre-avis",
-                  icon: MessageSquareText,
-                },
               ].map((item) => {
                 const isActive = active === item.id;
                 const Icon = item.icon;
@@ -404,6 +408,35 @@ export function AppShell({
                   >
                     <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
                       <Icon className={navMainIconClass} aria-hidden />
+                    </span>
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <nav
+              className="flex flex-col gap-1 border-t border-slate-200/80 pt-2.5"
+              aria-label="Compte et avis"
+            >
+              {bottomNav.map((item) => {
+                const isActive = active === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => go(item.hash)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
+                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
+                      isActive
+                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
+                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-white hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-50"
+                    )}
+                  >
+                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
+                      {item.icon}
                     </span>
                     {item.label}
                   </button>
@@ -491,7 +524,9 @@ export function AppShell({
           <main
             className={cn(
               "flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50 px-4 md:px-5",
-              route === "nouvelle-campagne" || route === "reglementations-sms"
+              route === "nouvelle-campagne" ||
+              route === "reglementations-sms" ||
+              route === "qr-boutique"
                 ? "gap-2 overflow-hidden py-3"
                 : "gap-[18px] overflow-auto py-4 md:py-5",
             )}

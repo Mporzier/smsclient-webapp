@@ -1,8 +1,44 @@
-import type { QrWheelSegment } from "@/lib/types/qrWheel";
+import type { QrWheelConfig, QrWheelSegment } from "@/lib/types/qrWheel";
+
+const WHEEL_COLOR_PALETTE = [
+  "#4a86ff",
+  "#2f6fed",
+  "#6366f1",
+  "#8b5cf6",
+  "#a855f7",
+  "#ec4899",
+  "#f43f5e",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+  "#0ea5e9",
+  "#38bdf8",
+  "#fb7185",
+  "#fbbf24",
+] as const;
+
+export function randomWheelColor(used: string[] = []): string {
+  const available = WHEEL_COLOR_PALETTE.filter((color) => !used.includes(color));
+  const pool = available.length > 0 ? available : [...WHEEL_COLOR_PALETTE];
+  return pool[Math.floor(Math.random() * pool.length)] ?? "#4a86ff";
+}
+
+export function randomizeSegmentColors<T extends Pick<QrWheelSegment, "color">>(
+  segments: T[],
+): T[] {
+  const used: string[] = [];
+  return segments.map((segment) => {
+    const color = randomWheelColor(used);
+    used.push(color);
+    return { ...segment, color };
+  });
+}
 
 /** Segments par défaut à l’activation (poids = parts sur 100). */
 export function defaultWheelSegments(): Omit<QrWheelSegment, "id">[] {
-  return [
+  const segments: Omit<QrWheelSegment, "id">[] = [
     {
       sortOrder: 0,
       label: "5 % de réduction",
@@ -63,10 +99,38 @@ export function defaultWheelSegments(): Omit<QrWheelSegment, "id">[] {
       color: "#94a3b8",
     },
   ];
+  return randomizeSegmentColors(segments);
 }
 
 export function totalWheelWeight(
   segments: Pick<QrWheelSegment, "probabilityWeight">[],
 ): number {
   return segments.reduce((s, x) => s + x.probabilityWeight, 0);
+}
+
+export function qrWheelConfigsEqual(a: QrWheelConfig, b: QrWheelConfig): boolean {
+  if (
+    a.title.trim() !== b.title.trim() ||
+    a.subtitle.trim() !== b.subtitle.trim() ||
+    a.allowRepeat !== b.allowRepeat ||
+    a.prizeValidityDays !== b.prizeValidityDays ||
+    a.sendPrizeSms !== b.sendPrizeSms ||
+    a.segments.length !== b.segments.length
+  ) {
+    return false;
+  }
+
+  return a.segments.every((seg, i) => {
+    const other = b.segments[i];
+    if (!other) return false;
+    return (
+      seg.id === other.id &&
+      seg.label.trim() === other.label.trim() &&
+      seg.probabilityWeight === other.probabilityWeight &&
+      seg.isLosing === other.isLosing &&
+      seg.screenMessage.trim() === other.screenMessage.trim() &&
+      seg.smsMessage.trim() === other.smsMessage.trim() &&
+      seg.color === other.color
+    );
+  });
 }

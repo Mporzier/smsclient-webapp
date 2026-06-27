@@ -18,6 +18,7 @@ export function SmsMessageComposer({
   hasError,
   allowSpecialChars = true,
   estimateFirstName,
+  compact = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -25,6 +26,7 @@ export function SmsMessageComposer({
   hasError?: boolean;
   allowSpecialChars?: boolean;
   estimateFirstName?: string;
+  compact?: boolean;
 }) {
   const [emojisOpen, setEmojisOpen] = useState(false);
   const emojiBtnRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +44,7 @@ export function SmsMessageComposer({
   }, []);
 
   return (
-    <div className="mt-2.5 shrink-0">
+    <div className={cn("shrink-0", compact ? "mt-1.5" : "mt-2.5")}>
       <div
         className={cn(
           "overflow-hidden rounded-2xl border bg-gradient-to-b from-white to-slate-50/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow",
@@ -56,6 +58,7 @@ export function SmsMessageComposer({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          className={compact ? "min-h-16 max-h-20 py-2 text-[13px] leading-snug" : undefined}
         />
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100/80 px-2 py-1.5">

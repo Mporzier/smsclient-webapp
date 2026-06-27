@@ -1,51 +1,128 @@
 "use client";
 
+import { QrCapturePreviewModal } from "@/components/smsclient/modals/QrCapturePreviewModal";
+import { QrWelcomeSmsSettingsModal } from "@/components/smsclient/modals/QrWelcomeSmsSettingsModal";
+import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSettingsModal";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import { downloadShopQrPdf } from "@/lib/qr/downloadShopQrPdf";
+import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
 import QRCode from "qrcode";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { QrWheelSettings } from "@/components/smsclient/views/QrWheelSettings";
+import { useCallback, useEffect, useState } from "react";
+import { QrCaptureComplianceCard } from "@/components/smsclient/views/QrCaptureComplianceCard";
+import { QrCapturePhonePreview } from "@/components/smsclient/views/QrCapturePhonePreview";
+import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
+import { useQrStats } from "@/hooks/useQrStats";
 import type { QrWheelConfig } from "@/lib/types/qrWheel";
-import { Download, MessageCircle, QrCode } from "lucide-react";
+import { CircleCheck, Copy, Download, Gift, Loader2, MessageCircle, QrCode } from "lucide-react";
 
 type QrCodeViewProps = {
   publicUrl: string;
   loading: boolean;
   error: string | null;
   companyName?: string;
-  welcomeSmsEnabled: boolean;
-  onWelcomeSmsChange: (enabled: boolean) => Promise<void>;
+  captureMode: QrCaptureMode;
+  onCaptureModeChange: (mode: QrCaptureMode) => Promise<void>;
+  welcomeSmsTemplate: string;
+  onWelcomeSmsTemplateChange: (template: string) => Promise<void>;
   wheelConfig: QrWheelConfig | null;
   wheelLoading: boolean;
   wheelSaving: boolean;
   onWheelSave: (config: QrWheelConfig) => Promise<void>;
   onWheelEnableDefaults: () => Promise<void>;
-  onRegenerate: () => Promise<void>;
 };
+
+const CAPTURE_MODE_OPTIONS: {
+  mode: Exclude<QrCaptureMode, "none">;
+  title: string;
+  description: string;
+  icon: typeof MessageCircle;
+}[] = [
+  {
+    mode: "welcome",
+    title: "SMS de bienvenue",
+    description:
+      "Envoyez un SMS personnalisé juste après l'inscription du client.",
+    icon: MessageCircle,
+  },
+  {
+    mode: "wheel",
+    title: "Roue des récompenses",
+    description:
+      "Faites tourner la roue après l'inscription pour distribuer des récompenses par SMS.",
+    icon: Gift,
+  },
+];
+
+function downloadQrPng(dataUrl: string) {
+  const anchor = document.createElement("a");
+  anchor.href = dataUrl;
+  anchor.download = "qr-code-boutique.png";
+  anchor.click();
+}
+
+type QrActionButtonProps = {
+  icon: typeof Download;
+  title: string;
+  subtitle: string;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
+function QrActionButton({
+  icon: Icon,
+  title,
+  subtitle,
+  disabled,
+  onClick,
+}: QrActionButtonProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-left transition-colors hover:border-[#2f6fed]/30 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-bold leading-tight text-slate-900">
+          {title}
+        </span>
+        <span className="block truncate text-[10px] font-semibold leading-tight text-slate-500">
+          {subtitle}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 export function QrCodeView({
   publicUrl,
   loading,
   error,
   companyName,
-  welcomeSmsEnabled,
-  onWelcomeSmsChange,
+  captureMode,
+  onCaptureModeChange,
+  welcomeSmsTemplate,
+  onWelcomeSmsTemplateChange,
   wheelConfig,
   wheelLoading,
   wheelSaving,
   onWheelSave,
   onWheelEnableDefaults,
-  onRegenerate,
 }: QrCodeViewProps) {
-  const inp =
-    "h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
+  const { stats: qrStats, loading: qrStatsLoading } = useQrStats();
   const [qrImage, setQrImage] = useState("");
-  const [regenLoading, setRegenLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const [welcomeSmsSaving, setWelcomeSmsSaving] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [templateSaving, setTemplateSaving] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
+  const [wheelModalOpen, setWheelModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,191 +145,350 @@ export function QrCodeView({
     };
   }, [publicUrl]);
 
+  const handleModeSelect = useCallback(
+    (mode: Exclude<QrCaptureMode, "none">) => {
+      const nextMode: QrCaptureMode = captureMode === mode ? "none" : mode;
+      void onCaptureModeChange(nextMode);
+    },
+    [captureMode, onCaptureModeChange],
+  );
+
   return (
-    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
-      <div className="flex items-start gap-3">
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed] shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
-          aria-hidden
-        >
-          <QrCode className="h-5 w-5" strokeWidth={2.25} />
-        </div>
-        <div>
-          <h2 className="m-0 text-lg font-black text-slate-900">
-            QR code boutique
-          </h2>
-          <p className="mt-1 text-sm font-semibold text-slate-600">
-            Affiche ce QR en boutique pour collecter des contacts via un
-            formulaire public.
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[1080px] flex-col gap-2 overflow-hidden">
+      <div className="flex shrink-0 items-start gap-2">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
+          <QrCode className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <h1 className="m-0 text-sm font-black leading-snug tracking-tight text-slate-900">
+            QR code commerçant
+          </h1>
+          <p className="m-0 mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-500">
+            Affichez ce QR code en boutique pour permettre à vos clients de
+            s&apos;enregistrer dans votre base de données en quelques secondes.
           </p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-        {loading ? (
-          <div className="grid min-h-[280px] place-items-center text-sm font-bold text-slate-500">
-            Génération du QR…
-          </div>
-        ) : error ? (
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+        {error ? (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
             {error}
           </div>
         ) : (
-          <div className="grid gap-4">
-            <div className="grid place-items-center rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              {qrImage ? (
-                <Image
-                  src={qrImage}
-                  alt="QR code boutique"
-                  width={260}
-                  height={260}
-                  unoptimized
-                  className="h-[260px] w-[260px]"
+          <>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+            <div className="flex min-h-0 flex-col gap-2 lg:border-r lg:border-slate-100 lg:pr-3">
+              <div className="mx-auto flex aspect-square w-full max-w-[180px] flex-col rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+                <div className="mb-1 flex shrink-0 items-center justify-between gap-1.5">
+                  <h3 className="m-0 text-[11px] font-black leading-tight text-slate-900">
+                    QR code d&apos;inscription
+                  </h3>
+                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
+                    Actif
+                  </span>
+                </div>
+                <div className="flex min-h-0 flex-1 items-center justify-center">
+                  {qrImage ? (
+                    <Image
+                      src={qrImage}
+                      alt="QR code commerçant"
+                      width={110}
+                      height={110}
+                      unoptimized
+                      className="h-[110px] w-[110px] max-h-full max-w-full"
+                    />
+                  ) : (
+                    <div className="h-[110px] w-[110px] animate-pulse rounded-lg bg-slate-200" />
+                  )}
+                </div>
+                <p className="m-0 shrink-0 text-center text-[9px] font-semibold text-slate-400">
+                  Scannez pour tester le parcours
+                </p>
+              </div>
+
+              <div className="min-w-0">
+                <p className="m-0 mb-1 text-[11px] font-black text-slate-600">
+                  Lien d&apos;inscription
+                </p>
+                <div className="min-w-0 truncate rounded-lg border border-[#dfe6f2] bg-slate-50/80 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                  {publicUrl || "—"}
+                </div>
+              </div>
+
+              {downloadError ? (
+                <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-900">
+                  {downloadError}
+                </p>
+              ) : null}
+
+              <div className="grid grid-cols-3 gap-1.5">
+                <QrActionButton
+                  icon={Download}
+                  title="Télécharger"
+                  subtitle="PNG"
+                  disabled={!qrImage}
+                  onClick={() => {
+                    if (!qrImage) return;
+                    setDownloadError(null);
+                    downloadQrPng(qrImage);
+                  }}
                 />
-              ) : (
-                <div className="h-[260px] w-[260px] animate-pulse rounded-xl bg-slate-200" />
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">
-                Lien public
-              </label>
-              <input
-                className={inp}
-                value={publicUrl || ""}
-                readOnly
-                onFocus={(e) => e.currentTarget.select()}
-              />
-            </div>
-            {pdfError && (
-              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-                {pdfError}
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <ProtoBtn
-                primary
-                disabled={!qrImage || pdfLoading}
-                onClick={async () => {
-                  if (!qrImage || !publicUrl) return;
-                  setPdfError(null);
-                  setPdfLoading(true);
-                  try {
-                    await downloadShopQrPdf({
+                <QrActionButton
+                  icon={Download}
+                  title="Télécharger"
+                  subtitle={pdfLoading ? "…" : "PDF"}
+                  disabled={!qrImage || pdfLoading}
+                  onClick={() => {
+                    if (!qrImage || !publicUrl) return;
+                    setDownloadError(null);
+                    setPdfLoading(true);
+                    void downloadShopQrPdf({
                       qrDataUrl: qrImage,
                       publicUrl,
                       companyName,
-                    });
-                  } catch (e) {
-                    setPdfError(
-                      e instanceof Error
-                        ? e.message
-                        : "Impossible de générer le PDF.",
-                    );
-                  } finally {
-                    setPdfLoading(false);
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-                {pdfLoading ? "Génération…" : "Télécharger en PDF"}
-              </ProtoBtn>
-              <ProtoBtn
-                onClick={async () => {
-                  if (!publicUrl) return;
-                  await navigator.clipboard.writeText(publicUrl);
-                }}
-              >
-                Copier le lien
-              </ProtoBtn>
-              <ProtoBtn
-                onClick={async () => {
-                  setRegenLoading(true);
-                  try {
-                    await onRegenerate();
-                  } finally {
-                    setRegenLoading(false);
-                  }
-                }}
-                disabled={regenLoading || loading}
-              >
-                {regenLoading ? "Régénération…" : "Régénérer le QR"}
-              </ProtoBtn>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-        <div className="flex items-start gap-3">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed]"
-            aria-hidden
-          >
-            <MessageCircle className="h-5 w-5" strokeWidth={2.25} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="m-0 text-base font-extrabold text-slate-900">
-                SMS de bienvenue
-              </h3>
-              <label className="flex shrink-0 cursor-pointer items-center gap-2">
-                <span className="sr-only">
-                  {welcomeSmsEnabled
-                    ? "Désactiver le SMS de bienvenue"
-                    : "Activer le SMS de bienvenue"}
-                </span>
-                <input
-                  type="checkbox"
-                  className="peer sr-only"
-                  checked={welcomeSmsEnabled}
-                  disabled={loading || welcomeSmsSaving}
-                  onChange={(e) => {
-                    const next = e.target.checked;
-                    setWelcomeSmsSaving(true);
-                    void onWelcomeSmsChange(next).finally(() => {
-                      setWelcomeSmsSaving(false);
+                    })
+                      .catch((e) => {
+                        setDownloadError(
+                          e instanceof Error
+                            ? e.message
+                            : "Impossible de générer le PDF.",
+                        );
+                      })
+                      .finally(() => {
+                        setPdfLoading(false);
+                      });
+                  }}
+                />
+                <QrActionButton
+                  icon={Copy}
+                  title="Copier le lien"
+                  subtitle={linkCopied ? "Copié !" : "URL"}
+                  disabled={!publicUrl}
+                  onClick={() => {
+                    if (!publicUrl) return;
+                    void navigator.clipboard.writeText(publicUrl).then(() => {
+                      setLinkCopied(true);
+                      window.setTimeout(() => setLinkCopied(false), 1500);
                     });
                   }}
                 />
-                <span
-                  className={cn(
-                    "relative h-7 w-12 rounded-full border transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50",
-                    welcomeSmsEnabled
-                      ? "border-[#2f6fed] bg-[#2f6fed]"
-                      : "border-slate-300 bg-slate-200",
-                  )}
-                  aria-hidden
-                />
-              </label>
+              </div>
+
+              <div className="border-t border-slate-100 pt-2">
+                <div className="mb-2">
+                  <h3 className="m-0 text-xs font-black text-slate-900">
+                    Après l&apos;inscription
+                  </h3>
+                  <p className="m-0 mt-0.5 text-[10px] font-semibold leading-snug text-slate-500">
+                    Choisissez une seule option : SMS de bienvenue ou roue des
+                    récompenses. Cliquez à nouveau sur une option active pour ne
+                    rien sélectionner.
+                  </p>
+                </div>
+
+                <div
+                  className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+                  role="radiogroup"
+                  aria-label="Option après inscription"
+                >
+                  {CAPTURE_MODE_OPTIONS.map((option) => {
+                    const Icon = option.icon;
+                    const selected = captureMode === option.mode;
+                    return (
+                      <button
+                        key={option.mode}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => handleModeSelect(option.mode)}
+                        className={cn(
+                          "relative flex cursor-pointer flex-col items-start gap-2 rounded-xl border p-2.5 text-left transition-[border-color,box-shadow] duration-200",
+                          selected
+                            ? option.mode === "wheel"
+                              ? "border-2 border-amber-400 bg-gradient-to-br from-amber-50/90 to-orange-50/50 ring-2 ring-amber-300/60 ring-offset-1"
+                              : "border-2 border-[#2f6fed] bg-[#eef4ff] ring-2 ring-[#2f6fed]/25 ring-offset-1"
+                            : "border border-slate-200 bg-white hover:border-slate-300",
+                        )}
+                      >
+                        {selected ? (
+                          <CircleCheck
+                            className="absolute right-2 top-2 h-4 w-4 text-emerald-500"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
+                        ) : null}
+                        <span
+                          className={cn(
+                            "grid h-8 w-8 place-items-center rounded-lg border",
+                            selected
+                              ? option.mode === "wheel"
+                                ? "border-amber-200/80 bg-white/80 text-amber-600"
+                                : "border-[#2f6fed]/20 bg-white text-[#2f6fed]"
+                              : "border-slate-200 bg-slate-50 text-slate-400",
+                          )}
+                        >
+                          <Icon className="h-4 w-4" aria-hidden />
+                        </span>
+                        <span>
+                          <span className="block text-xs font-black text-slate-900">
+                            {option.title}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] font-semibold leading-snug text-slate-500">
+                            {option.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="relative mt-3 min-h-[52px]">
+                  <div
+                    className={cn(
+                      "transition-all duration-200 ease-out",
+                      captureMode === "welcome"
+                        ? "translate-y-0 opacity-100"
+                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
+                    )}
+                    aria-hidden={captureMode !== "welcome"}
+                  >
+                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-[#2f6fed]/15 bg-[#eef4ff]/40 p-2.5">
+                      <ProtoBtn
+                        type="button"
+                        className="h-8 px-3 text-xs"
+                        disabled={templateSaving}
+                        onClick={() => setWelcomeModalOpen(true)}
+                      >
+                        Configurer
+                      </ProtoBtn>
+                    </div>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "transition-all duration-200 ease-out",
+                      captureMode === "wheel"
+                        ? "translate-y-0 opacity-100"
+                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
+                    )}
+                    aria-hidden={captureMode !== "wheel"}
+                  >
+                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-2.5">
+                      <ProtoBtn
+                        type="button"
+                        className="h-8 px-3 text-xs"
+                        disabled={wheelSaving}
+                        onClick={() => setPreviewModalOpen(true)}
+                      >
+                        Prévisualiser
+                      </ProtoBtn>
+                      <ProtoBtn
+                        type="button"
+                        className="h-8 px-3 text-xs"
+                        disabled={wheelSaving}
+                        onClick={() => setWheelModalOpen(true)}
+                      >
+                        Configurer
+                      </ProtoBtn>
+                    </div>
+                  </div>
+
+                  <p
+                    className={cn(
+                      "m-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-[10px] font-semibold text-slate-500 transition-opacity duration-200",
+                      captureMode === "none"
+                        ? "relative opacity-100"
+                        : "pointer-events-none absolute inset-x-0 top-0 opacity-0",
+                    )}
+                    aria-hidden={captureMode !== "none"}
+                  >
+                    Aucune option active : seule l&apos;inscription du contact
+                    est enregistrée.
+                  </p>
+                </div>
+              </div>
             </div>
-            <p className="mt-1.5 text-sm font-semibold text-slate-600">
-              Envoie un SMS automatique aux nouveaux contacts inscrits via le QR
-              (uniquement s&apos;ils acceptent de recevoir des SMS).
-            </p>
-            {welcomeSmsEnabled && (
-              <p className="mt-2 text-xs font-medium text-emerald-800">
-                Activé — l&apos;envoi sera déclenché à chaque nouvelle inscription
-                QR.
-              </p>
-            )}
-          </div>
-        </div>
+
+            <div className="flex min-h-0 flex-col lg:min-h-full lg:pl-0">
+              <QrCapturePhonePreview
+                compact
+                fill
+                className="min-h-0 flex-1"
+                publicUrl={publicUrl}
+                captureMode={captureMode}
+                wheelConfig={wheelConfig}
+                initialLoading={wheelLoading && !wheelConfig}
+              />
+
+              <QrCaptureStatsCard
+                embedded
+                className="mt-auto shrink-0"
+                stats={qrStats}
+                loading={qrStatsLoading}
+              />
+            </div>
+            </div>
+
+            <QrCaptureComplianceCard className="border-t border-slate-100 pt-2" />
+
+            {loading ? (
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/[0.06] backdrop-blur-[1px]"
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+                aria-label="Chargement"
+              >
+                <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+                  <Loader2
+                    className="h-5 w-5 shrink-0 animate-spin text-blue-600"
+                    aria-hidden
+                  />
+                  <span className="text-sm font-bold text-slate-700">
+                    Chargement…
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
-      <QrWheelSettings
+      <QrWelcomeSmsSettingsModal
+        open={welcomeModalOpen}
+        onClose={() => setWelcomeModalOpen(false)}
+        template={welcomeSmsTemplate}
+        saving={templateSaving}
+        onSave={async (template) => {
+          setTemplateSaving(true);
+          try {
+            await onWelcomeSmsTemplateChange(template);
+          } finally {
+            setTemplateSaving(false);
+          }
+        }}
+      />
+
+      <QrCapturePreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        wheelConfig={wheelConfig}
+        wheelLoading={wheelLoading}
+      />
+
+      <QrWheelSettingsModal
+        open={wheelModalOpen}
+        onClose={() => setWheelModalOpen(false)}
         config={wheelConfig}
         loading={wheelLoading}
         saving={wheelSaving}
-        onSave={onWheelSave}
+        onSave={async (config) => {
+          await onWheelSave(config);
+          setWheelModalOpen(false);
+        }}
         onEnableWithDefaults={onWheelEnableDefaults}
       />
-
-      <p className={cn("m-0 text-xs font-semibold leading-relaxed text-slate-500")}>
-        Les contacts saisis via ce formulaire apparaissent dans ta liste avec la
-        source « QR boutique ». Les gains de la roue sont ajoutés aux notes du
-        contact.
-      </p>
     </div>
   );
 }

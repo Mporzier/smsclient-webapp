@@ -43,9 +43,9 @@ export function ProtoBtn({
     <button
       type="button"
       className={cn(
-        "inline-flex h-11 cursor-pointer items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 text-[15px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
+        "inline-flex h-11 cursor-pointer items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 text-[15px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
         primary &&
-          "border-transparent bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-[18px] text-white shadow-[0_18px_30px_rgba(47,111,237,0.22)]",
+          "border-transparent bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-[18px] text-white shadow-[0_18px_30px_rgba(47,111,237,0.22)] disabled:border-transparent disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500",
         green &&
           "border-emerald-500/85 bg-emerald-500/85 text-white hover:brightness-[0.98]",
         className

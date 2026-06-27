@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import type { UserQrCodeRecord } from "@/lib/supabase/qrCodes";
+import { defaultWheelSegments } from "@/lib/qr/wheelDefaults";
 import {
   fetchWheelConfig,
   replaceWheelSegments,
@@ -10,38 +10,50 @@ import {
   seedDefaultWheelSegments,
 } from "@/lib/supabase/qrWheel";
 import type { QrWheelConfig, QrWheelSegment } from "@/lib/types/qrWheel";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-export function useQrWheel(qrRecord: UserQrCodeRecord | null) {
+export function useQrWheel(active: boolean) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
   const [config, setConfig] = useState<QrWheelConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const refresh = useCallback(async () => {
-    if (!userId || !qrRecord) {
-      setConfig(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const { data, error: err } = await fetchWheelConfig(supabase, userId, qrRecord);
-    if (err) {
-      setError(err.message);
-      setConfig(null);
-    } else {
-      setConfig(data);
-    }
-    setLoading(false);
-  }, [userId, qrRecord, supabase]);
+  const refresh = useCallback(
+    async (silent = false) => {
+      if (!userId || !active) {
+        setConfig(null);
+        hasLoadedRef.current = false;
+        return;
+      }
+      if (!silent && !hasLoadedRef.current) {
+        setLoading(true);
+      }
+      setError(null);
+      const { data, error: err } = await fetchWheelConfig(supabase, userId);
+      if (err) {
+        setError(err.message);
+        if (!silent) setConfig(null);
+      } else {
+        setConfig(data);
+        hasLoadedRef.current = true;
+      }
+      setLoading(false);
+    },
+    [userId, active, supabase],
+  );
 
   useEffect(() => {
     queueMicrotask(() => {
       void refresh();
     });
   }, [refresh]);
+
+  const patchEnabled = useCallback((enabled: boolean) => {
+    setConfig((current) => (current ? { ...current, enabled } : current));
+  }, []);
 
   const saveAll = useCallback(
     async (next: QrWheelConfig) => {
@@ -54,25 +66,38 @@ export function useQrWheel(qrRecord: UserQrCodeRecord | null) {
         next.segments,
       );
       if (segErr) throw segErr;
-      await refresh();
+      setConfig(next);
     },
-    [userId, supabase, refresh],
+    [userId, supabase],
   );
 
   const enableWithDefaults = useCallback(async () => {
     if (!userId) throw new Error("Non connecté");
-    const { error: seedErr } = await seedDefaultWheelSegments(supabase, userId);
-    if (seedErr) throw seedErr;
-    const { error: settingsErr } = await saveWheelSettings(supabase, userId, {
+
+    const defaults = defaultWheelSegments();
+    const optimistic: QrWheelConfig = {
       enabled: true,
       title: "Tournez la roue !",
       subtitle: "Inscrivez-vous et tentez votre chance",
       allowRepeat: false,
       prizeValidityDays: 30,
       sendPrizeSms: true,
+      segments: defaults,
+    };
+    setConfig(optimistic);
+
+    const { error: seedErr } = await seedDefaultWheelSegments(supabase, userId);
+    if (seedErr) throw seedErr;
+    const { error: settingsErr } = await saveWheelSettings(supabase, userId, {
+      enabled: true,
+      title: optimistic.title,
+      subtitle: optimistic.subtitle,
+      allowRepeat: optimistic.allowRepeat,
+      prizeValidityDays: optimistic.prizeValidityDays,
+      sendPrizeSms: optimistic.sendPrizeSms,
     });
     if (settingsErr) throw settingsErr;
-    await refresh();
+    await refresh(true);
   }, [userId, supabase, refresh]);
 
   return {
@@ -80,6 +105,7 @@ export function useQrWheel(qrRecord: UserQrCodeRecord | null) {
     loading,
     error,
     refresh,
+    patchEnabled,
     saveAll,
     enableWithDefaults,
   };
