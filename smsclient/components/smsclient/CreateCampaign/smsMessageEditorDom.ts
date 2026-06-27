@@ -160,9 +160,13 @@ export function shouldPreventEditorBeforeInput(
   return false;
 }
 
+type EditorKeyEvent = Pick<KeyboardEvent, "key"> & {
+  preventDefault(): void;
+};
+
 export function handlePrenomChipKeyDown(
   root: HTMLElement,
-  e: KeyboardEvent,
+  e: EditorKeyEvent,
 ): boolean {
   if (e.key !== "Backspace" && e.key !== "Delete") return false;
   const sel = window.getSelection();

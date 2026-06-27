@@ -74,7 +74,10 @@ export function useQrWheel(active: boolean) {
   const enableWithDefaults = useCallback(async () => {
     if (!userId) throw new Error("Non connecté");
 
-    const defaults = defaultWheelSegments();
+    const defaults = defaultWheelSegments().map((segment, index) => ({
+      ...segment,
+      id: `optimistic-${index}`,
+    }));
     const optimistic: QrWheelConfig = {
       enabled: true,
       title: "Tournez la roue !",
