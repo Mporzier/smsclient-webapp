@@ -1,15 +1,15 @@
 "use client";
 
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
+import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import { sanitizeSender } from "@/lib/proto/smsUtils";
-import { BUSINESS_ACTIVITIES } from "@/lib/types/businessActivity";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, MessageSquare, UserRound } from "lucide-react";
+import { Building2, MessageSquare, Store, UserRound } from "lucide-react";
 
 function suggestSender(company: string) {
   const s = sanitizeSender(company).slice(0, 11);
@@ -18,8 +18,9 @@ function suggestSender(company: string) {
 
 const STEPS = [
   { id: 1, title: "Profil", icon: UserRound },
-  { id: 2, title: "Entreprise", icon: Building2 },
-  { id: 3, title: "SMS", icon: MessageSquare },
+  { id: 2, title: "Secteur", icon: Store },
+  { id: 3, title: "Entreprise", icon: Building2 },
+  { id: 4, title: "SMS", icon: MessageSquare },
 ] as const;
 
 const inp =
@@ -72,11 +73,14 @@ export function OnboardingWizard() {
       return null;
     }
     if (s === 2) {
-      if (!form.companyName.trim()) return "Le nom de l'entreprise est obligatoire.";
-      if (!form.businessActivity) return "Choisis ton activité.";
+      if (!form.businessActivity) return "Choisissez votre secteur d'activité.";
       return null;
     }
     if (s === 3) {
+      if (!form.companyName.trim()) return "Le nom de l'entreprise est obligatoire.";
+      return null;
+    }
+    if (s === 4) {
       if (!sanitizeSender(form.sender).trim()) {
         return "Le nom d'expéditeur SMS est obligatoire.";
       }
@@ -91,14 +95,14 @@ export function OnboardingWizard() {
       setError(err);
       return;
     }
-    if (step === 2 && !form.sender.trim()) {
+    if (step === 3 && !form.sender.trim()) {
       setField("sender", suggestSender(form.companyName));
     }
-    setStep((s) => Math.min(3, s + 1));
+    setStep((s) => Math.min(4, s + 1));
   };
 
   const onFinish = async () => {
-    for (let s = 1; s <= 3; s++) {
+    for (let s = 1; s <= 4; s++) {
       const err = validateStep(s);
       if (err) {
         setStep(s);
@@ -126,8 +130,10 @@ export function OnboardingWizard() {
       case 1:
         return "Commençons par te connaître.";
       case 2:
-        return "Parle-nous de ton commerce.";
+        return "Quel est ton secteur d'activité ? On adaptera tes modèles SMS.";
       case 3:
+        return "Parle-nous de ton commerce.";
+      case 4:
         return "Dernier détail : l'expéditeur affiché sur tes SMS.";
       default:
         return "";
@@ -220,6 +226,22 @@ export function OnboardingWizard() {
         {step === 2 && (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black text-slate-900">
+              Secteur d&apos;activité
+            </h2>
+            <p className="m-0 text-sm font-semibold text-slate-600">
+              Choisis ton domaine pour accéder à des modèles SMS prêts à
+              l&apos;emploi, adaptés à ton métier.
+            </p>
+            <BusinessActivityPicker
+              value={form.businessActivity}
+              onChange={(id) => setField("businessActivity", id)}
+            />
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-slate-900">
               Ton entreprise
             </h2>
             <div>
@@ -231,26 +253,6 @@ export function OnboardingWizard() {
                 autoFocus
               />
             </div>
-            <div>
-              <label className={lbl}>Activité *</label>
-              <select
-                className={inp}
-                value={form.businessActivity}
-                onChange={(e) =>
-                  setField(
-                    "businessActivity",
-                    e.target.value as UserProfileForm["businessActivity"],
-                  )
-                }
-              >
-                <option value="">Sélectionner…</option>
-                {BUSINESS_ACTIVITIES.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-            </div>
             <p className="m-0 text-xs font-semibold text-slate-500">
               Tu pourras compléter SIRET, adresse de facturation, etc. dans les
               paramètres plus tard.
@@ -258,7 +260,7 @@ export function OnboardingWizard() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black text-slate-900">
               Expéditeur SMS
@@ -292,7 +294,7 @@ export function OnboardingWizard() {
           >
             Retour
           </ProtoBtn>
-          {step < 3 ? (
+          {step < 4 ? (
             <ProtoBtn primary onClick={onNext}>
               Continuer
             </ProtoBtn>

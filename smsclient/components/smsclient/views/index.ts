@@ -4,6 +4,7 @@ export { CampagnesView } from "./CampagnesView";
 export { ContactsView } from "./ContactsView";
 export { GroupesView } from "./GroupesView";
 export { LiensView } from "./LiensView";
+export { ModelesSmsView } from "./ModelesSmsView";
 export { ParametresView } from "./ParametresView";
 export { SoumettreAvisView } from "./SoumettreAvisView";
 export { ReglementationsSmsView } from "./ReglementationsSmsView";

@@ -1,18 +1,21 @@
 export const BUSINESS_ACTIVITIES = [
-  { id: "fleuriste", label: "Fleuriste" },
-  { id: "boulangerie", label: "Boulangerie / Pâtisserie" },
-  { id: "tabac", label: "Tabac / Presse" },
-  { id: "retail", label: "Commerce de détail" },
-  { id: "restaurant", label: "Restaurant / Bar / Café" },
-  { id: "coiffure", label: "Coiffure / Beauté" },
-  { id: "sport", label: "Sport / Fitness" },
-  { id: "sante", label: "Santé / Pharmacie" },
-  { id: "automobile", label: "Automobile / Garage" },
-  { id: "services", label: "Services aux particuliers" },
-  { id: "autre", label: "Autre" },
+  { id: "restaurant", label: "Restaurant", emoji: "🍽️" },
+  { id: "bar", label: "Bar / Café", emoji: "🍸" },
+  { id: "coiffure", label: "Coiffeur / Beauté", emoji: "💇" },
+  { id: "fleuriste", label: "Fleuriste", emoji: "💐" },
+  { id: "boulangerie", label: "Boulangerie / Pâtisserie", emoji: "🥐" },
+  { id: "retail", label: "Commerce de détail", emoji: "🛍️" },
+  { id: "tabac", label: "Tabac / Presse", emoji: "📰" },
+  { id: "sport", label: "Sport / Fitness", emoji: "🏋️" },
+  { id: "sante", label: "Santé / Pharmacie", emoji: "💊" },
+  { id: "automobile", label: "Automobile / Garage", emoji: "🚗" },
+  { id: "services", label: "Services aux particuliers", emoji: "🔧" },
+  { id: "autre", label: "Autres", emoji: "✨" },
 ] as const;
 
 export type BusinessActivityId = (typeof BUSINESS_ACTIVITIES)[number]["id"];
+
+export type BusinessActivity = (typeof BUSINESS_ACTIVITIES)[number];
 
 export function businessActivityLabel(id: string): string {
   const label = BUSINESS_ACTIVITIES.find((a) => a.id === id)?.label;

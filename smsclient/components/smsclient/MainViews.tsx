@@ -10,6 +10,7 @@ export {
   ContactsView,
   GroupesView,
   LiensView,
+  ModelesSmsView,
   ParametresView,
   QrCodeView,
   ReglementationsSmsView,

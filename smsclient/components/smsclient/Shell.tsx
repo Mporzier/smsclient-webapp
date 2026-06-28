@@ -21,6 +21,7 @@ import {
   Zap,
   Contact,
   Link2,
+  LayoutTemplate,
   MessageSquareText,
   QrCode,
   Scale,
@@ -136,7 +137,8 @@ type NavKey =
   | "qr-boutique"
   | "reglementations-sms"
   | "soumettre-avis"
-  | "liens";
+  | "liens"
+  | "modeles-sms";
 
 type ShellProps = {
   route: AppRoute;
@@ -377,6 +379,12 @@ export function AppShell({
             >
               {[
                 { id: "liens" as const, label: "Liens", hash: "liens", icon: Link2 },
+                {
+                  id: "modeles-sms" as const,
+                  label: "Modèles SMS",
+                  hash: "modeles-sms",
+                  icon: LayoutTemplate,
+                },
                 {
                   id: "qr-boutique" as const,
                   label: "QR code boutique",

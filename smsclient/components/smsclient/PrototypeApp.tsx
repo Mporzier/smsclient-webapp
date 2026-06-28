@@ -10,6 +10,7 @@ import {
   GroupesView,
   ParametresView,
   LiensView,
+  ModelesSmsView,
   QrCodeView,
   ReglementationsSmsView,
   SoumettreAvisView,
@@ -33,6 +34,7 @@ import { useContacts } from "@/hooks/useContacts";
 import { useCredits } from "@/hooks/useCredits";
 import { useGroups } from "@/hooks/useGroups";
 import { useLinks } from "@/hooks/useLinks";
+import { useSmsTemplates } from "@/hooks/useSmsTemplates";
 import { useStatistics } from "@/hooks/useStatistics";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { profileToForm } from "@/lib/supabase/profile";
@@ -152,6 +154,15 @@ export function PrototypeApp() {
     supabase: linksSupabase,
     userId: linksUserId,
   } = useLinks();
+
+  const {
+    rows: smsTemplateRows,
+    loading: smsTemplatesLoading,
+    error: smsTemplatesError,
+    refresh: refreshSmsTemplates,
+    supabase: smsTemplatesSupabase,
+    userId: smsTemplatesUserId,
+  } = useSmsTemplates();
 
   const automationsEnabled = route === "automatisations";
   const {
@@ -1161,6 +1172,18 @@ export function PrototypeApp() {
             supabase={linksSupabase}
             userId={linksUserId}
             onRefresh={refreshLinks}
+            onToast={showToast}
+          />
+        );
+      case "modeles-sms":
+        return (
+          <ModelesSmsView
+            rows={smsTemplateRows}
+            loading={smsTemplatesLoading}
+            error={smsTemplatesError}
+            supabase={smsTemplatesSupabase}
+            userId={smsTemplatesUserId}
+            onRefresh={refreshSmsTemplates}
             onToast={showToast}
           />
         );

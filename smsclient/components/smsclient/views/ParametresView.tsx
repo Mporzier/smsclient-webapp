@@ -4,7 +4,7 @@ import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
-import { BUSINESS_ACTIVITIES } from "@/lib/types/businessActivity";
+import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
@@ -316,29 +316,19 @@ export function ParametresView({
                 />
               </div>
               <div className="col-span-2">
-                <label className={lbl}>Activité</label>
-                <select
+                <label className={lbl}>Secteur d&apos;activité</label>
+                <div
                   className={cn(
-                    inp,
+                    "rounded-xl p-1",
                     changed("businessActivity") &&
-                      "border-blue-400 ring-2 ring-blue-100",
+                      "ring-2 ring-blue-100",
                   )}
-                  value={draftForm.businessActivity}
-                  onChange={(e) =>
-                    setField(
-                      "businessActivity",
-                      e.target
-                        .value as UserProfileForm["businessActivity"],
-                    )
-                  }
                 >
-                  <option value="">Sélectionner…</option>
-                  {BUSINESS_ACTIVITIES.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.label}
-                    </option>
-                  ))}
-                </select>
+                  <BusinessActivityPicker
+                    value={draftForm.businessActivity}
+                    onChange={(id) => setField("businessActivity", id)}
+                  />
+                </div>
               </div>
               <div>
                 <label className={lbl}>SIRET</label>

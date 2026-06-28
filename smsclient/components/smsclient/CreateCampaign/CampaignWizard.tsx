@@ -23,9 +23,11 @@ import {
   SMS_PRENOM_TAG,
 } from "@/lib/proto/smsPersonalization";
 import { useLinks } from "@/hooks/useLinks";
+import { useSmsTemplates } from "@/hooks/useSmsTemplates";
 import { createSmsShortLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import {
   Calendar,
   ChevronDown,
@@ -321,6 +323,7 @@ export function CampaignWizard({
   creditsAvailable,
   onConfirmCampaign,
 }: CampaignWizardProps) {
+  const { profile } = useUserProfile();
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [aiOptions, setAiOptions] = useState<SmsAiOptions>(
@@ -351,6 +354,12 @@ export function CampaignWizard({
     supabase,
     userId,
   } = useLinks();
+
+  const {
+    rows: customSmsTemplates,
+    loading: customSmsTemplatesLoading,
+    refresh: refreshSmsTemplates,
+  } = useSmsTemplates();
 
   const handleCreateSmsLink = useCallback(
     async (args: { originalUrl: string; label: string }) => {
@@ -983,6 +992,13 @@ export function CampaignWizard({
                         <SmsTemplatePicker
                           selectedId={selectedTemplateId}
                           onSelect={handleTemplateSelect}
+                          businessActivity={profile?.businessActivity ?? ""}
+                          customTemplates={customSmsTemplates}
+                          customLoading={customSmsTemplatesLoading}
+                          onManageCustomTemplates={() => {
+                            void refreshSmsTemplates();
+                            go("modeles-sms");
+                          }}
                         />
                       </div>
                     ) : null}
