@@ -16,7 +16,9 @@ import {
   StatistiquesView,
 } from "./MainViews";
 import { CampaignWizard } from "@/components/smsclient/FlowViews";
+import type { SmsComposeApproach } from "@/components/smsclient/CreateCampaign/SmsComposeApproachCards";
 import { buildDefaultCampaignTitle } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
+import { CampaignWizardLeaveConfirmModal } from "@/components/smsclient/modals/CampaignWizardLeaveConfirmModal";
 import { ImportContactsModal } from "./ImportContactsModal";
 import {
   CampaignDetailsModal,
@@ -73,6 +75,10 @@ import {
   setStoredCampaignWizardStep,
   type CampaignWizardStep,
 } from "@/lib/proto/campaignWizardSession";
+import {
+  type CampaignWizardFormSnapshot,
+  isCampaignWizardDirty,
+} from "@/lib/proto/campaignWizardDirty";
 import type { AppRoute } from "@/lib/proto/routes";
 import {
   statsMonthRange,
@@ -97,6 +103,14 @@ function plusTenMinutesLocalValue() {
 function defaultCampaignTitle() {
   return `Campagne du ${new Date().toLocaleDateString("fr-FR")}`;
 }
+
+type CampaignComposerPreset =
+  | string
+  | { contactIds?: string[]; groupNames?: string[] };
+
+type PendingWizardLeaveAction =
+  | { type: "navigate"; path: string }
+  | { type: "open"; preset?: CampaignComposerPreset };
 
 function parseManualNumbers(raw: string): string[] {
   return raw
@@ -340,6 +354,15 @@ export function PrototypeApp() {
   const [aiOpen, setAiOpen] = useState(false);
   const [campaignWizardStep, setCampaignWizardStep] =
     useState<CampaignWizardStep>(1);
+  const [campaignComposeApproach, setCampaignComposeApproach] =
+    useState<SmsComposeApproach | null>(null);
+  const [leaveWizardConfirmOpen, setLeaveWizardConfirmOpen] = useState(false);
+  const initialWizardSnapshotRef = useRef<CampaignWizardFormSnapshot | null>(
+    null,
+  );
+  const pendingWizardLeaveActionRef = useRef<PendingWizardLeaveAction | null>(
+    null,
+  );
   const wizardGuardRanRef = useRef(false);
 
   const handleWizardStepChange = useCallback((step: CampaignWizardStep) => {
@@ -350,7 +373,174 @@ export function PrototypeApp() {
   const handleWizardExit = useCallback(() => {
     clearCampaignWizardSession();
     setCampaignWizardStep(1);
+    setCampaignComposeApproach(null);
   }, []);
+
+  const buildCurrentWizardSnapshot = useCallback(
+    (): CampaignWizardFormSnapshot => ({
+      step: campaignWizardStep,
+      title: campaignTitle,
+      sender: campaignSender,
+      sms: smsBody,
+      sendMode,
+      scheduleAt: scheduledAt,
+      recipientMode: campaignRecipientMode,
+      manualNumbers: campaignManualNumbers,
+      selectedContactIds: campaignSelectedContactIds,
+      selectedGroupNames: campaignSelectedGroupNames,
+      excludedContactIds: campaignExcludedContactIds,
+      composeApproach: campaignComposeApproach,
+    }),
+    [
+      campaignWizardStep,
+      campaignTitle,
+      campaignSender,
+      smsBody,
+      sendMode,
+      scheduledAt,
+      campaignRecipientMode,
+      campaignManualNumbers,
+      campaignSelectedContactIds,
+      campaignSelectedGroupNames,
+      campaignExcludedContactIds,
+      campaignComposeApproach,
+    ],
+  );
+
+  const wizardIsDirty = useMemo(() => {
+    if (route !== "nouvelle-campagne" || !initialWizardSnapshotRef.current) {
+      return false;
+    }
+    return isCampaignWizardDirty(
+      buildCurrentWizardSnapshot(),
+      initialWizardSnapshotRef.current,
+    );
+  }, [route, buildCurrentWizardSnapshot]);
+
+  const openCampaignComposerInternal = useCallback(
+    (preset?: CampaignComposerPreset) => {
+      let recipientMode: "manual" | "lists" = "manual";
+      let contactIds: string[] = [];
+      let groupNames: string[] = [];
+
+      if (typeof preset === "string") {
+        const name = preset.trim();
+        if (name) {
+          recipientMode = "lists";
+          groupNames = [name];
+        }
+      } else if (preset?.groupNames?.length) {
+        recipientMode = "lists";
+        groupNames = preset.groupNames;
+      } else if (preset?.contactIds?.length) {
+        recipientMode = "manual";
+        contactIds = preset.contactIds;
+      }
+
+      const nextTitle = defaultCampaignTitle();
+      const nextScheduleAt = plusTenMinutesLocalValue();
+
+      setCampaignRecipientMode(recipientMode);
+      setCampaignTitle(nextTitle);
+      setCampaignSender(smsSender);
+      setSmsBody("");
+      setSendMode("now");
+      setScheduledAt(nextScheduleAt);
+      setAiOpen(false);
+      setCampaignSelectedContactIds(contactIds);
+      setCampaignExcludedContactIds([]);
+      setCampaignSelectedGroupNames(groupNames);
+      setCampaignManualNumbers("");
+      setCampaignComposeApproach(null);
+      setCampaignWizardStep(1);
+      setStoredCampaignWizardStep(1);
+
+      initialWizardSnapshotRef.current = {
+        step: 1,
+        title: nextTitle,
+        sender: smsSender,
+        sms: "",
+        sendMode: "now",
+        scheduleAt: nextScheduleAt,
+        recipientMode,
+        manualNumbers: "",
+        selectedContactIds: contactIds,
+        selectedGroupNames: groupNames,
+        excludedContactIds: [],
+        composeApproach: null,
+      };
+
+      go("nouvelle-campagne");
+    },
+    [go, smsSender],
+  );
+
+  const confirmWizardLeave = useCallback(() => {
+    setLeaveWizardConfirmOpen(false);
+    handleWizardExit();
+    const action = pendingWizardLeaveActionRef.current;
+    pendingWizardLeaveActionRef.current = null;
+    if (!action) return;
+    if (action.type === "navigate") {
+      go(action.path);
+      return;
+    }
+    openCampaignComposerInternal(action.preset);
+  }, [go, handleWizardExit, openCampaignComposerInternal]);
+
+  const requestWizardLeave = useCallback(
+    (path = "campagnes") => {
+      if (!wizardIsDirty) {
+        handleWizardExit();
+        go(path);
+        return;
+      }
+      pendingWizardLeaveActionRef.current = { type: "navigate", path };
+      setLeaveWizardConfirmOpen(true);
+    },
+    [wizardIsDirty, handleWizardExit, go],
+  );
+
+  const guardedGo = useCallback(
+    (path: string) => {
+      const normalized = path.startsWith("#") ? path.slice(1) : path;
+      if (
+        route === "nouvelle-campagne" &&
+        normalized !== "nouvelle-campagne" &&
+        wizardIsDirty
+      ) {
+        pendingWizardLeaveActionRef.current = {
+          type: "navigate",
+          path: normalized,
+        };
+        setLeaveWizardConfirmOpen(true);
+        return;
+      }
+      go(normalized);
+    },
+    [route, wizardIsDirty, go],
+  );
+
+  useEffect(() => {
+    if (route !== "nouvelle-campagne") return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!wizardIsDirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [route, wizardIsDirty]);
+
+  useEffect(() => {
+    if (route !== "nouvelle-campagne") {
+      initialWizardSnapshotRef.current = null;
+      return;
+    }
+    if (!initialWizardSnapshotRef.current) {
+      initialWizardSnapshotRef.current = buildCurrentWizardSnapshot();
+    }
+  }, [route, buildCurrentWizardSnapshot]);
 
   useEffect(() => {
     if (route !== "nouvelle-campagne") {
@@ -566,41 +756,15 @@ export function PrototypeApp() {
   );
 
   const openCampaignComposer = useCallback(
-    (preset?: string | { contactIds?: string[]; groupNames?: string[] }) => {
-      let recipientMode: "manual" | "lists" = "manual";
-      let contactIds: string[] = [];
-      let groupNames: string[] = [];
-
-      if (typeof preset === "string") {
-        const name = preset.trim();
-        if (name) {
-          recipientMode = "lists";
-          groupNames = [name];
-        }
-      } else if (preset?.groupNames?.length) {
-        recipientMode = "lists";
-        groupNames = preset.groupNames;
-      } else if (preset?.contactIds?.length) {
-        recipientMode = "manual";
-        contactIds = preset.contactIds;
+    (preset?: CampaignComposerPreset) => {
+      if (route === "nouvelle-campagne" && wizardIsDirty) {
+        pendingWizardLeaveActionRef.current = { type: "open", preset };
+        setLeaveWizardConfirmOpen(true);
+        return;
       }
-
-      setCampaignRecipientMode(recipientMode);
-      setCampaignTitle(defaultCampaignTitle());
-      setCampaignSender(smsSender);
-      setSmsBody("");
-      setSendMode("now");
-      setScheduledAt(plusTenMinutesLocalValue());
-      setAiOpen(false);
-      setCampaignSelectedContactIds(contactIds);
-      setCampaignExcludedContactIds([]);
-      setCampaignSelectedGroupNames(groupNames);
-      setCampaignManualNumbers("");
-      setCampaignWizardStep(1);
-      setStoredCampaignWizardStep(1);
-      go("nouvelle-campagne");
+      openCampaignComposerInternal(preset);
     },
-    [go, smsSender]
+    [route, wizardIsDirty, openCampaignComposerInternal],
   );
 
   const handleUnsubscribeContact = useCallback(async () => {
@@ -871,6 +1035,8 @@ export function PrototypeApp() {
     step: campaignWizardStep,
     onWizardStepChange: handleWizardStepChange,
     onWizardExit: handleWizardExit,
+    requestWizardLeave,
+    onComposeApproachChange: setCampaignComposeApproach,
     go,
     title: campaignTitle,
     setTitle: setCampaignTitle,
@@ -1125,10 +1291,10 @@ export function PrototypeApp() {
     <>
       <AppShell
         route={route}
-        go={go}
+        go={guardedGo}
         onNewCampaign={() => openCampaignComposer()}
         creditsLabel={creditsLoading ? "…" : creditsBalanceLabel}
-        onBuyCredits={() => go("acheter-credits")}
+        onBuyCredits={() => guardedGo("acheter-credits")}
         campaignWizardStep={
           route === "nouvelle-campagne" ? campaignWizardStep : undefined
         }
@@ -1229,6 +1395,15 @@ export function PrototypeApp() {
         stacked={confirmDeleteOpen && (groupEditOpen || contactModalOpen)}
         onConfirm={confirmDeleteAction ?? (async () => {})}
         onCancel={() => setConfirmDeleteOpen(false)}
+      />
+
+      <CampaignWizardLeaveConfirmModal
+        open={leaveWizardConfirmOpen}
+        onStay={() => {
+          pendingWizardLeaveActionRef.current = null;
+          setLeaveWizardConfirmOpen(false);
+        }}
+        onLeave={confirmWizardLeave}
       />
 
       {toast && (

@@ -3,13 +3,23 @@
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import {
+  defaultPercentForNewSegment,
+  distributeEqualWheelPercents,
   qrWheelConfigsEqual,
   randomWheelColor,
   randomizeSegmentColors,
   totalWheelWeight,
 } from "@/lib/qr/wheelDefaults";
 import type { QrWheelConfig, QrWheelSegment } from "@/lib/types/qrWheel";
-import { MessageSquare, Plus, RefreshCw, Trash2, Users } from "lucide-react";
+import {
+  CircleX,
+  Gift,
+  MessageSquare,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 const inp =
@@ -77,15 +87,118 @@ function emptySegment(order: number, usedColors: string[]): QrWheelSegment {
     label: "Nouvelle récompense",
     probabilityWeight: 10,
     isLosing: false,
-    screenMessage: "",
-    smsMessage: "",
+    screenMessage: "Bravo ! Vous avez gagné une récompense.",
+    smsMessage: "Félicitations {prenom} ! Présentez ce SMS en boutique.",
     color: randomWheelColor(usedColors),
   };
 }
 
-function segmentChance(weight: number, total: number): string {
-  if (total <= 0) return "0 %";
-  return `${Math.round((weight / total) * 100)} %`;
+function SegmentOutcomeToggle({
+  isLosing,
+  disabled,
+  onChange,
+}: {
+  isLosing: boolean;
+  disabled?: boolean;
+  onChange: (isLosing: boolean) => void;
+}) {
+  return (
+    <div
+      className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+      role="group"
+      aria-label="Type de case"
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(false)}
+        className={cn(
+          "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+          !isLosing
+            ? "bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-200"
+            : "text-slate-500 hover:text-slate-700",
+        )}
+      >
+        <Gift className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Récompense
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(true)}
+        className={cn(
+          "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+          isLosing
+            ? "bg-white text-slate-700 shadow-sm ring-1 ring-slate-300"
+            : "text-slate-500 hover:text-slate-700",
+        )}
+      >
+        <CircleX className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Perdu
+      </button>
+    </div>
+  );
+}
+
+function ChanceDistributionBar({
+  total,
+  onDistribute,
+  distributing,
+}: {
+  total: number;
+  onDistribute: () => void;
+  distributing?: boolean;
+}) {
+  const complete = total === 100;
+
+  return (
+    <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="m-0 text-[11px] font-black text-slate-800">
+            Répartition des chances
+          </p>
+          <p className="m-0 mt-0.5 text-[10px] font-semibold text-slate-500">
+            La somme de toutes les cases doit faire 100 %.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "text-sm font-black tabular-nums",
+              complete ? "text-emerald-600" : "text-amber-600",
+            )}
+          >
+            {total} / 100 %
+          </span>
+          <button
+            type="button"
+            disabled={distributing}
+            onClick={onDistribute}
+            className="inline-flex h-8 cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-bold text-slate-600 transition-colors hover:border-[#2f6fed]/30 hover:text-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Répartir équitablement
+          </button>
+        </div>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+        <div
+          className={cn(
+            "h-full rounded-full transition-[width] duration-300",
+            complete ? "bg-emerald-500" : total > 100 ? "bg-rose-500" : "bg-amber-400",
+          )}
+          style={{ width: `${Math.min(total, 100)}%` }}
+        />
+      </div>
+      {!complete ? (
+        <p className="m-0 mt-2 text-[10px] font-semibold text-amber-700">
+          {total < 100
+            ? `Il reste ${100 - total} % à attribuer entre les cases.`
+            : `Retirez ${total - 100} % : la somme dépasse 100 %.`}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function QrWheelSettings({
@@ -142,11 +255,19 @@ export function QrWheelSettings({
       : draft;
 
     if (payload.segments.length === 0) {
-      setError("Ajoutez au moins une récompense.");
+      setError("Ajoutez au moins une case sur la roue.");
       return;
     }
-    if (payload.enabled && weightTotal <= 0) {
-      setError("Les probabilités doivent être supérieures à 0.");
+    if (payload.enabled && weightTotal !== 100) {
+      setError(
+        `La somme des chances doit être égale à 100 %. Actuellement : ${weightTotal} %.`,
+      );
+      return;
+    }
+
+    const invalidLabel = payload.segments.find((s) => !s.label.trim());
+    if (invalidLabel) {
+      setError("Chaque case doit avoir un libellé.");
       return;
     }
 
@@ -221,87 +342,68 @@ export function QrWheelSettings({
 
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="m-0 text-[11px] font-black uppercase tracking-wide text-slate-500">
-            Récompenses
-          </h4>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={saving || draft.segments.length === 0}
-              onClick={() =>
-                setDraft({
-                  ...draft,
-                  segments: randomizeSegmentColors(draft.segments),
-                })
-              }
-              className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-600 transition-colors hover:border-[#2f6fed]/30 hover:text-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RefreshCw className="h-3 w-3" aria-hidden />
-              Couleurs aléatoires
-            </button>
-            <span className="text-[10px] font-semibold text-slate-400">
-              Total probabilités : {weightTotal}
-            </span>
+          <div>
+            <h4 className="m-0 text-[11px] font-black uppercase tracking-wide text-slate-500">
+              Cases de la roue
+            </h4>
+            <p className="m-0 mt-0.5 text-[10px] font-semibold text-slate-500">
+              Définissez chaque case, son type et sa chance d&apos;apparition.
+            </p>
           </div>
+          <button
+            type="button"
+            disabled={saving || draft.segments.length === 0}
+            onClick={() =>
+              setDraft({
+                ...draft,
+                segments: randomizeSegmentColors(draft.segments),
+              })
+            }
+            className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-600 transition-colors hover:border-[#2f6fed]/30 hover:text-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw className="h-3 w-3" aria-hidden />
+            Couleurs aléatoires
+          </button>
         </div>
 
-        <div className="space-y-2">
+        <ChanceDistributionBar
+          total={weightTotal}
+          distributing={saving}
+          onDistribute={() =>
+            setDraft({
+              ...draft,
+              segments: distributeEqualWheelPercents(draft.segments),
+            })
+          }
+        />
+
+        <div className="space-y-3">
           {draft.segments.map((seg, i) => (
             <div
               key={seg.id}
               className="rounded-xl border border-slate-200 bg-white p-3 shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
             >
-              <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="mb-3 flex items-start gap-2">
                 <span
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white shadow-sm"
+                  className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white shadow-sm"
                   style={{ backgroundColor: seg.color }}
-                  title="Couleur aléatoire"
                   aria-hidden
                 />
-                <input
-                  className={cn(inp, "min-w-[120px] flex-1")}
-                  value={seg.label}
-                  onChange={(e) => updateSegment(i, { label: e.target.value })}
-                  placeholder="Libellé sur la roue"
-                />
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-500">
-                    Poids
+                <div className="min-w-0 flex-1">
+                  <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                    Libellé affiché sur la roue
                   </label>
                   <input
-                    type="number"
-                    min={1}
-                    className={cn(inp, "w-16 px-2 text-center")}
-                    value={seg.probabilityWeight}
-                    onChange={(e) =>
-                      updateSegment(i, {
-                        probabilityWeight: Math.max(
-                          1,
-                          Number(e.target.value) || 1,
-                        ),
-                      })
-                    }
+                    className={inp}
+                    value={seg.label}
+                    onChange={(e) => updateSegment(i, { label: e.target.value })}
+                    placeholder="Ex : 10 % de réduction"
                   />
-                  <span className="w-8 text-right text-[10px] font-bold tabular-nums text-[#2f6fed]">
-                    {segmentChance(seg.probabilityWeight, weightTotal)}
-                  </span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => updateSegment(i, { isLosing: !seg.isLosing })}
-                  className={cn(
-                    "h-9 shrink-0 rounded-lg border px-2.5 text-[10px] font-bold transition-colors",
-                    seg.isLosing
-                      ? "border-slate-300 bg-slate-100 text-slate-600"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-700",
-                  )}
-                >
-                  {seg.isLosing ? "Perdant" : "Gagnant"}
-                </button>
-                <button
-                  type="button"
-                  className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Supprimer la récompense"
+                  className="mt-6 grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Supprimer la case"
                   disabled={saving}
                   onClick={() =>
                     setDraft({
@@ -313,43 +415,123 @@ export function QrWheelSettings({
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <input
-                className={cn(inp, "mb-2")}
-                value={seg.screenMessage}
-                onChange={(e) =>
-                  updateSegment(i, { screenMessage: e.target.value })
-                }
-                placeholder="Message affiché à l'écran après le tirage"
-              />
-              {!seg.isLosing ? (
-                <input
-                  className={inp}
-                  value={seg.smsMessage}
-                  onChange={(e) =>
-                    updateSegment(i, { smsMessage: e.target.value })
-                  }
-                  placeholder="SMS du gain (utilisez {prenom})"
-                />
-              ) : null}
+
+              <div className="mb-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                    Type de case
+                  </label>
+                  <SegmentOutcomeToggle
+                    isLosing={seg.isLosing}
+                    disabled={saving}
+                    onChange={(isLosing) => {
+                      updateSegment(i, {
+                        isLosing,
+                        smsMessage: isLosing ? "" : seg.smsMessage,
+                        screenMessage: isLosing
+                          ? "Pas de chance cette fois… Retentez votre chance !"
+                          : seg.screenMessage,
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor={`wheel-chance-${seg.id}`}
+                    className="mb-1 block text-[10px] font-bold text-slate-500"
+                  >
+                    Chance d&apos;apparition
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id={`wheel-chance-${seg.id}`}
+                      type="range"
+                      min={1}
+                      max={100}
+                      disabled={saving}
+                      value={seg.probabilityWeight}
+                      onChange={(e) =>
+                        updateSegment(i, {
+                          probabilityWeight: Number(e.target.value),
+                        })
+                      }
+                      className="min-w-0 flex-1 accent-[#2f6fed]"
+                    />
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        disabled={saving}
+                        className={cn(inp, "w-14 px-2 text-center tabular-nums")}
+                        value={seg.probabilityWeight}
+                        onChange={(e) =>
+                          updateSegment(i, {
+                            probabilityWeight: Math.min(
+                              100,
+                              Math.max(1, Number(e.target.value) || 1),
+                            ),
+                          })
+                        }
+                      />
+                      <span className="text-[11px] font-bold text-slate-500">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                    Message affiché après le tirage
+                  </label>
+                  <input
+                    className={inp}
+                    value={seg.screenMessage}
+                    onChange={(e) =>
+                      updateSegment(i, { screenMessage: e.target.value })
+                    }
+                    placeholder={
+                      seg.isLosing
+                        ? "Ex : Pas de chance cette fois…"
+                        : "Ex : Bravo ! Vous avez gagné…"
+                    }
+                  />
+                </div>
+                {!seg.isLosing ? (
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                      SMS envoyé au client
+                    </label>
+                    <input
+                      className={inp}
+                      value={seg.smsMessage}
+                      onChange={(e) =>
+                        updateSegment(i, { smsMessage: e.target.value })
+                      }
+                      placeholder="Ex : Félicitations {prenom} ! Présentez ce SMS en boutique."
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
 
         <ProtoBtn
-          className="mt-2 h-9 w-full text-xs"
+          className="mt-3 h-9 w-full text-xs"
           disabled={saving}
-          onClick={() =>
+          onClick={() => {
+            const next = emptySegment(draft.segments.length, usedColors);
+            next.probabilityWeight = defaultPercentForNewSegment(draft.segments);
             setDraft({
               ...draft,
-              segments: [
-                ...draft.segments,
-                emptySegment(draft.segments.length, usedColors),
-              ],
-            })
-          }
+              segments: [...draft.segments, next],
+            });
+          }}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-          Ajouter une récompense
+          Ajouter une case
         </ProtoBtn>
       </section>
 

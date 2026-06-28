@@ -24,6 +24,8 @@ type DataTableProps<T> = {
   searchNoResultsMessage?: string;
   onRowClick?: (row: T) => void;
   footer?: ReactNode;
+  /** Tronque le contenu au lieu de faire défiler horizontalement. */
+  clipHorizontalOverflow?: boolean;
 };
 
 export function DataTable<T>({
@@ -37,6 +39,7 @@ export function DataTable<T>({
   searchNoResultsMessage = "Aucun résultat pour cette recherche.",
   onRowClick,
   footer,
+  clipHorizontalOverflow = false,
 }: DataTableProps<T>) {
   const table = useReactTable({
     data,
@@ -57,8 +60,18 @@ export function DataTable<T>({
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full border-separate border-spacing-0 text-[15px]">
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto",
+          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-auto",
+        )}
+      >
+        <table
+          className={cn(
+            "w-full border-separate border-spacing-0 text-[15px]",
+            clipHorizontalOverflow && "table-fixed",
+          )}
+        >
           <thead className="sticky top-0 z-10">
             <tr>
               {table.getHeaderGroups()[0].headers.map((header) => {

@@ -48,6 +48,36 @@ export function normalizeUrl(url: string): string {
   return t;
 }
 
+export const SMS_LINK_LABEL_MAX_LENGTH = 60;
+export const SMS_LINK_LABEL_MIN_LENGTH = 3;
+
+export function isValidLinkLabel(label: string): boolean {
+  const trimmed = label.trim();
+  return (
+    trimmed.length >= SMS_LINK_LABEL_MIN_LENGTH &&
+    trimmed.length <= SMS_LINK_LABEL_MAX_LENGTH
+  );
+}
+
+/** URL http(s) avec nom d'hôte plausible (domaine ou localhost). */
+export function isValidLinkUrl(input: string): boolean {
+  const trimmed = input.trim();
+  if (!trimmed) return false;
+  const normalized = normalizeUrl(trimmed);
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+    const host = parsed.hostname;
+    if (!host) return false;
+    if (host === "localhost") return true;
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host);
+  } catch {
+    return false;
+  }
+}
+
 /** Lien court prototype pour le suivi des clics (remplacé par l’API plus tard). */
 export function minifyCampaignLink(url: string): string {
   const normalized = normalizeUrl(url);

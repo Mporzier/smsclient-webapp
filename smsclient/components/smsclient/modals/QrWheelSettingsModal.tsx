@@ -88,7 +88,8 @@ export function QrWheelSettingsModal({
                   Configurer la roue
                 </h2>
                 <p className="m-0 mt-0.5 text-xs font-semibold text-slate-500">
-                  Personnalisez les récompenses et les options de la roue.
+                  Définissez les cases, leurs chances (100 % au total) et les
+                  messages envoyés aux clients.
                 </p>
               </div>
             </div>

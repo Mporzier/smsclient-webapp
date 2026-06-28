@@ -9,16 +9,21 @@ import {
   Sparkles,
   UserRound,
   Wand2,
-  Layers3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type SmsAiOptions = {
   autoOptimize: boolean;
-  multiVersions: boolean;
   includeFirstName: boolean;
   allowSpecialChars: boolean;
   linkTracking: boolean;
+};
+
+export const DEFAULT_SMS_AI_OPTIONS: SmsAiOptions = {
+  autoOptimize: true,
+  includeFirstName: false,
+  allowSpecialChars: false,
+  linkTracking: false,
 };
 
 type SmsAiOptionCardsProps = {
@@ -28,7 +33,13 @@ type SmsAiOptionCardsProps = {
   linksLoading?: boolean;
   selectedLinkId: string | null;
   onSelectLink: (link: LinkRowData) => void;
+  onCreateLink?: (args: {
+    originalUrl: string;
+    label: string;
+  }) => Promise<{ data: LinkRowData | null; error: string | null }>;
   composeDisabled?: boolean;
+  /** Sans en-tête ni bordure — pour panneau repliable. */
+  embedded?: boolean;
 };
 
 type CardDef = {
@@ -47,22 +58,15 @@ const CARDS: CardDef[] = [
     icon: Wand2,
   },
   {
-    key: "multiVersions",
-    title: "Proposer plusieurs versions",
-    description: "L'IA proposera jusqu'à 3 variantes de votre SMS.",
-    icon: Layers3,
-  },
-  {
     key: "includeFirstName",
     title: "Inclure le prénom",
-    description:
-      "Personnalise le SMS avec le prénom de chaque destinataire.",
+    description: "Personnalise le SMS avec le prénom de chaque destinataire.",
     icon: UserRound,
   },
   {
     key: "allowSpecialChars",
     title: "Caractères spéciaux",
-    description: "Autoriser les caractères spéciaux (émojis, accents…)",
+    description: "Autoriser les caractères spéciaux (émojis)",
     icon: Smile,
   },
   {
@@ -150,14 +154,18 @@ export function SmsAiOptionCards({
   linksLoading = false,
   selectedLinkId,
   onSelectLink,
+  onCreateLink,
   composeDisabled = false,
+  embedded = false,
 }: SmsAiOptionCardsProps) {
   return (
-    <div className="shrink-0 border-t border-slate-100 pt-3">
-      <div className="mb-2 flex items-center gap-1.5">
-        <Sparkles className="h-3.5 w-3.5 text-[#2f6fed]" aria-hidden />
-        <span className="text-xs font-black text-slate-900">Options IA</span>
-      </div>
+    <div className={cn(!embedded && "shrink-0 border-t border-slate-100 pt-3")}>
+      {!embedded ? (
+        <div className="mb-2 flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5 text-[#2f6fed]" aria-hidden />
+          <span className="text-xs font-black text-slate-900">Options IA</span>
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CARDS.map((card) => {
           if (card.key === "linkTracking") {
@@ -173,7 +181,7 @@ export function SmsAiOptionCards({
                   }
                 />
                 {options.linkTracking ? (
-                  <div className="rounded-xl border border-[#dfe6f2] bg-slate-50/80 p-2.5">
+                  <div className="min-w-0 overflow-x-hidden rounded-xl border border-[#dfe6f2] bg-slate-50/80 p-2.5">
                     <p className="m-0 mb-2 text-[10px] font-black uppercase tracking-wide text-slate-500">
                       Sélectionner un lien
                     </p>
@@ -184,6 +192,7 @@ export function SmsAiOptionCards({
                       selectedLinkId={selectedLinkId}
                       onSelectLink={onSelectLink}
                       disabled={composeDisabled}
+                      onCreateLink={onCreateLink}
                     />
                   </div>
                 ) : null}

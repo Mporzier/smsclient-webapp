@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import {
   formatInt,
+  formatSmsPartsPerContact,
   sanitizeSender,
   analyzeSmsMessage,
   maxBillableCharacters,
@@ -22,6 +23,7 @@ import {
   SMS_PRENOM_TAG,
 } from "@/lib/proto/smsPersonalization";
 import { useLinks } from "@/hooks/useLinks";
+import { createSmsShortLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -40,20 +42,31 @@ import {
 } from "./CampaignWizardStep1";
 import { SmsMessageComposer } from "./SmsMessageComposer";
 import {
-  SmsComposeModeToggle,
-  type SmsComposeMode,
-} from "./SmsComposeModeToggle";
-import { SmsAiOptionCards, type SmsAiOptions } from "./SmsAiOptionCards";
+  SmsComposeApproachCards,
+  SmsComposeApproachSelectedCard,
+  getComposeApproachStepHint,
+  AI_COMPOSE_PROMPT_PLACEHOLDER,
+  type SmsComposeApproach,
+} from "./SmsComposeApproachCards";
+import { SmsTemplatePicker } from "./SmsTemplatePicker";
+import type { CampaignSmsTemplate } from "@/lib/proto/campaignSmsTemplates";
+import {
+  DEFAULT_SMS_AI_OPTIONS,
+  type SmsAiOptions,
+} from "./SmsAiOptionCards";
+import { SmsAiComposePanel } from "./SmsAiComposePanel";
+import { SmsAiPromptField } from "./SmsAiPromptField";
+import { generateCampaignSmsVariants } from "./campaignAiApi";
 import { SmsManualComposeOptions } from "./SmsManualComposeOptions";
 import { CampaignWizardMessageSummary } from "./CampaignWizardMessageSummary";
 import {
   SmsIphonePreview,
   SMS_IPHONE_PREVIEW_COLUMN,
+  SMS_IPHONE_PREVIEW_WIDTH_COMPACT,
 } from "./SmsIphonePreview";
 import { CAMPAIGN_WIZARD_SUMMARY_COL } from "./campaignLayout";
 import {
   buildDefaultCampaignTitle,
-  generateAiVariants,
   removeExistingUrl,
   ensureStopMention,
 } from "./campaignTextUtils";
@@ -272,6 +285,8 @@ export function CampaignWizard({
   step,
   onWizardStepChange,
   onWizardExit,
+  requestWizardLeave,
+  onComposeApproachChange,
   go,
   title,
   setTitle,
@@ -308,21 +323,59 @@ export function CampaignWizard({
 }: CampaignWizardProps) {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [aiOptions, setAiOptions] = useState<SmsAiOptions>(
+    DEFAULT_SMS_AI_OPTIONS
+  );
   const [aiVariants, setAiVariants] = useState<string[]>([]);
+  const [aiPrompt, setAiPrompt] = useState("");
   const [selectedAiVariant, setSelectedAiVariant] = useState<string | null>(
     null
   );
-  const [aiOptions, setAiOptions] = useState<SmsAiOptions>({
-    autoOptimize: false,
-    multiVersions: false,
-    includeFirstName: containsPrenomTag(sms),
-    allowSpecialChars: true,
-    linkTracking: false,
-  });
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiOptionsOpen, setAiOptionsOpen] = useState(false);
   const [advancedOpenStep3, setAdvancedOpenStep3] = useState(false);
-  const [composeMode, setComposeMode] = useState<SmsComposeMode>("ai");
+  const [composeApproach, setComposeApproach] =
+    useState<SmsComposeApproach | null>(null);
+
+  useEffect(() => {
+    onComposeApproachChange(composeApproach);
+  }, [composeApproach, onComposeApproachChange]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null
+  );
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
-  const { rows: savedLinks, loading: linksLoading } = useLinks();
+  const {
+    rows: savedLinks,
+    loading: linksLoading,
+    refresh: refreshLinks,
+    supabase,
+    userId,
+  } = useLinks();
+
+  const handleCreateSmsLink = useCallback(
+    async (args: { originalUrl: string; label: string }) => {
+      if (!userId) {
+        return {
+          data: null,
+          error: "Connectez-vous pour enregistrer un lien.",
+        };
+      }
+      const { data, error } = await createSmsShortLink(supabase, args);
+      if (error) {
+        return { data: null, error: error.message };
+      }
+      await refreshLinks();
+      return { data, error: null };
+    },
+    [userId, supabase, refreshLinks]
+  );
+
+  const showComposeOptions =
+    composeApproach === "manual" ||
+    composeApproach === "ai" ||
+    (composeApproach === "template" && selectedTemplateId != null);
+  const showTemplatePicker =
+    composeApproach === "template" && selectedTemplateId == null;
 
   const recipients = Math.max(0, recipientCount);
 
@@ -383,7 +436,6 @@ export function CampaignWizard({
     () => analyzeSmsMessage(billingMessage),
     [billingMessage]
   );
-  const unicode = smsStats.encoding === "UNICODE";
   const len = smsStats.characterCount;
 
   const displaySender = sanitizeSender(sender).trim() || "BOULANGERIE";
@@ -395,9 +447,13 @@ export function CampaignWizard({
     setConfirmError(null);
   }, [sms, recipientCount, sendMode]);
 
+  const showAiPromptComposer =
+    composeApproach === "ai" && aiVariants.length === 0;
+
   const handleSmsChange = useCallback(
     (next: string) => {
       setSms(next);
+      if (showAiPromptComposer) return;
       setAiOptions((prev) => {
         const hasTag = containsPrenomTag(next);
         return prev.includeFirstName === hasTag
@@ -405,23 +461,49 @@ export function CampaignWizard({
           : { ...prev, includeFirstName: hasTag };
       });
     },
-    [setSms]
+    [setSms, showAiPromptComposer]
   );
 
-  const generateWithAi = useCallback(() => {
-    const variants = generateAiVariants({
-      objective: displayTitle,
-      offer: "",
-      duration: "",
-      tone: "amical",
-      includeFirstName: aiOptions.includeFirstName,
-    });
-    setAiVariants(variants.slice(0, 3));
+  const handleComposeApproachSelect = useCallback(
+    (approach: SmsComposeApproach) => {
+      setComposeApproach(approach);
+      setSelectedTemplateId(null);
+      setSelectedLinkId(null);
+      setAiVariants([]);
+      setAiPrompt("");
+      setSelectedAiVariant(null);
+      setAiGenerating(false);
+      setAiOptionsOpen(false);
+      if (approach === "ai") {
+        setAiOptions(DEFAULT_SMS_AI_OPTIONS);
+        handleSmsChange("");
+      }
+      if (approach === "template") {
+        handleSmsChange("");
+      }
+    },
+    [handleSmsChange]
+  );
+
+  const handleTemplateSelect = useCallback(
+    (template: CampaignSmsTemplate) => {
+      setSelectedTemplateId(template.id);
+      handleSmsChange(template.body);
+    },
+    [handleSmsChange]
+  );
+
+  const handleResetComposeApproach = useCallback(() => {
+    setComposeApproach(null);
+    setSelectedTemplateId(null);
+    setSelectedLinkId(null);
+    setAiOptions(DEFAULT_SMS_AI_OPTIONS);
+    setAiVariants([]);
+    setAiPrompt("");
     setSelectedAiVariant(null);
-    if (!sms.trim()) {
-      handleSmsChange(variants[0] ?? "");
-    }
-  }, [displayTitle, sms, handleSmsChange, aiOptions.includeFirstName]);
+    setAiGenerating(false);
+    setAiOptionsOpen(false);
+  }, []);
 
   const correctAndReformulateMessage = useCallback(() => {
     const corrected = (sms || "")
@@ -455,28 +537,30 @@ export function CampaignWizard({
       const urlForSms = forceShortUrl ? link.shortUrl : link.originalUrl;
       handleSmsChange(`${next} ${urlForSms}`.trim());
     },
-    [sms, handleSmsChange],
+    [sms, handleSmsChange]
   );
 
   const handleAiOptionsChange = useCallback(
     (patch: Partial<SmsAiOptions>) => {
       let runOptimize = false;
-      let runGenerate = false;
       let enablePrenom = false;
       let disablePrenom = false;
       let disableLinkTracking = false;
 
       setAiOptions((prev) => {
         runOptimize = patch.autoOptimize === true && !prev.autoOptimize;
-        runGenerate = patch.multiVersions === true && !prev.multiVersions;
         enablePrenom =
           patch.includeFirstName === true && !prev.includeFirstName;
         disablePrenom =
           patch.includeFirstName === false && prev.includeFirstName;
-        disableLinkTracking =
-          patch.linkTracking === false && prev.linkTracking;
+        disableLinkTracking = patch.linkTracking === false && prev.linkTracking;
         return { ...prev, ...patch };
       });
+
+      if (composeApproach === "ai") {
+        if (disableLinkTracking) setSelectedLinkId(null);
+        return;
+      }
 
       if (enablePrenom) handleSmsChange(ensurePrenomInMessage(sms));
       if (disablePrenom) handleSmsChange(removePrenomTag(sms));
@@ -485,19 +569,66 @@ export function CampaignWizard({
         applyLinkToSms(null, true);
       }
       if (runOptimize) correctAndReformulateMessage();
-      if (runGenerate) generateWithAi();
     },
     [
+      composeApproach,
       correctAndReformulateMessage,
-      generateWithAi,
       handleSmsChange,
       sms,
       applyLinkToSms,
-    ],
+    ]
+  );
+
+  const handleGenerateAiMessage = useCallback(async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt || aiGenerating) return;
+
+    setAiGenerating(true);
+    try {
+      const link = selectedLinkId
+        ? savedLinks.find((l) => l.id === selectedLinkId)
+        : undefined;
+      const variants = await generateCampaignSmsVariants({
+        prompt,
+        campaignTitle: displayTitle,
+        options: aiOptions,
+        linkUrl:
+          aiOptions.linkTracking && link ? link.shortUrl : undefined,
+      });
+      setAiVariants(variants);
+      if (variants[0]) {
+        setSelectedAiVariant(variants[0]);
+        handleSmsChange(variants[0]);
+      } else {
+        setSelectedAiVariant(null);
+      }
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [
+    aiPrompt,
+    aiGenerating,
+    selectedLinkId,
+    savedLinks,
+    displayTitle,
+    aiOptions,
+    handleSmsChange,
+  ]);
+
+  const handleSelectAiVariant = useCallback(
+    (variant: string) => {
+      setSelectedAiVariant(variant);
+      handleSmsChange(variant);
+    },
+    [handleSmsChange]
   );
 
   const handleAiLinkSelect = useCallback(
     (link: LinkRowData) => {
+      if (composeApproach === "ai") {
+        setSelectedLinkId((prev) => (prev === link.id ? null : link.id));
+        return;
+      }
       if (selectedLinkId === link.id) {
         setSelectedLinkId(null);
         applyLinkToSms(null, true);
@@ -506,14 +637,14 @@ export function CampaignWizard({
       setSelectedLinkId(link.id);
       applyLinkToSms(link, true);
     },
-    [selectedLinkId, applyLinkToSms],
+    [composeApproach, selectedLinkId, applyLinkToSms]
   );
 
   const insertSavedLink = useCallback(
     (link: LinkRowData) => {
       applyLinkToSms(link, true);
     },
-    [applyLinkToSms],
+    [applyLinkToSms]
   );
 
   const handleConfirm = useCallback(async () => {
@@ -555,16 +686,6 @@ export function CampaignWizard({
     setStepWarnings([]);
   }, [step, recipients, sms, sender, sendMode, scheduleAt]);
 
-  useEffect(() => {
-    if (step < 2) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [step]);
-
   const validateStep1 = useCallback((): boolean => {
     const errors: string[] = [];
     if (recipients === 0)
@@ -577,6 +698,12 @@ export function CampaignWizard({
   const validateStep2 = useCallback((): boolean => {
     const errors: string[] = [];
     const warnings: string[] = [];
+    if (!composeApproach) {
+      errors.push("Choisissez comment rédiger votre message.");
+    }
+    if (composeApproach === "template" && !selectedTemplateId) {
+      errors.push("Sélectionnez un modèle SMS.");
+    }
     if (!sms.trim()) errors.push("Le message SMS ne peut pas être vide.");
     if (len > maxSmsLen)
       errors.push(
@@ -595,7 +722,15 @@ export function CampaignWizard({
     setStepErrors(errors);
     setStepWarnings(warnings);
     return errors.length === 0;
-  }, [sms, len, maxSmsLen, smsStats.exceedsMaxSegments, hasStopMention]);
+  }, [
+    composeApproach,
+    selectedTemplateId,
+    sms,
+    len,
+    maxSmsLen,
+    smsStats.exceedsMaxSegments,
+    hasStopMention,
+  ]);
 
   const validateStep3 = useCallback((): boolean => {
     const errors: string[] = [];
@@ -624,10 +759,29 @@ export function CampaignWizard({
     sms,
   ]);
 
+  const canContinueStep1 = recipients > 0;
+  const canContinueStep2 = composeApproach != null && sms.trim().length > 0;
+  const canContinue =
+    step === 1 ? canContinueStep1 : step === 2 ? canContinueStep2 : true;
+
   const handleNext = useCallback(() => {
-    if (step === 1 && validateStep1()) onWizardStepChange(2);
-    if (step === 2 && validateStep2()) onWizardStepChange(3);
-  }, [step, validateStep1, validateStep2, onWizardStepChange]);
+    if (step === 1) {
+      if (!canContinueStep1 || !validateStep1()) return;
+      onWizardStepChange(2);
+      return;
+    }
+    if (step === 2) {
+      if (!canContinueStep2 || !validateStep2()) return;
+      onWizardStepChange(3);
+    }
+  }, [
+    step,
+    canContinueStep1,
+    canContinueStep2,
+    validateStep1,
+    validateStep2,
+    onWizardStepChange,
+  ]);
 
   const handleConfirmWithValidation = useCallback(async () => {
     if (!validateStep3()) return;
@@ -658,8 +812,7 @@ export function CampaignWizard({
         className="min-w-0 flex-1"
         onClick={() => {
           if (step === 1) {
-            onWizardExit();
-            go("campagnes");
+            requestWizardLeave("campagnes");
             return;
           }
           onWizardStepChange((step - 1) as 1 | 2);
@@ -675,7 +828,12 @@ export function CampaignWizard({
         )}
       </ProtoBtn>
       {step < 3 && (
-        <ProtoBtn primary className="min-w-0 flex-1" onClick={handleNext}>
+        <ProtoBtn
+          primary
+          className="min-w-0 flex-1"
+          disabled={!canContinue}
+          onClick={handleNext}
+        >
           Continuer
           <ChevronRight className="h-4 w-4" />
         </ProtoBtn>
@@ -750,9 +908,9 @@ export function CampaignWizard({
                 </div>
               )}
               <CampaignWizardStep1Main />
+              {wizardActions}
             </div>
             <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-              {wizardActions}
               <CampaignWizardStep1Summary />
             </div>
           </div>
@@ -787,93 +945,106 @@ export function CampaignWizard({
             {/* Step 2 — Message */}
             {step === 2 && (
               <div
-                className="grid min-h-0 min-w-0 flex-1 gap-3 overflow-hidden max-[900px]:grid-cols-1"
-                style={{
-                  gridTemplateColumns: `minmax(0, 1fr) ${SMS_IPHONE_PREVIEW_COLUMN}px`,
-                }}
+                className={cn(
+                  fieldBox,
+                  "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                )}
               >
-                <div
-                  className={cn(
-                    fieldBox,
-                    "flex min-h-0 flex-col overflow-hidden"
-                  )}
-                >
-                  <div className="shrink-0">
+                <div className="flex shrink-0 items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <h2 className="m-0 text-sm font-black leading-snug text-slate-900">
                       Votre message
                     </h2>
                     <p className="m-0 mt-1 text-xs font-semibold text-slate-500">
-                      {composeMode === "ai"
-                        ? "Décrivez votre intention, l\u2019IA rédigera le SMS pour vous."
-                        : "Rédigez directement le texte de votre SMS."}
+                      {getComposeApproachStepHint(
+                        composeApproach,
+                        showTemplatePicker,
+                      )}
                     </p>
                   </div>
-                  <div className="mt-2 shrink-0">
-                    <SmsComposeModeToggle
-                      value={composeMode}
-                      onChange={setComposeMode}
+                  {composeApproach != null ? (
+                    <SmsComposeApproachSelectedCard
+                      approach={composeApproach}
+                      onChange={handleResetComposeApproach}
+                    />
+                  ) : null}
+                </div>
+
+                {composeApproach == null ? (
+                  <div className="mt-3 shrink-0">
+                    <SmsComposeApproachCards
+                      onSelect={handleComposeApproachSelect}
                     />
                   </div>
-                  <SmsMessageComposer
-                    value={sms}
-                    onChange={handleSmsChange}
-                    hasError={stepErrors.length > 0 && !sms.trim()}
-                    allowSpecialChars={aiOptions.allowSpecialChars}
-                    estimateFirstName={estimateLongestFirstName}
-                    placeholder={
-                      composeMode === "ai"
-                        ? "Expliquez votre message avec vos propres mots"
-                        : "Écris ton SMS ici…"
-                    }
-                  />
+                ) : (
+                  <>
+                    {showTemplatePicker ? (
+                      <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+                        <SmsTemplatePicker
+                          selectedId={selectedTemplateId}
+                          onSelect={handleTemplateSelect}
+                        />
+                      </div>
+                    ) : null}
 
-                  {composeMode === "ai" ? (
-                    <SmsAiOptionCards
-                      options={aiOptions}
-                      onChange={handleAiOptionsChange}
-                      savedLinks={savedLinks}
-                      linksLoading={linksLoading}
-                      selectedLinkId={selectedLinkId}
-                      onSelectLink={handleAiLinkSelect}
-                    />
-                  ) : (
-                    <SmsManualComposeOptions
-                      onCorrectAndReformulate={correctAndReformulateMessage}
-                      savedLinks={savedLinks}
-                      linksLoading={linksLoading}
-                      onSelectLink={insertSavedLink}
-                    />
-                  )}
+                    {showComposeOptions ? (
+                      <>
+                        {showAiPromptComposer ? (
+                          <SmsAiPromptField
+                            value={aiPrompt}
+                            onChange={setAiPrompt}
+                            placeholder={AI_COMPOSE_PROMPT_PLACEHOLDER}
+                            hasError={stepErrors.length > 0 && !aiPrompt.trim()}
+                            disabled={aiGenerating}
+                          />
+                        ) : (
+                          <SmsMessageComposer
+                            value={sms}
+                            onChange={handleSmsChange}
+                            hasError={stepErrors.length > 0 && !sms.trim()}
+                            allowSpecialChars={aiOptions.allowSpecialChars}
+                            estimateFirstName={estimateLongestFirstName}
+                            placeholder="Écris ton SMS ici…"
+                          />
+                        )}
 
-                  {composeMode === "ai" && aiOptions.multiVersions && aiVariants.length > 0 && (
-                    <div className="mt-2.5 grid max-h-[140px] shrink-0 grid-cols-1 gap-2 overflow-auto sm:grid-cols-2">
-                      {aiVariants.map((v, idx) => (
-                        <button
-                          key={`${idx}-${v.slice(0, 20)}`}
-                          type="button"
-                          onClick={() => {
-                            handleSmsChange(v);
-                            setSelectedAiVariant(v);
-                          }}
-                          className={cn(
-                            "cursor-pointer rounded-xl border p-2.5 text-left text-xs font-semibold leading-snug text-slate-900",
-                            selectedAiVariant === v || sms === v
-                              ? "border-[#2f6fed] bg-[#eef4ff]"
-                              : "border-slate-200 bg-white hover:border-slate-300"
-                          )}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex min-h-0 shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 max-[900px]:hidden">
-                  <SmsIphonePreview message={sms} sender={displaySender} />
-                </div>
+                        {composeApproach === "ai" ? (
+                          <SmsAiComposePanel
+                            options={aiOptions}
+                            onOptionsChange={handleAiOptionsChange}
+                            savedLinks={savedLinks}
+                            linksLoading={linksLoading}
+                            selectedLinkId={selectedLinkId}
+                            onSelectLink={handleAiLinkSelect}
+                            onCreateLink={handleCreateSmsLink}
+                            canGenerate={aiPrompt.trim().length > 0}
+                            generating={aiGenerating}
+                            onGenerate={handleGenerateAiMessage}
+                            optionsOpen={aiOptionsOpen}
+                            onOptionsOpenChange={setAiOptionsOpen}
+                            variants={aiVariants}
+                            selectedVariant={selectedAiVariant}
+                            onSelectVariant={handleSelectAiVariant}
+                          />
+                        ) : (
+                          <SmsManualComposeOptions
+                            onCorrectAndReformulate={
+                              correctAndReformulateMessage
+                            }
+                            savedLinks={savedLinks}
+                            linksLoading={linksLoading}
+                            onSelectLink={insertSavedLink}
+                            onCreateLink={handleCreateSmsLink}
+                          />
+                        )}
+                      </>
+                    ) : null}
+                  </>
+                )}
               </div>
             )}
+
+            {step === 2 ? wizardActions : null}
 
             {/* Step 3 — Confirmation */}
             {step === 3 && (
@@ -980,17 +1151,14 @@ export function CampaignWizard({
                           </div>
                           <div className="flex justify-between gap-3">
                             <span className="text-slate-600">
-                              Segments / SMS
+                              SMS par contact
                             </span>
                             <strong>
-                              {definitiveCredits.hasPrenomTag &&
-                              definitiveCredits.partsMin != null &&
-                              definitiveCredits.partsMax != null &&
-                              definitiveCredits.partsMin !==
+                              {formatSmsPartsPerContact(
+                                parts,
+                                definitiveCredits.partsMin,
                                 definitiveCredits.partsMax
-                                ? `${definitiveCredits.partsMin}–${definitiveCredits.partsMax}`
-                                : parts}{" "}
-                              ({unicode ? "Unicode" : "GSM-7"})
+                              )}
                             </strong>
                           </div>
                           <div className="flex justify-between gap-3">
@@ -1047,18 +1215,27 @@ export function CampaignWizard({
             )}
           </div>
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            {wizardActions}
+            {step === 3 ? wizardActions : null}
             {step === 2 && (
-              <CampaignWizardMessageSummary
-                destinatairesLabel={destinatairesLabel}
-                parts={parts}
-                unicode={unicode}
-                totalCredits={totalCredits}
-                creditsAvailable={creditsAvailable}
-                hasEnoughCredits={hasEnoughCredits}
-                indicative={estimatedCredits.indicative}
-                hasPrenomTag={hasPrenomTag}
-              />
+              <>
+                <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2">
+                  <SmsIphonePreview
+                    message={sms}
+                    sender={displaySender}
+                    width={SMS_IPHONE_PREVIEW_WIDTH_COMPACT}
+                  />
+                </div>
+                <CampaignWizardMessageSummary
+                  destinatairesLabel={destinatairesLabel}
+                  parts={parts}
+                  partsMin={activeCredits.partsMin}
+                  partsMax={activeCredits.partsMax}
+                  totalCredits={totalCredits}
+                  creditsAvailable={creditsAvailable}
+                  hasEnoughCredits={hasEnoughCredits}
+                  indicative={estimatedCredits.indicative}
+                />
+              </>
             )}
           </div>
         </div>

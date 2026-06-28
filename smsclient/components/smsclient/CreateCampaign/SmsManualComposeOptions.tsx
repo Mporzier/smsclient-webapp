@@ -10,6 +10,10 @@ type SmsManualComposeOptionsProps = {
   savedLinks: LinkRowData[];
   linksLoading?: boolean;
   onSelectLink: (link: LinkRowData) => void;
+  onCreateLink?: (args: {
+    originalUrl: string;
+    label: string;
+  }) => Promise<{ data: LinkRowData | null; error: string | null }>;
   disabled?: boolean;
 };
 
@@ -18,6 +22,7 @@ export function SmsManualComposeOptions({
   savedLinks,
   linksLoading = false,
   onSelectLink,
+  onCreateLink,
   disabled = false,
 }: SmsManualComposeOptionsProps) {
   return (
@@ -55,12 +60,13 @@ export function SmsManualComposeOptions({
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-[#dfe6f2] bg-slate-50/80 p-2.5">
+          <div className="mt-3 min-w-0 overflow-x-hidden rounded-xl border border-[#dfe6f2] bg-slate-50/80 p-2.5">
             <SmsLinkPicker
               links={savedLinks}
               loading={linksLoading}
               onSelectLink={onSelectLink}
               disabled={disabled}
+              onCreateLink={onCreateLink}
             />
           </div>
         </div>

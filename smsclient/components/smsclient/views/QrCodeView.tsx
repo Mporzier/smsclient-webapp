@@ -418,12 +418,14 @@ export function QrCodeView({
                 publicUrl={publicUrl}
                 captureMode={captureMode}
                 wheelConfig={wheelConfig}
+                welcomeSmsTemplate={welcomeSmsTemplate}
+                senderName={companyName}
                 initialLoading={wheelLoading && !wheelConfig}
               />
 
               <QrCaptureStatsCard
                 embedded
-                className="mt-auto shrink-0"
+                className="mt-auto shrink-0 pb-2"
                 stats={qrStats}
                 loading={qrStatsLoading}
               />

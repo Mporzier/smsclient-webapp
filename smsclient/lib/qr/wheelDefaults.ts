@@ -108,6 +108,29 @@ export function totalWheelWeight(
   return segments.reduce((s, x) => s + x.probabilityWeight, 0);
 }
 
+/** Répartit 100 % équitablement entre les cases (reste +1 % sur les premières). */
+export function distributeEqualWheelPercents(
+  segments: QrWheelSegment[],
+): QrWheelSegment[] {
+  if (segments.length === 0) return segments;
+  const base = Math.floor(100 / segments.length);
+  const remainder = 100 - base * segments.length;
+  return segments.map((segment, index) => ({
+    ...segment,
+    probabilityWeight: base + (index < remainder ? 1 : 0),
+  }));
+}
+
+export function defaultPercentForNewSegment(
+  segments: Pick<QrWheelSegment, "probabilityWeight">[],
+): number {
+  const used = totalWheelWeight(segments);
+  const remaining = 100 - used;
+  if (remaining >= 5) return remaining;
+  if (remaining >= 1) return remaining;
+  return 5;
+}
+
 export function qrWheelConfigsEqual(a: QrWheelConfig, b: QrWheelConfig): boolean {
   if (
     a.title.trim() !== b.title.trim() ||

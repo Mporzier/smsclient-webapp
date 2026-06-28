@@ -12,21 +12,41 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@keyframes qr-scan-line {
+@keyframes qr-camera-scan {
+  0% {
+    top: 4%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 92%;
+    opacity: 0;
+  }
+}
+
+@keyframes qr-viewfinder-pulse {
   0%,
   100% {
-    top: 12%;
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes qr-welcome-sms-in {
+  0% {
     opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  88% {
-    opacity: 1;
+    transform: translateY(6px);
   }
   100% {
-    top: 78%;
-    opacity: 0;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

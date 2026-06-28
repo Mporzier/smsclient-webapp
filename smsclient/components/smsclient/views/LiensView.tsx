@@ -6,7 +6,13 @@ import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
-import { normalizeUrl } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
+import {
+  normalizeUrl,
+  isValidLinkUrl,
+  isValidLinkLabel,
+  SMS_LINK_LABEL_MAX_LENGTH,
+  SMS_LINK_LABEL_MIN_LENGTH,
+} from "@/components/smsclient/CreateCampaign/campaignTextUtils";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,7 +44,6 @@ export function LiensView({
   const [label, setLabel] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [lastCreatedUrl, setLastCreatedUrl] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LinkRowData | null>(null);
 
   useEffect(() => {
@@ -52,7 +57,7 @@ export function LiensView({
 
   const footerLabel = useMemo(
     () => `${rows.length} lien${rows.length !== 1 ? "s" : ""}`,
-    [rows.length],
+    [rows.length]
   );
 
   const copyToClipboard = useCallback(
@@ -64,13 +69,22 @@ export function LiensView({
         onToast?.("Copie impossible");
       }
     },
-    [onToast],
+    [onToast]
   );
 
   const handleCreate = useCallback(async () => {
     const normalized = normalizeUrl(originalUrl);
-    if (!normalized) {
-      setFormError("Saisissez une URL valide.");
+    if (!isValidLinkUrl(originalUrl)) {
+      setFormError(
+        "Saisissez une URL valide (ex. https://votre-site.fr/promo)."
+      );
+      return;
+    }
+    const trimmedLabel = label.trim().slice(0, SMS_LINK_LABEL_MAX_LENGTH);
+    if (!isValidLinkLabel(trimmedLabel)) {
+      setFormError(
+        `Le libellé est obligatoire (${SMS_LINK_LABEL_MIN_LENGTH} caractères minimum).`
+      );
       return;
     }
     if (!userId) {
@@ -79,17 +93,15 @@ export function LiensView({
     }
     setCreating(true);
     setFormError(null);
-    setLastCreatedUrl(null);
     const { data, error: createError } = await createSmsShortLink(supabase, {
       originalUrl: normalized,
-      label,
+      label: trimmedLabel,
     });
     setCreating(false);
     if (createError || !data) {
       setFormError(createError?.message ?? "Création impossible.");
       return;
     }
-    setLastCreatedUrl(data.shortUrl);
     setOriginalUrl("");
     setLabel("");
     await onRefresh();
@@ -101,13 +113,17 @@ export function LiensView({
     const { error: delError } = await deleteSmsLink(
       supabase,
       userId,
-      deleteTarget.id,
+      deleteTarget.id
     );
     if (delError) throw delError;
     setDeleteTarget(null);
     await onRefresh();
     onToast?.("Lien supprimé");
   }, [deleteTarget, userId, supabase, onRefresh, onToast]);
+
+  const urlValid = isValidLinkUrl(originalUrl);
+  const labelValid = isValidLinkLabel(label);
+  const canCreate = urlValid && labelValid && !creating;
 
   const columns: ColumnDef<LinkRowData, unknown>[] = useMemo(
     () => [
@@ -119,6 +135,7 @@ export function LiensView({
       {
         accessorKey: "label",
         header: "Libellé",
+        size: 140,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>() || "—"}</CellTruncate>
         ),
@@ -126,6 +143,7 @@ export function LiensView({
       {
         accessorKey: "originalUrl",
         header: "URL d'origine",
+        size: 220,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="font-semibold text-slate-700">
             {getValue<string>()}
@@ -135,6 +153,7 @@ export function LiensView({
       {
         accessorKey: "shortUrl",
         header: "Lien court",
+        size: 118,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-1.5">
             <CellTruncate as="span" className="font-extrabold text-[#1f3b77]">
@@ -157,7 +176,7 @@ export function LiensView({
       {
         accessorKey: "clickCount",
         header: "Clics",
-        size: 70,
+        size: 40,
         cell: ({ getValue }) => (
           <span className="font-black tabular-nums">{getValue<number>()}</span>
         ),
@@ -180,7 +199,7 @@ export function LiensView({
         ),
       },
     ],
-    [copyToClipboard],
+    [copyToClipboard]
   );
 
   const deleteDescription = deleteTarget
@@ -213,28 +232,57 @@ export function LiensView({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-          <input
-            type="url"
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
-            placeholder="https://votre-site.fr/promo"
-            value={originalUrl}
-            onChange={(e) => setOriginalUrl(e.target.value)}
-            aria-label="URL à minifier"
-          />
-          <input
-            type="text"
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
-            placeholder="Libellé (optionnel)"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            aria-label="Libellé du lien"
-          />
+        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div className="min-w-0">
+            <label
+              htmlFor="liens-create-url"
+              className="mb-1.5 block text-xs font-bold text-slate-700"
+            >
+              URL
+            </label>
+            <input
+              id="liens-create-url"
+              type="url"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+              placeholder="www.votre-site.fr/promo"
+              value={originalUrl}
+              onChange={(e) => {
+                setOriginalUrl(e.target.value);
+                if (formError) setFormError(null);
+              }}
+            />
+          </div>
+          <div className="min-w-0">
+            <label
+              htmlFor="liens-create-label"
+              className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-slate-700"
+            >
+              <span>Libellé</span>
+              <span className="text-[10px] font-semibold tabular-nums text-slate-400">
+                {label.trim().length}/{SMS_LINK_LABEL_MAX_LENGTH} (min.{" "}
+                {SMS_LINK_LABEL_MIN_LENGTH})
+              </span>
+            </label>
+            <input
+              id="liens-create-label"
+              type="text"
+              required
+              minLength={SMS_LINK_LABEL_MIN_LENGTH}
+              maxLength={SMS_LINK_LABEL_MAX_LENGTH}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+              placeholder="Promo été"
+              value={label}
+              onChange={(e) => {
+                setLabel(e.target.value);
+                if (formError) setFormError(null);
+              }}
+            />
+          </div>
           <ProtoBtn
             primary
-            className="h-10 px-4"
+            className="h-10 w-full px-4 sm:w-auto"
             onClick={() => void handleCreate()}
-            disabled={creating || !originalUrl.trim()}
+            disabled={!canCreate}
           >
             {!creating ? <PlusIcon /> : null}
             {creating ? "Création…" : "Créer"}
@@ -242,18 +290,8 @@ export function LiensView({
         </div>
 
         {formError ? (
-          <p className="m-0 mt-2 text-xs font-bold text-rose-700">{formError}</p>
-        ) : null}
-        {lastCreatedUrl ? (
-          <p className="m-0 mt-2 text-xs font-semibold text-[#1f3b77]">
-            Lien créé :{" "}
-            <button
-              type="button"
-              className="cursor-pointer font-black underline"
-              onClick={() => void copyToClipboard(lastCreatedUrl)}
-            >
-              {lastCreatedUrl}
-            </button>
+          <p className="m-0 mt-2 text-xs font-bold text-rose-700">
+            {formError}
           </p>
         ) : null}
       </div>
@@ -290,6 +328,7 @@ export function LiensView({
             emptyMessage="Aucun lien."
             searchNoResultsMessage="Aucun résultat pour cette recherche."
             footer={footerLabel}
+            clipHorizontalOverflow
             onRowClick={(row) => void copyToClipboard(row.shortUrl)}
           />
         )}

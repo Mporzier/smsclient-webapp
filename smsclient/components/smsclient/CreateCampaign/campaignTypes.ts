@@ -1,11 +1,14 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
+import type { SmsComposeApproach } from "./SmsComposeApproachCards";
 
 export type CampaignWizardProps = {
   step: 1 | 2 | 3;
   onWizardStepChange: (step: 1 | 2 | 3) => void;
   onWizardExit: () => void;
+  requestWizardLeave: (path?: string) => void;
+  onComposeApproachChange: (approach: SmsComposeApproach | null) => void;
   go: (h: string) => void;
   title: string;
   setTitle: (v: string) => void;

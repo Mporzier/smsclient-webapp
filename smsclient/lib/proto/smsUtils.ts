@@ -23,6 +23,19 @@ export function formatInt(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+/** Libellé lisible pour le nombre de SMS facturés par contact. */
+export function formatSmsPartsPerContact(
+  parts: number,
+  partsMin?: number,
+  partsMax?: number,
+): string {
+  if (partsMin != null && partsMax != null && partsMin !== partsMax) {
+    return `${formatInt(partsMin)} à ${formatInt(partsMax)} SMS`;
+  }
+  const count = Math.max(0, parts);
+  return count === 1 ? "1 SMS" : `${formatInt(count)} SMS`;
+}
+
 export function sanitizeSender(v: string): string {
   return v.toUpperCase().replace(/[^A-Z0-9 ]/g, "");
 }
