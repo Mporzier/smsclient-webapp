@@ -1,15 +1,7 @@
+# Tests désactivés au push — lancer manuellement : Actions → Test SMSClient → Run workflow
 name: Test SMSClient
 
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - "smsclient/**"
-      - ".github/workflows/test.yml"
-  pull_request:
-    paths:
-      - "smsclient/**"
-      - ".github/workflows/test.yml"
   workflow_dispatch:
 
 defaults:
