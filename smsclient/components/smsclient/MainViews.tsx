@@ -4,6 +4,7 @@
  */
 export type { ContactRowData } from "@/lib/types/contact";
 export {
+  DashboardView,
   AcheterCreditsView,
   AutomatisationsView,
   CampagnesView,
@@ -14,6 +15,7 @@ export {
   ParametresView,
   QrCodeView,
   ReglementationsSmsView,
+  AideView,
   SoumettreAvisView,
   StatistiquesView,
 } from "./views";

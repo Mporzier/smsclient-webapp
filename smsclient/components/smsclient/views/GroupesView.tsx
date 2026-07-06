@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import type { GroupRowData } from "@/lib/types/group";
@@ -128,7 +129,10 @@ export function GroupesView({
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {showBigEmpty && (
+        <SectionGuideCard section="groupes" onPrimaryAction={onCreateGroup} />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <SearchBar
@@ -183,7 +187,7 @@ export function GroupesView({
             Aucun groupe
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-600">
-            Crée ton premier segment avec « Créer un groupe ».
+            Créez votre premier segment avec « Créer un groupe ».
           </p>
         </div>
       ) : (
@@ -194,7 +198,7 @@ export function GroupesView({
           pageSize={20}
           globalFilter={searchQuery}
           emptyMessage="Aucun groupe."
-          searchNoResultsMessage="Aucun groupe ne correspond à ta recherche."
+          searchNoResultsMessage="Aucun groupe ne correspond à votre recherche."
           onRowClick={onEditGroup}
           footer={footerLabel}
         />

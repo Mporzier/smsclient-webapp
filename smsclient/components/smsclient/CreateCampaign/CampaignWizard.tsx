@@ -70,7 +70,9 @@ import { CAMPAIGN_WIZARD_SUMMARY_COL } from "./campaignLayout";
 import {
   buildDefaultCampaignTitle,
   removeExistingUrl,
-  ensureStopMention,
+  stripStopMention,
+  hasStopMention,
+  appendStopMention,
 } from "./campaignTextUtils";
 import {
   fieldBox,
@@ -336,6 +338,7 @@ export function CampaignWizard({
   );
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiOptionsOpen, setAiOptionsOpen] = useState(false);
+  const [smsBody, setSmsBody] = useState(() => stripStopMention(sms));
   const [advancedOpenStep3, setAdvancedOpenStep3] = useState(false);
   const [composeApproach, setComposeApproach] =
     useState<SmsComposeApproach | null>(null);
@@ -459,9 +462,33 @@ export function CampaignWizard({
   const showAiPromptComposer =
     composeApproach === "ai" && aiVariants.length === 0;
 
-  const handleSmsChange = useCallback(
+  const reserveStopInCounter =
+    composeApproach === "manual" || composeApproach === "template";
+
+  const syncEffectiveSms = useCallback(
+    (body: string) => {
+      setSms(appendStopMention(stripStopMention(body)));
+    },
+    [setSms]
+  );
+
+  const applyExternalMessage = useCallback(
+    (raw: string, opts?: { fromAiApi?: boolean }) => {
+      const body = stripStopMention(raw);
+      setSmsBody(body);
+      if (opts?.fromAiApi && hasStopMention(raw)) {
+        setSms(raw.trim());
+      } else {
+        setSms(appendStopMention(body));
+      }
+    },
+    [setSms]
+  );
+
+  const handleSmsBodyChange = useCallback(
     (next: string) => {
-      setSms(next);
+      setSmsBody(next);
+      syncEffectiveSms(next);
       if (showAiPromptComposer) return;
       setAiOptions((prev) => {
         const hasTag = containsPrenomTag(next);
@@ -470,7 +497,7 @@ export function CampaignWizard({
           : { ...prev, includeFirstName: hasTag };
       });
     },
-    [setSms, showAiPromptComposer]
+    [syncEffectiveSms, showAiPromptComposer]
   );
 
   const handleComposeApproachSelect = useCallback(
@@ -485,21 +512,23 @@ export function CampaignWizard({
       setAiOptionsOpen(false);
       if (approach === "ai") {
         setAiOptions(DEFAULT_SMS_AI_OPTIONS);
-        handleSmsChange("");
+        setSmsBody("");
+        syncEffectiveSms("");
       }
-      if (approach === "template") {
-        handleSmsChange("");
+      if (approach === "template" || approach === "manual") {
+        setSmsBody("");
+        syncEffectiveSms("");
       }
     },
-    [handleSmsChange]
+    [syncEffectiveSms]
   );
 
   const handleTemplateSelect = useCallback(
     (template: CampaignSmsTemplate) => {
       setSelectedTemplateId(template.id);
-      handleSmsChange(template.body);
+      applyExternalMessage(template.body);
     },
-    [handleSmsChange]
+    [applyExternalMessage]
   );
 
   const handleResetComposeApproach = useCallback(() => {
@@ -515,7 +544,7 @@ export function CampaignWizard({
   }, []);
 
   const correctAndReformulateMessage = useCallback(() => {
-    const corrected = (sms || "")
+    const corrected = (smsBody || "")
       .replace(/\s+/g, " ")
       .replace(/-20%/g, "-20 %")
       .replace(/bonjour/gi, "Bonjour")
@@ -533,20 +562,20 @@ export function CampaignWizard({
     const withPrenom = aiOptions.includeFirstName
       ? ensurePrenomInMessage(reformulated)
       : removePrenomTag(reformulated);
-    handleSmsChange(withPrenom ? ensureStopMention(withPrenom) : "");
-  }, [sms, handleSmsChange, aiOptions.includeFirstName]);
+    handleSmsBodyChange(withPrenom);
+  }, [smsBody, handleSmsBodyChange, aiOptions.includeFirstName]);
 
   const applyLinkToSms = useCallback(
     (link: LinkRowData | null, forceShortUrl: boolean) => {
-      const next = removeExistingUrl(sms);
+      const next = removeExistingUrl(smsBody);
       if (!link) {
-        handleSmsChange(next.trim());
+        handleSmsBodyChange(next.trim());
         return;
       }
       const urlForSms = forceShortUrl ? link.shortUrl : link.originalUrl;
-      handleSmsChange(`${next} ${urlForSms}`.trim());
+      handleSmsBodyChange(`${next} ${urlForSms}`.trim());
     },
-    [sms, handleSmsChange]
+    [smsBody, handleSmsBodyChange]
   );
 
   const handleAiOptionsChange = useCallback(
@@ -571,8 +600,8 @@ export function CampaignWizard({
         return;
       }
 
-      if (enablePrenom) handleSmsChange(ensurePrenomInMessage(sms));
-      if (disablePrenom) handleSmsChange(removePrenomTag(sms));
+      if (enablePrenom) handleSmsBodyChange(ensurePrenomInMessage(smsBody));
+      if (disablePrenom) handleSmsBodyChange(removePrenomTag(smsBody));
       if (disableLinkTracking) {
         setSelectedLinkId(null);
         applyLinkToSms(null, true);
@@ -582,8 +611,8 @@ export function CampaignWizard({
     [
       composeApproach,
       correctAndReformulateMessage,
-      handleSmsChange,
-      sms,
+      handleSmsBodyChange,
+      smsBody,
       applyLinkToSms,
     ]
   );
@@ -607,7 +636,7 @@ export function CampaignWizard({
       setAiVariants(variants);
       if (variants[0]) {
         setSelectedAiVariant(variants[0]);
-        handleSmsChange(variants[0]);
+        applyExternalMessage(variants[0], { fromAiApi: true });
       } else {
         setSelectedAiVariant(null);
       }
@@ -621,15 +650,15 @@ export function CampaignWizard({
     savedLinks,
     displayTitle,
     aiOptions,
-    handleSmsChange,
+    applyExternalMessage,
   ]);
 
   const handleSelectAiVariant = useCallback(
     (variant: string) => {
       setSelectedAiVariant(variant);
-      handleSmsChange(variant);
+      applyExternalMessage(variant, { fromAiApi: true });
     },
-    [handleSmsChange]
+    [applyExternalMessage]
   );
 
   const handleAiLinkSelect = useCallback(
@@ -685,7 +714,6 @@ export function CampaignWizard({
       ? "1 destinataire"
       : `${formatInt(recipients)} destinataires`;
 
-  const hasStopMention = /stop/i.test(sms);
   const maxSmsLen = maxBillableCharacters(smsStats.encoding);
   const scheduleInPast =
     sendMode === "sched" && !!scheduleAt && isParisDateInPast(scheduleAt);
@@ -706,14 +734,13 @@ export function CampaignWizard({
 
   const validateStep2 = useCallback((): boolean => {
     const errors: string[] = [];
-    const warnings: string[] = [];
     if (!composeApproach) {
       errors.push("Choisissez comment rédiger votre message.");
     }
     if (composeApproach === "template" && !selectedTemplateId) {
       errors.push("Sélectionnez un modèle SMS.");
     }
-    if (!sms.trim()) errors.push("Le message SMS ne peut pas être vide.");
+    if (!smsBody.trim()) errors.push("Le message SMS ne peut pas être vide.");
     if (len > maxSmsLen)
       errors.push(
         `Le message dépasse la limite de ${formatInt(maxSmsLen)} caractères (${
@@ -724,21 +751,16 @@ export function CampaignWizard({
       errors.push(
         `Le message dépasse ${SMS_LIMITS.MAX_SEGMENTS} SMS — raccourcis-le ou envoie plusieurs campagnes.`
       );
-    if (!hasStopMention)
-      warnings.push(
-        "Le message ne contient pas de mention STOP. Elle est obligatoire en France."
-      );
     setStepErrors(errors);
-    setStepWarnings(warnings);
+    setStepWarnings([]);
     return errors.length === 0;
   }, [
     composeApproach,
     selectedTemplateId,
-    sms,
+    smsBody,
     len,
     maxSmsLen,
     smsStats.exceedsMaxSegments,
-    hasStopMention,
   ]);
 
   const validateStep3 = useCallback((): boolean => {
@@ -769,7 +791,10 @@ export function CampaignWizard({
   ]);
 
   const canContinueStep1 = recipients > 0;
-  const canContinueStep2 = composeApproach != null && sms.trim().length > 0;
+  const canContinueStep2 =
+    composeApproach != null &&
+    !showAiPromptComposer &&
+    smsBody.trim().length > 0;
   const canContinue =
     step === 1 ? canContinueStep1 : step === 2 ? canContinueStep2 : true;
 
@@ -1014,14 +1039,20 @@ export function CampaignWizard({
                             disabled={aiGenerating}
                           />
                         ) : (
-                          <SmsMessageComposer
-                            value={sms}
-                            onChange={handleSmsChange}
-                            hasError={stepErrors.length > 0 && !sms.trim()}
-                            allowSpecialChars={aiOptions.allowSpecialChars}
-                            estimateFirstName={estimateLongestFirstName}
-                            placeholder="Écris ton SMS ici…"
-                          />
+                          <>
+                            <SmsMessageComposer
+                              value={smsBody}
+                              onChange={handleSmsBodyChange}
+                              hasError={stepErrors.length > 0 && !smsBody.trim()}
+                              allowSpecialChars={aiOptions.allowSpecialChars}
+                              estimateFirstName={estimateLongestFirstName}
+                              reserveStop={reserveStopInCounter}
+                              billableMessage={
+                                reserveStopInCounter ? undefined : sms
+                              }
+                              placeholder="Écrivez votre SMS ici…"
+                            />
+                          </>
                         )}
 
                         {composeApproach === "ai" ? (
@@ -1102,7 +1133,7 @@ export function CampaignWizard({
                       ) : null}
                       {!hasEnoughCredits && (
                         <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-extrabold text-rose-800">
-                          Crédits insuffisants — recharge ton compte avant
+                          Crédits insuffisants — rechargez votre compte avant
                           l&apos;envoi.
                         </p>
                       )}
@@ -1236,7 +1267,7 @@ export function CampaignWizard({
               <>
                 <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2">
                   <SmsIphonePreview
-                    message={sms}
+                    message={smsBody}
                     sender={displaySender}
                     width={SMS_IPHONE_PREVIEW_WIDTH_COMPACT}
                   />

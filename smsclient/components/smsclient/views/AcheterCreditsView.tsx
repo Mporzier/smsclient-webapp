@@ -97,7 +97,7 @@ export function AcheterCreditsView({
             Achat confirmé
           </h2>
           <p className="mt-2 text-sm font-bold text-slate-600">
-            {fmtInt(sel.credits)} crédits ont été ajoutés à ton compte.
+            {fmtInt(sel.credits)} crédits ont été ajoutés à votre compte.
           </p>
           <p className="mt-1 text-sm font-bold text-slate-600">
             Nouveau solde : <strong className="text-slate-900">{fmtInt(newBalance)} crédits</strong>
@@ -204,7 +204,7 @@ export function AcheterCreditsView({
           </h2>
           {!sel ? (
             <p className="mt-3 text-sm font-semibold text-slate-500">
-              Sélectionne un pack pour voir le détail.
+              Sélectionnez un pack pour voir le détail.
             </p>
           ) : (
             <div className="mt-3 grid gap-2">
@@ -255,7 +255,7 @@ export function AcheterCreditsView({
               VISA •••• 8003 — Exp. 12/27
             </div>
             <p className="mt-2 text-xs font-semibold text-slate-500">
-              Le paiement sera débité sur ta carte enregistrée.
+              Le paiement sera débité sur votre carte enregistrée.
             </p>
 
             {buyError && (
@@ -274,7 +274,7 @@ export function AcheterCreditsView({
                 ? "Traitement…"
                 : sel
                   ? `Payer ${fmtEur(ttc)} TTC`
-                  : "Sélectionne un pack"}
+                  : "Sélectionnez un pack"}
             </ProtoBtn>
           </div>
 

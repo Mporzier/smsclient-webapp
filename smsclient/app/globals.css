@@ -3,6 +3,17 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --openwidget-right-offset: 48px;
+}
+
+/* OpenWidget — décalage dynamique (voir openwidgetOffset.ts) */
+#chat-widget-container {
+  right: var(--openwidget-right-offset) !important;
+}
+
+/* Réserve la place de la scrollbar dans la colonne principale */
+.app-main-scroll {
+  scrollbar-gutter: stable;
 }
 
 @theme inline {

@@ -167,7 +167,7 @@ export function ContactCreateModal({
     }
     if (!isValidFrMobile(phone)) {
       setValidationError(
-        "Indique un numéro mobile français à 10 chiffres (ex. 06 12 34 56 78)."
+        "Indiquez un numéro mobile français à 10 chiffres (ex. 06 12 34 56 78)."
       );
       return;
     }
@@ -396,7 +396,7 @@ export function ContactCreateModal({
                   id="contact-create-phone-err"
                   className={cn("mt-1.5", hintTextCls, "text-rose-700")}
                 >
-                  Indique un mobile à 10 chiffres (ex. 06 12 34 56 78).
+                  Indiquez un mobile à 10 chiffres (ex. 06 12 34 56 78).
                 </p>
               )}
             </div>

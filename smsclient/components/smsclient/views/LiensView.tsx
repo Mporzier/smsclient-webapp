@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
@@ -161,7 +162,7 @@ export function LiensView({
             </CellTruncate>
             <button
               type="button"
-              title="Copier le lien court"
+              aria-label="Copier le lien court"
               onClick={(e) => {
                 e.stopPropagation();
                 void copyToClipboard(row.original.shortUrl);
@@ -187,7 +188,7 @@ export function LiensView({
         cell: ({ row }) => (
           <button
             type="button"
-            title="Supprimer"
+            aria-label="Supprimer"
             onClick={(e) => {
               e.stopPropagation();
               setDeleteTarget(row.original);
@@ -207,15 +208,15 @@ export function LiensView({
     : "";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[18px]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="m-0 text-xl font-black text-slate-900">Liens</h1>
-          <p className="m-0 mt-1 text-sm font-semibold text-slate-500">
-            Minifiez vos URLs et suivez les clics dans vos SMS.
-          </p>
-        </div>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {showBigEmpty && (
+        <SectionGuideCard
+          section="liens"
+          onPrimaryAction={() =>
+            document.getElementById("liens-create-url")?.focus()
+          }
+        />
+      )}
 
       <div className={cn(fieldBox, "shrink-0 py-4")}>
         <div className="mb-3 flex items-center gap-2">

@@ -21,7 +21,7 @@ export function Pager({ page, totalPages, onPageChange }: PagerProps) {
         onClick={() => onPageChange(page - 1)}
         className={cn(
           "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-black leading-none text-slate-700",
-          page === 0 && "cursor-not-allowed opacity-40",
+          page === 0 && "cursor-not-allowed opacity-40"
         )}
       >
         ‹
@@ -34,7 +34,7 @@ export function Pager({ page, totalPages, onPageChange }: PagerProps) {
           className={cn(
             "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-extrabold leading-none text-slate-700",
             page === i &&
-              "border-[#2f6fed] bg-[#2f6fed] text-white shadow-[0_6px_12px_rgba(47,111,237,0.25)]",
+              "border-[#2f6fed] bg-[#2f6fed] text-white shadow-[0_6px_12px_rgba(47,111,237,0.25)]"
           )}
         >
           {i + 1}
@@ -46,7 +46,7 @@ export function Pager({ page, totalPages, onPageChange }: PagerProps) {
         onClick={() => onPageChange(page + 1)}
         className={cn(
           "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-black leading-none text-slate-700",
-          page === totalPages - 1 && "cursor-not-allowed opacity-40",
+          page === totalPages - 1 && "cursor-not-allowed opacity-40"
         )}
       >
         ›

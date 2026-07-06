@@ -37,7 +37,7 @@ export function SmsManualComposeOptions({
       <div className="flex flex-col gap-2">
         <ProtoBtn
           primary
-          className="h-10 w-full text-sm"
+          className="h-10 w-full gap-2 text-sm"
           onClick={onCorrectAndReformulate}
           disabled={disabled}
         >

@@ -141,7 +141,7 @@ export function AuthForm({ mode }: Props) {
       setResendMessage(mapAuthErrorToFrench(err));
     } else {
       setResendIsError(false);
-      setResendMessage("E-mail de confirmation renvoyé. Vérifie ta boîte.");
+      setResendMessage("E-mail de confirmation renvoyé. Vérifiez votre boîte.");
     }
   }
 
@@ -156,12 +156,12 @@ export function AuthForm({ mode }: Props) {
         data-cy="authForm-signupCheckEmail"
       >
         <h1 className="text-2xl font-black text-slate-900">
-          Vérifie ta boîte mail
+          Vérifiez votre boîte mail
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
-          Si cette adresse n’était pas déjà inscrite, nous t’avons envoyé un
-          lien pour confirmer ton e-mail. Clique dessus pour activer ton compte,
-          puis connecte-toi.
+          Si cette adresse n’était pas déjà inscrite, nous vous avons envoyé un
+          lien pour confirmer votre e-mail. Cliquez dessus pour activer votre compte,
+          puis connectez-vous.
         </p>
         <p className="mt-2 text-sm font-semibold text-slate-500">
           {email.trim()}
@@ -183,7 +183,7 @@ export function AuthForm({ mode }: Props) {
             <strong className="block font-black">
               Configuration manquante
             </strong>
-            Le site a été construit sans les clés Supabase. Ajoute les secrets{" "}
+            Le site a été construit sans les clés Supabase. Ajoutez les secrets{" "}
             <code className="rounded bg-amber-100/80 px-1 text-xs">
               NEXT_PUBLIC_SUPABASE_URL
             </code>{" "}
@@ -203,8 +203,8 @@ export function AuthForm({ mode }: Props) {
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {mode === "login"
-            ? "Connecte-toi avec ton email Supabase."
-            : "Inscris-toi pour accéder au prototype."}
+            ? "Connectez-vous avec votre e-mail Supabase."
+            : "Inscrivez-vous pour accéder au prototype."}
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>

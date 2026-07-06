@@ -21,9 +21,9 @@ const defaultTitle = "Confirmation d’e-mail requise";
 
 const defaultBody = (
   <>
-    Tu dois valider ton adresse e-mail avant d’accéder au tableau de bord. Ouvre
-    le message que nous t’avons envoyé (pense à vérifier les indésirables) et
-    clique sur le lien de confirmation.
+    Vous devez valider votre adresse e-mail avant d’accéder au tableau de bord. Ouvrez
+    le message que nous vous avons envoyé (pensez à vérifier les indésirables) et
+    cliquez sur le lien de confirmation.
   </>
 );
 

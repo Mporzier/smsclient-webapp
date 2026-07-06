@@ -1,3 +1,4 @@
+export { DashboardView } from "./DashboardView";
 export { AcheterCreditsView } from "./AcheterCreditsView";
 export { AutomatisationsView } from "./AutomatisationsView";
 export { CampagnesView } from "./CampagnesView";
@@ -8,5 +9,6 @@ export { ModelesSmsView } from "./ModelesSmsView";
 export { ParametresView } from "./ParametresView";
 export { SoumettreAvisView } from "./SoumettreAvisView";
 export { ReglementationsSmsView } from "./ReglementationsSmsView";
+export { AideView } from "./AideView";
 export { QrCodeView } from "./QrCodeView";
 export { StatistiquesView } from "./StatistiquesView";

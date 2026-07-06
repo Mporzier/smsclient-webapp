@@ -14,10 +14,12 @@ import { smsPrenomChipClass } from "./smsPrenomTagStyles";
 export function SmsMessageComposer({
   value,
   onChange,
-  placeholder = "Écris ton SMS ici…",
+  placeholder = "Écrivez votre SMS ici…",
   hasError,
   allowSpecialChars = true,
   estimateFirstName,
+  reserveStop = false,
+  billableMessage,
   compact = false,
 }: {
   value: string;
@@ -26,6 +28,8 @@ export function SmsMessageComposer({
   hasError?: boolean;
   allowSpecialChars?: boolean;
   estimateFirstName?: string;
+  reserveStop?: boolean;
+  billableMessage?: string;
   compact?: boolean;
 }) {
   const [emojisOpen, setEmojisOpen] = useState(false);
@@ -109,6 +113,8 @@ export function SmsMessageComposer({
 
           <SmsCompositionCounter
             message={value}
+            reserveStop={reserveStop}
+            billableMessage={billableMessage}
             estimateFirstName={estimateFirstName}
           />
         </div>

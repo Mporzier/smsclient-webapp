@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { cn } from "@/lib/cn";
@@ -12,7 +13,6 @@ import {
 } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import {
-  formatContactGroups,
   isCampaignEligibleContact,
 } from "@/lib/types/contact";
 import { useMemo, useState } from "react";
@@ -45,7 +45,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
           className={cn(
             "grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold",
             c.bg,
-            c.text,
+            c.text
           )}
         >
           {initials}
@@ -98,10 +98,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
         );
       }
       return (
-        <div
-          className="flex max-h-12 min-w-0 flex-wrap content-start gap-1 overflow-hidden"
-          title={formatContactGroups(groups)}
-        >
+        <div className="flex max-h-12 min-w-0 flex-wrap content-start gap-1 overflow-hidden">
           {groups.map((g) => {
             const c = groupColor(g);
             return (
@@ -144,12 +141,14 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
     cell: ({ row, getValue }) => {
       const date = getValue<string>();
       const body = row.original.lastSmsBody;
-      if (!body && date === "—") return <span className="text-sm text-slate-400">—</span>;
+      if (!body && date === "—")
+        return <span className="text-sm text-slate-400">—</span>;
       return (
         <div className="flex flex-col gap-0.5 truncate">
           {body ? (
-            <span className="truncate text-sm text-slate-700" title={body}>
-              &laquo;&thinsp;{body.slice(0, 50)}{body.length > 50 ? "…" : ""}&thinsp;&raquo;
+            <span className="truncate text-sm text-slate-700">
+              &laquo;&thinsp;{body.slice(0, 50)}
+              {body.length > 50 ? "…" : ""}&thinsp;&raquo;
             </span>
           ) : null}
           {date !== "—" && (
@@ -192,7 +191,7 @@ export function ContactsView({
 
   const eligibleRows = useMemo(
     () => rows.filter((r) => isCampaignEligibleContact(r)),
-    [rows],
+    [rows]
   );
 
   const hasSelection = selectedIds.size > 0;
@@ -230,9 +229,14 @@ export function ContactsView({
           <input
             type="checkbox"
             className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-            checked={selectedIds.size > 0 && selectedIds.size === eligibleRows.length}
+            checked={
+              selectedIds.size > 0 && selectedIds.size === eligibleRows.length
+            }
             ref={(el) => {
-              if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < eligibleRows.length;
+              if (el)
+                el.indeterminate =
+                  selectedIds.size > 0 &&
+                  selectedIds.size < eligibleRows.length;
             }}
             onChange={toggleAll}
           />
@@ -257,7 +261,10 @@ export function ContactsView({
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {showBigEmpty && (
+        <SectionGuideCard section="contacts" onPrimaryAction={onAddContact} />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <SearchBar
@@ -321,7 +328,7 @@ export function ContactsView({
               Aucun contact pour l&apos;instant
             </p>
             <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              Clique sur « Ajouter un contact » pour enregistrer ton premier
+              Cliquez sur « Ajouter un contact » pour enregistrer votre premier
               numéro.
             </p>
           </div>
@@ -334,7 +341,7 @@ export function ContactsView({
           pageSize={25}
           globalFilter={searchQuery}
           emptyMessage="Aucune cible disponible."
-          searchNoResultsMessage="Aucun contact ne correspond à ta recherche."
+          searchNoResultsMessage="Aucun contact ne correspond à votre recherche."
           onRowClick={onRowClick}
           footer={footerLabel}
         />

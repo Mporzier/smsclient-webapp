@@ -1,47 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { BookOpen, CircleHelp, Mail, MessageCircle } from "lucide-react";
+import { HELP_ACTIONS } from "@/lib/proto/helpActions";
 import { useEffect, useRef, useState } from "react";
-
-type HelpAction = {
-  label: string;
-  description: string;
-  icon: typeof BookOpen;
-  onClick: () => void;
-};
-
-const HELP_ACTIONS: HelpAction[] = [
-  {
-    label: "Centre d'aide",
-    description: "Guides et tutoriels",
-    icon: BookOpen,
-    onClick: () => window.open("https://smsclient.fr/aide", "_blank", "noopener,noreferrer"),
-  },
-  {
-    label: "Foire aux questions",
-    description: "Réponses aux questions fréquentes",
-    icon: CircleHelp,
-    onClick: () => window.open("https://smsclient.fr/faq", "_blank", "noopener,noreferrer"),
-  },
-  {
-    label: "Contacter le support",
-    description: "support@smsclient.fr",
-    icon: Mail,
-    onClick: () => {
-      window.location.href = "mailto:support@smsclient.fr?subject=Aide%20SMSClient";
-    },
-  },
-  {
-    label: "Donner un retour",
-    description: "Suggérer une amélioration",
-    icon: MessageCircle,
-    onClick: () => {
-      window.location.href =
-        "mailto:support@smsclient.fr?subject=Retour%20SMSClient&body=Bonjour%2C%0A%0A";
-    },
-  },
-];
 
 export function HeaderHelpMenu() {
   const [open, setOpen] = useState(false);
@@ -75,7 +36,7 @@ export function HeaderHelpMenu() {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white text-base font-black text-slate-600 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-colors hover:border-slate-300 hover:bg-slate-50",
-          open && "border-blue-200 bg-blue-50 text-blue-700",
+          open && "border-blue-200 bg-blue-50 text-blue-700"
         )}
       >
         ?

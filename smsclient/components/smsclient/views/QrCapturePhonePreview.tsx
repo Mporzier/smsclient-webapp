@@ -221,7 +221,7 @@ function SignupScreen({
         Reste en contact
       </p>
       <p className="m-0 mt-0.5 line-clamp-2 text-[7px] font-semibold leading-snug text-slate-600">
-        Laisse tes coordonnées pour recevoir les actus par SMS.
+        Laissez vos coordonnées pour recevoir les actus par SMS.
       </p>
       <div className="mt-1.5 space-y-1">
         <PreviewField label="Prénom *" placeholder="Ex : Marie" filled />

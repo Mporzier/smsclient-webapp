@@ -307,9 +307,9 @@ function GroupModalContactsPanel({
             hintTextCls
           )}
         >
-          Aucun contact enregistré. Ajoute des contacts depuis l’onglet{" "}
+          Aucun contact enregistré. Ajoutez des contacts depuis l’onglet{" "}
           <span className="font-medium text-slate-700">Contacts</span>, puis
-          reviens ici.
+          revenez ici.
         </div>
       ) : (
         <div
@@ -436,7 +436,6 @@ function GroupModalContactsPanel({
                                     gc.text,
                                     "max-w-full truncate"
                                   )}
-                                  title={g}
                                 >
                                   {g}
                                 </span>
@@ -650,7 +649,7 @@ export function GroupModal(props: GroupModalProps) {
     if (!isCreate) return;
     const trimmed = name.trim();
     if (!trimmed) {
-      setError("Indique un nom de groupe.");
+      setError("Indiquez un nom de groupe.");
       return;
     }
     setError(null);

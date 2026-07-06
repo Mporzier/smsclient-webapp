@@ -1,4 +1,5 @@
 import { SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
+import { appendStopMention, hasStopMention } from "@/lib/proto/smsStopMention";
 
 export function buildDefaultCampaignTitle(): string {
   const d = new Date().toLocaleDateString("fr-FR");
@@ -33,9 +34,9 @@ export function generateAiVariants(args: {
   const greet = opener ? `${opener} ` : "";
 
   return [
-    `${greet}${objective} : ${offer}. Valable ${duration}. Réponds STOP pour ne plus recevoir nos SMS.`,
-    `${greet}profite de ${offer} pour ${objective}. Fin de l’offre dans ${duration}.`,
-    `${objective} 💬 ${offer} pendant ${duration}. Passe en boutique avec ce SMS !`,
+    `${greet}${objective} : ${offer}. Valable ${duration}.`,
+    `${greet}profite de ${offer} pour ${objective}. Fin de l'offre dans ${duration}.`,
+    `${objective} ${offer} pendant ${duration}. Passe en boutique avec ce SMS !`,
   ].map((x) => x.slice(0, 320));
 }
 
@@ -95,7 +96,7 @@ export function removeExistingUrl(text: string): string {
 }
 
 export function ensureStopMention(text: string): string {
-  return /stop/i.test(text)
-    ? text
-    : `${text.trim()} Répondez STOP pour ne plus recevoir nos SMS.`.trim();
+  return hasStopMention(text) ? text.trim() : appendStopMention(text);
 }
+
+export { stripStopMention, hasStopMention, buildEffectiveSms, appendStopMention } from "@/lib/proto/smsStopMention";

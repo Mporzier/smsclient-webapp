@@ -110,7 +110,6 @@ export function SmsLinkPicker({
               <button
                 key={link.id}
                 type="button"
-                title={link.originalUrl}
                 disabled={disabled}
                 aria-pressed={mode === "select" ? isSelected : undefined}
                 onClick={() => onSelectLink(link)}

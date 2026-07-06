@@ -274,7 +274,7 @@ export async function insertClient(
     if (error.code === "23505") {
       return {
         error: new Error(
-          "Ce numéro est déjà enregistré pour ton compte.",
+          "Ce numéro est déjà enregistré pour votre compte.",
         ),
       };
     }
@@ -465,7 +465,7 @@ export async function updateClient(
     if (error.code === "23505") {
       return {
         error: new Error(
-          "Ce numéro est déjà enregistré pour ton compte.",
+          "Ce numéro est déjà enregistré pour votre compte.",
         ),
       };
     }

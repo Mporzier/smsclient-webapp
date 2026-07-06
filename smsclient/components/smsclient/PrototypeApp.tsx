@@ -3,6 +3,7 @@
 import { AppShell } from "@/components/smsclient/Shell";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
+  DashboardView,
   AcheterCreditsView,
   AutomatisationsView,
   CampagnesView,
@@ -13,6 +14,7 @@ import {
   ModelesSmsView,
   QrCodeView,
   ReglementationsSmsView,
+  AideView,
   SoumettreAvisView,
   StatistiquesView,
 } from "./MainViews";
@@ -369,10 +371,10 @@ export function PrototypeApp() {
     useState<SmsComposeApproach | null>(null);
   const [leaveWizardConfirmOpen, setLeaveWizardConfirmOpen] = useState(false);
   const initialWizardSnapshotRef = useRef<CampaignWizardFormSnapshot | null>(
-    null,
+    null
   );
   const pendingWizardLeaveActionRef = useRef<PendingWizardLeaveAction | null>(
-    null,
+    null
   );
   const wizardGuardRanRef = useRef(false);
 
@@ -415,7 +417,7 @@ export function PrototypeApp() {
       campaignSelectedGroupNames,
       campaignExcludedContactIds,
       campaignComposeApproach,
-    ],
+    ]
   );
 
   const wizardIsDirty = useMemo(() => {
@@ -424,7 +426,7 @@ export function PrototypeApp() {
     }
     return isCampaignWizardDirty(
       buildCurrentWizardSnapshot(),
-      initialWizardSnapshotRef.current,
+      initialWizardSnapshotRef.current
     );
   }, [route, buildCurrentWizardSnapshot]);
 
@@ -483,7 +485,7 @@ export function PrototypeApp() {
 
       go("nouvelle-campagne");
     },
-    [go, smsSender],
+    [go, smsSender]
   );
 
   const confirmWizardLeave = useCallback(() => {
@@ -509,7 +511,7 @@ export function PrototypeApp() {
       pendingWizardLeaveActionRef.current = { type: "navigate", path };
       setLeaveWizardConfirmOpen(true);
     },
-    [wizardIsDirty, handleWizardExit, go],
+    [wizardIsDirty, handleWizardExit, go]
   );
 
   const guardedGo = useCallback(
@@ -529,7 +531,7 @@ export function PrototypeApp() {
       }
       go(normalized);
     },
-    [route, wizardIsDirty, go],
+    [route, wizardIsDirty, go]
   );
 
   useEffect(() => {
@@ -660,7 +662,7 @@ export function PrototypeApp() {
         `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
         `${
           n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"
-        } retiré${n > 1 ? "s" : ""} de tes listes. Tu pourras ${
+        } retiré${n > 1 ? "s" : ""} de vos listes. Vous pourrez ${
           n > 1 ? "les" : "le"
         } restaurer dans Paramètres → Éléments supprimés.`,
         async () => {
@@ -693,7 +695,7 @@ export function PrototypeApp() {
           n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"
         } retiré${
           n > 1 ? "s" : ""
-        } de tes listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
+        } de vos listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
         async () => {
           const { error } = await deleteGroups(supabase, ids);
           if (error) throw error;
@@ -715,7 +717,7 @@ export function PrototypeApp() {
     const groupName = groupEditRow.name;
     openConfirmDelete(
       "Supprimer ce groupe ?",
-      `Le groupe « ${groupName} » sera retiré de tes listes. Les contacts ne sont pas supprimés. Tu pourras le restaurer dans Paramètres → Éléments supprimés.`,
+      `Le groupe « ${groupName} » sera retiré de vos listes. Les contacts ne sont pas supprimés. Vous pourrez le restaurer dans Paramètres → Éléments supprimés.`,
       async () => {
         const { error } = await deleteGroups(supabase, [id]);
         if (error) throw error;
@@ -738,7 +740,7 @@ export function PrototypeApp() {
 
   const handleRestoreTrashContacts = useCallback(
     async (ids: string[]) => {
-      if (!user?.id) throw new Error("Tu dois être connecté.");
+      if (!user?.id) throw new Error("Vous devez être connecté.");
       const { restored, error } = await restoreClients(supabase, user.id, ids);
       if (error) throw error;
       refreshContacts();
@@ -753,7 +755,7 @@ export function PrototypeApp() {
 
   const handleRestoreTrashGroups = useCallback(
     async (ids: string[]) => {
-      if (!user?.id) throw new Error("Tu dois être connecté.");
+      if (!user?.id) throw new Error("Vous devez être connecté.");
       const { restored, error } = await restoreGroups(supabase, user.id, ids);
       if (error) throw error;
       refreshGroups();
@@ -775,12 +777,12 @@ export function PrototypeApp() {
       }
       openCampaignComposerInternal(preset);
     },
-    [route, wizardIsDirty, openCampaignComposerInternal],
+    [route, wizardIsDirty, openCampaignComposerInternal]
   );
 
   const handleUnsubscribeContact = useCallback(async () => {
     if (!user?.id || !contactEditRow) {
-      throw new Error("Tu dois être connecté pour désabonner un contact.");
+      throw new Error("Vous devez être connecté pour désabonner un contact.");
     }
     const { error } = await updateClient(supabase, user.id, contactEditRow.id, {
       firstName: cmFirst.trim() || contactEditRow.firstName,
@@ -813,7 +815,7 @@ export function PrototypeApp() {
     async (payload: AutomationSavePayload) => {
       if (!user?.id) {
         throw new Error(
-          "Tu dois être connecté pour enregistrer une automatisation."
+          "Vous devez être connecté pour enregistrer une automatisation."
         );
       }
       const { error } = await upsertAutomation(supabase, user.id, payload);
@@ -831,7 +833,9 @@ export function PrototypeApp() {
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
       if (!user?.id) {
-        throw new Error("Tu dois être connecté pour enregistrer un contact.");
+        throw new Error(
+          "Vous devez être connecté pour enregistrer un contact."
+        );
       }
       if (contactModalMode === "edit" && contactEditRow) {
         const { error } = await updateClient(
@@ -880,7 +884,9 @@ export function PrototypeApp() {
 
   const handleCampaignConfirm = useCallback(async () => {
     if (!user?.id) {
-      throw new Error("Tu dois être connecté pour enregistrer une campagne.");
+      throw new Error(
+        "Vous devez être connecté pour enregistrer une campagne."
+      );
     }
     const targetContacts =
       campaignRecipientMode !== "numbers"
@@ -950,7 +956,7 @@ export function PrototypeApp() {
   const onGroupCreatedFromModal = useCallback(
     async (name: string, desc: string, selectedContactIds: string[]) => {
       if (!user?.id) {
-        throw new Error("Tu dois être connecté pour créer un groupe.");
+        throw new Error("Vous devez être connecté pour créer un groupe.");
       }
       const trimmed = name.trim();
       const { error } = await insertClientGroup(supabase, user.id, name, desc);
@@ -991,7 +997,7 @@ export function PrototypeApp() {
   const onGroupQuickCreatedFromContact = useCallback(
     async (name: string, desc: string) => {
       if (!user?.id) {
-        throw new Error("Tu dois être connecté pour créer un groupe.");
+        throw new Error("Vous devez être connecté pour créer un groupe.");
       }
       const trimmed = name.trim();
       const { error } = await insertClientGroup(
@@ -1021,7 +1027,7 @@ export function PrototypeApp() {
       selectedContactIds: string[];
     }) => {
       if (!user?.id) {
-        throw new Error("Tu dois être connecté pour modifier un groupe.");
+        throw new Error("Vous devez être connecté pour modifier un groupe.");
       }
       const { error } = await updateClientGroup(supabase, user.id, payload.id, {
         name: payload.name,
@@ -1085,6 +1091,24 @@ export function PrototypeApp() {
 
   const renderRoute = (r: AppRoute) => {
     switch (r) {
+      case "dashboard":
+        return (
+          <DashboardView
+            creditsLabel={creditsLoading ? undefined : creditsBalanceLabel}
+            creditsBalance={creditsBalance}
+            contactsCount={contacts.length}
+            groupsCount={groupRows.length}
+            campaignRows={campaignRows}
+            groupRows={groupRows}
+            contacts={contacts}
+            contactsLoading={contactsLoading}
+            campaignsLoading={campaignsLoading}
+            modelesSmsCount={smsTemplateRows.length}
+            modelesSmsLoading={smsTemplatesLoading}
+            onNewCampaign={() => openCampaignComposer()}
+            onGo={guardedGo}
+          />
+        );
       case "contacts":
         return (
           <ContactsView
@@ -1189,6 +1213,8 @@ export function PrototypeApp() {
         );
       case "reglementations-sms":
         return <ReglementationsSmsView />;
+      case "aide":
+        return <AideView onGo={go} />;
       case "soumettre-avis":
         return <SoumettreAvisView onToast={showToast} />;
       case "qr-boutique":
@@ -1269,7 +1295,7 @@ export function PrototypeApp() {
             onBuy={async (selection) => {
               if (!user?.id) {
                 throw new Error(
-                  "Tu dois être connecté pour acheter des crédits."
+                  "Vous devez être connecté pour acheter des crédits."
                 );
               }
               const { invoiceRef, error } = await buyCredits({
@@ -1317,7 +1343,6 @@ export function PrototypeApp() {
         go={guardedGo}
         onNewCampaign={() => openCampaignComposer()}
         creditsLabel={creditsLoading ? "…" : creditsBalanceLabel}
-        onBuyCredits={() => guardedGo("acheter-credits")}
         campaignWizardStep={
           route === "nouvelle-campagne" ? campaignWizardStep : undefined
         }

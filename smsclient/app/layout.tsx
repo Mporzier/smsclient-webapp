@@ -2,6 +2,7 @@ import { AuthGate } from "@/components/auth/AuthGate";
 import { OnboardingGate } from "@/components/auth/OnboardingGate";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { UserProfileProvider } from "@/components/auth/UserProfileProvider";
+import { OpenWidgetLoader } from "@/components/OpenWidgetLoader";
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({
             </UserProfileProvider>
           </AuthGate>
         </AuthProvider>
+        <OpenWidgetLoader />
       </body>
     </html>
   );

@@ -26,10 +26,10 @@ export function ParametresTrashSection({
   onRefresh,
 }: ParametresTrashSectionProps) {
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [restoring, setRestoring] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function ParametresTrashSection({
       await onRefresh();
     } catch (e) {
       setActionError(
-        e instanceof Error ? e.message : "Restauration impossible.",
+        e instanceof Error ? e.message : "Restauration impossible."
       );
     } finally {
       setRestoring(false);
@@ -85,9 +85,9 @@ export function ParametresTrashSection({
               Éléments supprimés
             </h2>
             <p className="mt-1.5 max-w-[640px] text-sm font-semibold text-slate-600">
-              Les contacts et groupes que tu supprimes sont retirés de tes listes
-              mais conservés ici. Sélectionne-les puis clique sur Restaurer pour
-              les récupérer.
+              Les contacts et groupes que vous supprimez sont retirés de vos
+              listes mais conservés ici. Sélectionnez-les puis cliquez sur
+              Restaurer pour les récupérer.
             </p>
           </div>
           {(selectedContactIds.size > 0 || selectedGroupIds.size > 0) && (
@@ -99,7 +99,9 @@ export function ParametresTrashSection({
               <RotateCcw className="mr-1.5 inline h-4 w-4" aria-hidden />
               {restoring
                 ? "Restauration…"
-                : `Restaurer la sélection (${selectedContactIds.size + selectedGroupIds.size})`}
+                : `Restaurer la sélection (${
+                    selectedContactIds.size + selectedGroupIds.size
+                  })`}
             </ProtoBtn>
           )}
         </div>
@@ -148,7 +150,13 @@ export function ParametresTrashSection({
         <TrashTable
           title="Groupes supprimés"
           emptyHint="Aucun groupe dans la corbeille."
-          headers={["", "Groupe", "Description", "Contacts actifs", "Supprimé le"]}
+          headers={[
+            "",
+            "Groupe",
+            "Description",
+            "Contacts actifs",
+            "Supprimé le",
+          ]}
           rows={groups.map((g) => ({
             id: g.id,
             selected: selectedGroupIds.has(g.id),
@@ -209,10 +217,7 @@ function TrashTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr
-                key={row.id}
-                className={cn(row.selected && "bg-blue-50/50")}
-              >
+              <tr key={row.id} className={cn(row.selected && "bg-blue-50/50")}>
                 <td className="border-b border-slate-100 px-3 py-2.5">
                   <input
                     type="checkbox"

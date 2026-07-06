@@ -44,7 +44,7 @@ export const COMPOSE_APPROACH_PICK_INTRO =
   "Choisissez comment rédiger votre SMS.";
 
 export const AI_COMPOSE_PROMPT_PLACEHOLDER =
-  "Écris-moi un SMS pour partager ma promotion de 30 % de réduction sur tout le magasin.";
+  "Rédigez un SMS pour partager ma promotion de 30 % de réduction sur tout le magasin.";
 
 export function getComposeApproachStepHint(
   composeApproach: SmsComposeApproach | null,

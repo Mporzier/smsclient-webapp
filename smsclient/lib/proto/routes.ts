@@ -1,4 +1,5 @@
 export type AppRoute =
+  | "dashboard"
   | "contacts"
   | "groupes"
   | "campagnes"
@@ -9,11 +10,13 @@ export type AppRoute =
   | "liens"
   | "modeles-sms"
   | "reglementations-sms"
+  | "aide"
   | "soumettre-avis"
   | "nouvelle-campagne"
   | "acheter-credits";
 
 export const APP_ROUTES: AppRoute[] = [
+  "dashboard",
   "contacts",
   "groupes",
   "campagnes",
@@ -24,6 +27,7 @@ export const APP_ROUTES: AppRoute[] = [
   "liens",
   "modeles-sms",
   "reglementations-sms",
+  "aide",
   "soumettre-avis",
   "nouvelle-campagne",
   "acheter-credits",
@@ -34,6 +38,7 @@ export function isAppRoute(s: string): s is AppRoute {
 }
 
 export const ROUTE_TITLES: Record<AppRoute, string> = {
+  dashboard: "Accueil",
   contacts: "Contacts",
   groupes: "Groupes",
   campagnes: "Campagnes",
@@ -44,6 +49,7 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   liens: "Liens",
   "modeles-sms": "Modèles SMS",
   "reglementations-sms": "Réglementations SMS",
+  aide: "Centre d'aide",
   "soumettre-avis": "Soumettre un avis",
   "nouvelle-campagne": "Nouvelle campagne",
   "acheter-credits": "Acheter des crédits",
@@ -70,7 +76,7 @@ export function parseLegacyCampaignWizardStep(raw: string): 1 | 2 | 3 | null {
 
 export function parseHash(raw: string): AppRoute {
   const h = raw.replace(/^#/, "").trim();
-  if (h === "" || h === "home" || h === "features") return "contacts";
+  if (h === "" || h === "home" || h === "features") return "dashboard";
   if (h === "nouvelle-campagne" || h.startsWith("nouvelle-campagne-")) {
     return "nouvelle-campagne";
   }

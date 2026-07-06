@@ -104,7 +104,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
 
   const saveProfile = useCallback(
     async (form: UserProfileForm) => {
-      if (!user?.id) throw new Error("Tu dois être connecté.");
+      if (!user?.id) throw new Error("Vous devez être connecté.");
       const email = user.email ?? form.email;
       const { data, error: err } = await updateUserProfile(
         supabase,
@@ -123,7 +123,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
 
   const completeOnboarding = useCallback(
     async (form: UserProfileForm) => {
-      if (!user?.id) throw new Error("Tu dois être connecté.");
+      if (!user?.id) throw new Error("Vous devez être connecté.");
       const email = user.email ?? form.email;
       const { data, error: err } = await completeUserOnboarding(
         supabase,

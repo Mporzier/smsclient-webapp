@@ -49,7 +49,7 @@ export function useCredits() {
   const buy = useCallback(
     async (input: BuyCreditsInput): Promise<{ invoiceRef: string | null; error: Error | null }> => {
       if (!userId) {
-        return { invoiceRef: null, error: new Error("Tu dois être connecté pour acheter des crédits.") };
+        return { invoiceRef: null, error: new Error("Vous devez être connecté pour acheter des crédits.") };
       }
       const result = await buyCreditsDummy(supabase, userId, input);
       if (!result.error) {

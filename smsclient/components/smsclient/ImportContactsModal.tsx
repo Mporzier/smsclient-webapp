@@ -128,7 +128,7 @@ export function ImportContactsModal({
       file.type === "application/csv";
     if (!hasCsvExtension && !mimeOk) {
       setParseError(
-        "Choisis un fichier .csv (export Excel « CSV séparé par des virgules » ou point-virgule)."
+        "Choisissez un fichier .csv (export Excel « CSV séparé par des virgules » ou point-virgule)."
       );
       setFileName(null);
       return;
@@ -178,7 +178,7 @@ export function ImportContactsModal({
       const f = fileFromDataTransfer(e.dataTransfer);
       if (!f) {
         setParseError(
-          "Aucun fichier détecté. Essaie de déposer le fichier depuis l’explorateur, ou utilise « parcourir »."
+          "Aucun fichier détecté. Essayez de déposer le fichier depuis l’explorateur, ou utilisez « parcourir »."
         );
         return;
       }
@@ -211,7 +211,7 @@ export function ImportContactsModal({
       setRoles(suggestColumnRoles(p.headers, p.rows));
     } catch {
       setParseError(
-        "Impossible d’analyser ce fichier. Vérifie l’encodage (UTF-8 recommandé)."
+        "Impossible d’analyser ce fichier. Vérifiez l’encodage (UTF-8 recommandé)."
       );
       setParsed(null);
       setRoles([]);
@@ -271,7 +271,7 @@ export function ImportContactsModal({
         const reasons: string[] = [];
         if (invalidTotal > 0) {
           reasons.push(
-            "numéros non reconnus — utilise 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78"
+            "numéros non reconnus — utilisez 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78"
           );
         }
         if (dupes > 0) {
@@ -284,8 +284,8 @@ export function ImportContactsModal({
           reasons.length > 0
             ? `Aucun contact n’a été importé. ${reasons.join(
                 " · "
-              )}. Corrige le CSV puis réessaie — la modale reste ouverte.`
-            : "Aucun contact n’a été enregistré. Réessaie (la modale reste ouverte)."
+              )}. Corrigez le CSV puis réessayez — la modale reste ouverte.`
+            : "Aucun contact n’a été enregistré. Réessayez (la modale reste ouverte)."
         );
         return;
       }
@@ -506,7 +506,7 @@ export function ImportContactsModal({
                 </p>
                 {!hasPhoneColumn && (
                   <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
-                    Choisis la colonne qui contient le numéro de téléphone.
+                    Choisissez la colonne qui contient le numéro de téléphone.
                   </p>
                 )}
                 <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200">

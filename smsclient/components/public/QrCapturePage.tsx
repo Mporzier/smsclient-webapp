@@ -32,13 +32,13 @@ function parseQrSubmitResult(raw: unknown): QrSubmitResult | null {
 function messageForQrSubmitError(code: string | undefined): string {
   switch (code) {
     case "invalid_phone":
-      return "Indique un numéro mobile français valide (06 ou 07, 10 chiffres).";
+      return "Indiquez un numéro mobile français valide (06 ou 07, 10 chiffres).";
     case "invalid_slug":
       return "Ce lien n’est plus valide. Demande un nouveau QR code au commerce.";
     case "first_name_required":
       return "Le prénom est obligatoire.";
     default:
-      return "Enregistrement impossible pour le moment. Réessaie dans un instant.";
+      return "Enregistrement impossible pour le moment. Réessayez dans un instant.";
   }
 }
 
@@ -51,7 +51,7 @@ function messageForSpinError(code: string | null): string {
     case "wheel_disabled":
       return "La roue n’est pas disponible pour le moment.";
     default:
-      return "Impossible de lancer la roue. Réessaie plus tard.";
+      return "Impossible de lancer la roue. Réessayez plus tard.";
   }
 }
 
@@ -109,7 +109,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
     }
     const e164 = frDisplayToE164(phone);
     if (!e164) {
-      setError("Indique un numéro mobile FR valide (06/07).");
+      setError("Indiquez un numéro mobile FR valide (06/07).");
       return;
     }
     if (wheelActive && !optIn) {
@@ -181,8 +181,8 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               Reste en contact
             </h1>
             <p className="mt-2 text-sm font-semibold text-slate-600">
-              Laisse tes coordonnées pour recevoir les actus et offres par SMS.
-              {wheelActive && " Puis tente ta chance à la roue des récompenses !"}
+              Laissez vos coordonnées pour recevoir les actus et offres par SMS.
+              {wheelActive && " Puis tentez votre chance à la roue des récompenses !"}
             </p>
           </>
         )}
@@ -246,7 +246,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               Merci 🎉
             </p>
             <p className="mt-1 text-sm font-semibold text-emerald-900/90">
-              Tes informations ont bien été enregistrées.
+              Vos informations ont bien été enregistrées.
             </p>
           </div>
         ) : (

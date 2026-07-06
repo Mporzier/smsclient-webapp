@@ -56,20 +56,24 @@ export function DataTable<T>({
   const pageIndex = table.getState().pagination.pageIndex;
 
   const isEmpty = !loading && data.length === 0;
-  const isSearchEmpty = !loading && data.length > 0 && tableRows.length === 0 && globalFilter.trim() !== "";
+  const isSearchEmpty =
+    !loading &&
+    data.length > 0 &&
+    tableRows.length === 0 &&
+    globalFilter.trim() !== "";
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
       <div
         className={cn(
           "min-h-0 flex-1 overflow-y-auto",
-          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-auto",
+          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-auto"
         )}
       >
         <table
           className={cn(
             "w-full border-separate border-spacing-0 text-[15px]",
-            clipHorizontalOverflow && "table-fixed",
+            clipHorizontalOverflow && "table-fixed"
           )}
         >
           <thead className="sticky top-0 z-10">
@@ -81,13 +85,22 @@ export function DataTable<T>({
                     key={header.id}
                     className={cn(
                       "whitespace-nowrap border-b border-slate-200 bg-slate-50 py-3.5 text-sm font-extrabold text-slate-900",
-                      isSelectCol ? "w-10 px-3 text-center" : "px-[18px] text-left",
+                      isSelectCol
+                        ? "w-10 px-3 text-center"
+                        : "px-[18px] text-left"
                     )}
-                    style={header.column.getSize() !== 150 ? { width: `${header.column.getSize()}px` } : undefined}
+                    style={
+                      header.column.getSize() !== 150
+                        ? { width: `${header.column.getSize()}px` }
+                        : undefined
+                    }
                   >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </th>
                 );
               })}
@@ -124,16 +137,20 @@ export function DataTable<T>({
                 </td>
               </tr>
             )}
-            {!loading && !isEmpty && !isSearchEmpty &&
+            {!loading &&
+              !isEmpty &&
+              !isSearchEmpty &&
               tableRows.map((row: Row<T>) => (
                 <tr
                   key={row.id}
                   className={cn(
-                    onRowClick && "cursor-pointer hover:bg-indigo-50/60",
+                    onRowClick && "cursor-pointer hover:bg-indigo-50/60"
                   )}
                   tabIndex={onRowClick ? 0 : undefined}
                   role={onRowClick ? "button" : undefined}
-                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  onClick={
+                    onRowClick ? () => onRowClick(row.original) : undefined
+                  }
                   onKeyDown={
                     onRowClick
                       ? (e) => {
@@ -152,19 +169,24 @@ export function DataTable<T>({
                         key={cell.id}
                         className={cn(
                           "min-w-0 border-b border-slate-100 py-3.5 align-middle text-slate-900",
-                          isSelectCol ? "w-10 px-3 text-center" : "px-[18px]",
+                          isSelectCol ? "w-10 px-3 text-center" : "px-[18px]"
                         )}
                         onClick={
                           isSelectCol
                             ? (e) => {
                                 e.stopPropagation();
-                                const input = e.currentTarget.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+                                const input = e.currentTarget.querySelector(
+                                  "input[type=checkbox]"
+                                ) as HTMLInputElement | null;
                                 if (input) input.click();
                               }
                             : undefined
                         }
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </td>
                     );
                   })}
@@ -177,7 +199,10 @@ export function DataTable<T>({
         <span>
           {loading
             ? "…"
-            : footer ?? `${table.getFilteredRowModel().rows.length} élément${table.getFilteredRowModel().rows.length > 1 ? "s" : ""}`}
+            : footer ??
+              `${table.getFilteredRowModel().rows.length} élément${
+                table.getFilteredRowModel().rows.length > 1 ? "s" : ""
+              }`}
         </span>
         {pageCount > 1 && (
           <Pager

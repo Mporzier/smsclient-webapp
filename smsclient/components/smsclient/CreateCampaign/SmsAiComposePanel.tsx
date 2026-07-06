@@ -7,6 +7,7 @@ import {
   type SmsAiOptions,
 } from "@/components/smsclient/CreateCampaign/SmsAiOptionCards";
 import type { LinkRowData } from "@/lib/types/link";
+import { stripStopMention } from "@/lib/proto/smsStopMention";
 import { ChevronDown, Check, Loader2, SlidersHorizontal, Sparkles } from "lucide-react";
 
 const VARIANT_LABELS = ["Direct", "Chaleureux", "Dynamique"] as const;
@@ -152,7 +153,7 @@ export function SmsAiComposePanel({
                     {label}
                   </span>
                   <p className="m-0 line-clamp-6 flex-1 text-xs font-semibold leading-relaxed text-slate-800">
-                    {variant}
+                    {stripStopMention(variant)}
                   </p>
                 </button>
               );

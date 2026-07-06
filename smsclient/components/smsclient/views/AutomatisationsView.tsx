@@ -1,10 +1,14 @@
 "use client";
 
 import { AutomationEditModal } from "@/components/smsclient/modals/AutomationEditModal";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ProtoBtn } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
-import type { AutomationRowData, AutomationSavePayload } from "@/lib/types/automation";
+import type {
+  AutomationRowData,
+  AutomationSavePayload,
+} from "@/lib/types/automation";
 import {
   Cake,
   CalendarHeart,
@@ -101,7 +105,7 @@ function AutomationCard({
               "relative h-7 w-12 rounded-full border transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50",
               row.enabled
                 ? "border-[#2f6fed] bg-[#2f6fed]"
-                : "border-slate-300 bg-slate-200",
+                : "border-slate-300 bg-slate-200"
             )}
             aria-hidden
           />
@@ -134,7 +138,7 @@ export function AutomatisationsView({
 }: AutomatisationsViewProps) {
   const [editRow, setEditRow] = useState<AutomationRowData | null>(null);
   const [togglingKey, setTogglingKey] = useState<AutomationPresetKey | null>(
-    null,
+    null
   );
 
   const birthdayRow = rows.find((r) => r.presetKey === "birthday");
@@ -142,19 +146,19 @@ export function AutomatisationsView({
 
   const eligibleCount = useMemo(
     () => contacts.filter(isCampaignEligibleContact).length,
-    [contacts],
+    [contacts]
   );
 
   const birthdayEligible = useMemo(
     () =>
       contacts.filter(
-        (c) =>
-          isCampaignEligibleContact(c) && Boolean(c.birthday?.trim()),
+        (c) => isCampaignEligibleContact(c) && Boolean(c.birthday?.trim())
       ).length,
-    [contacts],
+    [contacts]
   );
 
   const activeCount = rows.filter((r) => r.enabled).length;
+  const showGuide = !loading && !error && activeCount === 0;
 
   async function handleToggle(row: AutomationRowData, enabled: boolean) {
     setTogglingKey(row.presetKey);
@@ -171,29 +175,16 @@ export function AutomatisationsView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
-      <div className="flex items-start gap-3">
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed] shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
-          aria-hidden
-        >
-          <Zap className="h-5 w-5" strokeWidth={2.25} />
-        </div>
-        <div className="min-w-0">
-          <p className="m-0 text-sm font-semibold text-slate-600">
-            Programme des SMS récurrents : anniversaires, fêtes et événements.
-            Seuls les contacts abonnés (sans STOP) sont ciblés.
-          </p>
-          {!loading && (
-            <p className="mt-1 text-xs font-bold text-slate-500">
-              {activeCount} automatisation{activeCount !== 1 ? "s" : ""} active
-              {activeCount !== 1 ? "s" : ""} · {eligibleCount} contact
-              {eligibleCount > 1 ? "s" : ""} éligible
-              {eligibleCount > 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+      {showGuide && <SectionGuideCard section="automatisations" />}
+      {!loading && (
+        <p className="m-0 text-xs font-bold text-slate-500">
+          {activeCount} automatisation{activeCount !== 1 ? "s" : ""} active
+          {activeCount !== 1 ? "s" : ""} · {eligibleCount} contact
+          {eligibleCount > 1 ? "s" : ""} éligible
+          {eligibleCount > 1 ? "s" : ""}
+        </p>
+      )}
 
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
@@ -226,7 +217,9 @@ export function AutomatisationsView({
             {birthdayRow ? (
               <AutomationCard
                 row={birthdayRow}
-                meta={`${birthdayEligible} contact${birthdayEligible > 1 ? "s" : ""} avec une date d'anniversaire`}
+                meta={`${birthdayEligible} contact${
+                  birthdayEligible > 1 ? "s" : ""
+                } avec une date d'anniversaire`}
                 onEdit={() => setEditRow(birthdayRow)}
                 onToggle={(enabled) => void handleToggle(birthdayRow, enabled)}
                 toggling={togglingKey === birthdayRow.presetKey}

@@ -3,30 +3,43 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
+import { MonProfilModal } from "@/components/smsclient/modals/MonProfilModal";
 import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
 import { cn } from "@/lib/cn";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
 import type { AppRoute } from "@/lib/proto/routes";
-import { navOverrideForRoute, ROUTE_TITLES, isCampaignWizardRoute } from "@/lib/proto/routes";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  navOverrideForRoute,
+  ROUTE_TITLES,
+  isCampaignWizardRoute,
+} from "@/lib/proto/routes";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BarChart3,
   Bell,
+  CalendarSync,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  CircleUserRound,
   Coins,
+  LayoutDashboard,
+  Link,
   LogOut,
+  Megaphone,
+  MoreHorizontal,
   Plus,
   Search,
-  Send,
-  Zap,
-  Contact,
-  Link2,
-  LayoutTemplate,
   MessageSquareText,
   QrCode,
   Scale,
   Settings,
+  UserRound,
   Users,
+  type LucideIcon,
+  LayoutTemplate,
 } from "lucide-react";
 
 function polygonToRoundedPath(points: string, radius: number): string {
@@ -121,13 +134,65 @@ function LogoMark({ size = 45 }: { size?: number }) {
   );
 }
 
-/** Largeur menu latéral + bandeau marque dans le header */
-const SIDEBAR_W = "w-[240px]";
+/** Fond applicatif (canvas entre sidebar et contenu) */
+const APP_CANVAS_CLASS = "bg-[#e5eaf2]";
 
-const navMainIconClass = "h-[22px] w-[22px] shrink-0 text-[#2f6fed]";
-const navSubIconClass = "h-[22px] w-[22px] shrink-0 text-[#475569]";
+/** Panneau principal (carte blanche comme la sidebar) */
+const MAIN_PANEL_CLASS =
+  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-[#e5edf6] bg-white";
+
+/** Largeur du menu latéral */
+const SIDEBAR_W_EXPANDED = "w-[260px]";
+const SIDEBAR_W_COLLAPSED = "w-[84px]";
+
+const navIconWrapClass =
+  "grid h-[18px] w-[18px] shrink-0 place-items-center text-[#1831c9]";
+const navMainIconClass = "h-[17px] w-[17px] shrink-0";
+const navMainIconStroke = 1.85;
+
+const sidebarTextClass = "text-[13px] font-bold leading-none";
+const sidebarSectionLabelClass =
+  "px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7d8ba0]";
+
+const navItemBase = cn(
+  "group flex h-[34px] w-full cursor-pointer select-none items-center gap-[9px] rounded-full border border-transparent px-2.5 text-left no-underline transition-[background-color,color] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1831c9]",
+  sidebarTextClass
+);
+
+function sidebarNavItemClass(isActive: boolean) {
+  return cn(
+    navItemBase,
+    isActive
+      ? "bg-[#e9f5ff] text-[#1831c9] hover:bg-[#dfeefb]"
+      : "text-[#33415a] hover:bg-slate-100"
+  );
+}
+
+function SidebarNavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className={navIconWrapClass} aria-hidden>
+      <Icon
+        className={navMainIconClass}
+        strokeWidth={navMainIconStroke}
+        aria-hidden
+      />
+    </span>
+  );
+}
+
+function SidebarMenuIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span
+      className="grid h-[17px] w-[17px] shrink-0 place-items-center text-[#1831c9]"
+      aria-hidden
+    >
+      <Icon className="h-4 w-4" strokeWidth={navMainIconStroke} aria-hidden />
+    </span>
+  );
+}
 
 type NavKey =
+  | "dashboard"
   | "contacts"
   | "groupes"
   | "campagnes"
@@ -136,6 +201,7 @@ type NavKey =
   | "parametres"
   | "qr-boutique"
   | "reglementations-sms"
+  | "aide"
   | "soumettre-avis"
   | "liens"
   | "modeles-sms";
@@ -145,67 +211,219 @@ type ShellProps = {
   go: (path: string) => void;
   onNewCampaign: () => void;
   creditsLabel?: string;
-  onBuyCredits?: () => void;
   campaignWizardStep?: 1 | 2 | 3;
   children: ReactNode;
 };
 
-const mainNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
-  [
-    {
-      id: "contacts",
-      label: "Contacts",
-      hash: "contacts",
-      icon: <Contact className={navMainIconClass} aria-hidden />,
-    },
-    {
-      id: "groupes",
-      label: "Groupes",
-      hash: "groupes",
-      icon: <Users className={navMainIconClass} aria-hidden />,
-    },
-    {
-      id: "campagnes",
-      label: "Campagnes",
-      hash: "campagnes",
-      icon: <Send className={navMainIconClass} aria-hidden />,
-    },
-    {
-      id: "automatisations",
-      label: "Automatisations",
-      hash: "automatisations",
-      icon: <Zap className={navMainIconClass} aria-hidden />,
-    },
-    {
-      id: "statistiques",
-      label: "Statistiques",
-      hash: "statistiques",
-      icon: <BarChart3 className={navMainIconClass} aria-hidden />,
-    },
-  ];
+type NavItem = {
+  id: NavKey;
+  label: string;
+  hash: string;
+  icon: LucideIcon;
+};
 
-const bottomNav: { id: NavKey; label: string; hash: string; icon: ReactNode }[] =
-  [
-    {
-      id: "parametres",
-      label: "Paramètres",
-      hash: "parametres",
-      icon: <Settings className={navMainIconClass} aria-hidden />,
-    },
-    {
-      id: "soumettre-avis",
-      label: "Soumettre un avis",
-      hash: "soumettre-avis",
-      icon: <MessageSquareText className={navMainIconClass} aria-hidden />,
-    },
-  ];
+const generalNav: NavItem[] = [
+  {
+    id: "dashboard",
+    label: "Accueil",
+    hash: "dashboard",
+    icon: LayoutTemplate,
+  },
+  {
+    id: "contacts",
+    label: "Contacts",
+    hash: "contacts",
+    icon: CircleUserRound,
+  },
+  { id: "groupes", label: "Groupes", hash: "groupes", icon: Users },
+  { id: "campagnes", label: "Campagnes", hash: "campagnes", icon: Megaphone },
+  {
+    id: "statistiques",
+    label: "Statistiques",
+    hash: "statistiques",
+    icon: BarChart3,
+  },
+];
+
+const toolsNav: NavItem[] = [
+  {
+    id: "automatisations",
+    label: "Automatisations",
+    hash: "automatisations",
+    icon: CalendarSync,
+  },
+  { id: "liens", label: "Liens", hash: "liens", icon: Link },
+  {
+    id: "modeles-sms",
+    label: "Modèles SMS",
+    hash: "modeles-sms",
+    icon: MessageSquareText,
+  },
+  {
+    id: "qr-boutique",
+    label: "QR code boutique",
+    hash: "qr-boutique",
+    icon: QrCode,
+  },
+];
+
+const assistanceNav: NavItem[] = [
+  {
+    id: "aide",
+    label: "Centre d'aide",
+    hash: "aide",
+    icon: CircleHelp,
+  },
+  {
+    id: "reglementations-sms",
+    label: "Réglementations SMS",
+    hash: "reglementations-sms",
+    icon: Scale,
+  },
+];
+
+function SidebarHoverTooltip({
+  label,
+  enabled,
+  children,
+}: {
+  label: string;
+  enabled: boolean;
+  children: ReactNode;
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const updatePosition = useCallback(() => {
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({
+      top: rect.top + rect.height / 2,
+      left: rect.right + 10,
+    });
+  }, []);
+
+  const show = useCallback(() => {
+    if (!enabled) return;
+    updatePosition();
+    setVisible(true);
+  }, [enabled, updatePosition]);
+
+  const hide = useCallback(() => setVisible(false), []);
+
+  useEffect(() => {
+    if (!visible || !enabled) return;
+    const onScrollOrResize = () => updatePosition();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [visible, enabled, updatePosition]);
+
+  return (
+    <>
+      <div
+        ref={anchorRef}
+        className="relative"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+      >
+        {children}
+      </div>
+      {enabled &&
+        visible &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[100] -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[#e5edf6] bg-white px-2.5 py-1.5 text-xs font-bold text-[#293852] shadow-[0_8px_24px_rgba(15,31,56,0.12)]"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {label}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  isActive,
+  collapsed,
+  onGo,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  collapsed: boolean;
+  onGo: (hash: string) => void;
+}) {
+  return (
+    <SidebarHoverTooltip label={item.label} enabled={collapsed}>
+      <button
+        type="button"
+        onClick={() => onGo(item.hash)}
+        aria-current={isActive ? "page" : undefined}
+        aria-label={collapsed ? item.label : undefined}
+        className={cn(
+          sidebarNavItemClass(isActive),
+          collapsed && "justify-center px-0"
+        )}
+      >
+        <SidebarNavIcon icon={item.icon} />
+        {!collapsed && item.label}
+      </button>
+    </SidebarHoverTooltip>
+  );
+}
+
+function SidebarNavSection({
+  label,
+  items,
+  active,
+  onGo,
+  bordered,
+  collapsed,
+}: {
+  label: string;
+  items: NavItem[];
+  active: string;
+  onGo: (hash: string) => void;
+  bordered?: boolean;
+  collapsed: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-[3px]",
+        bordered && "mt-2.5 border-t border-[#dfe6f0] pt-2.5"
+      )}
+    >
+      {!collapsed && <p className={sidebarSectionLabelClass}>{label}</p>}
+      <nav className="flex flex-col gap-[3px]" aria-label={label}>
+        {items.map((item) => (
+          <SidebarNavItem
+            key={item.id}
+            item={item}
+            isActive={active === item.id}
+            collapsed={collapsed}
+            onGo={onGo}
+          />
+        ))}
+      </nav>
+    </div>
+  );
+}
 
 export function AppShell({
   route,
   go,
   onNewCampaign,
   creditsLabel,
-  onBuyCredits,
   campaignWizardStep,
   children,
 }: ShellProps) {
@@ -214,6 +432,8 @@ export function AppShell({
   const router = useRouter();
   const active = navOverrideForRoute(route);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isCampaignWizard = isCampaignWizardRoute(route);
 
   const email = user?.email ?? "";
@@ -259,200 +479,102 @@ export function AppShell({
     router.replace("/auth/login");
   }
 
+  function toggleSidebar() {
+    setProfileOpen(false);
+    setSidebarCollapsed((collapsed) => !collapsed);
+  }
+
   return (
-    <div className="h-screen w-screen bg-slate-50">
+    <div className={cn("h-screen w-screen", APP_CANVAS_CLASS)}>
       <div
-        className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-slate-50"
+        className={cn("flex h-full w-full min-w-0 overflow-hidden", APP_CANVAS_CLASS)}
         role="application"
         aria-label="smsclient.fr - Application SMS"
       >
-        <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white pr-[22px]">
-          <div className="flex h-full min-w-0 flex-1 items-center">
+        <div
+          className={cn(
+            "relative z-30 flex h-full min-h-0 shrink-0 p-3 transition-[width] duration-200 ease-out max-[860px]:hidden",
+            sidebarCollapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W_EXPANDED
+          )}
+        >
+          <div className="relative flex h-full min-h-0 w-full flex-col overflow-visible rounded-3xl border border-[#e5edf6] bg-white px-3 py-3.5">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-expanded={!sidebarCollapsed}
+              aria-label={
+                sidebarCollapsed
+                  ? "Ouvrir le menu latéral"
+                  : "Fermer le menu latéral"
+              }
+              className="absolute right-0 top-8 z-40 grid h-7 w-7 translate-x-1/2 cursor-pointer place-items-center rounded-full border border-[#e5edf6] bg-white text-[#1831c9] transition-colors hover:bg-slate-50"
+            >
+              {sidebarCollapsed ? (
+                <ChevronRight
+                  className="h-4 w-4"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              ) : (
+                <ChevronLeft
+                  className="h-4 w-4"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              )}
+            </button>
+
             <div
               className={cn(
-                "flex h-full shrink-0 items-center gap-1.5 border-r border-slate-200/80 bg-slate-100/90 px-2 min-w-0 overflow-hidden max-[860px]:w-auto max-[860px]:border-r-0 max-[860px]:bg-white max-[860px]:pl-4",
-                SIDEBAR_W
+                "mb-7 flex shrink-0 items-center",
+                sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
               )}
             >
               <div
-                className="grid h-10 w-10 shrink-0 place-items-center"
+                className="grid h-[27px] w-[27px] shrink-0 place-items-center"
                 aria-hidden
               >
-                <LogoMark size={40} />
+                <LogoMark size={27} />
               </div>
-              <span className="min-w-0 flex-1 truncate text-lg font-semibold leading-none text-slate-900">
-                smsclient.fr
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-3 pl-5 pr-3">
-              <h1 className="m-0 shrink-0 text-lg font-extrabold text-slate-700">
-                {ROUTE_TITLES[route]}
-              </h1>
-              {isCampaignWizard && campaignWizardStep != null && (
-                <CampaignWizardStepper current={campaignWizardStep} compact />
+              {!sidebarCollapsed && (
+                <span className="min-w-0 truncate text-lg font-extrabold leading-none text-[#14284f]">
+                  smsclient.fr
+                </span>
               )}
             </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            {creditsLabel && (
-              <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">
-                <Coins className="h-4 w-4 text-[#2f6fed]" aria-hidden />
-                {creditsLabel} · Crédits restants
-              </div>
-            )}
-            {onBuyCredits && (
-              <button
-                type="button"
-                onClick={onBuyCredits}
-                className="flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3.5 py-1.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(47,111,237,0.2)] transition-all hover:brightness-[1.03]"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-                Acheter des crédits
-              </button>
-            )}
-            <HeaderHelpMenu />
-            <button
-              type="button"
-              className="grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
-              title="Notifications"
-              aria-label="Notifications"
+
+            <div
+              className={cn(
+                "flex min-h-0 flex-1 flex-col",
+                sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"
+              )}
             >
-              <Bell
-                className="h-[18px] w-[18px] shrink-0 text-slate-900"
-                aria-hidden
+              <SidebarNavSection
+                label="Général"
+                items={generalNav}
+                active={active}
+                onGo={go}
+                collapsed={sidebarCollapsed}
               />
-            </button>
-          </div>
-        </header>
-
-        <div className="grid min-h-0 flex-1 grid-cols-[244px_minmax(0,1fr)] max-[860px]:grid-cols-1">
-          <aside
-            className={cn(
-              "flex min-h-0 shrink-0 flex-col gap-2 border-r border-slate-200/80 bg-slate-100 p-2.5 max-[860px]:hidden",
-              SIDEBAR_W
-            )}
-          >
-            <button
-              type="button"
-              onClick={onNewCampaign}
-              className="flex cursor-pointer select-none items-center gap-2 rounded-xl border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3 py-2 text-sm font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_22px_36px_rgba(47,111,237,0.32)] hover:brightness-[1.03] active:translate-y-0 active:scale-[0.99] active:brightness-100"
-            >
-              <Plus
-                className="h-4.5 w-4.5 shrink-0"
-                strokeWidth={2.5}
-                aria-hidden
+              <SidebarNavSection
+                label="Outils"
+                items={toolsNav}
+                active={active}
+                onGo={go}
+                bordered
+                collapsed={sidebarCollapsed}
               />
-              Envoyer un SMS
-            </button>
+              <SidebarNavSection
+                label="Assistance"
+                items={assistanceNav}
+                active={active}
+                onGo={go}
+                bordered
+                collapsed={sidebarCollapsed}
+              />
+            </div>
 
-            <nav className="flex flex-col gap-1 pt-0.5" aria-label="Navigation">
-              {mainNav.map((item) => {
-                const isActive = active === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => go(item.hash)}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
-                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
-                      isActive
-                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
-                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-white hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-50"
-                    )}
-                  >
-                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="flex-1" />
-
-            <nav
-              className="flex flex-col gap-1 border-t border-slate-200/80 pt-2.5"
-              aria-label="Outils"
-            >
-              {[
-                { id: "liens" as const, label: "Liens", hash: "liens", icon: Link2 },
-                {
-                  id: "modeles-sms" as const,
-                  label: "Modèles SMS",
-                  hash: "modeles-sms",
-                  icon: LayoutTemplate,
-                },
-                {
-                  id: "qr-boutique" as const,
-                  label: "QR code boutique",
-                  hash: "qr-boutique",
-                  icon: QrCode,
-                },
-                {
-                  id: "reglementations-sms" as const,
-                  label: "Réglementations SMS",
-                  hash: "reglementations-sms",
-                  icon: Scale,
-                },
-              ].map((item) => {
-                const isActive = active === item.id;
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => go(item.hash)}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
-                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
-                      isActive
-                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
-                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-white hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-50"
-                    )}
-                  >
-                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
-                      <Icon className={navMainIconClass} aria-hidden />
-                    </span>
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <nav
-              className="flex flex-col gap-1 border-t border-slate-200/80 pt-2.5"
-              aria-label="Compte et avis"
-            >
-              {bottomNav.map((item) => {
-                const isActive = active === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => go(item.hash)}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "group flex w-full cursor-pointer select-none items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out",
-                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2f6fed]",
-                      isActive
-                        ? "border-slate-200 bg-white text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_12px_26px_rgba(15,23,42,0.10)] active:scale-[0.99]"
-                        : "border-transparent font-medium text-slate-700 hover:translate-x-0.5 hover:border-slate-200/90 hover:bg-white hover:shadow-[0_6px_16px_rgba(15,23,42,0.06)] active:scale-[0.99] active:bg-slate-50"
-                    )}
-                  >
-                    <span className="shrink-0 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-105">
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="relative mt-auto flex flex-col gap-2 border-t border-slate-200/80 pt-3">
+            <div className="relative shrink-0 border-t border-[#dfe6f0] pt-2.5">
               {profileOpen && (
                 <>
                   <div
@@ -461,88 +583,221 @@ export function AppShell({
                     aria-hidden
                   />
                   <div
-                    className="absolute bottom-full left-0 z-50 mb-2 w-full rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_25px_-5px_rgba(15,23,42,0.1),0_8px_16px_-6px_rgba(15,23,42,0.1)] transition-opacity duration-150"
-                    role="dialog"
+                    className={cn(
+                      "absolute z-50 overflow-hidden rounded-2xl border border-[#e5edf6] bg-white p-1.5 shadow-[0_18px_48px_rgba(15,31,56,0.16)]",
+                      sidebarCollapsed
+                        ? "bottom-0 left-[calc(100%+10px)] mb-0 w-[220px]"
+                        : "bottom-full left-0 right-0 mb-2"
+                    )}
+                    role="menu"
                     aria-label="Menu du compte"
                   >
-                    <div className="flex flex-col gap-1 border-b border-slate-100 pb-2.5">
-                      <p className="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        Compte connecté
-                      </p>
-                      <p className="m-0 truncate text-sm font-bold text-slate-900">
-                        {displayName ?? "…"}
-                      </p>
-                      {email && (
-                        <p className="m-0 truncate text-xs text-slate-500">
-                          {email}
-                        </p>
-                      )}
-                    </div>
                     <button
                       type="button"
-                      onClick={() => void handleLogout()}
-                      className="group mt-2.5 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-transparent bg-rose-50/50 px-2.5 py-2 text-left text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setProfileModalOpen(true);
+                      }}
+                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
                     >
-                      <LogOut
-                        className="h-4 w-4 text-rose-500 transition-transform group-hover:translate-x-0.5"
+                      <SidebarMenuIcon icon={UserRound} />
+                      Mon profil
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        go("parametres");
+                      }}
+                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
+                    >
+                      <SidebarMenuIcon icon={Settings} />
+                      Paramètres
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        go("acheter-credits");
+                      }}
+                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
+                    >
+                      <SidebarMenuIcon icon={Coins} />
+                      Crédits
+                      {creditsLabel ? (
+                        <span className="ml-auto rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold tabular-nums text-slate-600">
+                          {creditsLabel}
+                        </span>
+                      ) : null}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        go("soumettre-avis");
+                      }}
+                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
+                    >
+                      <SidebarMenuIcon icon={MessageSquareText} />
+                      Soumettre un avis
+                    </button>
+                    <div
+                      className="mx-1 my-1.5 h-px bg-[#edf1f6]"
+                      role="separator"
+                      aria-hidden
+                    />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleLogout()}
+                      className="group flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#e13b54] transition-colors hover:bg-[#f5f8fd]"
+                    >
+                      <span
+                        className="grid h-[17px] w-[17px] shrink-0 place-items-center text-[#e13b54]"
                         aria-hidden
-                      />
+                      >
+                        <LogOut
+                          className="h-4 w-4"
+                          strokeWidth={navMainIconStroke}
+                          aria-hidden
+                        />
+                      </span>
                       Se déconnecter
                     </button>
                   </div>
                 </>
               )}
 
-              <div className="px-1">
+              <div
+                className={cn(
+                  "items-center",
+                  sidebarCollapsed
+                    ? "flex flex-col gap-2"
+                    : "grid grid-cols-[32px_1fr_24px] gap-2"
+                )}
+              >
+                <SidebarHoverTooltip
+                  label={displayName ?? "Mon compte"}
+                  enabled={sidebarCollapsed}
+                >
+                  <div
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[#1831c9] text-[11px] font-extrabold text-white"
+                    aria-hidden
+                  >
+                    {initials ?? (
+                      <span className="text-[11px] font-extrabold opacity-80">
+                        …
+                      </span>
+                    )}
+                  </div>
+                </SidebarHoverTooltip>
+                {!sidebarCollapsed && (
+                  <span className="min-w-0 truncate text-xs font-bold leading-tight text-[#14284f]">
+                    {displayName ?? (
+                      <span className="inline-block h-3 w-16 animate-pulse rounded bg-slate-200/80 align-middle" />
+                    )}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => setProfileOpen((open) => !open)}
                   aria-expanded={profileOpen}
-                  aria-haspopup="dialog"
+                  aria-haspopup="menu"
+                  aria-label="Menu du compte"
                   className={cn(
-                    "flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border p-1.5 text-left transition-all duration-200",
-                    profileOpen
-                      ? "border-slate-200 bg-white shadow-sm"
-                      : "border-transparent hover:bg-slate-200/50"
+                    "grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-[#7d8ba0] transition-colors hover:bg-slate-100 hover:text-[#18243a]",
+                    profileOpen && "bg-[#e9f5ff] text-[#1831c9]",
+                    sidebarCollapsed && "mx-auto"
                   )}
                 >
-                  <div
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] text-xs font-bold text-white shadow-sm"
+                  <MoreHorizontal
+                    className="h-4 w-4"
+                    strokeWidth={navMainIconStroke}
                     aria-hidden
-                  >
-                    {initials ?? (
-                      <span className="text-[10px] font-bold opacity-80">…</span>
-                    )}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-xs font-bold text-slate-700">
-                      {displayName ?? (
-                        <span className="inline-block h-3 w-16 animate-pulse rounded bg-slate-200/80 align-middle" />
-                      )}
-                    </span>
-                    <span className="truncate text-[11px] text-slate-400">
-                      Options
-                    </span>
-                  </div>
+                  />
                 </button>
               </div>
             </div>
-          </aside>
+          </div>
+        </div>
+
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 pl-0 max-[860px]:pl-3">
+          <div className={MAIN_PANEL_CLASS}>
+          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-[#e5edf6] px-4 pr-[22px] md:px-5">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="hidden min-w-0 items-center gap-1.5 max-[860px]:flex">
+                <div
+                  className="grid h-10 w-10 shrink-0 place-items-center"
+                  aria-hidden
+                >
+                  <LogoMark size={40} />
+                </div>
+                <span className="min-w-0 truncate text-lg font-semibold leading-none text-slate-900">
+                  smsclient.fr
+                </span>
+              </div>
+              <h1 className="m-0 shrink-0 text-lg font-extrabold text-slate-700">
+                {ROUTE_TITLES[route]}
+              </h1>
+              {isCampaignWizard && campaignWizardStep != null && (
+                <CampaignWizardStepper current={campaignWizardStep} compact />
+              )}
+            </div>
+            <div className="flex items-center gap-2.5">
+              {creditsLabel && (
+                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">
+                  <Coins className="h-4 w-4 text-[#2f6fed]" aria-hidden />
+                  {creditsLabel} · Crédits restants
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={onNewCampaign}
+                className="flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3.5 py-1.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(47,111,237,0.2)] transition-all hover:brightness-[1.03]"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                Nouvelle campagne
+              </button>
+              <HeaderHelpMenu />
+              <button
+                type="button"
+                className="grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                title="Notifications"
+                aria-label="Notifications"
+              >
+                <Bell
+                  className="h-[18px] w-[18px] shrink-0 text-slate-900"
+                  aria-hidden
+                />
+              </button>
+            </div>
+          </header>
 
           <main
+            data-app-main-scroll
             className={cn(
-              "flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50 px-4 md:px-5",
+              "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-white px-4 md:px-5",
               route === "nouvelle-campagne" ||
-              route === "reglementations-sms" ||
-              route === "qr-boutique"
+                route === "reglementations-sms" ||
+                route === "qr-boutique"
                 ? "gap-2 overflow-hidden py-3"
-                : "gap-[18px] overflow-auto py-4 md:py-5",
+                : "gap-[18px] overflow-auto py-4 md:py-5"
             )}
           >
             {children}
           </main>
+          </div>
         </div>
       </div>
+
+      <MonProfilModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
     </div>
   );
 }

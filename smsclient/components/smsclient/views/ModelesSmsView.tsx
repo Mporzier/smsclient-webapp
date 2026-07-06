@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
@@ -48,7 +49,7 @@ export function ModelesSmsView({
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserSmsTemplateRow | null>(
-    null,
+    null
   );
 
   useEffect(() => {
@@ -62,13 +63,13 @@ export function ModelesSmsView({
 
   const footerLabel = useMemo(
     () => `${rows.length} modèle${rows.length !== 1 ? "s" : ""}`,
-    [rows.length],
+    [rows.length]
   );
 
   const handleCreate = useCallback(async () => {
     if (!isValidSmsTemplateTitle(title)) {
       setFormError(
-        `Le titre est obligatoire (${SMS_TEMPLATE_TITLE_MIN_LENGTH} caractères minimum).`,
+        `Le titre est obligatoire (${SMS_TEMPLATE_TITLE_MIN_LENGTH} caractères minimum).`
       );
       return;
     }
@@ -85,7 +86,7 @@ export function ModelesSmsView({
     const { data, error: createError } = await createUserSmsTemplate(
       supabase,
       userId,
-      { title, description, body },
+      { title, description, body }
     );
     setCreating(false);
     if (createError || !data) {
@@ -104,7 +105,7 @@ export function ModelesSmsView({
     const { error: delError } = await deleteUserSmsTemplate(
       supabase,
       userId,
-      deleteTarget.id,
+      deleteTarget.id
     );
     if (delError) throw delError;
     setDeleteTarget(null);
@@ -113,9 +114,7 @@ export function ModelesSmsView({
   }, [deleteTarget, userId, supabase, onRefresh, onToast]);
 
   const canCreate =
-    isValidSmsTemplateTitle(title) &&
-    isValidSmsTemplateBody(body) &&
-    !creating;
+    isValidSmsTemplateTitle(title) && isValidSmsTemplateBody(body) && !creating;
 
   const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
@@ -160,7 +159,7 @@ export function ModelesSmsView({
         cell: ({ row }) => (
           <button
             type="button"
-            title="Supprimer"
+            aria-label="Supprimer"
             onClick={(e) => {
               e.stopPropagation();
               setDeleteTarget(row.original);
@@ -172,7 +171,7 @@ export function ModelesSmsView({
         ),
       },
     ],
-    [],
+    []
   );
 
   const deleteDescription = deleteTarget
@@ -180,13 +179,15 @@ export function ModelesSmsView({
     : "";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[18px]">
-      <div>
-        <h1 className="m-0 text-xl font-black text-slate-900">Modèles SMS</h1>
-        <p className="m-0 mt-1 text-sm font-semibold text-slate-500">
-          Créez et gérez vos modèles personnalisés pour vos campagnes.
-        </p>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {showBigEmpty && (
+        <SectionGuideCard
+          section="modeles-sms"
+          onPrimaryAction={() =>
+            document.getElementById("modeles-create-title")?.focus()
+          }
+        />
+      )}
 
       <div className={cn(fieldBox, "shrink-0 py-4")}>
         <div className="mb-3 flex items-center gap-2">
@@ -260,7 +261,7 @@ export function ModelesSmsView({
               id="modeles-create-body"
               rows={4}
               className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold leading-relaxed text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
-              placeholder="Bonjour ⟦prénom⟧, profitez de -20 % cette semaine en boutique ! STOP 36000"
+              placeholder="Bonjour ⟦prénom⟧, profitez de -20 % cette semaine en boutique !"
               value={body}
               onChange={(e) => {
                 setBody(e.target.value);
@@ -282,7 +283,9 @@ export function ModelesSmsView({
         </div>
 
         {formError ? (
-          <p className="m-0 mt-2 text-xs font-bold text-rose-700">{formError}</p>
+          <p className="m-0 mt-2 text-xs font-bold text-rose-700">
+            {formError}
+          </p>
         ) : null}
       </div>
 

@@ -49,7 +49,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setResendMessage(mapAuthErrorToFrench(error));
     } else {
       setResendIsError(false);
-      setResendMessage("E-mail de confirmation renvoyé. Vérifie ta boîte.");
+      setResendMessage("E-mail de confirmation renvoyé. Vérifiez votre boîte.");
     }
   }, [user]);
 

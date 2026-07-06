@@ -1,6 +1,6 @@
 import { isAuthError } from "@supabase/supabase-js";
 
-const GENERIC = "Une erreur est survenue. Réessaie.";
+const GENERIC = "Une erreur est survenue. Réessayez.";
 const LOGIN_INVALID_EMAIL = "Format d’e-mail invalide.";
 const LOGIN_REQUIRED_EMAIL = "L’e-mail est requis.";
 const LOGIN_REQUIRED_PASSWORD = "Le mot de passe est requis.";
@@ -52,7 +52,7 @@ function mapCodeAndMessage({
     return "Un compte existe déjà avec cette adresse e-mail.";
   }
   if (code === "email_not_confirmed" || code === "provider_email_needs_verification") {
-    return "Confirme ton e-mail pour te connecter.";
+    return "Confirmez votre e-mail pour vous connecter.";
   }
   if (code === "invalid_credentials" || (status === 400 && /invalid login credentials/i.test(message))) {
     return "E-mail ou mot de passe incorrect.";
@@ -64,13 +64,13 @@ function mapCodeAndMessage({
     return "Le mot de passe est trop faible (lorsque des règles de complexité sont activées côté Supabase).";
   }
   if (code === "same_password" || (status === 422 && /Password/i.test(message))) {
-    return "Choisis un autre mot de passe.";
+    return "Choisissez un autre mot de passe.";
   }
   if (code === "validation_failed" || (status === 400 && /password|email/i.test(message))) {
-    return "Données invalides. Vérifie l’e-mail et le mot de passe.";
+    return "Données invalides. Vérifiez l’e-mail et le mot de passe.";
   }
   if (status && status >= 500) {
-    return "Service temporairement indisponible. Réessaie plus tard.";
+    return "Service temporairement indisponible. Réessayez plus tard.";
   }
   if (message && !/^AuthApiError|AuthError|NetworkError/i.test(message)) {
     return message;

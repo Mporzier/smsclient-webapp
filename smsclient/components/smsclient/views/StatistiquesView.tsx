@@ -5,6 +5,7 @@ import {
   type UnsubscribedContactRow,
 } from "@/components/smsclient/modals/UnsubscribedContactsModal";
 import { ProtoBtn } from "@/components/smsclient/ui";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { cn } from "@/lib/cn";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import {
@@ -103,6 +104,12 @@ export function StatistiquesView(props: StatsProps) {
     appliedDateFrom,
     appliedDateTo
   );
+
+  const showGuide =
+    !loading &&
+    !error &&
+    data.kpis.smsSent === 0 &&
+    data.campaignSeries.length === 0;
 
   const kpis: KpiConfig[] = [
     {
@@ -235,6 +242,9 @@ export function StatistiquesView(props: StatsProps) {
         )}
         aria-hidden={loading}
       >
+        {showGuide && (
+          <SectionGuideCard section="statistiques" className="shrink-0" />
+        )}
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2.5">
             <button
               ref={periodPickerRef}

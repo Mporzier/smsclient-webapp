@@ -1,0 +1,170 @@
+"use client";
+
+import { ContactsView } from "@/components/smsclient/views/ContactsView";
+import { ContactCreateModal } from "@/components/smsclient/modals/ContactCreateModal";
+import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import type { ContactRowData } from "@/lib/types/contact";
+import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
+import { useCallback, useState } from "react";
+import { nextMockId } from "../helpers/mockData";
+
+type ContactsFlowHarnessProps = {
+  initialRows?: ContactRowData[];
+  groupOptions?: string[];
+  onCreateCampaign?: (ids: string[]) => void;
+};
+
+export function ContactsFlowHarness({
+  initialRows = [],
+  groupOptions = [],
+  onCreateCampaign,
+}: ContactsFlowHarnessProps) {
+  const [rows, setRows] = useState<ContactRowData[]>(initialRows);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [editRow, setEditRow] = useState<ContactRowData | null>(null);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [phone, setPhone] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [notes, setNotes] = useState("");
+  const [groups, setGroups] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+
+  const openAdd = useCallback(() => {
+    setModalMode("add");
+    setEditRow(null);
+    setFirst("");
+    setLast("");
+    setPhone("");
+    setBirthday("");
+    setNotes("");
+    setGroups([]);
+    setModalOpen(true);
+  }, []);
+
+  const openEdit = useCallback((row: ContactRowData) => {
+    setModalMode("edit");
+    setEditRow(row);
+    setFirst(row.firstName);
+    setLast(row.lastName);
+    setPhone(formatFrPhoneInput(row.phone));
+    setBirthday(row.birthday);
+    setNotes(row.notes);
+    setGroups([...row.groups]);
+    setModalOpen(true);
+  }, []);
+
+  const payloadToRow = useCallback(
+    (payload: ContactFormSubmitPayload, id: string): ContactRowData => ({
+      id,
+      created: "17/06/2025",
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      name: [payload.firstName, payload.lastName].filter(Boolean).join(" "),
+      phone: payload.phoneDisplay,
+      groups: payload.groupLabels,
+      birthday: payload.birthday,
+      notes: payload.notes,
+      lastSms: "—",
+      lastSmsBody: "",
+      unsubscribed: "",
+      source: "Manuel",
+      optIn: payload.optIn,
+      stopSms: payload.stop,
+    }),
+    [],
+  );
+
+  const onSaveContact = useCallback(
+    async (payload: ContactFormSubmitPayload) => {
+      if (modalMode === "add") {
+        const id = nextMockId("contact");
+        setRows((prev) => [...prev, payloadToRow(payload, id)]);
+        return;
+      }
+      if (!editRow) return;
+      setRows((prev) =>
+        prev.map((row) =>
+          row.id === editRow.id ? payloadToRow(payload, row.id) : row,
+        ),
+      );
+    },
+    [modalMode, editRow, payloadToRow],
+  );
+
+  const onDeleteContacts = useCallback((ids: string[]) => {
+    setPendingDeleteIds(ids);
+    setConfirmOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    setRows((prev) => prev.filter((row) => !pendingDeleteIds.includes(row.id)));
+    setConfirmOpen(false);
+    setPendingDeleteIds([]);
+  }, [pendingDeleteIds]);
+
+  const n = pendingDeleteIds.length;
+
+  return (
+    <>
+      <ContactsView
+        rows={rows}
+        loading={false}
+        error={null}
+        onImport={() => {}}
+        onAddContact={openAdd}
+        onRowClick={openEdit}
+        onDeleteContacts={onDeleteContacts}
+        onCreateCampaignFromContacts={(ids) => onCreateCampaign?.(ids)}
+      />
+
+      <ContactCreateModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        mode={modalMode === "add" ? "add" : "edit"}
+        first={first}
+        setFirst={setFirst}
+        last={last}
+        setLast={setLast}
+        phone={phone}
+        setPhone={setPhone}
+        birthday={birthday}
+        setBirthday={setBirthday}
+        notes={notes}
+        setNotes={setNotes}
+        groups={groups}
+        setGroups={setGroups}
+        groupOptions={groupOptions}
+        onCreateGroupRequest={() => {}}
+        consentDefaults={
+          editRow
+            ? { optIn: editRow.optIn, stop: editRow.stopSms }
+            : undefined
+        }
+        onSaveContact={onSaveContact}
+        onDeleteContact={
+          modalMode === "edit" && editRow
+            ? () => {
+                setModalOpen(false);
+                onDeleteContacts([editRow.id]);
+              }
+            : undefined
+        }
+      />
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        title={`Supprimer ${n} contact${n > 1 ? "s" : ""} ?`}
+        description="Le contact sera retiré de vos listes."
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setPendingDeleteIds([]);
+        }}
+      />
+    </>
+  );
+}

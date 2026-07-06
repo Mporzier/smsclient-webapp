@@ -74,7 +74,7 @@ export function GroupQuickCreateModal({
   const handleCreate = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setSaveError("Indique un nom de groupe.");
+      setSaveError("Indiquez un nom de groupe.");
       return;
     }
     setSaveError(null);

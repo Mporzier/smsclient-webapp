@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import {
   BadgeDraft,
   BadgeFailed,
@@ -43,14 +44,18 @@ const columns: ColumnDef<CampaignRowData, unknown>[] = [
   {
     accessorKey: "name",
     header: "Campagne",
-    cell: ({ getValue }) => <span className="font-extrabold">{getValue<string>()}</span>,
+    cell: ({ getValue }) => (
+      <span className="font-extrabold">{getValue<string>()}</span>
+    ),
   },
   { accessorKey: "recipients", header: "Destinataires", size: 110 },
   {
     accessorKey: "status",
     header: "Statut",
     size: 120,
-    cell: ({ getValue }) => <StatusBadge status={getValue<SmsCampaignStatus>()} />,
+    cell: ({ getValue }) => (
+      <StatusBadge status={getValue<SmsCampaignStatus>()} />
+    ),
   },
   { accessorKey: "sendLabel", header: "Envoi", size: 160 },
   { accessorKey: "creditsLabel", header: "Crédit SMS", size: 100 },
@@ -80,7 +85,10 @@ export function CampagnesView({
   }, [rows]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {showBigEmpty && (
+        <SectionGuideCard section="campagnes" onPrimaryAction={onNewCampaign} />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <SearchBar
@@ -109,7 +117,7 @@ export function CampagnesView({
             Aucune campagne
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-600">
-            Crée une campagne avec « Nouvelle campagne ».
+            Créez une campagne avec « Nouvelle campagne ».
           </p>
         </div>
       ) : (

@@ -1,5 +1,6 @@
+import { appendStopMention, stripStopMention } from "@/lib/proto/smsStopMention";
 import type { SmsAiOptions } from "./SmsAiOptionCards";
-import { ensureStopMention, generateAiVariants } from "./campaignTextUtils";
+import { generateAiVariants } from "./campaignTextUtils";
 
 const MOCK_LATENCY_MS = 1400;
 
@@ -31,10 +32,6 @@ export async function generateCampaignSmsVariants(
     includeFirstName: input.options.includeFirstName,
   });
 
-  if (input.options.autoOptimize) {
-    variants = variants.map((v) => ensureStopMention(v));
-  }
-
   if (!input.options.allowSpecialChars) {
     variants = variants.map(stripEmojis);
   }
@@ -43,5 +40,7 @@ export async function generateCampaignSmsVariants(
     variants = variants.map((v) => `${v} ${input.linkUrl}`.trim());
   }
 
-  return variants.slice(0, 3);
+  return variants
+    .slice(0, 3)
+    .map((v) => appendStopMention(stripStopMention(v)));
 }

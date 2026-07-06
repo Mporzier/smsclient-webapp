@@ -734,7 +734,6 @@ export function CampaignWizardStep1Main() {
                               gc.border,
                               gc.text
                             )}
-                            title={g}
                           >
                             {g}
                           </span>
@@ -742,10 +741,7 @@ export function CampaignWizardStep1Main() {
                       })
                     )}
                     {c.groups.length > 4 && (
-                      <span
-                        className="text-[11px] font-bold text-slate-400"
-                        title={c.groups.slice(4).join(", ")}
-                      >
+                      <span className="text-[11px] font-bold text-slate-400">
                         +{c.groups.length - 4}
                       </span>
                     )}
@@ -862,7 +858,6 @@ export function CampaignWizardStep1Summary() {
                     gc.text,
                     "inline-flex max-w-full items-center gap-1 py-0.5 text-[10px] font-bold"
                   )}
-                  title={name}
                 >
                   <span className="truncate">{name}</span>
                   <span className="font-semibold opacity-80">
