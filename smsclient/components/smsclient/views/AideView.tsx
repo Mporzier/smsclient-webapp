@@ -38,6 +38,10 @@ function openSupportContact() {
   openSupportEmail();
 }
 
+function openHelpResources() {
+  window.open("https://smsclient.fr/faq", "_blank", "noopener,noreferrer");
+}
+
 function openHelpFaq() {
   if (openOpenWidget("faq")) return;
   openHelpResources();

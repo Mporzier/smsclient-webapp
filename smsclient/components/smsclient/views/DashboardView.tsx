@@ -367,7 +367,11 @@ function DashboardFirstVisit({
                   index < 3 && "min-[900px]:border-r",
                 )}
               >
-                <StepCircle icon={step.icon} step={step.step} done={step.done} />
+                <StepCircle
+                  icon={step.icon}
+                  step={step.step}
+                  done={"done" in step ? step.done : undefined}
+                />
                 <b className="text-xs leading-snug text-[#0b1b3f]">{step.title}</b>
               </button>
             ))}
