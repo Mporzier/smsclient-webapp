@@ -8,7 +8,7 @@ Stack: Next.js 16, React 19, Supabase, Tailwind 4, Vitest, Playwright. pnpm only
 
 - `wiki/hot.md` — contexte session récent
 - `wiki/index.md` — routes → 3 fichiers max
-- Skills: `.cursor/skills/` uniquement
+- Skills: `.cursor/skills/`
 
 ## Arborescence
 

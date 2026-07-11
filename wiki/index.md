@@ -34,4 +34,10 @@ Lire `wiki/hot.md` d'abord si session récente documentée.
 
 ## Skills
 
-`.cursor/skills/` — `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`
+`.cursor/skills/` (workspace root).
+
+**smsclient** : `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`
+
+**caveman** : `caveman`, `cavecrew`, `caveman-commit`, `caveman-compress`, `caveman-help`, `caveman-review`, `caveman-stats`
+
+**obsidian** : `obsidian-markdown`, `obsidian-cli`, `obsidian-bases`, `json-canvas` (wiki `wiki/`)

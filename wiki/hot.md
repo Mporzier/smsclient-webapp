@@ -6,7 +6,9 @@ Updated: 2026-07-12
 
 - Token savings setup : rules, skills, wiki, gros fichiers découpés
 - `PrototypeApp` → `prototypeApp/` (~40 lignes shell)
-- Skills canoniques : `.cursor/skills/` uniquement (`.agents/` supprimé)
+- Skills : `.cursor/skills/` (workspace root flat — plus de dossier `smsclient/`)
+- Caveman complet : caveman, cavecrew, commit, compress, help, review, stats
+- Obsidian : markdown, cli, bases, json-canvas
 
 ## Découpes faites
 
