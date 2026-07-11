@@ -1,0 +1,107 @@
+"use client";
+
+import {
+  AideView,
+  AutomatisationsView,
+  LiensView,
+  ModelesSmsView,
+  ReglementationsSmsView,
+  SoumettreAvisView,
+  StatistiquesView,
+} from "@/components/smsclient/MainViews";
+import type { AppRoute } from "@/lib/proto/routes";
+import type { ReactNode } from "react";
+import type { PrototypeAppContext } from "../usePrototypeApp";
+
+const CONTENT_ROUTES = new Set<AppRoute>([
+  "automatisations",
+  "statistiques",
+  "liens",
+  "modeles-sms",
+  "reglementations-sms",
+  "aide",
+  "soumettre-avis",
+]);
+
+export function renderContentRoute(
+  r: AppRoute,
+  ctx: PrototypeAppContext
+): ReactNode | null {
+  if (!CONTENT_ROUTES.has(r)) return null;
+  const { data, modals, actions, statisticsState } = ctx;
+  const {
+    contactsState,
+    linksState,
+    smsTemplatesState,
+    automationsState,
+    unsubscribedContacts,
+  } = data;
+
+  switch (r) {
+    case "automatisations":
+      return (
+        <AutomatisationsView
+          rows={automationsState.rows}
+          contacts={contactsState.rows}
+          loading={automationsState.loading}
+          error={automationsState.error}
+          onSave={actions.handleAutomationSave}
+        />
+      );
+    case "statistiques":
+      return (
+        <StatistiquesView
+          statsPeriod={modals.statsPeriod}
+          appliedDateFrom={modals.appliedStatsFrom}
+          appliedDateTo={modals.appliedStatsTo}
+          onSelectPeriod={actions.applyStatsPreset}
+          statsOpen={modals.statsOpen}
+          setStatsOpen={modals.setStatsOpen}
+          dateFrom={modals.dateFrom}
+          dateTo={modals.dateTo}
+          setDateFrom={modals.setDateFrom}
+          setDateTo={modals.setDateTo}
+          applyRange={actions.applyStatsRange}
+          loading={statisticsState.loading}
+          error={statisticsState.error}
+          data={statisticsState.data}
+          onExport={() =>
+            modals.showToast("Export des statistiques (à implémenter).")
+          }
+          unsubscribedContacts={unsubscribedContacts}
+        />
+      );
+    case "liens":
+      return (
+        <LiensView
+          rows={linksState.rows}
+          loading={linksState.loading}
+          error={linksState.error}
+          supabase={linksState.supabase}
+          userId={linksState.userId}
+          onRefresh={linksState.refresh}
+          onToast={modals.showToast}
+        />
+      );
+    case "modeles-sms":
+      return (
+        <ModelesSmsView
+          rows={smsTemplatesState.rows}
+          loading={smsTemplatesState.loading}
+          error={smsTemplatesState.error}
+          supabase={smsTemplatesState.supabase}
+          userId={smsTemplatesState.userId}
+          onRefresh={smsTemplatesState.refresh}
+          onToast={modals.showToast}
+        />
+      );
+    case "reglementations-sms":
+      return <ReglementationsSmsView />;
+    case "aide":
+      return <AideView onGo={ctx.go} />;
+    case "soumettre-avis":
+      return <SoumettreAvisView onToast={modals.showToast} />;
+    default:
+      return null;
+  }
+}

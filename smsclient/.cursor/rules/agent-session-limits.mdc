@@ -1,0 +1,57 @@
+---
+description: Plafonds session agent — pas de chaînes de commandes ni boucles longues
+alwaysApply: true
+---
+
+# Session agent — pas de marathon
+
+Objectif : une requête Cursor doit rester courte. L'utilisateur valide manuellement entre les étapes.
+
+## Shell — plafonds
+
+| Règle | Limite |
+|-------|--------|
+| Commandes shell par requête utilisateur | ≤ 3 (sauf demande explicite de lancer une commande) |
+| Chaînes `&&`, `;`, `\|` multi-étapes | Interdit — une commande = une intention |
+| Retry après échec | 0 — stop, résumer, demander à l'utilisateur |
+| Processus long / watch / dev server | Interdit (`pnpm dev`, `next dev`, `watch`, serveurs en arrière-plan) |
+
+## Commandes interdites (lentes ou volumineuses)
+
+- `pnpm install`, `npm install`, `pnpm add`
+- `pnpm build`, `next build`
+- `pnpm test`, `vitest`, `playwright test`
+- `tsc`, `tsc --noEmit`
+- `docker`, `docker compose`
+- `grep -r` / `rg` sans chemin restreint ni `head_limit`
+- `find` sur tout le repo
+
+## Boucles interdites
+
+- run → fix → run (tests, type-check, lint, build)
+- explore → read 20 fichiers → explore encore
+- subagent → subagent → subagent sans livrable intermédiaire
+- « Je vérifie que tout passe » avant de répondre
+
+## Subagents
+
+- Pas de `Task` / `explore` sauf demande explicite de l'utilisateur
+- Jamais plusieurs subagents en parallèle pour investiguer
+
+## Stratégie obligatoire
+
+1. **Une hypothèse** → **un correctif minimal** → **réponse**
+2. Bloqué après 2 hypothèses infructueuses → stop, exposer ce qui manque, demander l'erreur ou la décision utilisateur
+3. Vérifications (tests, type-check, build) → commandes à copier pour l'utilisateur, jamais exécutées
+
+## Outils préférés (rapides)
+
+- `Grep` avec `path` + `head_limit` avant `Read`
+- `Read` avec `offset`/`limit` sur gros fichiers (`CampaignWizard.tsx`, `Shell.tsx`)
+- Édition ciblée sans relire tout le dossier
+
+## Gros fichiers — lire par offset
+
+- `components/smsclient/CreateCampaign/CampaignWizard.tsx`
+- `components/smsclient/Shell.tsx`
+- `components/smsclient/views/ParametresView.tsx`

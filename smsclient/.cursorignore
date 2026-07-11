@@ -1,0 +1,12 @@
+.next/
+.next/cache/
+out/
+node_modules/
+playwright-report/
+test-results/
+coverage/
+*.trace
+.pnpm-store/
+pnpm-lock.yaml
+*.min.js
+public/**/*.svg

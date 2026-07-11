@@ -1,31 +1,26 @@
 "use client";
 
 import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
-import { DataTable } from "@/components/smsclient/DataTable";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
+import {
+  ModalPanel,
+  SettingCard,
+} from "@/components/smsclient/views/parametres/SettingCard";
+import {
+  allSettingCards,
+  emptyProfileForm,
+  parametresFieldInp,
+  parametresFieldLbl,
+  type SettingId,
+} from "@/components/smsclient/views/parametres/parametresSettings";
 import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
-import type { LucideIcon } from "lucide-react";
-import {
-  BarChart3,
-  Building2,
-  CreditCard,
-  FileText,
-  Hash,
-  Mail,
-  MapPin,
-  MessageSquare,
-  Shield,
-  Sparkles,
-  Trash2,
-  UserCircle,
-} from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
 
 export type ParametresViewProps = {
   profileForm: UserProfileForm | null;
@@ -43,203 +38,6 @@ export type ParametresViewProps = {
   onRefreshTrash?: () => Promise<void>;
 };
 
-type SettingId =
-  | "entreprise"
-  | "identifiants-legaux"
-  | "adresse-facturation"
-  | "contact-facturation"
-  | "abonnement"
-  | "paiement"
-  | "securite"
-  | "factures"
-  | "expediteur-sms"
-  | "notifications-email"
-  | "resume-mensuel"
-  | "corbeille";
-
-type SettingCardDef = {
-  id: SettingId;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  savable?: boolean;
-};
-
-const emptyForm: UserProfileForm = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  companyName: "",
-  businessActivity: "",
-  siret: "",
-  tva: "",
-  address: "",
-  zip: "",
-  city: "",
-  country: "France",
-  billingContact: "",
-  sender: "",
-  notifyInvoices: true,
-  notifySummary: true,
-};
-
-const inp =
-  "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
-const lbl = "mb-1.5 block text-xs font-black text-slate-600";
-
-const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
-  { accessorKey: "createdLabel", header: "Date" },
-  {
-    accessorKey: "packLabel",
-    header: "Pack",
-    cell: ({ getValue }) => (
-      <span className="font-bold">{getValue<string>()}</span>
-    ),
-  },
-  { accessorKey: "amountLabel", header: "Prix", size: 90 },
-  {
-    accessorKey: "status",
-    header: "Statut",
-    size: 100,
-    cell: ({ getValue }) => {
-      const status = getValue<string>();
-      return status === "paid" ? (
-        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-500/12 px-2 py-0.5 text-[11px] font-black text-emerald-800">
-          Payée
-        </span>
-      ) : (
-        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-400/15 px-2 py-0.5 text-[11px] font-black text-slate-700">
-          Remboursée
-        </span>
-      );
-    },
-  },
-  { accessorKey: "creditsLabel", header: "Crédits", size: 80 },
-];
-
-const allSettingCards: SettingCardDef[] = [
-  {
-    id: "entreprise",
-    title: "Entreprise",
-    description: "Nom et secteur d'activité.",
-    icon: Building2,
-    savable: true,
-  },
-  {
-    id: "identifiants-legaux",
-    title: "SIRET & TVA",
-    description: "Identifiants légaux de l'entreprise.",
-    icon: Hash,
-    savable: true,
-  },
-  {
-    id: "adresse-facturation",
-    title: "Adresse",
-    description: "Adresse postale de facturation.",
-    icon: MapPin,
-    savable: true,
-  },
-  {
-    id: "contact-facturation",
-    title: "Contact facturation",
-    description: "Personne à contacter pour la facturation.",
-    icon: UserCircle,
-    savable: true,
-  },
-  {
-    id: "abonnement",
-    title: "Abonnement",
-    description: "Formule et mode de facturation.",
-    icon: Sparkles,
-  },
-  {
-    id: "paiement",
-    title: "Paiement",
-    description: "Carte bancaire enregistrée.",
-    icon: CreditCard,
-  },
-  {
-    id: "securite",
-    title: "Sécurité",
-    description: "Authentification à deux facteurs.",
-    icon: Shield,
-  },
-  {
-    id: "factures",
-    title: "Factures",
-    description: "Historique des achats de crédits.",
-    icon: FileText,
-  },
-  {
-    id: "expediteur-sms",
-    title: "Expéditeur SMS",
-    description: "Nom affiché aux destinataires.",
-    icon: MessageSquare,
-    savable: true,
-  },
-  {
-    id: "notifications-email",
-    title: "Alertes email",
-    description: "Factures et notifications importantes.",
-    icon: Mail,
-    savable: true,
-  },
-  {
-    id: "resume-mensuel",
-    title: "Résumé mensuel",
-    description: "Synthèse de vos campagnes par email.",
-    icon: BarChart3,
-    savable: true,
-  },
-  {
-    id: "corbeille",
-    title: "Corbeille",
-    description: "Contacts et groupes supprimés.",
-    icon: Trash2,
-  },
-];
-
-function SettingCard({
-  title,
-  description,
-  icon: Icon,
-  onClick,
-}: {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex cursor-pointer flex-col rounded-xl border border-slate-200/80 bg-white p-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
-    >
-      <Icon
-        className="h-4 w-4 shrink-0 text-[#2f6fed]"
-        strokeWidth={2}
-        aria-hidden
-      />
-      <span className="mt-2 text-sm font-bold leading-tight text-slate-900">
-        {title}
-      </span>
-      <span className="mt-0.5 line-clamp-2 text-xs font-medium leading-snug text-slate-500">
-        {description}
-      </span>
-    </button>
-  );
-}
-
-function ModalPanel({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      {children}
-    </div>
-  );
-}
-
 export function ParametresView({
   profileForm,
   profileLoading = false,
@@ -255,8 +53,8 @@ export function ParametresView({
   onRestoreTrashGroups,
   onRefreshTrash,
 }: ParametresViewProps) {
-  const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyForm);
-  const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyForm);
+  const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyProfileForm);
+  const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyProfileForm);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [openSetting, setOpenSetting] = useState<SettingId | null>(null);
@@ -390,10 +188,10 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid gap-3">
                 <div>
-                  <label className={lbl}>Nom de l&apos;entreprise</label>
-                  <input
+                  <label className={parametresFieldLbl}>Nom de l&apos;entreprise</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("companyName") &&
                         "border-blue-400 ring-2 ring-blue-100"
                     )}
@@ -402,7 +200,7 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Secteur d&apos;activité</label>
+                  <label className={parametresFieldLbl}>Secteur d&apos;activité</label>
                   <div
                     className={cn(
                       "rounded-xl p-1",
@@ -423,10 +221,10 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div>
-                  <label className={lbl}>SIRET</label>
-                  <input
+                  <label className={parametresFieldLbl}>SIRET</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("siret") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.siret}
@@ -434,10 +232,10 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={lbl}>TVA</label>
-                  <input
+                  <label className={parametresFieldLbl}>TVA</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("tva") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.tva}
@@ -452,10 +250,10 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div className="col-span-2">
-                  <label className={lbl}>Adresse</label>
-                  <input
+                  <label className={parametresFieldLbl}>Adresse</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("address") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.address}
@@ -463,10 +261,10 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Code postal</label>
-                  <input
+                  <label className={parametresFieldLbl}>Code postal</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("zip") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.zip}
@@ -474,10 +272,10 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Ville</label>
-                  <input
+                  <label className={parametresFieldLbl}>Ville</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("city") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.city}
@@ -485,10 +283,10 @@ export function ParametresView({
                   />
                 </div>
                 <div className="col-span-2 max-[480px]:col-span-1">
-                  <label className={lbl}>Pays</label>
-                  <input
+                  <label className={parametresFieldLbl}>Pays</label>
+                  <parametresFieldInput
                     className={cn(
-                      inp,
+                      parametresFieldInp,
                       changed("country") && "border-blue-400 ring-2 ring-blue-100"
                     )}
                     value={draftForm.country}
@@ -502,10 +300,10 @@ export function ParametresView({
           {openSetting === "contact-facturation" && (
             <ModalPanel>
               <div>
-                <label className={lbl}>Contact facturation</label>
-                <input
+                <label className={parametresFieldLbl}>Contact facturation</label>
+                <parametresFieldInput
                   className={cn(
-                    inp,
+                    parametresFieldInp,
                     changed("billingContact") &&
                       "border-blue-400 ring-2 ring-blue-100"
                   )}
@@ -566,12 +364,12 @@ export function ParametresView({
           {openSetting === "expediteur-sms" && (
             <ModalPanel>
               <div>
-                <label className={lbl}>
+                <label className={parametresFieldLbl}>
                   Nom d&apos;expéditeur SMS (11 car. max)
                 </label>
-                <input
+                <parametresFieldInput
                   className={cn(
-                    inp,
+                    parametresFieldInp,
                     changed("sender") && "border-blue-400 ring-2 ring-blue-100"
                   )}
                   maxLength={11}
@@ -590,7 +388,7 @@ export function ParametresView({
           {openSetting === "notifications-email" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <input
+                <parametresFieldInput
                   type="checkbox"
                   className="mt-0.5 h-[18px] w-[18px]"
                   checked={draftForm.notifyInvoices}
@@ -604,7 +402,7 @@ export function ParametresView({
           {openSetting === "resume-mensuel" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <input
+                <parametresFieldInput
                   type="checkbox"
                   className="mt-0.5 h-[18px] w-[18px]"
                   checked={draftForm.notifySummary}
@@ -629,54 +427,5 @@ export function ParametresView({
         </ParametresSettingModal>
       )}
     </>
-  );
-}
-
-function InvoicesTable({
-  purchases,
-  loading,
-  onInvoiceClick,
-}: {
-  purchases: CreditPurchaseRowData[];
-  loading: boolean;
-  onInvoiceClick?: (id: string) => void;
-}) {
-  const cols = useMemo(
-    (): ColumnDef<CreditPurchaseRowData, unknown>[] => [
-      ...invoiceColumns,
-      ...(onInvoiceClick
-        ? [
-            {
-              id: "actions",
-              header: "PDF",
-              size: 140,
-              cell: ({ row }: { row: { original: CreditPurchaseRowData } }) => (
-                <ProtoBtn
-                  className="h-8 px-2.5 text-xs"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    onInvoiceClick(row.original.invoiceRef);
-                  }}
-                >
-                  Télécharger
-                </ProtoBtn>
-              ),
-            } as ColumnDef<CreditPurchaseRowData, unknown>,
-          ]
-        : []),
-    ],
-    [onInvoiceClick]
-  );
-
-  return (
-    <DataTable
-      columns={cols}
-      data={purchases}
-      loading={loading}
-      pageSize={10}
-      emptyMessage="Aucune facture pour l'instant."
-      loadingMessage="Chargement des factures…"
-      footer={`${purchases.length} facture${purchases.length > 1 ? "s" : ""}`}
-    />
   );
 }
