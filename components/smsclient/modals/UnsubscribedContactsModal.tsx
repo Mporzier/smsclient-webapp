@@ -1,9 +1,20 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { modalCloseBtn, overlayCls } from "./modalChrome";
+import {
+  dialogContentZCls,
+  dialogOverlayCls,
+  formDialogContentCls,
+  modalCloseBtn,
+} from "./modalChrome";
 
 export type UnsubscribedContactRow = {
   name: string;
@@ -28,24 +39,6 @@ export function UnsubscribedContactsModal({
     if (!open) setSearch("");
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return contacts;
@@ -57,22 +50,27 @@ export function UnsubscribedContactsModal({
     );
   }, [contacts, search]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className={overlayCls}
-      role="dialog"
-      aria-modal
-      aria-label="Contacts désabonnés"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
     >
-      <div className="flex max-h-[min(82vh,640px)] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.20)]">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName={dialogOverlayCls}
+        className={cn(
+          formDialogContentCls,
+          "max-h-[min(82vh,640px)] sm:max-w-[520px]",
+          dialogContentZCls
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <h2 className="m-0 text-base font-black text-slate-900">
+            <DialogTitle className="m-0 text-base font-black text-foreground">
               Contacts désabonnés
-            </h2>
+            </DialogTitle>
           </div>
           <button
             type="button"
@@ -94,29 +92,29 @@ export function UnsubscribedContactsModal({
 
         <div className="min-h-0 flex-1 overflow-auto px-5 pb-5 pt-2">
           {contacts.length === 0 && (
-            <p className="py-8 text-center text-sm font-bold text-slate-500">
+            <p className="py-8 text-center text-sm font-bold text-muted-foreground">
               Aucun contact désabonné.
             </p>
           )}
           {contacts.length > 0 && filtered.length === 0 && (
-            <p className="py-8 text-center text-sm font-bold text-slate-500">
+            <p className="py-8 text-center text-sm font-bold text-muted-foreground">
               Aucun résultat pour cette recherche.
             </p>
           )}
           {filtered.length > 0 && (
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+            <ul className="divide-y divide-border rounded-xl border border-border">
               {filtered.map((c) => (
                 <li
                   key={`${c.phone}-${c.date}`}
                   className="flex flex-col gap-0.5 px-3.5 py-3"
                 >
-                  <span className="text-sm font-extrabold text-slate-900">
+                  <span className="text-sm font-extrabold text-foreground">
                     {c.name || "—"}
                   </span>
-                  <span className="text-sm font-semibold text-slate-600">
+                  <span className="text-sm font-semibold text-muted-foreground">
                     {c.phone}
                   </span>
-                  <span className="text-xs font-semibold text-slate-400">
+                  <span className="text-xs font-semibold text-muted-foreground/70">
                     Désinscrit le {c.date}
                   </span>
                 </li>
@@ -124,7 +122,7 @@ export function UnsubscribedContactsModal({
             </ul>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import {
   SmsAiOptionCards,
   type SmsAiOptions,
@@ -77,9 +78,13 @@ export function SmsAiComposePanel({
           />
         </button>
         {!hasVariants ? (
-          <ProtoBtn
-            primary
-            className="h-10 min-w-0 flex-1 gap-2 px-4 text-sm sm:flex-none"
+          <Button
+            variant="default"
+            size="lg"
+            className={cn(
+              brandBtnPrimaryCls,
+              "h-10 min-w-0 flex-1 gap-2 px-4 text-sm sm:flex-none",
+            )}
             disabled={!canGenerate || generating}
             onClick={onGenerate}
           >
@@ -89,7 +94,7 @@ export function SmsAiComposePanel({
               <Sparkles className="h-4 w-4" aria-hidden />
             )}
             {generating ? "Génération…" : "Générer le message"}
-          </ProtoBtn>
+          </Button>
         ) : null}
       </div>
 

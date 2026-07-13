@@ -59,7 +59,7 @@ function HelpCard({
   return (
     <article
       className={cn(
-        "grid min-h-[190px] grid-cols-[58px_1fr] gap-4 rounded-[18px] border border-[#e5edf6] bg-white p-6 shadow-[0_12px_35px_rgba(15,31,56,0.05)] min-[1100px]:grid-cols-[72px_1fr] min-[1100px]:gap-[18px]",
+        "grid min-h-[190px] grid-cols-[58px_1fr] gap-4 rounded-[18px] border border-border bg-card p-6 shadow-[0_12px_35px_rgba(15,31,56,0.05)] min-[1100px]:grid-cols-[72px_1fr] min-[1100px]:gap-[18px]",
         className
       )}
     >
@@ -70,10 +70,10 @@ function HelpCard({
         <Icon className="h-7 w-7" strokeWidth={2} aria-hidden />
       </div>
       <div className="min-w-0">
-        <h3 className="m-0 mb-2.5 mt-1 text-[19px] font-extrabold leading-tight text-[#14284f]">
+        <h3 className="m-0 mb-2.5 mt-1 text-[19px] font-extrabold leading-tight text-foreground">
           {title}
         </h3>
-        <p className="m-0 text-sm font-semibold leading-relaxed text-[#6c7890]">
+        <p className="m-0 text-sm font-semibold leading-relaxed text-muted-foreground">
           {description}
         </p>
         {children}
@@ -96,7 +96,7 @@ function WideBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "mt-5 h-[42px] w-full cursor-pointer rounded-[13px] border-0 bg-gradient-to-br from-[#386ff4] to-[#235fe8] text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(52,120,246,0.22)] transition-[filter] hover:brightness-105",
+        "mt-5 h-[42px] w-full cursor-pointer rounded-[13px] border-0 bg-primary text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(52,120,246,0.22)] transition-[filter] hover:brightness-105",
         className
       )}
     >
@@ -165,7 +165,7 @@ export function AideView({ onGo }: AideViewProps) {
             ].map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-2.5 text-[13px] font-bold text-[#30405d]"
+                className="flex items-center gap-2.5 text-[13px] font-bold text-foreground"
               >
                 <Check
                   className="h-5 w-5 shrink-0 text-[#7ac943]"
@@ -182,8 +182,8 @@ export function AideView({ onGo }: AideViewProps) {
         </HelpCard>
 
         <HelpCard
-          softBg="#e8f1ff"
-          color="#2868e8"
+          softBg="var(--accent)"
+          color="var(--ring)"
           icon={Users}
           title="Gérer vos contacts"
           description="Importez, organisez et segmentez vos contacts pour des campagnes ciblées et efficaces."
@@ -203,16 +203,16 @@ export function AideView({ onGo }: AideViewProps) {
             ].map((row) => (
               <div
                 key={row.step}
-                className="grid min-h-12 grid-cols-[36px_1fr_auto] items-center gap-3 rounded-[13px] border border-[#e5edf6] bg-[#f8faff] px-3.5 text-[13px] font-bold text-[#59677f]"
+                className="grid min-h-12 grid-cols-[36px_1fr_auto] items-center gap-3 rounded-[13px] border border-border bg-muted/50 px-3.5 text-[13px] font-bold text-muted-foreground"
               >
-                <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#e8f1ff] text-sm font-black text-[#2c67e9]">
+                <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-accent text-sm font-black text-ring">
                   {row.step}
                 </span>
                 <span>{row.label}</span>
                 <button
                   type="button"
                   onClick={() => go(row.hash)}
-                  className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-[#2868e8] hover:underline"
+                  className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-ring hover:underline"
                 >
                   Voir comment
                 </button>
@@ -228,7 +228,7 @@ export function AideView({ onGo }: AideViewProps) {
           title="Utiliser l'IA pour vos messages"
           description="Gagnez du temps avec notre assistant IA pour rédiger des SMS percutants et personnalisés."
         >
-          <div className="mt-[22px] overflow-hidden rounded-[14px] border border-[#e5edf6]">
+          <div className="mt-[22px] overflow-hidden rounded-[14px] border border-border">
             {[
               { emoji: "✨", label: "Générer un message avec l'IA" },
               { emoji: "✎", label: "Corriger et reformuler votre texte" },
@@ -237,8 +237,8 @@ export function AideView({ onGo }: AideViewProps) {
               <div
                 key={row.label}
                 className={cn(
-                  "grid h-[42px] grid-cols-[26px_1fr_auto] items-center gap-2.5 bg-[#fbfcff] px-3.5 text-[13px] font-bold text-[#55637a]",
-                  index < arr.length - 1 && "border-b border-[#e5edf6]"
+                  "grid h-[42px] grid-cols-[26px_1fr_auto] items-center gap-2.5 bg-card px-3.5 text-[13px] font-bold text-muted-foreground",
+                  index < arr.length - 1 && "border-b border-border"
                 )}
               >
                 <span aria-hidden>{row.emoji}</span>
@@ -246,7 +246,7 @@ export function AideView({ onGo }: AideViewProps) {
                 <button
                   type="button"
                   onClick={() => go("nouvelle-campagne")}
-                  className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-[#2868e8] hover:underline"
+                  className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-ring hover:underline"
                 >
                   Découvrir
                 </button>
@@ -275,8 +275,8 @@ export function AideView({ onGo }: AideViewProps) {
                 glyph: "◉",
                 label: "Taux de lecture",
                 hint: "SMS lus",
-                soft: "#e8f1ff",
-                color: "#2868e8",
+                soft: "var(--accent)",
+                color: "var(--ring)",
               },
               {
                 glyph: "⌁",
@@ -288,7 +288,7 @@ export function AideView({ onGo }: AideViewProps) {
             ].map((pill) => (
               <div
                 key={pill.label}
-                className="grid grid-cols-[34px_1fr] items-center gap-2.5 rounded-[13px] border border-[#e5edf6] bg-[#fbfdff] p-3.5"
+                className="grid grid-cols-[34px_1fr] items-center gap-2.5 rounded-[13px] border border-border bg-card p-3.5"
               >
                 <span
                   className="grid h-[34px] w-[34px] place-items-center rounded-[11px] text-sm font-black"
@@ -297,10 +297,10 @@ export function AideView({ onGo }: AideViewProps) {
                   {pill.glyph}
                 </span>
                 <span>
-                  <b className="block text-xs font-extrabold text-[#14284f]">
+                  <b className="block text-xs font-extrabold text-foreground">
                     {pill.label}
                   </b>
-                  <small className="text-xs font-bold text-[#6d7a91]">
+                  <small className="text-xs font-bold text-muted-foreground">
                     {pill.hint}
                   </small>
                 </span>
@@ -317,8 +317,8 @@ export function AideView({ onGo }: AideViewProps) {
         </HelpCard>
 
         <HelpCard
-          softBg="#ffe5e9"
-          color="#e13b54"
+          softBg="color-mix(in srgb, var(--destructive) 12%, white)"
+          color="var(--destructive)"
           icon={MessageSquare}
           title="Besoin d'un accompagnement ?"
           description="Notre équipe est là pour répondre à toutes vos questions et vous aider à réussir."
@@ -326,19 +326,19 @@ export function AideView({ onGo }: AideViewProps) {
           <button
             type="button"
             onClick={openSupportContact}
-            className="mt-[18px] h-[38px] cursor-pointer rounded-xl border-0 bg-[#ffd8df] px-[18px] text-[13px] font-extrabold text-[#df3451] transition-[filter] hover:brightness-95"
+            className="mt-[18px] h-[38px] cursor-pointer rounded-xl border-0 bg-destructive/15 px-[18px] text-[13px] font-extrabold text-destructive transition-[filter] hover:brightness-95"
           >
             Contacter le support
           </button>
         </HelpCard>
 
         <HelpCard
-          softBg="#dfeaff"
-          color="#2868e8"
+          softBg="var(--accent)"
+          color="var(--ring)"
           icon={LayoutTemplate}
           title="Découvrir SMSClient"
           description="Accédez à nos tutoriels, exemples de SMS et ressources pour devenir autonome."
-          className="bg-gradient-to-br from-[#eef5ff] to-[#dfeeff]"
+          className="bg-gradient-to-br from-accent to-accent/60"
         >
           <WideBtn onClick={openHelpFaq} className="mt-5 w-auto px-[34px]">
             Voir les ressources

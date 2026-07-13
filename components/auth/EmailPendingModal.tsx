@@ -1,5 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -39,63 +47,62 @@ export function EmailPendingModal({
   variant = "dialog",
   extraActions,
 }: Props) {
-  if (!open) {
-    return null;
-  }
-
-  const backdrop = (
-    <div
-      className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
-      onClick={variant === "dialog" ? onClose : undefined}
-      onKeyDown={undefined}
-      role="presentation"
-    />
-  );
+  const isBlocking = variant === "blocking";
 
   return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      data-cy="emailPendingModal"
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !isBlocking) onClose();
+      }}
     >
-      {backdrop}
-      <div
-        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="email-pending-title"
+      <DialogContent
+        showCloseButton={false}
+        data-cy="emailPendingModal"
+        overlayClassName="z-[200] bg-foreground/55 backdrop-blur-sm"
+        className={cn(
+          "z-[200] w-full max-w-md gap-0 rounded-2xl border border-border bg-card p-6 text-left shadow-2xl ring-0"
+        )}
+        onPointerDownOutside={(e) => {
+          if (isBlocking) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isBlocking) e.preventDefault();
+        }}
       >
-        <h2
+        <DialogTitle
           id="email-pending-title"
-          className="text-lg font-black text-slate-900"
+          className="text-lg font-black text-foreground"
         >
           {title}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600">
+        </DialogTitle>
+        <DialogDescription className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {defaultBody}
-        </p>
+        </DialogDescription>
         {email && (
-          <p className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 text-center text-xs font-semibold text-slate-800">
+          <p className="mt-2 rounded-lg bg-muted/50 px-2 py-1.5 text-center text-xs font-semibold text-foreground">
             {email}
           </p>
         )}
 
         {onResend && (
           <div className="mt-4">
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={resendPending}
               onClick={onResend}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+              className="h-auto w-full rounded-xl py-2.5 text-sm font-bold"
               data-cy="emailPendingModal-resend"
             >
               {resendPending ? "Envoi…" : "Renvoyer l’e-mail de confirmation"}
-            </button>
+            </Button>
             {resendMessage && (
               <p
-                className={`mt-2 text-center text-xs ${
-                  resendIsError ? "text-rose-700" : "text-emerald-700"
-                }`}
+                className={cn(
+                  "mt-2 text-center text-xs",
+                  resendIsError ? "text-destructive" : "text-emerald-700"
+                )}
               >
                 {resendMessage}
               </p>
@@ -105,16 +112,17 @@ export function EmailPendingModal({
 
         <div className="mt-5 flex flex-col gap-2">
           {extraActions}
-          <button
+          <Button
             type="button"
+            variant="default"
             onClick={onClose}
-            className="w-full rounded-xl bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(47,111,237,0.2)]"
+            className="h-auto w-full rounded-xl py-2.5 text-sm font-bold"
             data-cy="emailPendingModal-dismiss"
           >
-            {variant === "blocking" ? "Se déconnecter" : "Compris"}
-          </button>
+            {isBlocking ? "Se déconnecter" : "Compris"}
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

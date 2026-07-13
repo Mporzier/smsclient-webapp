@@ -32,19 +32,30 @@ Layout: **flat** (app à la racine, pas de dossier app `smsclient/`).
 - Wizard: `CreateCampaign/CampaignWizard.tsx`
 - Auth: `components/auth/AuthGate.tsx`
 
+## Priorité instructions
+
+1. Rules/skills **smsclient** (ci-dessous)  
+2. Message user  
+3. Plugins / superpowers (`verification-before-completion`, `executing-plans`, …)
+
+Superpowers **ne** font **pas** lancer build/tsc/lint/install/dlx/Task ici. Plan qui cite `pnpm build` = commande à **copier** pour l’user.
+
+**Multi-root** : pour jobs UI smsclient, ouvrir **ce repo seul**. Sinon rules smsclient s’appliquent quand même dès que le travail touche ce tree.
+
 ## Always-on (rules)
 
 `.cursor/rules/` — injecté chaque chat :
 
-- `agent-session-limits` — ≤3 shells, pas de chaînes, pas de Task sauf demande, **pas de commandes lourdes** (skill `no-heavy-cmds`)
-- `testing-no-auto-run` — pas de test/build/tsc/lint/install auto (skills `no-verify-build`, `no-heavy-cmds`)
-- `token-economy` — anti-boucle + doute→question + lectures/edits frugales
+- `agent-session-limits` — ≤3 shells, pas de chaînes, pas de Task sauf demande, **pas de commandes lourdes** (skill `no-heavy-cmds`) ; gagne sur superpowers
+- `testing-no-auto-run` — pas de test/build/tsc/lint/install auto (skills `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`)
+- `token-economy` — anti-boucle + doute→question + lectures/edits frugales (`anti-loop`, `token-diet`)
+- `no-git-commit` — pas de `git commit` / `git push` auto
 - `caveman` — sortie compressée (full) ; off = `stop caveman` / `normal mode`
 - `skill-evolve` — proposer improve/add skill avant d’implémenter
 
-Skills détail (manuel / trigger) : `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `skill-evolve`, …
+Skills détail (manuel / trigger) : `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`, `no-git-commit`, `skill-evolve`, `smsclient-map`, …
 
-## Vérif manuelle
+## Vérif manuelle (user lance — agent propose seulement)
 
 ```bash
 pnpm build

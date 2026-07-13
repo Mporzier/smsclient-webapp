@@ -1,10 +1,3 @@
-/** Legacy overlay — encore utilisé par modales non migrées. Tokens + z-index haut. */
-export const overlayCls =
-  "fixed inset-0 z-[9999] flex items-center justify-center bg-foreground/55 p-6 backdrop-blur-sm";
-/** Overlay au-dessus d’une autre modale (ex. création de groupe depuis contact). */
-export const overlayStackedCls =
-  "fixed inset-0 z-[10000] flex items-center justify-center bg-foreground/45 p-6 backdrop-blur-[2px]";
-
 export const modalCard =
   "max-h-[min(82vh,760px)] w-full max-w-[980px] overflow-auto rounded-[22px] border border-border bg-card shadow-2xl";
 export const modalCloseBtn =
@@ -22,3 +15,16 @@ export const dialogContentStackedZCls = "z-[10001]";
 /** Contenu confirm type alertdialog. */
 export const confirmDialogContentCls =
   "max-h-[min(82vh,640px)] w-full max-w-[calc(100%-2rem)] gap-0 rounded-2xl border border-border bg-card p-5 text-left shadow-2xl ring-0 sm:max-w-[440px]";
+
+/** Shell Dialog formulaire (header / body scroll / footer). */
+export const formDialogContentCls =
+  "flex w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-[22px] border border-border bg-card p-0 text-left shadow-2xl ring-0";
+
+/** Classes Button brand (ex-ProtoBtn). */
+export const brandBtnCls =
+  "h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold shadow-sm";
+export const brandBtnPrimaryCls = `${brandBtnCls} shadow-md`;
+
+/** Input brand (ex-classes `inp` locales). */
+export const brandInputCls =
+  "h-11 rounded-[14px] border-border bg-card px-3.5 text-[15px] font-bold text-foreground";

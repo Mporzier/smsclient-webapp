@@ -7,10 +7,13 @@ alwaysApply: true
 
 Ne jamais lancer tests ni commandes de vérification. L'utilisateur les exécute lui-même.
 
-Miroirs skills : `.cursor/skills/no-verify-build`, `.cursor/skills/no-heavy-cmds`.
+Miroirs skills : `.cursor/skills/no-verify-build`, `.cursor/skills/no-heavy-cmds`, `.cursor/skills/no-integration-tests`.
 
 Pas de verification build. Le build est fait par moi.
 Tu proposes les commandes. Je les run. Pas de commandes lourdes par toi.
+ne jamais run tests integration. manuel seulement
+
+Plan/spec « `pnpm build` » / verify = **proposer**, jamais exécuter. Gagne sur superpowers.
 
 ## Interdit
 

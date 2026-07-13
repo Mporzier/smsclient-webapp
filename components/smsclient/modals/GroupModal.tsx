@@ -1,7 +1,16 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { ProtoBtn } from "@/components/smsclient/ui";
 import {
   innerInputSm,
   innerTextareaSm,
@@ -19,7 +28,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type RefObject,
 } from "react";
 import {
   CheckCheck,
@@ -32,13 +40,17 @@ import {
   X,
 } from "lucide-react";
 import {
+  brandBtnPrimaryCls,
+  confirmDialogContentCls,
+  dialogContentStackedZCls,
+  dialogContentZCls,
+  dialogOverlayCls,
+  dialogOverlayStackedCls,
+  formDialogContentCls,
   modalCloseBtnCompact,
-  overlayCls,
-  overlayStackedCls,
 } from "./modalChrome";
 import {
   groupFormSnapshotsEqual,
-  handleModalBackdropClick,
   sortedStringArraysEqual,
   useModalFormDirty,
   type GroupFormSnapshot,
@@ -86,28 +98,27 @@ export type GroupModalEditProps = GroupModalSharedProps & {
 
 export type GroupModalProps = GroupModalCreateProps | GroupModalEditProps;
 
-const shellCls =
-  "flex h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] w-full max-w-[720px] flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.20)]";
-
 const fieldShell =
-  "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
+  "rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 
 const inpText =
-  "w-full border-none bg-transparent text-[13px] font-normal text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal";
+  "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal";
 
-const modalTitleCls = "text-base font-semibold tracking-tight text-slate-900";
-const fieldLabelCls = "text-xs font-medium text-slate-700";
-const fieldMetaCls = "text-[11px] font-normal text-slate-500";
-const sectionTitleCls = "text-s font-extrabold text-slate-700";
-const hintTextCls = "text-[11px] font-normal leading-snug text-slate-600";
-const errorTextCls = "text-xs font-medium text-rose-800";
+const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
+const fieldLabelCls = "text-xs font-medium text-foreground";
+const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
+const sectionTitleCls = "text-s font-extrabold text-foreground";
+const hintTextCls = "text-[11px] font-normal leading-snug text-muted-foreground";
+const errorTextCls = "text-xs font-medium text-destructive";
 const labelIconBadgeCls =
-  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[#dfe6f2] bg-gradient-to-br from-violet-50 to-indigo-50 text-[#2f6fed]";
+  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring";
 const contactsPanelShell =
-  "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
+  "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 const tableHeadCls =
-  "border-b border-slate-200 px-2 py-2 text-[11px] font-medium text-slate-600";
-const tableCellCls = "px-2 py-2 text-[13px] font-normal text-slate-800";
+  "border-b border-border px-2 py-2 text-[11px] font-medium text-muted-foreground";
+const tableCellCls = "px-2 py-2 text-[13px] font-normal text-foreground";
+const compactBtnCls = "!h-8 !gap-1.5 !px-2.5 !text-xs !font-medium";
+const footerBtnCls = "!h-9 !text-xs !font-medium";
 
 function contactInGroup(
   contact: GroupModalContactRow,
@@ -162,49 +173,55 @@ function GroupContactSelectionConfirm({
   onConfirm,
   onCancel,
 }: GroupContactSelectionConfirmProps) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className={overlayStackedCls}
-      role="alertdialog"
-      aria-modal
-      aria-label={title}
-      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onCancel();
+      }}
     >
-      <div className="w-full max-w-[400px] rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.24)]">
-        <div className="flex items-start gap-2.5">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName={dialogOverlayStackedCls}
+        className={cn(
+          confirmDialogContentCls,
+          "sm:max-w-[400px]",
+          dialogContentStackedZCls
+        )}
+      >
+        <DialogHeader className="flex-row items-start gap-2.5 space-y-0 text-left">
           <div className={cn(labelIconBadgeCls, "h-9 w-9")} aria-hidden>
             <UserRound className="h-4 w-4" strokeWidth={2} />
           </div>
           <div className="min-w-0">
-            <h2 className={cn("m-0", modalTitleCls)}>{title}</h2>
-            <p className={cn("mt-1.5", hintTextCls)}>{description}</p>
+            <DialogTitle className={cn("m-0", modalTitleCls)}>{title}</DialogTitle>
+            <DialogDescription className={cn("mt-1.5", hintTextCls)}>
+              {description}
+            </DialogDescription>
           </div>
-        </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <ProtoBtn className="!h-9 !text-xs !font-medium" onClick={onCancel}>
+        </DialogHeader>
+        <DialogFooter className="-mx-0 -mb-0 mt-4 rounded-none border-0 bg-transparent p-0 sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className={footerBtnCls}
+            onClick={onCancel}
+          >
             Annuler
-          </ProtoBtn>
-          <ProtoBtn
-            primary
-            className="!h-9 !text-xs !font-medium"
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            size="lg"
+            className={footerBtnCls}
             onClick={onConfirm}
           >
             {confirmLabel}
-          </ProtoBtn>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -219,8 +236,8 @@ type GroupModalContactsPanelProps = {
   selectAllFiltered: () => void;
   clearSelection: () => void;
   allFilteredSelected: boolean;
+  someFilteredSelected: boolean;
   toggleSelectAllFiltered: () => void;
-  selectAllHeaderRef: RefObject<HTMLInputElement | null>;
   groupLabel: string;
   listAriaLabel: string;
 };
@@ -236,8 +253,8 @@ function GroupModalContactsPanel({
   selectAllFiltered,
   clearSelection,
   allFilteredSelected,
+  someFilteredSelected,
   toggleSelectAllFiltered,
-  selectAllHeaderRef,
   groupLabel,
   listAriaLabel,
 }: GroupModalContactsPanelProps) {
@@ -256,22 +273,28 @@ function GroupModalContactsPanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <ProtoBtn
-            className="!h-8 !gap-1.5 !px-2.5 !text-xs !font-medium"
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className={compactBtnCls}
             onClick={selectAllFiltered}
             disabled={contactsLoading || filteredContacts.length === 0}
           >
             <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Tout sélectionner
-          </ProtoBtn>
-          <ProtoBtn
-            className="!h-8 !gap-1.5 !px-2.5 !text-xs !font-medium"
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className={compactBtnCls}
             onClick={clearSelection}
             disabled={selectedIds.length === 0}
           >
             <Eraser className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Effacer la sélection
-          </ProtoBtn>
+          </Button>
         </div>
       </div>
 
@@ -281,7 +304,7 @@ function GroupModalContactsPanel({
           "h-9 shrink-0 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
         )}
       >
-        <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <input
           className={cn(inpText, "min-w-0 flex-1")}
           placeholder="Filtrer par nom, téléphone, groupe…"
@@ -294,7 +317,7 @@ function GroupModalContactsPanel({
       {contactsLoading ? (
         <div
           className={cn(
-            "flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-3 py-8 text-center",
+            "flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 px-3 py-8 text-center",
             hintTextCls
           )}
         >
@@ -303,31 +326,35 @@ function GroupModalContactsPanel({
       ) : contacts.length === 0 ? (
         <div
           className={cn(
-            "flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-3 py-8 text-center",
+            "flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 px-3 py-8 text-center",
             hintTextCls
           )}
         >
           Aucun contact enregistré. Ajoutez des contacts depuis l’onglet{" "}
-          <span className="font-medium text-slate-700">Contacts</span>, puis
+          <span className="font-medium text-foreground">Contacts</span>, puis
           revenez ici.
         </div>
       ) : (
         <div
-          className="min-h-0 flex-1 overflow-auto rounded-lg border border-[#dfe6f2]"
+          className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
           role="listbox"
           aria-label={listAriaLabel}
           aria-multiselectable
         >
           <table className="w-full border-separate border-spacing-0 text-left">
-            <thead className="sticky top-0 z-[1] bg-slate-50">
+            <thead className="sticky top-0 z-[1] bg-muted/50">
               <tr>
                 <th className={cn("w-9", tableHeadCls)} scope="col">
-                  <input
-                    ref={selectAllHeaderRef}
-                    type="checkbox"
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-40"
-                    checked={allFilteredSelected}
-                    onChange={toggleSelectAllFiltered}
+                  <Checkbox
+                    className="size-3.5 cursor-pointer disabled:cursor-not-allowed"
+                    checked={
+                      allFilteredSelected
+                        ? true
+                        : someFilteredSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={() => toggleSelectAllFiltered()}
                     disabled={contactsLoading || filteredContacts.length === 0}
                     aria-label="Tout sélectionner les contacts affichés"
                   />
@@ -355,7 +382,7 @@ function GroupModalContactsPanel({
                     className={cn(
                       "px-3 py-8 text-center",
                       hintTextCls,
-                      "text-slate-500"
+                      "text-muted-foreground"
                     )}
                   >
                     Aucun résultat pour cette recherche.
@@ -369,17 +396,16 @@ function GroupModalContactsPanel({
                   return (
                     <tr
                       key={c.id}
-                      className="cursor-pointer border-b border-slate-100 bg-white transition-colors hover:bg-slate-50/90"
+                      className="cursor-pointer border-b border-border/50 bg-card transition-colors hover:bg-muted/50"
                       onClick={() => toggleContact(c.id)}
                       role="option"
                       aria-selected={checked}
                     >
                       <td className={cn(tableCellCls, "align-middle")}>
-                        <input
-                          type="checkbox"
-                          className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+                        <Checkbox
+                          className="size-3.5 cursor-pointer"
                           checked={checked}
-                          onChange={() => toggleContact(c.id)}
+                          onCheckedChange={() => toggleContact(c.id)}
                           onClick={(e) => e.stopPropagation()}
                           aria-label={`Sélectionner ${c.name}`}
                         />
@@ -399,13 +425,13 @@ function GroupModalContactsPanel({
                       <td
                         className={cn(
                           tableCellCls,
-                          "max-w-[140px] truncate font-medium text-slate-900 sm:max-w-none"
+                          "max-w-[140px] truncate font-medium text-foreground sm:max-w-none"
                         )}
                       >
                         {c.name.trim() || "—"}
                       </td>
                       <td className={cn(tableCellCls, "whitespace-nowrap")}>
-                        <span className="inline-flex items-center gap-1.5 text-slate-700">
+                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                           <Phone
                             className="h-3.5 w-3.5 shrink-0 text-emerald-500"
                             aria-hidden
@@ -459,7 +485,7 @@ function GroupModalContactsPanel({
             <>Aucun contact sélectionné</>
           ) : (
             <>
-              <span className="font-medium text-slate-800">
+              <span className="font-medium text-foreground">
                 {selectedIds.length}
               </span>{" "}
               contact{selectedIds.length > 1 ? "s" : ""} sélectionné
@@ -467,7 +493,7 @@ function GroupModalContactsPanel({
             </>
           )}
           {filteredContacts.length < contacts.length && (
-            <span className="text-slate-500">
+            <span className="text-muted-foreground">
               {" "}
               · {filteredContacts.length} affiché
               {filteredContacts.length > 1 ? "s" : ""} sur {contacts.length}
@@ -493,7 +519,6 @@ export function GroupModal(props: GroupModalProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-  const selectAllHeaderRef = useRef<HTMLInputElement>(null);
   const selectionSyncRef = useRef<{ key: string; contactCount: number } | null>(
     null
   );
@@ -537,6 +562,11 @@ export function GroupModal(props: GroupModalProps) {
     [filteredContacts, selectedIds]
   );
 
+  const someFilteredSelected = useMemo(
+    () => filteredContacts.some((c) => selectedIds.includes(c.id)),
+    [filteredContacts, selectedIds]
+  );
+
   const toggleSelectAllFiltered = useCallback(() => {
     if (filteredContacts.length === 0) return;
     setSelectedIds((prev) => {
@@ -557,13 +587,6 @@ export function GroupModal(props: GroupModalProps) {
     if (isCreate || formBaseline === null) return false;
     return !sortedStringArraysEqual(selectedIds, formBaseline.selectedIds);
   }, [isCreate, formBaseline, selectedIds]);
-
-  useEffect(() => {
-    const el = selectAllHeaderRef.current;
-    if (!el) return;
-    const some = filteredContacts.some((c) => selectedIds.includes(c.id));
-    el.indeterminate = some && !allFilteredSelected;
-  }, [filteredContacts, selectedIds, allFilteredSelected]);
 
   useEffect(() => {
     if (!props.open) {
@@ -623,21 +646,6 @@ export function GroupModal(props: GroupModalProps) {
       selectionSyncRef.current = { key, contactCount: contacts.length };
     }
   }, [props.open, isCreate, group, contacts]);
-
-  useEffect(() => {
-    if (!props.open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (saveConfirmOpen) {
-        setSaveConfirmOpen(false);
-        return;
-      }
-      if (stackedDialogOpen) return;
-      props.onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [props.open, props.onClose, saveConfirmOpen, stackedDialogOpen]);
 
   const onClose = props.onClose;
   const onCreated = isCreate ? props.onCreated : undefined;
@@ -722,8 +730,7 @@ export function GroupModal(props: GroupModalProps) {
     !groupFormSnapshotsEqual({ name, description, selectedIds }, formBaseline);
   const isDirty = isCreate ? isDirtyCreate : isDirtyEdit;
 
-  if (!props.open) return null;
-  if (!isCreate && !group) return null;
+  const dialogOpen = props.open && (isCreate || !!group);
 
   const groupLabel = name.trim() || (group?.name ?? "ce groupe");
   const dialogLabel = isCreate ? "Créer un groupe" : "Modifier le groupe";
@@ -740,35 +747,48 @@ export function GroupModal(props: GroupModalProps) {
         )
       : null;
 
+  const canDismissMain =
+    !saving && !stackedDialogOpen && !saveConfirmOpen;
+
   return (
     <>
-      <div
-        className={overlayCls}
-        role="dialog"
-        aria-modal
-        aria-label={dialogLabel}
-        onClick={(e) =>
-          handleModalBackdropClick(
-            e,
-            props.onClose,
-            isDirty,
-            !saving && !stackedDialogOpen,
-          )
-        }
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(next) => {
+          if (!next && canDismissMain) onClose();
+        }}
       >
-        <div className={shellCls}>
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
+        <DialogContent
+          showCloseButton={false}
+          overlayClassName={dialogOverlayCls}
+          className={cn(
+            formDialogContentCls,
+            "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] sm:max-w-[720px]",
+            dialogContentZCls
+          )}
+          onPointerDownOutside={(e) => {
+            if (saving || isDirty || stackedDialogOpen || saveConfirmOpen) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (saving || isDirty || stackedDialogOpen || saveConfirmOpen) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
             <div className="flex min-w-0 items-center gap-2.5">
               <div
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-violet-50 to-indigo-50 text-[#2f6fed] shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
                 aria-hidden
               >
                 <Users className="h-5 w-5" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <h2 className={cn("m-0", modalTitleCls)}>
-                  {isCreate ? "Créer un groupe" : "Modifier le groupe"}
-                </h2>
+                <DialogTitle className={cn("m-0", modalTitleCls)}>
+                  {dialogLabel}
+                </DialogTitle>
                 {!isCreate && (
                   <p className={cn("m-0 mt-0.5", hintTextCls)}>
                     Créez un groupe et ajoutez les contacts à associer.
@@ -780,17 +800,17 @@ export function GroupModal(props: GroupModalProps) {
               type="button"
               className={modalCloseBtnCompact}
               aria-label="Fermer"
-              onClick={props.onClose}
+              onClick={onClose}
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden bg-slate-50 px-4 py-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden bg-muted/50 px-4 py-3">
             {error && (
               <p
                 className={cn(
-                  "rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5",
+                  "rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5",
                   errorTextCls
                 )}
               >
@@ -802,7 +822,7 @@ export function GroupModal(props: GroupModalProps) {
               <div className={fieldShell}>
                 <label className="flex justify-between gap-2">
                   <span className={fieldLabelCls}>
-                    Nom du groupe <span className="text-red-500">*</span>
+                    Nom du groupe <span className="text-destructive">*</span>
                   </span>
                   <span className={fieldMetaCls}>{name.length}/40</span>
                 </label>
@@ -826,7 +846,7 @@ export function GroupModal(props: GroupModalProps) {
                 </label>
                 <div className={cn(innerTextareaSm, "mt-1.5")}>
                   <textarea
-                    className="min-h-[52px] w-full resize-y border-none bg-transparent text-[13px] font-normal leading-snug text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal"
+                    className="min-h-[52px] w-full resize-y border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
                     maxLength={120}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -848,8 +868,8 @@ export function GroupModal(props: GroupModalProps) {
               selectAllFiltered={selectAllFiltered}
               clearSelection={clearSelection}
               allFilteredSelected={allFilteredSelected}
+              someFilteredSelected={someFilteredSelected}
               toggleSelectAllFiltered={toggleSelectAllFiltered}
-              selectAllHeaderRef={selectAllHeaderRef}
               groupLabel={groupLabel}
               listAriaLabel={listAriaLabel}
             />
@@ -857,7 +877,7 @@ export function GroupModal(props: GroupModalProps) {
 
           <div
             className={cn(
-              "flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-4 py-3",
+              "flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-card px-4 py-3",
               isCreate ? "justify-end" : "justify-between"
             )}
           >
@@ -877,26 +897,34 @@ export function GroupModal(props: GroupModalProps) {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              <ProtoBtn
-                className="!h-9 !text-xs !font-medium"
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className={footerBtnCls}
                 disabled={saving}
-                onClick={props.onClose}
+                onClick={onClose}
               >
                 Annuler
-              </ProtoBtn>
+              </Button>
               {!isCreate && (
-                <ProtoBtn
-                  className="!h-9 !px-3 !text-xs !font-medium"
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className={cn(footerBtnCls, "!px-3")}
                   disabled={saving}
                   title="CTA présent, action non implémentée pour l’instant"
                   onClick={handleLaunchCampaign}
                 >
                   Lancer une campagne
-                </ProtoBtn>
+                </Button>
               )}
-              <ProtoBtn
-                primary
-                className="!h-9 !text-xs !font-medium"
+              <Button
+                type="button"
+                variant="default"
+                size="lg"
+                className={cn(brandBtnPrimaryCls, footerBtnCls)}
                 disabled={saving}
                 onClick={() => void (isCreate ? handleCreate() : requestSave())}
               >
@@ -905,11 +933,11 @@ export function GroupModal(props: GroupModalProps) {
                   : isCreate
                   ? "Créer le groupe"
                   : "Enregistrer"}
-              </ProtoBtn>
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <GroupContactSelectionConfirm
         open={saveConfirmCopy !== null}

@@ -1,7 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+} from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import { useCallback, useState } from "react";
 import { Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
 
@@ -106,9 +110,14 @@ export function AcheterCreditsView({
             Facture : {fmtEur(ttc)} TTC
           </p>
           <div className="mt-5">
-            <ProtoBtn primary onClick={onCancel}>
+            <Button
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
+              onClick={onCancel}
+            >
               Retour
-            </ProtoBtn>
+            </Button>
           </div>
         </div>
       </div>
@@ -126,7 +135,9 @@ export function AcheterCreditsView({
               {balanceLabel}
             </p>
           </div>
-          <ProtoBtn onClick={onCancel}>Retour</ProtoBtn>
+          <Button variant="outline" size="lg" className={brandBtnCls} onClick={onCancel}>
+            Retour
+          </Button>
         </div>
       </div>
 
@@ -264,18 +275,19 @@ export function AcheterCreditsView({
               </p>
             )}
 
-            <ProtoBtn
-              primary
+            <Button
+              variant="default"
+              size="lg"
+              className={cn(brandBtnPrimaryCls, "mt-4 w-full justify-center")}
               disabled={!sel || buying}
               onClick={handleBuy}
-              className="mt-4 w-full justify-center"
             >
               {buying
                 ? "Traitement…"
                 : sel
                   ? `Payer ${fmtEur(ttc)} TTC`
                   : "Sélectionnez un pack"}
-            </ProtoBtn>
+            </Button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

@@ -1,6 +1,9 @@
 "use client";
 
-import { BadgeSent, ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { BadgeSent } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
@@ -334,7 +337,9 @@ export function ParametresView({
                 <strong>VISA •••• 8003</strong>
               </div>
               <div className="mt-3">
-                <ProtoBtn>Modifier la carte</ProtoBtn>
+                <Button variant="outline" size="lg" className={brandBtnCls}>
+                  Modifier la carte
+                </Button>
               </div>
             </ModalPanel>
           )}
@@ -348,7 +353,9 @@ export function ParametresView({
                 <BadgeSent>Activé</BadgeSent>
               </div>
               <div className="mt-3">
-                <ProtoBtn>Gérer la sécurité</ProtoBtn>
+                <Button variant="outline" size="lg" className={brandBtnCls}>
+                  Gérer la sécurité
+                </Button>
               </div>
             </ModalPanel>
           )}
@@ -388,11 +395,12 @@ export function ParametresView({
           {openSetting === "notifications-email" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-[18px] w-[18px]"
+                <Checkbox
                   checked={draftForm.notifyInvoices}
-                  onChange={(e) => setField("notifyInvoices", e.target.checked)}
+                  onCheckedChange={(checked) =>
+                    setField("notifyInvoices", checked === true)
+                  }
+                  className="mt-0.5"
                 />
                 Recevoir les notifications email (factures, alertes)
               </label>
@@ -402,11 +410,12 @@ export function ParametresView({
           {openSetting === "resume-mensuel" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-[18px] w-[18px]"
+                <Checkbox
                   checked={draftForm.notifySummary}
-                  onChange={(e) => setField("notifySummary", e.target.checked)}
+                  onCheckedChange={(checked) =>
+                    setField("notifySummary", checked === true)
+                  }
+                  className="mt-0.5"
                 />
                 Recevoir un résumé mensuel de vos campagnes par email
               </label>

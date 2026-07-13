@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { submitUserFeedback } from "@/lib/supabase/feedback";
@@ -215,8 +216,10 @@ export function SoumettreAvisView({ onToast }: SoumettreAvisViewProps) {
                 Aucune donnée personnelle n&apos;est collectée
               </p>
             </div>
-            <ProtoBtn
-              primary
+            <Button
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
               disabled={submitting}
               onClick={() => void handleSubmit()}
             >
@@ -228,7 +231,7 @@ export function SoumettreAvisView({ onToast }: SoumettreAvisViewProps) {
                   Envoyer l&apos;avis
                 </>
               )}
-            </ProtoBtn>
+            </Button>
           </div>
         </div>
       </div>

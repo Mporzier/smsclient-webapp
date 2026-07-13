@@ -157,14 +157,15 @@ export function DataTable<T>({
                       "relative whitespace-nowrap border-b border-border bg-muted py-3.5 text-sm font-medium text-foreground",
                       isSelectCol
                         ? "px-3 text-center"
-                        : "px-[18px] text-left"
+                        : "px-[18px] text-left",
+                      canSort && "cursor-pointer"
                     )}
                   >
                     {header.isPlaceholder ? null : canSort ? (
                       <button
                         type="button"
                         className={cn(
-                          "inline-flex max-w-full items-center gap-1.5 rounded-md text-left",
+                          "inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-md text-left",
                           "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         )}
                         onClick={header.column.getToggleSortingHandler()}

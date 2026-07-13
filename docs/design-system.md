@@ -16,18 +16,18 @@ Nouveaux composants UI → [`components/ui/`](../components/ui/) via CLI :
 pnpm dlx shadcn@latest add <component> -y -c .
 ```
 
-Installés : `button`, `dropdown-menu`, `dialog`, `input`.
+Installés : `button`, `dropdown-menu`, `dialog`, `input`, `label`, `textarea`, `select`, `checkbox`.
 
-`ProtoBtn` = wrapper compat → `Button`. Code neuf : `Button` direct.
+Code neuf : `Button` / `Input` / `Dialog` / `Checkbox` directs. Helpers brand : `brandBtnCls`, `brandBtnPrimaryCls`, `brandInputCls`, `formDialogContentCls` dans [`modalChrome.ts`](../components/smsclient/modals/modalChrome.ts).
 
-`DialogContent` accepte `overlayClassName` (z-index stacked via [`modalChrome.ts`](../components/smsclient/modals/modalChrome.ts)).
+`DialogContent` accepte `overlayClassName` (z-index stacked via `modalChrome`).
 
 ## Règles
 
 1. **Nouveau UI** : `components/ui` + tokens. Pas de nouveaux hex.
 2. **Legacy** : migration opportuniste. Pas de big-bang.
 3. **Brand** : vars `:root` / `.dark` dans `globals.css`.
-4. **Listes / DataTable** : garder **TanStack Table** (déjà en place). Polish DS (tokens + `Pager` → `Button`). **Pas** AG Grid / MUI DataGrid / shadcn Table seul. Virtualisation (`@tanstack/react-virtual`) seulement si perf mesurée.
+4. **Listes / DataTable** : garder **TanStack Table**. Polish DS. **Pas** AG Grid / MUI DataGrid / shadcn Table seul. Virtualisation seulement si perf mesurée.
 
 ## Brand (tokens)
 
@@ -46,57 +46,45 @@ Installés : `button`, `dropdown-menu`, `dialog`, `input`.
 ### Fait
 
 - [x] Tokens brand + `--canvas`
-- [x] Primitives `button` / `dropdown-menu` / `dialog` / `input`
+- [x] Primitives `button` / `dropdown-menu` / `dialog` / `input` / `label` / `textarea` / `select` / `checkbox`
 - [x] Menu compte + HeaderHelp → `DropdownMenu`
-- [x] CTA header / `ProtoBtn` wrapper → `Button`
-- [x] Vague 2 — Shell / SidebarNav tokens
-- [x] **Vague 3** — Confirms → `Dialog` + SearchBar → `Input`
-- [x] **Vague L1** — DataTable tokens + Pager → `Button` (TanStack conservé)
-
-### A. Shell chrome
-
-- [x] SearchBar → `Input`
+- [x] Shell / SidebarNav / SearchBar → tokens + `Input`
+- [x] Confirms → `Dialog`
+- [x] DataTable L1 tokens + Pager → `Button` ; L2a tri ; L2b Checkbox
+- [x] Vague 4 — petites modales Dialog + forms Input
+- [x] Vague 5 — ContactCreate / GroupModal / ImportContacts → Dialog
+- [x] ProtoBtn purgé → `Button` + `brandBtn*`
+- [x] Hex produit → tokens (Dashboard / Aide : hex décoratifs restants volontaires)
 
 ### B. Modals → Dialog
 
-- [x] `modalChrome` tokens + helpers Dialog (`dialogOverlay*`, `confirmDialogContentCls`)
-- [x] Confirms : `ConfirmDeleteModal`, `ConfirmUnsubscribeModal`, `CampaignWizardLeaveConfirmModal`
-- [ ] Petites : `MonProfilModal`, `ParametresSettingModal`, `CampaignDetailsModal`, `EmailPendingModal`
-- [ ] Moyennes / grosses (plus tard)
+- [x] `modalChrome` helpers Dialog
+- [x] Confirms
+- [x] Petites : MonProfil, ParametresSetting, CampaignDetails, EmailPending, AutomationEdit, GroupQuickCreate, CreateSmsLink, UnsubscribedContacts, QrWelcome, QrCapturePreview, QrWheelSettings
+- [x] Grosses : ContactCreate, GroupModal, ImportContacts
+- [x] Legacy `overlayCls` / `ModalPortal` retirés
 
 ### C. Forms → Input
 
-- [ ] Classes `inp` MonProfil / Contact / Parametres
-- [ ] `AuthForm`, `parametresSettings`
-- [ ] CLI si besoin : `label`, `textarea`, `select` (user lance)
+- [x] `inp` → Input : MonProfil, Onboarding, QrWheelSettings, QrCapturePage, AuthForm, ContactCreate
 
 ### D / E / Listes
 
-- [ ] ProtoBtn → Button direct (opportuniste)
-- [ ] Hex vues (opportuniste)
-- [x] DataTable tokens + Pager Button — **pas** Table shadcn / AG Grid
-- [x] L2a : tri colonnes UI
-- [ ] L2b : Checkbox shadcn
-- [ ] L3 : virtualisation si besoin
+- [x] ProtoBtn purge
+- [x] Hex vues prioritaires (wizard, listes, guides, charts, overlay)
+- [x] DataTable + L2a + L2b
+- [ ] L3 : virtualisation si perf mesurée
 
 ### Hors scope
 
 - Remplacer TanStack par AG Grid / MUI
 - Dark mode produit
-- Big-bang 16 modales
+- Hex SVG `LogoMark` + illustrations Aide / gradients Dashboard décoratifs
 
-## Vagues suivantes
-
-4. Petites modales + `Input`  
-5. Moyennes / grosses  
-L2a. Tri colonnes — fait  
-L2b. Checkbox shadcn  
-L3. Virtual si perf  
-
-Vérif manuelle :
+## Vérif
 
 ```bash
 pnpm build
 ```
 
-Tester : listes Contacts / Groupes / Campagnes (chrome + pagination).
+Tester : listes Contacts / Groupes / Campagnes + modales profil / contact / groupe / import.

@@ -60,7 +60,7 @@ function LinkishBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "cursor-pointer border-0 bg-transparent p-0 text-xs font-extrabold text-[#1648e8] hover:underline",
+        "cursor-pointer border-0 bg-transparent p-0 text-xs font-extrabold text-primary hover:underline",
         className
       )}
     >
@@ -79,12 +79,12 @@ function StepCircle({
   done?: boolean;
 }) {
   return (
-    <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#eaf3ff] text-[#1648e8]">
+    <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-primary">
       <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
       <span
         className={cn(
           "absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full text-[9px] font-extrabold text-white",
-          done ? "bg-[#16b978]" : "bg-[#1648e8]"
+          done ? "bg-emerald-500" : "bg-primary"
         )}
       >
         {step}
@@ -113,20 +113,20 @@ function OverviewMetric({
   return (
     <article
       className={cn(
-        "rounded-xl border border-[#dbe5f4] p-3",
+        "rounded-xl border border-border p-3",
         gradient
       )}
     >
       <div className="flex items-start gap-2.5">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/80">
-          <Icon className="h-4 w-4 text-[#1648e8]" strokeWidth={2} aria-hidden />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/80">
+          <Icon className="h-4 w-4 text-primary" strokeWidth={2} aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-2xl font-extrabold leading-none text-[#0b1b3f]">
+          <div className="text-2xl font-extrabold leading-none text-foreground">
             {value}
           </div>
-          <b className="mt-1 block text-xs text-[#0b1b3f]">{label}</b>
-          <p className="m-0 mt-0.5 line-clamp-1 text-[11px] leading-snug text-[#3f4d68]">
+          <b className="mt-1 block text-xs text-foreground">{label}</b>
+          <p className="m-0 mt-0.5 line-clamp-1 text-[11px] leading-snug text-muted-foreground">
             {hint}
           </p>
         </div>
@@ -160,22 +160,22 @@ function SideInfoCard({
   return (
     <article
       className={cn(
-        "rounded-xl border border-[#dbe5f4] p-3.5",
+        "rounded-xl border border-border p-3.5",
         gradient
       )}
     >
       <div className="flex items-start gap-2.5">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70">
-          <Icon className="h-4 w-4 text-[#1648e8]" strokeWidth={2} aria-hidden />
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/70">
+          <Icon className="h-4 w-4 text-primary" strokeWidth={2} aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="m-0 text-sm font-extrabold text-[#0b1b3f]">{title}</h3>
+          <h3 className="m-0 text-sm font-extrabold text-foreground">{title}</h3>
           {value != null && (
-            <div className="text-2xl font-extrabold leading-none text-[#0b1b3f]">
+            <div className="text-2xl font-extrabold leading-none text-foreground">
               {value}
             </div>
           )}
-          <p className="m-0 mt-1 line-clamp-2 text-[11px] leading-snug text-[#344260]">
+          <p className="m-0 mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
             {description}
           </p>
           {actionAsLink ? (
@@ -205,7 +205,7 @@ function NoticeBar({
   onDismiss?: () => void;
 }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#bdd5ff] bg-[#f5f9ff] px-3 py-2 text-[11px] text-[#25375c]">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-accent px-3 py-2 text-[11px] text-muted-foreground">
       <span className="font-semibold leading-snug">{children}</span>
       <div className="flex shrink-0 items-center gap-2">
         {action && onAction && (
@@ -215,7 +215,7 @@ function NoticeBar({
           <button
             type="button"
             onClick={onDismiss}
-            className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-[#64728b] hover:bg-white/70"
+            className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground hover:bg-card/70"
             aria-label="Fermer"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
@@ -244,7 +244,7 @@ function DashboardSideColumn({
         description={creditsHint}
         action="Recharger"
         onAction={() => onGo("acheter-credits")}
-        gradient="bg-gradient-to-br from-[#fff6d9] to-white"
+        gradient="bg-gradient-to-br from-[#fff6d9] to-card"
       />
       <SideInfoCard
         icon={Shield}
@@ -252,7 +252,7 @@ function DashboardSideColumn({
         description="Vos SMS marketing doivent inclure la mention STOP."
         action="En savoir plus"
         onAction={() => onGo("reglementations-sms")}
-        gradient="bg-gradient-to-br from-[#eff8ff] to-white"
+        gradient="bg-gradient-to-br from-accent to-card"
         actionAsLink
       />
       <SideInfoCard
@@ -261,7 +261,7 @@ function DashboardSideColumn({
         description="Notre centre d'aide vous accompagne à chaque étape."
         action="Centre d'aide"
         onAction={() => onGo("aide")}
-        gradient="bg-gradient-to-br from-[#f5f0ff] to-white"
+        gradient="bg-gradient-to-br from-[#f5f0ff] to-card"
       />
     </aside>
   );
@@ -269,7 +269,7 @@ function DashboardSideColumn({
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h3 className="m-0 mb-2 text-sm font-extrabold text-[#0b1b3f]">
+    <h3 className="m-0 mb-2 text-sm font-extrabold text-foreground">
       {children}
     </h3>
   );
@@ -336,10 +336,10 @@ function DashboardFirstVisit({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h2 className="m-0 text-2xl font-extrabold leading-tight text-[#0b1b3f]">
+        <h2 className="m-0 text-2xl font-extrabold leading-tight text-foreground">
           Bienvenue {greetingName} ! 👋
         </h2>
-        <p className="m-0 mt-1 text-sm text-[#27385d]">
+        <p className="m-0 mt-1 text-sm text-muted-foreground">
           Suivez ces étapes pour envoyer votre premier SMS.
         </p>
       </div>
@@ -354,14 +354,14 @@ function DashboardFirstVisit({
             />
           )}
 
-          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#dbe5f4] bg-white min-[900px]:grid-cols-4">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card min-[900px]:grid-cols-4">
             {steps.map((step, index) => (
               <button
                 key={step.step}
                 type="button"
                 onClick={step.onClick}
                 className={cn(
-                  "flex cursor-pointer items-center gap-2.5 border-[#dbe5f4] bg-white px-3 py-2.5 text-left",
+                  "flex cursor-pointer items-center gap-2.5 border-border bg-card px-3 py-2.5 text-left",
                   index < 2 && "border-b min-[900px]:border-b-0",
                   index % 2 === 0 && "border-r min-[900px]:border-r",
                   index < 3 && "min-[900px]:border-r",
@@ -372,7 +372,7 @@ function DashboardFirstVisit({
                   step={step.step}
                   done={"done" in step ? step.done : undefined}
                 />
-                <b className="text-xs leading-snug text-[#0b1b3f]">{step.title}</b>
+                <b className="text-xs leading-snug text-foreground">{step.title}</b>
               </button>
             ))}
           </div>
@@ -387,7 +387,7 @@ function DashboardFirstVisit({
                 hint="Rechargez pour envoyer."
                 action="Recharger"
                 onAction={() => onGo("acheter-credits")}
-                gradient="bg-gradient-to-br from-[#fff7dc] to-white"
+                gradient="bg-gradient-to-br from-[#fff7dc] to-card"
               />
               <OverviewMetric
                 icon={UserPlus}
@@ -396,7 +396,7 @@ function DashboardFirstVisit({
                 hint="Ajoutez vos contacts."
                 action="Ajouter"
                 onAction={() => onGo("contacts")}
-                gradient="bg-gradient-to-br from-[#eafff4] to-white"
+                gradient="bg-gradient-to-br from-[#eafff4] to-card"
               />
               <OverviewMetric
                 icon={Users}
@@ -405,7 +405,7 @@ function DashboardFirstVisit({
                 hint="Créez un groupe."
                 action="Créer"
                 onAction={() => onGo("groupes")}
-                gradient="bg-gradient-to-br from-[#f5efff] to-white"
+                gradient="bg-gradient-to-br from-[#f5efff] to-card"
               />
               <OverviewMetric
                 icon={Megaphone}
@@ -414,7 +414,7 @@ function DashboardFirstVisit({
                 hint="Aucun SMS pour le moment."
                 action="Envoyer"
                 onAction={onNewCampaign}
-                gradient="bg-gradient-to-br from-[#eff8ff] to-white"
+                gradient="bg-gradient-to-br from-accent to-card"
               />
             </div>
           </section>
@@ -490,10 +490,10 @@ function DashboardReturning({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h2 className="m-0 text-2xl font-extrabold leading-tight text-[#0b1b3f]">
+        <h2 className="m-0 text-2xl font-extrabold leading-tight text-foreground">
           Bonjour {greetingName} ! 👋
         </h2>
-        <p className="m-0 mt-1 text-sm text-[#27385d]">
+        <p className="m-0 mt-1 text-sm text-muted-foreground">
           Voici un aperçu de votre activité.
         </p>
       </div>
@@ -507,23 +507,23 @@ function DashboardReturning({
           <section>
             <SectionTitle>Activités récentes</SectionTitle>
             {campaignsLoading ? (
-              <p className="m-0 text-xs font-semibold text-[#64728b]">Chargement…</p>
+              <p className="m-0 text-xs font-semibold text-muted-foreground">Chargement…</p>
             ) : activities.length === 0 ? (
-              <p className="m-0 rounded-xl border border-[#dbe5f4] bg-white px-3 py-2 text-xs text-[#64728b]">
+              <p className="m-0 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
                 Aucune activité récente.
               </p>
             ) : (
-              <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#dbe5f4] bg-white min-[900px]:grid-cols-4">
+              <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card min-[900px]:grid-cols-4">
                 {activities.map((act) => (
                   <article
                     key={`${act.title}-${act.sortAt}`}
-                    className="border-b border-r border-[#dbe5f4] px-3 py-2.5 last:border-r-0 min-[900px]:border-b-0"
+                    className="border-b border-r border-border px-3 py-2.5 last:border-r-0 min-[900px]:border-b-0"
                   >
-                    <div className="mb-1.5 grid h-8 w-8 place-items-center rounded-full bg-[#eaf3ff] text-[#1648e8]">
+                    <div className="mb-1.5 grid h-8 w-8 place-items-center rounded-full bg-accent text-primary">
                       <act.icon className="h-4 w-4" strokeWidth={2} aria-hidden />
                     </div>
-                    <b className="block text-xs text-[#0b1b3f]">{act.title}</b>
-                    <p className="m-0 mt-0.5 line-clamp-2 text-[11px] leading-snug text-[#3b4a68]">
+                    <b className="block text-xs text-foreground">{act.title}</b>
+                    <p className="m-0 mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
                       {act.description.replace("\n", " · ")}
                     </p>
                     <span
@@ -550,7 +550,7 @@ function DashboardReturning({
                 hint={creditsHint}
                 action="Recharger"
                 onAction={() => onGo("acheter-credits")}
-                gradient="bg-gradient-to-br from-[#fff7dc] to-white"
+                gradient="bg-gradient-to-br from-[#fff7dc] to-card"
               />
               <OverviewMetric
                 icon={UserPlus}
@@ -559,7 +559,7 @@ function DashboardReturning({
                 hint="Gérez votre base."
                 action="Voir contacts"
                 onAction={() => onGo("contacts")}
-                gradient="bg-gradient-to-br from-[#eafff4] to-white"
+                gradient="bg-gradient-to-br from-[#eafff4] to-card"
               />
               <OverviewMetric
                 icon={Users}
@@ -572,7 +572,7 @@ function DashboardReturning({
                 }
                 action="Voir groupes"
                 onAction={() => onGo("groupes")}
-                gradient="bg-gradient-to-br from-[#f5efff] to-white"
+                gradient="bg-gradient-to-br from-[#f5efff] to-card"
               />
               <OverviewMetric
                 icon={Megaphone}
@@ -581,7 +581,7 @@ function DashboardReturning({
                 hint={smsHint}
                 action="Voir stats"
                 onAction={() => onGo("statistiques")}
-                gradient="bg-gradient-to-br from-[#eff8ff] to-white"
+                gradient="bg-gradient-to-br from-accent to-card"
               />
             </div>
           </section>
@@ -634,7 +634,7 @@ export function DashboardView({
 
   if (profileLoading) {
     return (
-      <p className="m-0 text-sm font-semibold text-[#64728b]">Chargement…</p>
+      <p className="m-0 text-sm font-semibold text-muted-foreground">Chargement…</p>
     );
   }
 

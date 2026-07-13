@@ -80,14 +80,14 @@ export function SchedulePicker({
   );
 
   const numInput =
-    "h-10 rounded-lg border bg-white px-2 text-center text-sm font-bold text-slate-900 outline-none focus:border-[#2f6fed] focus:ring-2 focus:ring-blue-100";
-  const sep = "text-sm font-black text-slate-400 self-center";
-  const borderCls = hasError ? "border-rose-300" : "border-slate-200";
+    "h-10 rounded-lg border bg-card px-2 text-center text-sm font-bold text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20";
+  const sep = "text-sm font-black text-muted-foreground self-center";
+  const borderCls = hasError ? "border-rose-300" : "border-border";
 
   return (
     <div className="mt-1 flex flex-wrap items-end gap-3">
       <div>
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+        <span className="mb-1 block text-[11px] font-bold text-muted-foreground">
           Date
         </span>
         <div className="flex items-center gap-1">
@@ -126,7 +126,7 @@ export function SchedulePicker({
         </div>
       </div>
       <div>
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+        <span className="mb-1 block text-[11px] font-bold text-muted-foreground">
           Heure
         </span>
         <div className="flex items-center gap-1">
@@ -154,14 +154,14 @@ export function SchedulePicker({
         </div>
       </div>
       <div className="self-end">
-        <span className="mb-1 block text-[11px] font-bold text-slate-400">
+        <span className="mb-1 block text-[11px] font-bold text-muted-foreground">
           &nbsp;
         </span>
         <button
           type="button"
           title="Ouvrir le calendrier"
           onClick={() => nativeRef.current?.showPicker()}
-          className="grid h-10 w-10 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:border-[#2f6fed] hover:bg-blue-50 hover:text-[#2f6fed]"
+          className="grid h-10 w-10 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-ring hover:bg-accent hover:text-ring"
         >
           <Calendar className="h-4 w-4" />
         </button>
@@ -188,11 +188,11 @@ export function AdvancedOptionsCollapsible({
   children: ReactNode;
 }) {
   return (
-    <div className="shrink-0 border-t border-slate-100 pt-2.5">
+    <div className="shrink-0 border-t border-border/50 pt-2.5">
       <button
         type="button"
         onClick={onToggle}
-        className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-800"
+        className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronDown
           className={cn(

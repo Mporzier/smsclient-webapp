@@ -1,6 +1,9 @@
 "use client";
 
 import { EmailPendingModal } from "@/components/auth/EmailPendingModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   getLoginValidationErrors,
   mapAuthErrorToFrench,
@@ -17,11 +20,6 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-const inputCls =
-  "mt-2 w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
-
-const inputErrorCls = `${inputCls} border-rose-300 focus:border-rose-500 focus:ring-rose-500/20`;
 
 type Props = { mode: "login" | "signup" };
 
@@ -209,10 +207,10 @@ export function AuthForm({ mode }: Props) {
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
           <div>
-            <label htmlFor="email" className="text-xs font-bold text-slate-600">
+            <Label htmlFor="email" className="text-xs font-bold text-muted-foreground">
               E-mail
-            </label>
-            <input
+            </Label>
+            <Input
               id="email"
               name="email"
               type="email"
@@ -225,20 +223,21 @@ export function AuthForm({ mode }: Props) {
                   setEmailError(null);
                 }
               }}
-              className={emailError ? inputErrorCls : inputCls}
+              aria-invalid={emailError ? true : undefined}
+              className="mt-2 rounded-xl border-border bg-transparent px-3 py-2.5 text-sm font-semibold"
             />
             {emailError && (
               <p className="mt-1.5 text-xs text-rose-700">{emailError}</p>
             )}
           </div>
           <div>
-            <label
+            <Label
               htmlFor="password"
-              className="text-xs font-bold text-slate-600"
+              className="text-xs font-bold text-muted-foreground"
             >
               Mot de passe
-            </label>
-            <input
+            </Label>
+            <Input
               id="password"
               name="password"
               type="password"
@@ -255,7 +254,8 @@ export function AuthForm({ mode }: Props) {
                   setPasswordError(null);
                 }
               }}
-              className={passwordError ? inputErrorCls : inputCls}
+              aria-invalid={passwordError ? true : undefined}
+              className="mt-2 rounded-xl border-border bg-transparent px-3 py-2.5 text-sm font-semibold"
             />
             {mode === "signup" && (
               <p className="mt-1.5 text-xs text-slate-500">
@@ -277,14 +277,15 @@ export function AuthForm({ mode }: Props) {
             </p>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={pending || !configured}
-            className="w-full rounded-xl bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(47,111,237,0.25)] disabled:opacity-60"
+            variant="default"
+            className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
             data-cy="authForm-submit"
           >
             {pending ? "…" : mode === "login" ? "Se connecter" : "S'inscrire"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">

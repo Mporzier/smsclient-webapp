@@ -2,8 +2,9 @@
 
 import { AutomationEditModal } from "@/components/smsclient/modals/AutomationEditModal";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
-import { ProtoBtn } from "@/components/smsclient/ui";
-import { cn } from "@/lib/cn";
+import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
 import type {
   AutomationRowData,
@@ -23,7 +24,7 @@ import type { AutomationPresetKey } from "@/lib/types/automation";
 import type { ContactRowData } from "@/lib/types/contact";
 
 const cardCls =
-  "rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)]";
+  "rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)]";
 
 function presetIcon(key: AutomationPresetKey) {
   const cls = "h-5 w-5";
@@ -60,14 +61,14 @@ function AutomationCard({
     <article className={cardCls}>
       <div className="flex items-start gap-3">
         <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed]"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-accent to-accent/60 text-ring"
           aria-hidden
         >
           {presetIcon(row.presetKey)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="m-0 text-base font-extrabold text-slate-900">
+            <h3 className="m-0 text-base font-extrabold text-foreground">
               {row.name}
             </h3>
             {row.enabled ? (
@@ -75,47 +76,33 @@ function AutomationCard({
                 Active
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
+              <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
                 Inactive
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm font-semibold text-slate-600">
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">
             {row.scheduleLabel}
             {row.enabled ? ` · ${row.sendTime}` : ""}
           </p>
           {meta && (
-            <p className="mt-1 text-xs font-medium text-slate-500">{meta}</p>
+            <p className="mt-1 text-xs font-medium text-muted-foreground">{meta}</p>
           )}
-          <p className="mt-2 line-clamp-2 text-sm text-slate-700">{row.body}</p>
+          <p className="mt-2 line-clamp-2 text-sm text-foreground">{row.body}</p>
         </div>
-        <label className="flex shrink-0 cursor-pointer items-center gap-2">
-          <span className="sr-only">
-            {row.enabled ? "Désactiver" : "Activer"} {row.name}
-          </span>
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            checked={row.enabled}
-            disabled={toggling}
-            onChange={(e) => onToggle(e.target.checked)}
-          />
-          <span
-            className={cn(
-              "relative h-7 w-12 rounded-full border transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50",
-              row.enabled
-                ? "border-[#2f6fed] bg-[#2f6fed]"
-                : "border-slate-300 bg-slate-200"
-            )}
-            aria-hidden
-          />
-        </label>
+        <Checkbox
+          checked={row.enabled}
+          disabled={toggling}
+          onCheckedChange={(checked) => onToggle(checked === true)}
+          className="shrink-0 cursor-pointer"
+          aria-label={`${row.enabled ? "Désactiver" : "Activer"} ${row.name}`}
+        />
       </div>
-      <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
-        <ProtoBtn onClick={onEdit}>
+      <div className="mt-3 flex justify-end border-t border-border/50 pt-3">
+        <Button variant="outline" size="lg" className={brandBtnCls} onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" aria-hidden />
           Configurer
-        </ProtoBtn>
+        </Button>
       </div>
     </article>
   );
@@ -178,7 +165,7 @@ export function AutomatisationsView({
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {showGuide && <SectionGuideCard section="automatisations" />}
       {!loading && (
-        <p className="m-0 text-xs font-bold text-slate-500">
+        <p className="m-0 text-xs font-bold text-muted-foreground">
           {activeCount} automatisation{activeCount !== 1 ? "s" : ""} active
           {activeCount !== 1 ? "s" : ""} · {eligibleCount} contact
           {eligibleCount > 1 ? "s" : ""} éligible
@@ -204,14 +191,14 @@ export function AutomatisationsView({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-slate-100"
+              className="h-40 animate-pulse rounded-2xl border border-border bg-muted"
             />
           ))}
         </div>
       ) : (
         <>
           <section>
-            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-slate-500">
+            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
               Anniversaires
             </h2>
             {birthdayRow ? (
@@ -228,7 +215,7 @@ export function AutomatisationsView({
           </section>
 
           <section>
-            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-slate-500">
+            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
               Événements
             </h2>
             <div className="grid gap-3 lg:grid-cols-2">
@@ -249,7 +236,7 @@ export function AutomatisationsView({
             </div>
           </section>
 
-          <p className="text-xs font-medium text-slate-500">
+          <p className="text-xs font-medium text-muted-foreground">
             L&apos;envoi effectif des SMS automatiques sera déclenché côté
             serveur (cron). La configuration est enregistrée pour votre compte.
           </p>

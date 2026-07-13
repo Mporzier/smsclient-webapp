@@ -2,14 +2,15 @@
 
 import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import {
   BadgeDraft,
   BadgeFailed,
   BadgeScheduled,
   BadgeSent,
-  ProtoBtn,
   PlusIcon,
 } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { useMemo, useState } from "react";
@@ -98,10 +99,15 @@ export function CampagnesView({
           />
         </div>
         <div className="mt-0.5 flex flex-wrap gap-3">
-          <ProtoBtn primary onClick={onNewCampaign}>
+          <Button
+            variant="default"
+            size="lg"
+            className={brandBtnPrimaryCls}
+            onClick={onNewCampaign}
+          >
             <PlusIcon />
             Nouvelle campagne
-          </ProtoBtn>
+          </Button>
         </div>
       </div>
 

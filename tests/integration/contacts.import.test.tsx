@@ -21,6 +21,8 @@ describe("Import contacts — flow (intégration, mock API)", () => {
       inserted: 2,
       skippedDuplicateInFile: 0,
       skippedDuplicateInDb: 0,
+      duplicatePhoneE164s: [],
+      linkedExistingToGroup: 0,
       skippedInvalidRow: 0,
       otherErrors: 0,
     });
@@ -35,6 +37,7 @@ describe("Import contacts — flow (intégration, mock API)", () => {
         userId="user-mock"
         onImported={async () => {}}
         onNotify={() => {}}
+        groupOptions={["Clients VIP", "Prospects"]}
       />,
     );
 
@@ -60,6 +63,7 @@ describe("Import contacts — flow (intégration, mock API)", () => {
         userId="user-mock"
         onImported={onImported}
         onNotify={onNotify}
+        groupOptions={["Clients VIP", "Prospects"]}
       />,
     );
 
@@ -77,10 +81,20 @@ Bob;Durand;06 98 76 54 32;Prospects`;
       expect(screen.getByText(/2 lignes détectées/)).toBeInTheDocument();
     });
 
+    await user.selectOptions(
+      screen.getByLabelText("Ajouter au groupe"),
+      "Clients VIP",
+    );
+
     await user.click(screen.getByRole("button", { name: /Importer 2 lignes/ }));
 
     await waitFor(() => {
       expect(clientsApi.insertClientsFromImport).toHaveBeenCalledTimes(1);
+      const payloads = vi.mocked(clientsApi.insertClientsFromImport).mock
+        .calls[0][2];
+      expect(payloads.every((p) => p.groupLabels.includes("Clients VIP"))).toBe(
+        true,
+      );
       expect(onImported).toHaveBeenCalled();
       expect(onNotify).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();

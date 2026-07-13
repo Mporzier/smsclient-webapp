@@ -17,8 +17,14 @@ type Props = {
 
 export function PrototypeAppModals({ ctx }: Props) {
   const { data, modals, wizard, actions } = ctx;
-  const { contactsState, groupModalContacts, groupOptions, user, supabase } =
-    data;
+  const {
+    contactsState,
+    groupsState,
+    groupModalContacts,
+    groupOptions,
+    user,
+    supabase,
+  } = data;
 
   return (
     <>
@@ -110,7 +116,11 @@ export function PrototypeAppModals({ ctx }: Props) {
           onClose={() => modals.setImportContactsOpen(false)}
           supabase={supabase}
           userId={user.id}
-          onImported={contactsState.refresh}
+          groupOptions={groupsState.rows.map((g) => g.name)}
+          onImported={async () => {
+            await contactsState.refresh();
+            await groupsState.refresh();
+          }}
           onNotify={modals.showToast}
         />
       )}

@@ -4,7 +4,11 @@ import {
   UnsubscribedContactsModal,
   type UnsubscribedContactRow,
 } from "@/components/smsclient/modals/UnsubscribedContactsModal";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+} from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { cn } from "@/lib/cn";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
@@ -269,9 +273,14 @@ export function StatistiquesView(props: StatsProps) {
               />
               {periodLabel}
             </button>
-            <ProtoBtn primary onClick={onExport}>
+            <Button
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
+              onClick={onExport}
+            >
               Exporter
-            </ProtoBtn>
+            </Button>
         </div>
 
         <div className="grid shrink-0 grid-cols-4 gap-3 max-[1200px]:grid-cols-2">
@@ -374,7 +383,7 @@ export function StatistiquesView(props: StatsProps) {
                       <polyline
                         fill="none"
                         points={sentPath}
-                        stroke="#10b981"
+                        stroke="var(--chart-1)"
                         strokeWidth="3"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -382,7 +391,7 @@ export function StatistiquesView(props: StatsProps) {
                       <polyline
                         fill="none"
                         points={failedPath}
-                        stroke="#f43f5e"
+                        stroke="var(--destructive)"
                         strokeWidth="3"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -390,7 +399,7 @@ export function StatistiquesView(props: StatsProps) {
                       <polyline
                         fill="none"
                         points={scheduledPath}
-                        stroke="#3b82f6"
+                        stroke="var(--chart-2)"
                         strokeWidth="3"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -398,9 +407,9 @@ export function StatistiquesView(props: StatsProps) {
 
                       {data.campaignSeries.map((point, idx) => (
                         <g key={point.label}>
-                          <circle cx={xFor(idx)} cy={yFor(point.sent)} r="4" fill="#10b981" />
-                          <circle cx={xFor(idx)} cy={yFor(point.failed)} r="4" fill="#f43f5e" />
-                          <circle cx={xFor(idx)} cy={yFor(point.scheduled)} r="4" fill="#3b82f6" />
+                          <circle cx={xFor(idx)} cy={yFor(point.sent)} r="4" fill="var(--chart-1)" />
+                          <circle cx={xFor(idx)} cy={yFor(point.failed)} r="4" fill="var(--destructive)" />
+                          <circle cx={xFor(idx)} cy={yFor(point.scheduled)} r="4" fill="var(--chart-2)" />
                           <text
                             x={xFor(idx)}
                             y={chartHeight - 12}
@@ -534,16 +543,25 @@ export function StatistiquesView(props: StatsProps) {
                 </label>
               </div>
               <div className="mt-3 flex justify-end gap-2">
-                <ProtoBtn onClick={() => setStatsOpen(false)}>Annuler</ProtoBtn>
-                <ProtoBtn
-                  primary
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={brandBtnCls}
+                  onClick={() => setStatsOpen(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="default"
+                  size="lg"
+                  className={brandBtnPrimaryCls}
                   onClick={() => {
                     applyRange();
                     setStatsOpen(false);
                   }}
                 >
                   Appliquer
-                </ProtoBtn>
+                </Button>
               </div>
             </div>
             <div className="border-t border-slate-200 bg-slate-50/60 p-3 sm:w-[188px] sm:border-t-0 sm:border-l">

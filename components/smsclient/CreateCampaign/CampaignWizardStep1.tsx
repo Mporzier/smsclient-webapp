@@ -1,6 +1,8 @@
 "use client";
 
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
 import {
@@ -83,13 +85,13 @@ export function CampaignWizardStep1Main() {
       )}
     >
       <div className="shrink-0">
-        <h2 className="m-0 text-sm font-black leading-snug text-slate-900">
+        <h2 className="m-0 text-sm font-black leading-snug text-foreground">
           À qui voulez-vous envoyer votre SMS ?
         </h2>
       </div>
 
       <div
-        className="flex shrink-0 gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5"
+        className="flex shrink-0 gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5"
         role="tablist"
         aria-label="Mode de sélection des destinataires"
       >
@@ -109,8 +111,8 @@ export function CampaignWizardStep1Main() {
             className={cn(
               "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-extrabold transition-colors",
               tab === id
-                ? "bg-white text-[#1f3b77] shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -121,12 +123,12 @@ export function CampaignWizardStep1Main() {
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <div
-          className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5"
+          className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5"
           role="search"
         >
-          <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <input
-            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
             placeholder={
               tab === "manual"
                 ? "Rechercher un contact par nom, téléphone ou groupe"
@@ -141,28 +143,32 @@ export function CampaignWizardStep1Main() {
             }
           />
         </div>
-        <ProtoBtn
-          className="h-8 shrink-0 px-2.5 text-[11px]"
+        <Button
+          variant="outline"
+          size="lg"
+          className={cn(brandBtnCls, "h-8 shrink-0 px-2.5 text-[11px]")}
           onClick={handleSelectAll}
           disabled={!canSelectAll}
         >
           Tout sélectionner
-        </ProtoBtn>
-        <ProtoBtn
-          className="h-8 shrink-0 px-2.5 text-[11px]"
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className={cn(brandBtnCls, "h-8 shrink-0 px-2.5 text-[11px]")}
           onClick={handleClearSelection}
           disabled={!canClearSelection}
         >
           Tout désélectionner
-        </ProtoBtn>
+        </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200">
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border">
         {tab === "manual" ? (
           contactsLoading ? (
             <RecipientListSkeleton />
           ) : filteredContacts.length === 0 ? (
-            <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-slate-500">
+            <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
               Aucun contact trouvé.
             </p>
           ) : (
@@ -175,20 +181,19 @@ export function CampaignWizardStep1Main() {
                 <label
                   key={c.id}
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0",
+                    "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-2.5 last:border-b-0",
                     isUnsubscribed
-                      ? "cursor-not-allowed bg-slate-50 opacity-70"
+                      ? "cursor-not-allowed bg-muted/50 opacity-70"
                       : checked
-                      ? "bg-[#eef4ff]/80"
-                      : "bg-white hover:bg-slate-50/80"
+                      ? "bg-accent/80"
+                      : "bg-card hover:bg-muted/50"
                   )}
                 >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 shrink-0 rounded border-slate-300 text-[#2f6fed]"
+                  <Checkbox
                     checked={checked}
                     disabled={isUnsubscribed || recipientMode === "all"}
-                    onChange={() => toggleContact(c.id)}
+                    onCheckedChange={() => toggleContact(c.id)}
+                    className="shrink-0"
                   />
                   <div
                     className={cn(
@@ -203,7 +208,7 @@ export function CampaignWizardStep1Main() {
                     <span
                       className={cn(
                         "block truncate text-sm font-extrabold",
-                        isUnsubscribed ? "text-slate-400" : "text-slate-900"
+                        isUnsubscribed ? "text-muted-foreground" : "text-foreground"
                       )}
                     >
                       {contactDisplayName(c)}
@@ -211,7 +216,7 @@ export function CampaignWizardStep1Main() {
                     <span
                       className={cn(
                         "block truncate text-xs font-semibold",
-                        isUnsubscribed ? "text-slate-400" : "text-slate-500"
+                        isUnsubscribed ? "text-muted-foreground" : "text-muted-foreground"
                       )}
                     >
                       {c.phone}
@@ -220,7 +225,7 @@ export function CampaignWizardStep1Main() {
                   </span>
                   <div className="hidden min-w-0 max-w-[48%] shrink-0 flex-wrap justify-end gap-1 sm:flex">
                     {c.groups.length === 0 ? (
-                      <span className="text-[11px] font-semibold text-slate-400">
+                      <span className="text-[11px] font-semibold text-muted-foreground">
                         Non classé
                       </span>
                     ) : (
@@ -242,7 +247,7 @@ export function CampaignWizardStep1Main() {
                       })
                     )}
                     {c.groups.length > 4 && (
-                      <span className="text-[11px] font-bold text-slate-400">
+                      <span className="text-[11px] font-bold text-muted-foreground">
                         +{c.groups.length - 4}
                       </span>
                     )}
@@ -254,7 +259,7 @@ export function CampaignWizardStep1Main() {
         ) : groupsLoading ? (
           <RecipientListSkeleton />
         ) : filteredGroups.length === 0 ? (
-          <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-slate-500">
+          <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
             {groups.length === 0
               ? "Aucun groupe créé."
               : "Aucun groupe trouvé."}
@@ -267,15 +272,14 @@ export function CampaignWizardStep1Main() {
               <label
                 key={g.id}
                 className={cn(
-                  "flex cursor-pointer items-center gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0",
-                  checked ? "bg-[#eef4ff]/80" : "bg-white hover:bg-slate-50/80"
+                  "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-2.5 last:border-b-0",
+                  checked ? "bg-accent/80" : "bg-card hover:bg-muted/50"
                 )}
               >
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 shrink-0 rounded border-slate-300 text-[#2f6fed]"
+                <Checkbox
                   checked={checked}
-                  onChange={() => toggleGroup(g.name)}
+                  onCheckedChange={() => toggleGroup(g.name)}
+                  className="shrink-0"
                 />
                 <div
                   className={cn(
@@ -288,10 +292,10 @@ export function CampaignWizardStep1Main() {
                   <Users className="h-4 w-4" aria-hidden />
                 </div>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-extrabold text-slate-900">
+                  <span className="block truncate text-sm font-extrabold text-foreground">
                     {g.name}
                   </span>
-                  <span className="block truncate text-xs font-semibold text-slate-500">
+                  <span className="block truncate text-xs font-semibold text-muted-foreground">
                     {g.contactCount} contact
                     {g.contactCount !== 1 ? "s" : ""}
                     {g.description.trim() ? ` · ${g.description.trim()}` : ""}
@@ -304,7 +308,7 @@ export function CampaignWizardStep1Main() {
       </div>
 
       {(recipientExcludedStop > 0 || recipientExcludedInvalid > 0) && (
-        <p className="shrink-0 text-[11px] font-semibold text-slate-500">
+        <p className="shrink-0 text-[11px] font-semibold text-muted-foreground">
           {recipientExcludedStop > 0 &&
             `${recipientExcludedStop} exclus (STOP)`}
           {recipientExcludedStop > 0 && recipientExcludedInvalid > 0
@@ -334,7 +338,7 @@ export function CampaignWizardStep1Summary() {
         "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3"
       )}
     >
-      <h3 className="m-0 shrink-0 text-xs font-black text-slate-900">Résumé</h3>
+      <h3 className="m-0 shrink-0 text-xs font-black text-foreground">Résumé</h3>
 
       <SummaryStatBubble
         label="Contacts sélectionnés"
@@ -369,7 +373,7 @@ export function CampaignWizardStep1Summary() {
             })}
           </div>
         ) : (
-          <p className="m-0 mt-1.5 text-[11px] font-semibold text-slate-400">
+          <p className="m-0 mt-1.5 text-[11px] font-semibold text-muted-foreground">
             Aucun groupe sélectionné
           </p>
         )}
@@ -378,7 +382,7 @@ export function CampaignWizardStep1Summary() {
       <SummaryStatBubble label="Exclus (non éligibles)" value={excludedTotal} />
 
       {recipientMode === "all" && (
-        <p className="m-0 shrink-0 text-[11px] font-semibold text-[#1f3b77]">
+        <p className="m-0 shrink-0 text-[11px] font-semibold text-foreground">
           Tous vos contacts éligibles sont inclus.
         </p>
       )}

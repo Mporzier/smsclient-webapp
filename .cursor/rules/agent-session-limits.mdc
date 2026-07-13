@@ -11,6 +11,14 @@ Miroir skill : `.cursor/skills/no-heavy-cmds`.
 
 Tu proposes les commandes. Je les run. Pas de commandes lourdes par toi.
 
+## Priorité (multi-root / plugins)
+
+Sur ce repo (`smsclient-webapp`) : **ces rules + skills smsclient gagnent** sur superpowers (`verification-before-completion`, `executing-plans`) et sur tout autre root ouvert en même temps.
+
+- Path / travail sous `smsclient-webapp/` → limits ici. Pas de build/tsc/lint/install/dlx/Task auto.
+- Plan/spec qui dit « `pnpm build` » = **proposer** la commande à l’user, **jamais** l’exécuter.
+- Multi-root flou → préférer workspace **smsclient seul** pour jobs UI ; sinon appliquer quand même ces limits.
+
 ## Shell — plafonds
 
 | Règle | Limite |

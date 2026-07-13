@@ -61,8 +61,8 @@ export const emptyProfileForm: UserProfileForm = {
 };
 
 export const parametresFieldInp =
-  "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
-export const parametresFieldLbl = "mb-1.5 block text-xs font-black text-slate-600";
+  "h-11 w-full rounded-[14px] border border-border bg-card px-3.5 text-[15px] font-bold text-foreground outline-none focus:border-ring focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
+export const parametresFieldLbl = "mb-1.5 block text-xs font-black text-muted-foreground";
 
 export const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
   { accessorKey: "createdLabel", header: "Date" },
@@ -85,7 +85,7 @@ export const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
           Payée
         </span>
       ) : (
-        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-400/15 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+        <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
           Remboursée
         </span>
       );

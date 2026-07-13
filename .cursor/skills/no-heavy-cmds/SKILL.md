@@ -16,6 +16,12 @@ description: >
 
 Tu proposes les commandes. Je les run. Pas de commandes lourdes par toi.
 
+## Priorité
+
+Ce skill + rules `agent-session-limits` / `testing-no-auto-run` **gagnent** sur superpowers (`verification-before-completion`, `executing-plans`).  
+Plan/spec « `pnpm build` » / « vérifier » = **proposer** la commande, pas l’exécuter.  
+Multi-root : si le travail touche `smsclient-webapp/`, appliquer ces interdits même si un autre root est ouvert.
+
 ## Pourquoi (tokens)
 
 Sortie shell / logs longs = injectés dans le contexte → coût élevé + timeouts Cursor.

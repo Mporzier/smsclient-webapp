@@ -1,7 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 /** Texte sur une ligne dans une cellule de liste : tronqué sans infobulle au survol. */
 export function CellTruncate({
@@ -19,41 +18,6 @@ export function CellTruncate({
     </Tag>
   );
 }
-
-/**
- * Compat wrapper autour de shadcn `Button`.
- * Préférer `Button` directement pour le code neuf.
- */
-export function ProtoBtn({
-  className,
-  primary,
-  green,
-  children,
-  type = "button",
-  ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  primary?: boolean;
-  green?: boolean;
-}) {
-  return (
-    <Button
-      type={type}
-      variant={primary || green ? "default" : "outline"}
-      size="lg"
-      className={cn(
-        "h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold shadow-sm",
-        primary && "shadow-md",
-        green &&
-          "border-transparent bg-emerald-500/85 text-white hover:bg-emerald-500 hover:text-white",
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </Button>
-  );
-}
-
 export function PlusIcon({ className }: { className?: string }) {
   return (
     <Plus

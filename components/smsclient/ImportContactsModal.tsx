@@ -1,6 +1,11 @@
 "use client";
 
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import {
   buildPayloadFromMappedRow,
@@ -11,6 +16,7 @@ import {
   suggestColumnRoles,
 } from "@/lib/import/contactImportMap";
 import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
+import { frDisplayToE164 } from "@/lib/proto/smsUtils";
 import { insertClientsFromImport } from "@/lib/supabase/clients";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,13 +28,14 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { handleModalBackdropClick } from "./modals/modalFormGuard";
-import { modalCloseBtn } from "./modals/modalChrome";
-
-const overlayCls =
-  "fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/55 p-6 backdrop-blur-sm";
-const modalCard =
-  "max-h-[min(90vh,820px)] w-full max-w-[960px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.20)] flex flex-col";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+  dialogContentZCls,
+  dialogOverlayCls,
+  formDialogContentCls,
+  modalCloseBtnCompact,
+} from "./modals/modalChrome";
 
 const ROLE_OPTIONS: ImportColumnRole[] = [
   "skip",
@@ -59,6 +66,9 @@ type ImportContactsModalProps = {
   userId: string;
   onImported: () => Promise<void>;
   onNotify: (msg: string) => void;
+  /** Noms de groupes existants (segments) pour l’option « Ajouter au groupe ». */
+  groupOptions?: string[];
+  /** Pré-sélection d’un groupe (ex. import depuis une fiche groupe). */
   defaultGroupLabel?: string | null;
 };
 
@@ -69,6 +79,7 @@ export function ImportContactsModal({
   userId,
   onImported,
   onNotify,
+  groupOptions = [],
   defaultGroupLabel = null,
 }: ImportContactsModalProps) {
   const [fileName, setFileName] = useState<string | null>(null);
@@ -77,8 +88,10 @@ export function ImportContactsModal({
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
   const [roles, setRoles] = useState<ImportColumnRole[]>([]);
+  const [targetGroupName, setTargetGroupName] = useState("");
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [duplicatePhoneE164s, setDuplicatePhoneE164s] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** Ignore le clic synthétique qui suit un drop (sinon input.click() → onChange vide → reset). */
@@ -91,23 +104,20 @@ export function ImportContactsModal({
     setParseError(null);
     setParsed(null);
     setRoles([]);
+    setTargetGroupName("");
     setImportError(null);
+    setDuplicatePhoneE164s([]);
     setImporting(false);
     setDragActive(false);
   }, []);
 
   useEffect(() => {
-    if (!open) reset();
-  }, [open, reset]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    if (!open) {
+      reset();
+      return;
+    }
+    setTargetGroupName(defaultGroupLabel?.trim() ?? "");
+  }, [open, reset, defaultGroupLabel]);
 
   const onPickFile = useCallback((file: File | null) => {
     setParseError(null);
@@ -115,6 +125,7 @@ export function ImportContactsModal({
     setRoles([]);
     setRawText(null);
     setImportError(null);
+    setDuplicatePhoneE164s([]);
     setFileLoading(false);
     if (!file) {
       setFileName(null);
@@ -219,6 +230,8 @@ export function ImportContactsModal({
   }, [rawText]);
 
   const setRole = useCallback((index: number, role: ImportColumnRole) => {
+    setDuplicatePhoneE164s([]);
+    setImportError(null);
     setRoles((prev) => {
       const next = [...prev];
       if (role !== "skip") {
@@ -236,17 +249,36 @@ export function ImportContactsModal({
     [roles]
   );
 
+  const duplicatePhoneSet = useMemo(
+    () => new Set(duplicatePhoneE164s),
+    [duplicatePhoneE164s]
+  );
+
+  const duplicateCount = duplicatePhoneE164s.length;
+
   const previewRows = useMemo(() => {
     if (!parsed) return [];
+    if (duplicateCount > 0) return parsed.rows;
     return parsed.rows.slice(0, 5);
-  }, [parsed]);
+  }, [parsed, duplicateCount]);
 
   const rowCount = parsed?.rows.length ?? 0;
+
+  const rowPhoneE164 = useCallback(
+    (cells: string[]) => {
+      const p = buildPayloadFromMappedRow(cells, roles);
+      if (!p) return null;
+      return frDisplayToE164(p.phoneDisplay);
+    },
+    [roles]
+  );
 
   const handleImport = useCallback(async () => {
     if (!parsed || !hasPhoneColumn || importing) return;
     setImportError(null);
+    setDuplicatePhoneE164s([]);
     setImporting(true);
+    const groupLabel = targetGroupName.trim();
     try {
       const payloads = [];
       let skippedInvalid = 0;
@@ -256,45 +288,69 @@ export function ImportContactsModal({
           skippedInvalid++;
           continue;
         }
-        if (defaultGroupLabel?.trim()) {
-          const merged = new Set([...p.groupLabels, defaultGroupLabel.trim()]);
+        if (groupLabel) {
+          const merged = new Set([...p.groupLabels, groupLabel]);
           p.groupLabels = Array.from(merged);
         }
         payloads.push(p);
       }
 
       const batch = await insertClientsFromImport(supabase, userId, payloads);
+      const didSomething =
+        batch.inserted > 0 || batch.linkedExistingToGroup > 0;
+      const dupes = batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
 
-      if (batch.inserted === 0) {
+      if (!didSomething) {
+        if (dupes > 0) {
+          setDuplicatePhoneE164s(batch.duplicatePhoneE164s);
+        }
         const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
-        const dupes = batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
         const reasons: string[] = [];
         if (invalidTotal > 0) {
           reasons.push(
             "numéros non reconnus — utilisez 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78"
           );
         }
-        if (dupes > 0) {
-          reasons.push("doublons (dans le fichier ou déjà en base)");
-        }
         if (batch.otherErrors > 0) {
           reasons.push("erreur d’enregistrement côté serveur");
         }
-        setImportError(
-          reasons.length > 0
-            ? `Aucun contact n’a été importé. ${reasons.join(
-                " · "
-              )}. Corrigez le CSV puis réessayez — la modale reste ouverte.`
-            : "Aucun contact n’a été enregistré. Réessayez (la modale reste ouverte)."
-        );
+        if (reasons.length > 0) {
+          setImportError(
+            `Aucun contact n’a été importé. ${reasons.join(
+              " · "
+            )}. Corrigez le CSV puis réessayez — la modale reste ouverte.`
+          );
+        } else if (dupes === 0) {
+          setImportError(
+            "Aucun contact n’a été enregistré. Réessayez (la modale reste ouverte)."
+          );
+        }
         return;
       }
 
-      const parts = [
-        `${batch.inserted} contact${batch.inserted > 1 ? "s" : ""} importé${
-          batch.inserted > 1 ? "s" : ""
-        }`,
-      ];
+      const parts: string[] = [];
+      if (batch.inserted > 0) {
+        parts.push(
+          `${batch.inserted} contact${batch.inserted > 1 ? "s" : ""} importé${
+            batch.inserted > 1 ? "s" : ""
+          }`
+        );
+      }
+      if (groupLabel) {
+        const linked =
+          batch.inserted + batch.linkedExistingToGroup;
+        if (linked > 0) {
+          parts.push(
+            `${linked} ajouté${linked > 1 ? "s" : ""} au groupe « ${groupLabel} »`
+          );
+        }
+      } else if (batch.linkedExistingToGroup > 0) {
+        parts.push(
+          `${batch.linkedExistingToGroup} déjà en base rattaché${
+            batch.linkedExistingToGroup > 1 ? "s" : ""
+          } au groupe`
+        );
+      }
       if (batch.skippedDuplicateInFile > 0) {
         parts.push(
           `${batch.skippedDuplicateInFile} doublon${
@@ -302,8 +358,15 @@ export function ImportContactsModal({
           } dans le fichier`
         );
       }
-      if (batch.skippedDuplicateInDb > 0) {
-        parts.push(`${batch.skippedDuplicateInDb} déjà en base`);
+      if (
+        batch.skippedDuplicateInDb > 0 &&
+        batch.linkedExistingToGroup < batch.skippedDuplicateInDb
+      ) {
+        const leftover =
+          batch.skippedDuplicateInDb - batch.linkedExistingToGroup;
+        if (leftover > 0) {
+          parts.push(`${leftover} déjà en base`);
+        }
       }
       const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
       if (invalidTotal > 0) {
@@ -334,6 +397,7 @@ export function ImportContactsModal({
     roles,
     hasPhoneColumn,
     importing,
+    targetGroupName,
     supabase,
     userId,
     onImported,
@@ -343,32 +407,43 @@ export function ImportContactsModal({
 
   const isDirty = fileName !== null || parsed !== null;
 
-  if (!open) return null;
-
   return (
-    <div
-      className={overlayCls}
-      role="dialog"
-      aria-modal
-      aria-label="Importer des contacts"
-      onClick={(e) =>
-        handleModalBackdropClick(e, onClose, isDirty, !importing)
-      }
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !importing) onClose();
+      }}
     >
-      <div className={modalCard}>
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-[18px] py-4">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName={dialogOverlayCls}
+        className={cn(
+          formDialogContentCls,
+          "max-h-[min(90vh,820px)] sm:max-w-[960px]",
+          dialogContentZCls
+        )}
+        onPointerDownOutside={(e) => {
+          if (importing || isDirty) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (importing || isDirty) e.preventDefault();
+        }}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-[18px] py-4">
           <div>
-            <div className="flex items-center gap-2.5 text-xl font-black text-slate-900">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-blue-100 bg-blue-50">
-                <CloudUpload className="h-6 w-6 text-blue-500" aria-hidden />
+            <div className="flex items-center gap-2.5 text-xl font-black text-foreground">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border bg-accent">
+                <CloudUpload className="h-6 w-6 text-ring" aria-hidden />
               </div>
-              Importer des contacts
+              <DialogTitle className="m-0 text-xl font-black text-foreground">
+                Importer des contacts
+              </DialogTitle>
             </div>
           </div>
           <button
             type="button"
             disabled={importing}
-            className={modalCloseBtn}
+            className={modalCloseBtnCompact}
             aria-label="Fermer"
             onClick={onClose}
           >
@@ -376,7 +451,7 @@ export function ImportContactsModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-[18px]">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 p-[18px]">
           <input
             ref={fileInputRef}
             type="file"
@@ -392,7 +467,7 @@ export function ImportContactsModal({
           />
 
           {!parsed && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
               <div
                 aria-label="Zone de dépôt pour fichier CSV"
                 onDragEnter={onDragEnter}
@@ -402,8 +477,8 @@ export function ImportContactsModal({
                 className={cn(
                   "rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors",
                   dragActive
-                    ? "border-[#2f6fed] bg-[#eef4ff]"
-                    : "border-slate-300 bg-slate-50/80",
+                    ? "border-ring bg-accent"
+                    : "border-border bg-muted/50",
                   importing &&
                     "pointer-events-none cursor-not-allowed opacity-60"
                 )}
@@ -411,13 +486,13 @@ export function ImportContactsModal({
                 {fileLoading ? (
                   <>
                     <Loader2
-                      className="mx-auto h-8 w-8 animate-spin text-[#2f6fed]"
+                      className="mx-auto h-8 w-8 animate-spin text-ring"
                       aria-hidden
                     />
-                    <p className="mt-3 text-sm font-extrabold text-slate-800">
+                    <p className="mt-3 text-sm font-extrabold text-foreground">
                       Analyse du fichier en cours…
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">
                       {fileName}
                     </p>
                   </>
@@ -429,33 +504,34 @@ export function ImportContactsModal({
                         aria-hidden
                       />
                     </div>
-                    <p className="mt-2 text-sm font-extrabold text-slate-800">
+                    <p className="mt-2 text-sm font-extrabold text-foreground">
                       {dragActive
                         ? "Dépose le fichier ici…"
                         : "Glissez-déposez un fichier CSV ici"}
                     </p>
-                    <p className="mt-1.5 text-xs font-semibold text-slate-500">
+                    <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
                       ou
                     </p>
-                    <button
+                    <Button
                       type="button"
+                      variant="default"
                       disabled={importing}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (importing || suppressPickerClickRef.current) return;
                         fileInputRef.current?.click();
                       }}
-                      className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#2f6fed] bg-[#2f6fed] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(47,111,237,0.25)] transition-all hover:bg-[#2560d4] hover:shadow-[0_6px_16px_rgba(47,111,237,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold shadow-md"
                     >
                       <Upload className="h-4 w-4" aria-hidden />
                       Choisir un fichier CSV
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
-                <Info className="h-4 w-4 shrink-0 text-blue-500" aria-hidden />
-                <p className="m-0 text-center text-xs font-semibold leading-relaxed text-slate-700">
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-accent/60 px-3 py-2.5">
+                <Info className="h-4 w-4 shrink-0 text-ring" aria-hidden />
+                <p className="m-0 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
                   Depuis Excel : Fichier → Enregistrer sous → Format CSV
                 </p>
               </div>
@@ -463,7 +539,7 @@ export function ImportContactsModal({
           )}
 
           {parseError && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+            <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive">
               {parseError}
             </div>
           )}
@@ -471,15 +547,15 @@ export function ImportContactsModal({
           {parsed && parsed.headers.length > 0 && (
             <>
               {fileName && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
                   <FileSpreadsheet
                     className="h-4 w-4 shrink-0 text-emerald-500"
                     aria-hidden
                   />
-                  <span className="text-sm font-bold text-slate-800">
+                  <span className="text-sm font-bold text-foreground">
                     {fileName}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500">
+                  <span className="text-xs font-semibold text-muted-foreground">
                     — {parsed.rows.length} ligne
                     {parsed.rows.length > 1 ? "s" : ""} détectée
                     {parsed.rows.length > 1 ? "s" : ""}
@@ -488,20 +564,50 @@ export function ImportContactsModal({
                     type="button"
                     onClick={reset}
                     disabled={importing}
-                    className="ml-auto cursor-pointer text-xs font-bold text-slate-500 hover:text-slate-800 disabled:opacity-50"
+                    className="ml-auto cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
                     Changer de fichier
                   </button>
                 </div>
               )}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-                <div className="text-[13px] font-black text-slate-800">
+              <div className="mb-3 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+                <label
+                  htmlFor="import-contacts-target-group"
+                  className="block text-[13px] font-black text-foreground"
+                >
+                  Ajouter au groupe
+                </label>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                  Optionnel — les contacts importés (et ceux déjà en base) sont
+                  rattachés à ce groupe existant.
+                </p>
+                <select
+                  id="import-contacts-target-group"
+                  className="mt-2 w-full max-w-md rounded-xl border border-border bg-card px-3 py-2 text-sm font-extrabold text-foreground"
+                  value={targetGroupName}
+                  disabled={importing || groupOptions.length === 0}
+                  onChange={(e) => setTargetGroupName(e.target.value)}
+                >
+                  <option value="">
+                    {groupOptions.length === 0
+                      ? "Aucun groupe disponible"
+                      : "Aucun (import seul)"}
+                  </option>
+                  {groupOptions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+                <div className="text-[13px] font-black text-foreground">
                   Aperçu des lignes ({rowCount} ligne
                   {rowCount > 1 ? "s" : ""})
                 </div>
-                <p className="mt-1 text-xs font-semibold text-slate-500">
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">
                   Associe chaque colonne directement dans son en-tête. Le champ{" "}
-                  <strong className="text-slate-700">Téléphone</strong> est
+                  <strong className="text-foreground">Téléphone</strong> est
                   obligatoire.
                 </p>
                 {!hasPhoneColumn && (
@@ -509,31 +615,31 @@ export function ImportContactsModal({
                     Choisissez la colonne qui contient le numéro de téléphone.
                   </p>
                 )}
-                <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200">
+                <div className="mt-2 overflow-x-auto rounded-xl border border-border">
                   <table className="w-full min-w-[760px] text-[12px]">
                     <thead>
-                      <tr className="bg-slate-50">
+                      <tr className="bg-muted/50">
                         {parsed.headers.map((h, i) => {
                           const role = roles[i];
                           return (
                             <th
                               key={`ph-${i}`}
                               className={cn(
-                                "border-b border-slate-200 px-2 py-2 text-left align-top",
+                                "border-b border-border px-2 py-2 text-left align-top",
                                 role && role !== "skip"
-                                  ? "text-[#2f6fed]"
-                                  : "text-slate-500"
+                                  ? "text-ring"
+                                  : "text-muted-foreground"
                               )}
                             >
                               <div className="min-w-[170px] space-y-1.5">
-                                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                                   {h || `Colonne ${i + 1}`}
                                 </div>
                                 <select
                                   className={cn(
-                                    "w-full rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-[12px] font-extrabold text-slate-700",
+                                    "w-full rounded-xl border border-border bg-card px-2 py-1.5 text-[12px] font-extrabold text-foreground",
                                     role === "phone" &&
-                                      "border-[#2f6fed] ring-2 ring-[#2f6fed]/20"
+                                      "border-ring ring-2 ring-ring/20"
                                   )}
                                   value={role ?? "skip"}
                                   disabled={importing}
@@ -560,10 +666,18 @@ export function ImportContactsModal({
                           phoneColIdx >= 0 ? cells[phoneColIdx] ?? "" : "";
                         const isInvalid =
                           phoneColIdx >= 0 && !looksLikeFrPhone(phoneVal);
+                        const e164 = rowPhoneE164(cells);
+                        const isDuplicate =
+                          !!e164 && duplicatePhoneSet.has(e164);
                         return (
                           <tr
                             key={ri}
-                            className={isInvalid ? "bg-rose-50/60" : ""}
+                            className={cn(
+                              isInvalid && "bg-rose-50/60",
+                              isDuplicate &&
+                                !isInvalid &&
+                                "bg-muted/50 opacity-55"
+                            )}
                           >
                             {parsed.headers.map((_, ci) => {
                               const raw = cells[ci] ?? "";
@@ -575,10 +689,12 @@ export function ImportContactsModal({
                                 <td
                                   key={ci}
                                   className={cn(
-                                    "border-b border-slate-100 px-2 py-1.5 font-semibold",
+                                    "border-b border-border/50 px-2 py-1.5 font-semibold",
                                     isInvalid
-                                      ? "text-rose-600"
-                                      : "text-slate-600"
+                                      ? "text-destructive"
+                                      : isDuplicate
+                                        ? "text-muted-foreground"
+                                        : "text-muted-foreground"
                                   )}
                                 >
                                   <span className="line-clamp-2 break-all">
@@ -599,26 +715,55 @@ export function ImportContactsModal({
         </div>
 
         {importError && (
-          <div className="shrink-0 border-t border-rose-200 bg-rose-50 px-[18px] py-2 text-sm font-bold text-rose-900">
+          <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-[18px] py-2 text-sm font-bold text-destructive">
             {importError}
           </div>
         )}
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-[18px] py-3.5">
-          <ProtoBtn disabled={importing} onClick={onClose}>
-            Annuler
-          </ProtoBtn>
-          <ProtoBtn
-            primary
-            disabled={importing || !parsed || !hasPhoneColumn || rowCount === 0}
-            onClick={() => void handleImport()}
-          >
-            {importing
-              ? "Import…"
-              : `Importer ${rowCount} ligne${rowCount > 1 ? "s" : ""}`}
-          </ProtoBtn>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-[18px] py-3.5">
+          <div className="min-w-0 flex-1">
+            {duplicateCount > 0 && (
+              <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                <Info
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+                <span>
+                  {duplicateCount} doublon
+                  {duplicateCount > 1 ? "s" : ""} détecté
+                  {duplicateCount > 1 ? "s" : ""}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className={brandBtnCls}
+              disabled={importing}
+              onClick={onClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
+              disabled={
+                importing || !parsed || !hasPhoneColumn || rowCount === 0
+              }
+              onClick={() => void handleImport()}
+            >
+              {importing
+                ? "Import…"
+                : `Importer ${rowCount} ligne${rowCount > 1 ? "s" : ""}`}
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

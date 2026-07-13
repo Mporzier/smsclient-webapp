@@ -1,11 +1,18 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
-import { ProtoBtn } from "@/components/smsclient/ui";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
 import {
   BellOff,
@@ -17,14 +24,18 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { innerTextareaSm } from "@/components/smsclient/flowFieldStyles";
 import {
-  innerInputSm,
-  innerTextareaSm,
-} from "@/components/smsclient/flowFieldStyles";
-import { modalCloseBtnCompact, overlayCls } from "./modalChrome";
+  brandBtnCls,
+  brandBtnPrimaryCls,
+  brandInputCls,
+  dialogContentZCls,
+  dialogOverlayCls,
+  formDialogContentCls,
+  modalCloseBtnCompact,
+} from "./modalChrome";
 import {
   contactFormSnapshotsEqual,
-  handleModalBackdropClick,
   useModalFormDirty,
   type ContactFormSnapshot,
 } from "./modalFormGuard";
@@ -53,31 +64,28 @@ export type ContactCreateModalProps = {
   onUnsubscribeContact?: () => Promise<void>;
 };
 
-const shellCls =
-  "flex h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] w-full max-w-[640px] flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.20)]";
-
 const fieldShell =
-  "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
+  "rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 
 const inpText =
-  "w-full border-none bg-transparent text-[13px] font-normal text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal";
+  "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal";
 
-const modalTitleCls = "text-base font-semibold tracking-tight text-slate-900";
-const fieldLabelCls = "text-xs font-semibold text-slate-700";
-const fieldMetaCls = "text-[11px] font-normal text-slate-500";
+const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
+const fieldLabelCls = "text-xs font-semibold text-foreground";
+const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
 const labelIconBadgeCls =
-  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed]";
-const hintTextCls = "text-[11px] font-normal leading-snug text-slate-600";
-const errorTextCls = "text-xs font-medium text-rose-800";
+  "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring";
+const hintTextCls = "text-[11px] font-normal leading-snug text-muted-foreground";
+const errorTextCls = "text-xs font-medium text-destructive";
 const newGroupBtnCls =
-  "w-full !h-9 !justify-center !gap-2 !text-xs !font-medium !border-[#2f6fed]/50 !bg-gradient-to-br !from-blue-50 !via-indigo-50/80 !to-blue-50/60 !text-[#2f6fed] !shadow-[0_0_0_1px_rgba(47,111,237,0.12),0_6px_18px_rgba(47,111,237,0.16)] hover:!border-[#2f6fed] hover:!from-blue-50 hover:!to-indigo-50 hover:!shadow-[0_0_0_1px_rgba(47,111,237,0.2),0_8px_22px_rgba(47,111,237,0.22)]";
+  "w-full !h-9 !justify-center !gap-2 !text-xs !font-medium !border-ring/50 !bg-gradient-to-br !from-blue-50 !via-indigo-50/80 !to-blue-50/60 !text-ring !shadow-[0_0_0_1px_rgba(47,111,237,0.12),0_6px_18px_rgba(47,111,237,0.16)] hover:!border-ring hover:!from-blue-50 hover:!to-indigo-50 hover:!shadow-[0_0_0_1px_rgba(47,111,237,0.2),0_8px_22px_rgba(47,111,237,0.22)]";
 
 function FrFlagIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 3 2"
       className={cn(
-        "h-3 w-[18px] shrink-0 overflow-hidden rounded-[2px] border border-slate-300/60 shadow-sm",
+        "h-3 w-[18px] shrink-0 overflow-hidden rounded-[2px] border border-border/60 shadow-sm",
         className
       )}
       aria-hidden
@@ -134,15 +142,6 @@ export function ContactCreateModal({
     setValidationError(null);
     onClose();
   }, [onClose]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, handleClose]);
 
   const consentSnapshot = useCallback((): { optIn: boolean; stop: boolean } => {
     if (mode === "edit" && consentDefaults) {
@@ -222,8 +221,6 @@ export function ContactCreateModal({
     contactFormSnapshotsEqual
   );
 
-  if (!open) return null;
-
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneInvalid =
     phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone);
@@ -240,80 +237,86 @@ export function ContactCreateModal({
     mode === "edit" ? "Modifier le contact" : "Ajouter un contact";
 
   return (
-    <div
-      className={overlayCls}
-      role="dialog"
-      aria-modal
-      aria-label={dialogLabel}
-      onClick={(e) =>
-        handleModalBackdropClick(
-          e,
-          handleClose,
-          isDirty,
-          !saving && !confirmUnsubscribeOpen,
-        )
-      }
-    >
-      <div className={shellCls}>
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed] shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
-              aria-hidden
-            >
-              <UserPlus className="h-5 w-5" strokeWidth={2.25} />
-            </div>
-            <h2 className={cn("m-0 min-w-0", modalTitleCls)}>
-              {mode === "edit" ? "Modifier le contact" : "Ajouter un contact"}
-            </h2>
-          </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            onClick={handleClose}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50">
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
-            {validationError && (
-              <p
-                className={cn(
-                  "rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5",
-                  errorTextCls
-                )}
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && !saving && !confirmUnsubscribeOpen) handleClose();
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          overlayClassName={dialogOverlayCls}
+          className={cn(
+            formDialogContentCls,
+            "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] sm:max-w-[640px]",
+            dialogContentZCls
+          )}
+          onPointerDownOutside={(e) => {
+            if (saving || isDirty || confirmUnsubscribeOpen) e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (saving || isDirty || confirmUnsubscribeOpen) e.preventDefault();
+          }}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
+                aria-hidden
               >
-                {validationError}
-              </p>
-            )}
-
-            {isUnsubscribed && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
-                <BellOff
-                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
-                  aria-hidden
-                />
-                <p className={cn("m-0", hintTextCls, "text-amber-900")}>
-                  Ce contact est désabonné : il ne recevra plus vos campagnes
-                  SMS.
-                </p>
+                <UserPlus className="h-5 w-5" strokeWidth={2.25} />
               </div>
-            )}
+              <DialogTitle className={cn("m-0 min-w-0", modalTitleCls)}>
+                {dialogLabel}
+              </DialogTitle>
+            </div>
+            <button
+              type="button"
+              className={modalCloseBtnCompact}
+              aria-label="Fermer"
+              onClick={handleClose}
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div className={fieldShell}>
-                <label className="flex justify-between gap-2">
-                  <span className={fieldLabelCls}>
-                    Prénom <span className="text-red-500">*</span>
-                  </span>
-                  <span className={fieldMetaCls}>{first.length}/30</span>
-                </label>
-                <div className={cn(innerInputSm, "mt-1.5 h-9")}>
-                  <input
-                    className={inpText}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/50">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
+              {validationError && (
+                <p
+                  className={cn(
+                    "rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5",
+                    errorTextCls
+                  )}
+                >
+                  {validationError}
+                </p>
+              )}
+
+              {isUnsubscribed && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+                  <BellOff
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+                    aria-hidden
+                  />
+                  <p className={cn("m-0", hintTextCls, "text-amber-900")}>
+                    Ce contact est désabonné : il ne recevra plus vos campagnes
+                    SMS.
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className={fieldShell}>
+                  <Label className="flex justify-between gap-2">
+                    <span className={fieldLabelCls}>
+                      Prénom <span className="text-destructive">*</span>
+                    </span>
+                    <span className={fieldMetaCls}>{first.length}/30</span>
+                  </Label>
+                  <Input
+                    className={cn(brandInputCls, "mt-1.5 h-9 text-[13px] font-normal")}
                     maxLength={30}
                     value={first}
                     onChange={(e) => {
@@ -322,250 +325,261 @@ export function ContactCreateModal({
                     }}
                   />
                 </div>
-              </div>
-              <div className={fieldShell}>
-                <label className="flex justify-between gap-2">
-                  <span className={fieldLabelCls}>Nom</span>
-                  <span className={fieldMetaCls}>{last.length}/30</span>
-                </label>
-                <div className={cn(innerInputSm, "mt-1.5 h-9")}>
-                  <input
-                    className={inpText}
+                <div className={fieldShell}>
+                  <Label className="flex justify-between gap-2">
+                    <span className={fieldLabelCls}>Nom</span>
+                    <span className={fieldMetaCls}>{last.length}/30</span>
+                  </Label>
+                  <Input
+                    className={cn(brandInputCls, "mt-1.5 h-9 text-[13px] font-normal")}
                     maxLength={30}
                     value={last}
                     onChange={(e) => setLast(e.target.value)}
                   />
                 </div>
               </div>
-            </div>
 
-            <div className={fieldShell}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className={fieldLabelCls} htmlFor="contact-create-phone">
-                  Téléphone <span className="text-red-500">*</span>
-                </label>
-                <span
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600"
-                  title="Numéro mobile français : 10 chiffres, commence par 0 (ex. 06 12 34 56 78)."
-                >
-                  <FrFlagIcon />
-                  France
-                </span>
-              </div>
-              <div
-                className={cn(
-                  "mt-1.5 flex h-9 items-center gap-3 rounded-lg border border-[#dfe6f2] bg-transparent py-0 pl-1 pr-2 transition-[border-color,box-shadow]",
-                  phoneInvalid &&
-                    "border-rose-400 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.35)]"
-                )}
-              >
+              <div className={fieldShell}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label className={fieldLabelCls} htmlFor="contact-create-phone">
+                    Téléphone <span className="text-destructive">*</span>
+                  </Label>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                    title="Numéro mobile français : 10 chiffres, commence par 0 (ex. 06 12 34 56 78)."
+                  >
+                    <FrFlagIcon />
+                    France
+                  </span>
+                </div>
                 <div
                   className={cn(
-                    "grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[#dfe6f2] bg-gradient-to-br from-blue-50 to-indigo-50 text-[#2f6fed] shadow-[0_2px_6px_rgba(47,111,237,0.08)]",
+                    "mt-1.5 flex h-9 items-center gap-3 rounded-lg border border-border bg-transparent py-0 pl-1 pr-2 transition-[border-color,box-shadow]",
                     phoneInvalid &&
-                      "border-rose-200 from-rose-50 to-rose-50/80 text-rose-500"
+                      "border-destructive shadow-[inset_0_0_0_1px_rgba(244,63,94,0.35)]"
                   )}
-                  aria-hidden
                 >
-                  <Phone className="h-4 w-4" strokeWidth={2.25} />
+                  <div
+                    className={cn(
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring shadow-[0_2px_6px_rgba(47,111,237,0.08)]",
+                      phoneInvalid &&
+                        "border-rose-200 from-rose-50 to-rose-50/80 text-rose-500"
+                    )}
+                    aria-hidden
+                  >
+                    <Phone className="h-4 w-4" strokeWidth={2.25} />
+                  </div>
+                  <Input
+                    id="contact-create-phone"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    enterKeyHint="done"
+                    placeholder="06 12 34 56 78"
+                    maxLength={14}
+                    className={cn(
+                      brandInputCls,
+                      "h-auto min-w-0 border-none bg-transparent px-0 text-[13px] font-normal shadow-none focus-visible:ring-0"
+                    )}
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(formatFrPhoneInput(e.target.value));
+                      setValidationError(null);
+                    }}
+                    onBlur={() => setPhoneBlurred(true)}
+                    aria-invalid={phoneInvalid}
+                    aria-describedby={
+                      phoneInvalid ? "contact-create-phone-err" : undefined
+                    }
+                  />
                 </div>
-                <input
-                  id="contact-create-phone"
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  enterKeyHint="done"
-                  placeholder="06 12 34 56 78"
-                  maxLength={14}
-                  className={cn(inpText, "min-w-0")}
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(formatFrPhoneInput(e.target.value));
-                    setValidationError(null);
-                  }}
-                  onBlur={() => setPhoneBlurred(true)}
-                  aria-invalid={phoneInvalid}
-                  aria-describedby={
-                    phoneInvalid ? "contact-create-phone-err" : undefined
-                  }
-                />
+                {phoneInvalid && (
+                  <p
+                    id="contact-create-phone-err"
+                    className={cn("mt-1.5", hintTextCls, "text-destructive")}
+                  >
+                    Indiquez un mobile à 10 chiffres (ex. 06 12 34 56 78).
+                  </p>
+                )}
               </div>
-              {phoneInvalid && (
-                <p
-                  id="contact-create-phone-err"
-                  className={cn("mt-1.5", hintTextCls, "text-rose-700")}
-                >
-                  Indiquez un mobile à 10 chiffres (ex. 06 12 34 56 78).
-                </p>
-              )}
-            </div>
 
-            <div className={fieldShell}>
-              <label className={fieldLabelCls} htmlFor="contact-create-birthday">
-                Anniversaire
-              </label>
-              <div className={cn(innerInputSm, "mt-1.5 h-9")}>
-                <input
+              <div className={fieldShell}>
+                <Label className={fieldLabelCls} htmlFor="contact-create-birthday">
+                  Anniversaire
+                </Label>
+                <Input
                   id="contact-create-birthday"
                   name="birthday"
                   type="date"
-                  className={inpText}
+                  className={cn(brandInputCls, "mt-1.5 h-9 text-[13px] font-normal")}
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
                 />
+                <p className={cn("mt-1.5", hintTextCls)}>Optionnel</p>
               </div>
-              <p className={cn("mt-1.5", hintTextCls)}>Optionnel</p>
-            </div>
 
-            <div className={fieldShell}>
-              <label className="flex justify-between gap-2">
-                <span className={fieldLabelCls}>Notes</span>
-                <span className={fieldMetaCls}>{notes.length}/280</span>
-              </label>
-              <div className={cn(innerTextareaSm, "mt-1.5")}>
-                <textarea
-                  className="min-h-[52px] w-full resize-y border-none bg-transparent text-[13px] font-normal leading-snug text-slate-900 outline-none placeholder:text-slate-400 placeholder:font-normal"
-                  maxLength={280}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Optionnel — contexte, préférences, informations utiles…"
-                />
-              </div>
-            </div>
-
-            <div className={fieldShell}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="flex items-center gap-1.5">
-                  <span className={labelIconBadgeCls} aria-hidden>
-                    <Users className="h-3.5 w-3.5" strokeWidth={2} />
-                  </span>
-                  <span className={fieldLabelCls}>Groupes</span>
+              <div className={fieldShell}>
+                <label className="flex justify-between gap-2">
+                  <span className={fieldLabelCls}>Notes</span>
+                  <span className={fieldMetaCls}>{notes.length}/280</span>
                 </label>
-                {groups.length > 0 && (
-                  <span className={fieldMetaCls}>
-                    {groups.length} sélectionné{groups.length > 1 ? "s" : ""}
-                  </span>
-                )}
+                <div className={cn(innerTextareaSm, "mt-1.5")}>
+                  <textarea
+                    className="min-h-[52px] w-full resize-y border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
+                    maxLength={280}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Optionnel — contexte, préférences, informations utiles…"
+                  />
+                </div>
               </div>
-              <div className="mt-1.5 max-h-[min(36vh,280px)] overflow-y-auto rounded-lg border border-[#dfe6f2] bg-slate-50/80 p-2.5">
-                {groupOptions.length === 0 ? (
-                  <p className={cn("m-0 px-1 py-2 text-center", hintTextCls)}>
-                    Aucun groupe — crée-en un ci-dessous.
-                  </p>
-                ) : (
-                  <div
-                    className="grid grid-cols-2 gap-2 sm:grid-cols-3"
-                    role="group"
-                    aria-label="Groupes du contact"
-                  >
-                    {groupOptions.map((g) => {
-                      const selected = groups.includes(g);
-                      return (
-                        <button
-                          key={g}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => toggleContactGroup(g)}
-                          className={cn(
-                            "relative flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs font-medium leading-snug transition-all",
-                            selected
-                              ? "border-[#2f6fed] bg-blue-50/90 text-[#1e4fc4] shadow-[0_4px_14px_rgba(47,111,237,0.12)] ring-1 ring-blue-200/80"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/80"
-                          )}
-                        >
-                          <span
+
+              <div className={fieldShell}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex items-center gap-1.5">
+                    <span className={labelIconBadgeCls} aria-hidden>
+                      <Users className="h-3.5 w-3.5" strokeWidth={2} />
+                    </span>
+                    <span className={fieldLabelCls}>Groupes</span>
+                  </label>
+                  {groups.length > 0 && (
+                    <span className={fieldMetaCls}>
+                      {groups.length} sélectionné{groups.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1.5 max-h-[min(36vh,280px)] overflow-y-auto rounded-lg border border-border bg-muted/50 p-2.5">
+                  {groupOptions.length === 0 ? (
+                    <p className={cn("m-0 px-1 py-2 text-center", hintTextCls)}>
+                      Aucun groupe — crée-en un ci-dessous.
+                    </p>
+                  ) : (
+                    <div
+                      className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                      role="group"
+                      aria-label="Groupes du contact"
+                    >
+                      {groupOptions.map((g) => {
+                        const selected = groups.includes(g);
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => toggleContactGroup(g)}
                             className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
+                              "relative flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-xs font-medium leading-snug transition-all",
                               selected
-                                ? "border-[#2f6fed] bg-[#2f6fed] text-white"
-                                : "border-slate-300/80 bg-white/80"
+                                ? "border-ring bg-accent/90 text-ring shadow-[0_4px_14px_rgba(47,111,237,0.12)] ring-1 ring-ring/20"
+                                : "border-border bg-card text-foreground hover:border-border hover:bg-muted/80"
                             )}
-                            aria-hidden
                           >
-                            {selected && (
-                              <Check className="h-3 w-3" strokeWidth={3} />
-                            )}
-                          </span>
-                          <span className="min-w-0 flex-1 break-words">
-                            {g}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              <div className="mt-2">
-                <ProtoBtn
-                  className={newGroupBtnCls}
-                  onClick={() => {
-                    onCreateGroupRequest();
-                  }}
-                >
-                  <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
-                  Nouveau groupe…
-                </ProtoBtn>
+                            <span
+                              className={cn(
+                                "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
+                                selected
+                                  ? "border-ring bg-primary text-primary-foreground"
+                                  : "border-border/80 bg-card/80"
+                              )}
+                              aria-hidden
+                            >
+                              {selected && (
+                                <Check className="h-3 w-3" strokeWidth={3} />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1 break-words">
+                              {g}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={newGroupBtnCls}
+                    onClick={() => {
+                      onCreateGroupRequest();
+                    }}
+                  >
+                    <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
+                    Nouveau groupe…
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {saveError && (
-          <div
-            className={cn(
-              "shrink-0 border-t border-rose-200 bg-rose-50 px-4 py-2",
-              errorTextCls
-            )}
-          >
-            {saveError}
-          </div>
-        )}
-
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {mode === "edit" && onDeleteContact && (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={onDeleteContact}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-                Supprimer
-              </button>
-            )}
-            {mode === "edit" && onUnsubscribeContact && !isUnsubscribed && (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setConfirmUnsubscribeOpen(true)}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <BellOff className="h-4 w-4" aria-hidden />
-                Désabonner
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <ProtoBtn disabled={saving} onClick={handleClose}>
-              Annuler
-            </ProtoBtn>
-            <ProtoBtn
-              primary
-              disabled={saving}
-              onClick={() => void handleFinalSave()}
+          {saveError && (
+            <div
+              className={cn(
+                "shrink-0 border-t border-destructive/30 bg-destructive/10 px-4 py-2",
+                errorTextCls
+              )}
             >
-              {saving
-                ? "Enregistrement…"
-                : mode === "edit"
-                ? "Enregistrer"
-                : "Enregistrer le contact"}
-            </ProtoBtn>
+              {saveError}
+            </div>
+          )}
+
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {mode === "edit" && onDeleteContact && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={onDeleteContact}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Supprimer
+                </button>
+              )}
+              {mode === "edit" && onUnsubscribeContact && !isUnsubscribed && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setConfirmUnsubscribeOpen(true)}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <BellOff className="h-4 w-4" aria-hidden />
+                  Désabonner
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className={brandBtnCls}
+                disabled={saving}
+                onClick={handleClose}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="lg"
+                className={brandBtnPrimaryCls}
+                disabled={saving}
+                onClick={() => void handleFinalSave()}
+              >
+                {saving
+                  ? "Enregistrement…"
+                  : mode === "edit"
+                  ? "Enregistrer"
+                  : "Enregistrer le contact"}
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmUnsubscribeModal
         open={confirmUnsubscribeOpen}
@@ -578,6 +592,6 @@ export function ContactCreateModal({
           handleClose();
         }}
       />
-    </div>
+    </>
   );
 }

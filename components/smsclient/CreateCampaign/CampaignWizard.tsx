@@ -1,7 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+} from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import {
   formatInt,
   formatSmsPartsPerContact,
@@ -642,8 +646,10 @@ export function CampaignWizard({
 
   const wizardActions = (
     <div className="flex w-full shrink-0 gap-2">
-      <ProtoBtn
-        className="min-w-0 flex-1"
+      <Button
+        variant="outline"
+        size="lg"
+        className={cn(brandBtnCls, "min-w-0 flex-1")}
         onClick={() => {
           if (step === 1) {
             requestWizardLeave("campagnes");
@@ -660,22 +666,24 @@ export function CampaignWizard({
             Précédent
           </>
         )}
-      </ProtoBtn>
+      </Button>
       {step < 3 && (
-        <ProtoBtn
-          primary
-          className="min-w-0 flex-1"
+        <Button
+          variant="default"
+          size="lg"
+          className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
           disabled={!canContinue}
           onClick={handleNext}
         >
           Continuer
           <ChevronRight className="h-4 w-4" />
-        </ProtoBtn>
+        </Button>
       )}
       {step === 3 && (
-        <ProtoBtn
-          primary
-          className="min-w-0 flex-1"
+        <Button
+          variant="default"
+          size="lg"
+          className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
           disabled={confirmLoading}
           onClick={handleConfirmWithValidation}
         >
@@ -684,7 +692,7 @@ export function CampaignWizard({
             : sendMode === "sched"
             ? "Programmer l\u0027envoi"
             : "Confirmer l\u0027envoi"}
-        </ProtoBtn>
+        </Button>
       )}
     </div>
   );
@@ -698,7 +706,7 @@ export function CampaignWizard({
           </span>
         </div>
       </div>
-      <div className="mt-1.5 flex h-9 items-center rounded-xl border border-[#dfe6f2] bg-white px-3">
+      <div className="mt-1.5 flex h-9 items-center rounded-xl border border-border bg-card px-3">
         <input
           className="w-full border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
           maxLength={80}
@@ -950,7 +958,7 @@ export function CampaignWizard({
                           className={cn(
                             "flex min-w-[140px] flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-extrabold",
                             sendMode === "now" &&
-                              "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                              "border-ring bg-accent text-foreground"
                           )}
                         >
                           <Calendar className="h-4 w-4 shrink-0" aria-hidden />
@@ -962,7 +970,7 @@ export function CampaignWizard({
                           className={cn(
                             "flex min-w-[140px] flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-extrabold",
                             sendMode === "sched" &&
-                              "border-[#2f6fed] bg-[#eef4ff] text-[#1f3b77]"
+                              "border-ring bg-accent text-foreground"
                           )}
                         >
                           <Clock className="h-4 w-4 shrink-0" aria-hidden />

@@ -2,8 +2,11 @@
 
 import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
-import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { GroupRowData } from "@/lib/types/group";
 import { useMemo, useState } from "react";
 import { Send, Trash2 } from "lucide-react";
@@ -96,30 +99,28 @@ export function GroupesView({
       enableResizing: false,
       header: () => (
         <div className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
-            checked={selectedIds.size > 0 && selectedIds.size === rows.length}
-            ref={(el) => {
-              if (el)
-                el.indeterminate =
-                  selectedIds.size > 0 && selectedIds.size < rows.length;
-            }}
-            onChange={toggleAll}
+          <Checkbox
+            checked={
+              selectedIds.size > 0 && selectedIds.size === rows.length
+                ? true
+                : selectedIds.size > 0
+                  ? "indeterminate"
+                  : false
+            }
+            onCheckedChange={() => toggleAll()}
+            className="cursor-pointer"
+            aria-label="Tout sélectionner les groupes"
           />
         </div>
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2f6fed] focus:ring-[#2f6fed]"
+          <Checkbox
             checked={selectedIds.has(row.original.id)}
-            onChange={(e) => {
-              e.stopPropagation();
-              toggleSelect(row.original.id);
-            }}
+            onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
+            className="cursor-pointer"
+            aria-label={`Sélectionner ${row.original.name}`}
           />
         </div>
       ),
@@ -154,8 +155,10 @@ export function GroupesView({
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Supprimer ({selectedIds.size})
               </button>
-              <ProtoBtn
-                primary
+              <Button
+                variant="default"
+                size="lg"
+                className={brandBtnPrimaryCls}
                 onClick={() => {
                   onCreateCampaignFromGroups(Array.from(selectedIds));
                   setSelectedIds(new Set());
@@ -163,13 +166,18 @@ export function GroupesView({
               >
                 <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden />
                 Créer une campagne
-              </ProtoBtn>
+              </Button>
             </>
           ) : (
-            <ProtoBtn primary onClick={onCreateGroup}>
+            <Button
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
+              onClick={onCreateGroup}
+            >
               <PlusIcon />
               Créer un groupe
-            </ProtoBtn>
+            </Button>
           )}
         </div>
       </div>

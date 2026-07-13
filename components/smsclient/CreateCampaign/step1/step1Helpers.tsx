@@ -108,15 +108,15 @@ export function SummaryStatBubble({
       className={cn(
         "rounded-xl border px-3 py-2.5",
         highlight
-          ? "border-[#2f6fed]/30 bg-[#eef4ff]"
-          : "border-slate-200 bg-slate-50"
+          ? "border-ring/30 bg-accent"
+          : "border-border bg-muted/50"
       )}
     >
       <div className="flex items-baseline justify-between gap-2">
         <span
           className={cn(
             "text-xs font-extrabold",
-            highlight ? "text-[#1f3b77]" : "text-slate-700"
+            highlight ? "text-foreground" : "text-muted-foreground"
           )}
         >
           {label}
@@ -124,7 +124,7 @@ export function SummaryStatBubble({
         <span
           className={cn(
             "text-lg font-black tabular-nums",
-            highlight ? "text-[#1f3b77]" : "text-slate-900"
+            highlight ? "text-foreground" : "text-foreground"
           )}
         >
           {formatInt(value)}
@@ -137,17 +137,17 @@ export function SummaryStatBubble({
 
 export function RecipientListSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="divide-y divide-slate-100">
+    <div className="divide-y divide-border/50">
       {Array.from({ length: rows }, (_, i) => (
         <div
           key={i}
           className="flex animate-pulse items-center gap-3 px-3 py-2.5"
         >
-          <div className="h-4 w-4 shrink-0 rounded bg-slate-200" />
-          <div className="h-9 w-9 shrink-0 rounded-full bg-slate-200" />
+          <div className="h-4 w-4 shrink-0 rounded bg-muted" />
+          <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-3.5 w-2/5 max-w-[140px] rounded bg-slate-200" />
-            <div className="h-3 w-3/5 max-w-[200px] rounded bg-slate-100" />
+            <div className="h-3.5 w-2/5 max-w-[140px] rounded bg-muted" />
+            <div className="h-3 w-3/5 max-w-[200px] rounded bg-muted/60" />
           </div>
         </div>
       ))}

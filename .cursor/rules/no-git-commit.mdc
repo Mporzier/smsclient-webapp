@@ -1,0 +1,25 @@
+---
+description: Interdit à l'agent git commit et git push — toujours manuel
+alwaysApply: true
+---
+
+# Git — commit / push manuels
+
+cursor ne commit JAMAIS. commit et push toujours manuel
+
+Miroir skill : `.cursor/skills/no-git-commit`.
+
+## Interdit
+
+- `git commit` (toute variante, y compris amend)
+- `git push` (toute variante)
+- Exécuter une étape « Commit » d’un plan / skill sans demande explicite user
+
+## Autorisé
+
+- `git status` / `git diff` / `git log` légers
+- Proposer commandes + message ; l’utilisateur lance
+
+## Fin de tâche
+
+Lister les commandes à copier, sans les exécuter.

@@ -1,6 +1,12 @@
 "use client";
 
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+} from "@/components/smsclient/modals/modalChrome";
 import { cn } from "@/lib/cn";
 import {
   defaultPercentForNewSegment,
@@ -22,8 +28,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const inp =
-  "h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/10";
+const inputCls =
+  "h-9 rounded-xl border-border bg-card px-3 text-sm font-semibold text-foreground";
 
 type QrWheelSettingsProps = {
   config: QrWheelConfig | null;
@@ -286,22 +292,22 @@ export function QrWheelSettings({
         </h4>
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-600">
+            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
               Titre
-            </label>
-            <input
-              className={inp}
+            </Label>
+            <Input
+              className={inputCls}
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               placeholder="Tournez la roue !"
             />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-600">
+            <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
               Sous-titre
-            </label>
-            <input
-              className={inp}
+            </Label>
+            <Input
+              className={inputCls}
               value={draft.subtitle}
               onChange={(e) =>
                 setDraft({ ...draft, subtitle: e.target.value })
@@ -390,11 +396,11 @@ export function QrWheelSettings({
                   aria-hidden
                 />
                 <div className="min-w-0 flex-1">
-                  <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                  <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
                     Libellé affiché sur la roue
-                  </label>
-                  <input
-                    className={inp}
+                  </Label>
+                  <Input
+                    className={inputCls}
                     value={seg.label}
                     onChange={(e) => updateSegment(i, { label: e.target.value })}
                     placeholder="Ex : 10 % de réduction"
@@ -458,12 +464,12 @@ export function QrWheelSettings({
                       className="min-w-0 flex-1 accent-[#2f6fed]"
                     />
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <input
+                      <Input
                         type="number"
                         min={1}
                         max={100}
                         disabled={saving}
-                        className={cn(inp, "w-14 px-2 text-center tabular-nums")}
+                        className={cn(inputCls, "w-14 px-2 text-center tabular-nums")}
                         value={seg.probabilityWeight}
                         onChange={(e) =>
                           updateSegment(i, {
@@ -482,11 +488,11 @@ export function QrWheelSettings({
 
               <div className="space-y-2">
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                  <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
                     Message affiché après le tirage
-                  </label>
-                  <input
-                    className={inp}
+                  </Label>
+                  <Input
+                    className={inputCls}
                     value={seg.screenMessage}
                     onChange={(e) =>
                       updateSegment(i, { screenMessage: e.target.value })
@@ -500,11 +506,11 @@ export function QrWheelSettings({
                 </div>
                 {!seg.isLosing ? (
                   <div>
-                    <label className="mb-1 block text-[10px] font-bold text-slate-500">
+                    <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
                       SMS envoyé au client
-                    </label>
-                    <input
-                      className={inp}
+                    </Label>
+                    <Input
+                      className={inputCls}
                       value={seg.smsMessage}
                       onChange={(e) =>
                         updateSegment(i, { smsMessage: e.target.value })
@@ -518,8 +524,10 @@ export function QrWheelSettings({
           ))}
         </div>
 
-        <ProtoBtn
-          className="mt-3 h-9 w-full text-xs"
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(brandBtnCls, "mt-3 h-9 w-full text-xs")}
           disabled={saving}
           onClick={() => {
             const next = emptySegment(draft.segments.length, usedColors);
@@ -532,7 +540,7 @@ export function QrWheelSettings({
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
           Ajouter une case
-        </ProtoBtn>
+        </Button>
       </section>
 
       {error ? (
@@ -548,14 +556,15 @@ export function QrWheelSettings({
       <div className="flex min-h-0 flex-col">
         <div className="min-h-0 flex-1">{form}</div>
         <div className="sticky bottom-0 mt-4 border-t border-slate-100 bg-white pt-3">
-          <ProtoBtn
-            primary
-            className="h-10 w-full text-sm"
+          <Button
+            type="button"
+            variant="default"
+            className={cn(brandBtnPrimaryCls, "h-10 w-full text-sm")}
             disabled={saving}
             onClick={() => void handleSave()}
           >
             {saving ? "Enregistrement…" : "Enregistrer"}
-          </ProtoBtn>
+          </Button>
         </div>
       </div>
     );
@@ -564,14 +573,15 @@ export function QrWheelSettings({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
       {form}
-      <ProtoBtn
-        primary
-        className="mt-4 w-full"
+      <Button
+        type="button"
+        variant="default"
+        className={cn(brandBtnPrimaryCls, "mt-4 w-full")}
         disabled={saving}
         onClick={() => void handleSave()}
       >
         {saving ? "Enregistrement…" : "Enregistrer la roue"}
-      </ProtoBtn>
+      </Button>
     </div>
   );
 }

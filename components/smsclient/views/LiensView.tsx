@@ -4,7 +4,9 @@ import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
-import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
@@ -141,7 +143,7 @@ export function LiensView({
                 e.stopPropagation();
                 void copyToClipboard(row.original.shortUrl);
               }}
-              className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-[#2f6fed]/30 hover:text-[#2f6fed]"
+              className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-ring/30 hover:text-ring"
             >
               <Copy className="h-3.5 w-3.5" aria-hidden />
             </button>
@@ -168,7 +170,7 @@ export function LiensView({
               e.stopPropagation();
               setDeleteTarget(row.original);
             }}
-            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>
@@ -200,10 +202,15 @@ export function LiensView({
           />
         </div>
         <div className="mt-0.5">
-          <ProtoBtn primary onClick={() => setCreateOpen(true)}>
+          <Button
+            variant="default"
+            size="lg"
+            className={brandBtnPrimaryCls}
+            onClick={() => setCreateOpen(true)}
+          >
             <PlusIcon />
             Créer un lien
-          </ProtoBtn>
+          </Button>
         </div>
       </div>
 
@@ -212,12 +219,12 @@ export function LiensView({
       ) : null}
 
       {showBigEmpty ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
-          <Link2 className="mb-3 h-10 w-10 text-slate-300" aria-hidden />
-          <p className="m-0 text-sm font-extrabold text-slate-700">
+        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
+          <Link2 className="mb-3 h-10 w-10 text-muted-foreground/50" aria-hidden />
+          <p className="m-0 text-sm font-extrabold text-foreground">
             Aucun lien court pour le moment
           </p>
-          <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-slate-500">
+          <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-muted-foreground">
             Créez votre premier lien ou activez le suivi des liens dans une
             campagne SMS.
           </p>

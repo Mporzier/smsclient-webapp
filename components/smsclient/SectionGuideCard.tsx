@@ -41,12 +41,12 @@ export function SectionGuideCard({
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-[#c5d7f6] bg-gradient-to-br from-[#eef4ff] via-white to-[#f8fbff] px-4 py-3.5 shadow-[0_10px_28px_rgba(22,72,232,0.07)]",
+        "relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-accent via-card to-card px-4 py-3.5 shadow-[0_10px_28px_rgba(22,72,232,0.07)]",
         className
       )}
     >
       <div
-        className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#1648e8]/[0.06]"
+        className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-primary/[0.06]"
         aria-hidden
       />
       <div
@@ -70,16 +70,16 @@ export function SectionGuideCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf3ff] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#1648e8]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-primary">
               <Sparkles className="h-3 w-3" aria-hidden />
               {guide.eyebrow}
             </span>
           </div>
 
-          <h2 className="m-0 mt-1.5 text-base font-extrabold leading-snug text-[#0b1b3f] min-[900px]:text-lg">
+          <h2 className="m-0 mt-1.5 text-base font-extrabold leading-snug text-foreground min-[900px]:text-lg">
             {guide.title}
           </h2>
-          <p className="m-0 mt-1 text-xs leading-relaxed text-[#344260] min-[900px]:text-sm">
+          <p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground min-[900px]:text-sm">
             {guide.description}
           </p>
 
@@ -87,10 +87,10 @@ export function SectionGuideCard({
             {guide.bullets.map((bullet) => (
               <li
                 key={bullet}
-                className="flex gap-1.5 text-[11px] leading-snug text-[#3f4d68] min-[900px]:text-xs"
+                className="flex gap-1.5 text-[11px] leading-snug text-muted-foreground min-[900px]:text-xs"
               >
                 <span
-                  className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#1648e8]"
+                  className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary"
                   aria-hidden
                 />
                 <span>{bullet}</span>
@@ -103,7 +103,7 @@ export function SectionGuideCard({
               <button
                 type="button"
                 onClick={handlePrimary}
-                className="inline-flex cursor-pointer items-center rounded-lg border-0 bg-[#1648e8] px-3.5 py-2 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(22,72,232,0.22)] transition-[filter] hover:brightness-105"
+                className="inline-flex cursor-pointer items-center rounded-lg border-0 bg-primary px-3.5 py-2 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(22,72,232,0.22)] transition-[filter] hover:brightness-105"
               >
                 {guide.primaryLabel}
               </button>
@@ -112,7 +112,7 @@ export function SectionGuideCard({
               href={knowledgeBaseArticleUrl(guide.kbSlug)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#1648e8] no-underline hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-primary no-underline hover:underline"
             >
               <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Base de connaissance →

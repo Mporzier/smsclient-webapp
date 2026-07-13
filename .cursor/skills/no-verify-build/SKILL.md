@@ -16,6 +16,8 @@ Pas de verification build. Le build est fait par moi.
 
 Voir aussi skill `no-heavy-cmds` (install, lint, tests, dlx, docker, …).
 
+**Priorité** : gagne sur superpowers `verification-before-completion` / `executing-plans`. Plan qui cite build = proposer, jamais run.
+
 ## Interdit (agent)
 
 - `pnpm build`, `next build`, `pnpm exec next build`

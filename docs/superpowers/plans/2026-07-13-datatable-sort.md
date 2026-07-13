@@ -29,7 +29,7 @@
 **Files:**
 - Modify: `components/smsclient/DataTable.tsx`
 
-- [ ] **Step 1: Ajouter imports + état**
+- [x] **Step 1: Ajouter imports + état**
 
 ```tsx
 import {
@@ -53,7 +53,7 @@ Dans le composant :
 const [sorting, setSorting] = useState<SortingState>([]);
 ```
 
-- [ ] **Step 2: Brancher `useReactTable`**
+- [x] **Step 2: Brancher `useReactTable`**
 
 ```tsx
 const table = useReactTable({
@@ -79,7 +79,7 @@ const table = useReactTable({
 });
 ```
 
-- [ ] **Step 3: Désactiver tri sur colonnes structurelles**
+- [x] **Step 3: Désactiver tri sur colonnes structurelles**
 
 Étendre `withResizeDefaults` (renommer optionnel en `withColumnDefaults`) :
 
@@ -106,7 +106,7 @@ function withColumnDefaults<T>(
 
 Si une vue passe déjà `enableSorting: false`, le `??` conserve l’override quand `noSort` est false. Quand `noSort` est true, forcer `false`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/smsclient/DataTable.tsx
@@ -120,7 +120,7 @@ git commit -m "feat(DataTable): wire TanStack sorting state"
 **Files:**
 - Modify: `components/smsclient/DataTable.tsx` (bloc `<thead>`)
 
-- [ ] **Step 1: Remplacer le contenu header**
+- [x] **Step 1: Remplacer le contenu header**
 
 Pour chaque `header` :
 
@@ -171,14 +171,14 @@ const ariaSort =
 </th>
 ```
 
-- [ ] **Step 2: Smoke mental**
+- [x] **Step 2: Smoke mental**
 
 - Clic Prénom → asc → desc → none
 - Clic Nom pendant tri Prénom → remplace
 - Resize ne trie pas
 - `select` / `actions` / `avatar` : pas de bouton tri
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/smsclient/DataTable.tsx
@@ -193,7 +193,7 @@ git commit -m "feat(DataTable): sortable column headers"
 - Modify (si besoin) : vues listées ci-dessous
 - Modify: `docs/design-system.md`
 
-- [ ] **Step 1: Scan rapide `enableSorting: false`**
+- [x] **Step 1: Scan rapide `enableSorting: false`**
 
 Ouvrir et, si une colonne n’a ni `accessorKey` ni `accessorFn` utile (ex. menu actions déjà id `actions`), rien à faire. Sinon ajouter `enableSorting: false` sur colonnes purement décoratives hors `{select,actions,avatar}`.
 
@@ -206,7 +206,7 @@ Fichiers à parcourir (grep `ColumnDef` / `id:` / `accessorKey`) :
 - `components/smsclient/views/LiensView.tsx`
 - `components/smsclient/views/parametres/InvoicesTable.tsx`
 
-- [ ] **Step 2: Design system**
+- [x] **Step 2: Design system**
 
 Dans `docs/design-system.md`, section L2 :
 
@@ -221,18 +221,20 @@ Ou scinder :
 - [ ] L2b : Checkbox shadcn
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/design-system.md components/smsclient/views/
 git commit -m "docs: mark DataTable column sort done"
 ```
 
+*(Scan vues : rien à changer — `select` / `actions` / `avatar` couverts par `NO_SORT_IDS`.)*
+
 ---
 
 ### Task 4: Handoff vérif manuelle
 
-- [ ] **Step 1: Donner à l’user (ne pas exécuter)**
+- [x] **Step 1: Donner à l’user (ne pas exécuter)**
 
 ```bash
 pnpm build

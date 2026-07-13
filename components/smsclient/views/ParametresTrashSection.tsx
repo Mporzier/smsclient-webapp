@@ -1,6 +1,8 @@
 "use client";
 
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/cn";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import { Loader2, RotateCcw, Trash2 } from "lucide-react";
@@ -91,8 +93,10 @@ export function ParametresTrashSection({
             </p>
           </div>
           {(selectedContactIds.size > 0 || selectedGroupIds.size > 0) && (
-            <ProtoBtn
-              primary
+            <Button
+              variant="default"
+              size="lg"
+              className={brandBtnPrimaryCls}
               disabled={restoring}
               onClick={() => void restoreSelected()}
             >
@@ -102,7 +106,7 @@ export function ParametresTrashSection({
                 : `Restaurer la sélection (${
                     selectedContactIds.size + selectedGroupIds.size
                   })`}
-            </ProtoBtn>
+            </Button>
           )}
         </div>
       </div>
@@ -219,11 +223,10 @@ function TrashTable({
             {rows.map((row) => (
               <tr key={row.id} className={cn(row.selected && "bg-blue-50/50")}>
                 <td className="border-b border-slate-100 px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 cursor-pointer"
+                  <Checkbox
                     checked={row.selected}
-                    onChange={row.onToggle}
+                    onCheckedChange={row.onToggle}
+                    className="cursor-pointer"
                     aria-label="Sélectionner"
                   />
                 </td>

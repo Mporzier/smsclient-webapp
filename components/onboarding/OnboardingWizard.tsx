@@ -2,7 +2,14 @@
 
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  brandBtnCls,
+  brandBtnPrimaryCls,
+  brandInputCls,
+} from "@/components/smsclient/modals/modalChrome";
 import { cn } from "@/lib/cn";
 import { sanitizeSender } from "@/lib/proto/smsUtils";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
@@ -22,10 +29,6 @@ const STEPS = [
   { id: 3, title: "Entreprise", icon: Building2 },
   { id: 4, title: "SMS", icon: MessageSquare },
 ] as const;
-
-const inp =
-  "h-11 w-full rounded-[14px] border border-slate-300/50 bg-white px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
-const lbl = "mb-1.5 block text-xs font-black text-slate-600";
 
 export function OnboardingWizard() {
   const { user } = useAuth();
@@ -141,15 +144,15 @@ export function OnboardingWizard() {
   }, [step]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f5f7fb]">
-      <header className="border-b border-slate-200/80 bg-white px-6 py-5">
-        <p className="m-0 text-xs font-black uppercase tracking-wide text-blue-600">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-border bg-card px-6 py-5">
+        <p className="m-0 text-xs font-black uppercase tracking-wide text-primary">
           Bienvenue sur SMSClient
         </p>
-        <h1 className="m-0 mt-1 text-2xl font-black text-slate-900">
+        <h1 className="m-0 mt-1 text-2xl font-black text-foreground">
           Configurez votre compte
         </h1>
-        <p className="m-0 mt-1 text-sm font-semibold text-slate-600">
+        <p className="m-0 mt-1 text-sm font-semibold text-muted-foreground">
           {stepHint}
         </p>
         <ol className="mt-5 flex gap-2" aria-label="Étapes">
@@ -163,9 +166,9 @@ export function OnboardingWizard() {
                 className={cn(
                   "flex flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold",
                   active &&
-                    "border-blue-200 bg-blue-50 text-blue-800",
+                    "border-primary/25 bg-accent text-primary",
                   done && !active && "border-emerald-200 bg-emerald-50 text-emerald-800",
-                  !active && !done && "border-slate-200 bg-slate-50 text-slate-500",
+                  !active && !done && "border-border bg-muted text-muted-foreground",
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -184,37 +187,49 @@ export function OnboardingWizard() {
         )}
 
         {step === 1 && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-foreground">
               Informations personnelles
             </h2>
             <div className="grid grid-cols-2 gap-3 max-[500px]:grid-cols-1">
               <div>
-                <label className={lbl}>Prénom *</label>
-                <input
-                  className={inp}
+                <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                  Prénom *
+                </Label>
+                <Input
+                  className={brandInputCls}
                   value={form.firstName}
                   onChange={(e) => setField("firstName", e.target.value)}
                   autoFocus
                 />
               </div>
               <div>
-                <label className={lbl}>Nom</label>
-                <input
-                  className={inp}
+                <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                  Nom
+                </Label>
+                <Input
+                  className={brandInputCls}
                   value={form.lastName}
                   onChange={(e) => setField("lastName", e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <label className={lbl}>E-mail</label>
-              <input className={cn(inp, "bg-slate-50 text-slate-600")} value={form.email} readOnly />
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                E-mail
+              </Label>
+              <Input
+                className={cn(brandInputCls, "bg-muted text-muted-foreground")}
+                value={form.email}
+                readOnly
+              />
             </div>
             <div>
-              <label className={lbl}>Téléphone *</label>
-              <input
-                className={inp}
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                Téléphone *
+              </Label>
+              <Input
+                className={brandInputCls}
                 value={form.phone}
                 onChange={(e) => setField("phone", e.target.value)}
                 placeholder="06 12 34 56 78"
@@ -224,11 +239,11 @@ export function OnboardingWizard() {
         )}
 
         {step === 2 && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-foreground">
               Secteur d&apos;activité
             </h2>
-            <p className="m-0 text-sm font-semibold text-slate-600">
+            <p className="m-0 text-sm font-semibold text-muted-foreground">
               Choisissez votre domaine pour accéder à des modèles SMS prêts à
               l&apos;emploi, adaptés à votre métier.
             </p>
@@ -240,20 +255,22 @@ export function OnboardingWizard() {
         )}
 
         {step === 3 && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-foreground">
               Votre entreprise
             </h2>
             <div>
-              <label className={lbl}>Nom de l&apos;entreprise *</label>
-              <input
-                className={inp}
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                Nom de l&apos;entreprise *
+              </Label>
+              <Input
+                className={brandInputCls}
                 value={form.companyName}
                 onChange={(e) => setField("companyName", e.target.value)}
                 autoFocus
               />
             </div>
-            <p className="m-0 text-xs font-semibold text-slate-500">
+            <p className="m-0 text-xs font-semibold text-muted-foreground">
               Vous pourrez compléter SIRET, adresse de facturation, etc. dans les
               paramètres plus tard.
             </p>
@@ -261,18 +278,20 @@ export function OnboardingWizard() {
         )}
 
         {step === 4 && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <h2 className="m-0 text-base font-black text-foreground">
               Expéditeur SMS
             </h2>
-            <p className="m-0 text-sm font-semibold text-slate-600">
+            <p className="m-0 text-sm font-semibold text-muted-foreground">
               Nom affiché à la réception des SMS (11 caractères max, sans
               accents).
             </p>
             <div>
-              <label className={lbl}>Nom d&apos;expéditeur *</label>
-              <input
-                className={inp}
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
+                Nom d&apos;expéditeur *
+              </Label>
+              <Input
+                className={brandInputCls}
                 maxLength={11}
                 value={form.sender}
                 onChange={(e) =>
@@ -280,7 +299,7 @@ export function OnboardingWizard() {
                 }
                 autoFocus
               />
-              <p className="mt-1 text-xs font-semibold text-slate-500">
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
                 {sanitizeSender(form.sender).length}/11
               </p>
             </div>
@@ -288,20 +307,34 @@ export function OnboardingWizard() {
         )}
 
         <div className="mt-6 flex justify-between gap-3">
-          <ProtoBtn
+          <Button
+            type="button"
+            variant="outline"
+            className={brandBtnCls}
             disabled={step === 1 || saving}
             onClick={() => setStep((s) => Math.max(1, s - 1))}
           >
             Retour
-          </ProtoBtn>
+          </Button>
           {step < 4 ? (
-            <ProtoBtn primary onClick={onNext}>
+            <Button
+              type="button"
+              variant="default"
+              className={brandBtnPrimaryCls}
+              onClick={onNext}
+            >
               Continuer
-            </ProtoBtn>
+            </Button>
           ) : (
-            <ProtoBtn primary disabled={saving} onClick={() => void onFinish()}>
+            <Button
+              type="button"
+              variant="default"
+              className={brandBtnPrimaryCls}
+              disabled={saving}
+              onClick={() => void onFinish()}
+            >
               {saving ? "Enregistrement…" : "Terminer"}
-            </ProtoBtn>
+            </Button>
           )}
         </div>
       </main>

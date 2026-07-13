@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RewardWheel } from "@/components/public/RewardWheel";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -9,6 +13,9 @@ import {
 import { frDisplayToE164, normalizeFRPhone } from "@/lib/proto/smsUtils";
 import type { QrSubmitResult, QrWheelPublicConfig, QrWheelSpinResult } from "@/lib/types/qrWheel";
 import { useEffect, useMemo, useState } from "react";
+
+const brandInputCls =
+  "h-11 rounded-[14px] border-border bg-transparent px-3.5 text-[15px] font-bold text-foreground";
 
 type QrCapturePageProps = {
   slug: string;
@@ -169,9 +176,6 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
     setPhase("prize");
   }
 
-  const inp =
-    "h-11 w-full rounded-[14px] border border-slate-300/50 bg-transparent px-3.5 text-[15px] font-bold text-slate-900 outline-none focus:border-blue-500 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
-
   return (
     <main className="min-h-screen bg-[#f5f7fb] px-4 py-10">
       <div className="mx-auto w-full max-w-[560px] rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_22px_50px_rgba(15,23,42,0.10)]">
@@ -252,11 +256,11 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
         ) : (
           <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
                 Prénom *
-              </label>
-              <input
-                className={inp}
+              </Label>
+              <Input
+                className={brandInputCls}
                 maxLength={30}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -264,11 +268,11 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
                 Nom
-              </label>
-              <input
-                className={inp}
+              </Label>
+              <Input
+                className={brandInputCls}
                 maxLength={30}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -276,11 +280,11 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-black text-slate-600">
+              <Label className="mb-1.5 block text-xs font-black text-muted-foreground">
                 Téléphone *
-              </label>
-              <input
-                className={inp}
+              </Label>
+              <Input
+                className={brandInputCls}
                 inputMode="tel"
                 value={phone}
                 onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}
@@ -288,30 +292,29 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               />
             </div>
             <div>
-              <label
-                className="mb-1.5 block text-xs font-black text-slate-600"
+              <Label
+                className="mb-1.5 block text-xs font-black text-muted-foreground"
                 htmlFor="qr-capture-birthday"
               >
                 Anniversaire
-              </label>
-              <input
+              </Label>
+              <Input
                 id="qr-capture-birthday"
                 name="birthday"
                 type="date"
-                className={inp}
+                className={brandInputCls}
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
               />
-              <p className="mt-1 text-xs font-semibold text-slate-500">
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
                 Optionnel
               </p>
             </div>
             <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2f6fed]"
+              <Checkbox
                 checked={optIn}
-                onChange={(e) => setOptIn(e.target.checked)}
+                onCheckedChange={(checked) => setOptIn(checked === true)}
+                className="mt-0.5"
               />
               <span>
                 J&apos;accepte de recevoir des SMS d&apos;information et
@@ -330,17 +333,18 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={saving}
-              className="mt-1 inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[14px] border border-transparent bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-[18px] text-[15px] font-bold text-white shadow-[0_18px_30px_rgba(47,111,237,0.22)] disabled:cursor-not-allowed disabled:opacity-60"
+              variant="default"
+              className="mt-1 h-11 w-full rounded-[14px] bg-primary px-[18px] text-[15px] font-bold text-primary-foreground shadow-md disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving
                 ? "Enregistrement…"
                 : wheelActive
                   ? "S'inscrire et jouer"
                   : "Envoyer"}
-            </button>
+            </Button>
           </form>
         )}
       </div>

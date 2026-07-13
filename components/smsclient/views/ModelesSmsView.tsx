@@ -3,7 +3,9 @@
 import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
-import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
@@ -138,7 +140,7 @@ export function ModelesSmsView({
         header: "Description",
         size: 160,
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-slate-600">
+          <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>() || "—"}
           </CellTruncate>
         ),
@@ -165,7 +167,7 @@ export function ModelesSmsView({
               e.stopPropagation();
               setDeleteTarget(row.original);
             }}
-            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>
@@ -192,14 +194,14 @@ export function ModelesSmsView({
 
       <div className={cn(fieldBox, "shrink-0 py-4")}>
         <div className="mb-3 flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
+          <span className="grid h-9 w-9 place-items-center rounded-xl border border-ring/20 bg-accent text-ring">
             <LayoutTemplate className="h-4 w-4" aria-hidden />
           </span>
           <div>
-            <h2 className="m-0 text-sm font-black text-slate-900">
+            <h2 className="m-0 text-sm font-black text-foreground">
               Créer un modèle
             </h2>
-            <p className="m-0 text-xs font-semibold text-slate-500">
+            <p className="m-0 text-xs font-semibold text-muted-foreground">
               Réutilisez-le lors de la rédaction d&apos;une campagne SMS.
             </p>
           </div>
@@ -210,10 +212,10 @@ export function ModelesSmsView({
             <div className="min-w-0">
               <label
                 htmlFor="modeles-create-title"
-                className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-slate-700"
+                className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-foreground"
               >
                 <span>Titre *</span>
-                <span className="text-[10px] font-semibold tabular-nums text-slate-400">
+                <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
                   {title.trim().length}/{SMS_TEMPLATE_TITLE_MAX_LENGTH} (min.{" "}
                   {SMS_TEMPLATE_TITLE_MIN_LENGTH})
                 </span>
@@ -222,7 +224,7 @@ export function ModelesSmsView({
                 id="modeles-create-title"
                 type="text"
                 maxLength={SMS_TEMPLATE_TITLE_MAX_LENGTH}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
                 placeholder="Promo été"
                 value={title}
                 onChange={(e) => {
@@ -234,14 +236,14 @@ export function ModelesSmsView({
             <div className="min-w-0">
               <label
                 htmlFor="modeles-create-description"
-                className="mb-1.5 block text-xs font-bold text-slate-700"
+                className="mb-1.5 block text-xs font-bold text-foreground"
               >
                 Description
               </label>
               <input
                 id="modeles-create-description"
                 type="text"
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
                 placeholder="Offre de rentrée"
                 value={description}
                 onChange={(e) => {
@@ -254,14 +256,14 @@ export function ModelesSmsView({
           <div className="min-w-0">
             <label
               htmlFor="modeles-create-body"
-              className="mb-1.5 block text-xs font-bold text-slate-700"
+              className="mb-1.5 block text-xs font-bold text-foreground"
             >
               Message SMS *
             </label>
             <textarea
               id="modeles-create-body"
               rows={4}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold leading-relaxed text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
+              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
               placeholder="Bonjour ⟦prénom⟧, profitez de -20 % cette semaine en boutique !"
               value={body}
               onChange={(e) => {
@@ -271,15 +273,16 @@ export function ModelesSmsView({
             />
           </div>
           <div className="flex justify-end">
-            <ProtoBtn
-              primary
-              className="h-10 px-4"
+            <Button
+              variant="default"
+              size="lg"
+              className={cn(brandBtnPrimaryCls, "h-10 px-4")}
               onClick={() => void handleCreate()}
               disabled={!canCreate}
             >
               {!creating ? <PlusIcon /> : null}
               {creating ? "Création…" : "Créer le modèle"}
-            </ProtoBtn>
+            </Button>
           </div>
         </div>
 
@@ -302,15 +305,15 @@ export function ModelesSmsView({
         ) : null}
 
         {showBigEmpty ? (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
             <LayoutTemplate
-              className="mb-3 h-10 w-10 text-slate-300"
+              className="mb-3 h-10 w-10 text-muted-foreground/50"
               aria-hidden
             />
-            <p className="m-0 text-sm font-extrabold text-slate-700">
+            <p className="m-0 text-sm font-extrabold text-foreground">
               Aucun modèle personnalisé
             </p>
-            <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-slate-500">
+            <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-muted-foreground">
               Créez votre premier modèle ci-dessus pour le retrouver dans le
               wizard campagne.
             </p>

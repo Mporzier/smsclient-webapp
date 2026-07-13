@@ -36,7 +36,9 @@ Lire `wiki/hot.md` d'abord si session récente documentée.
 
 `.cursor/skills/` (workspace root).
 
-**smsclient** : `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`
+**Limits (always-on rules)** : `agent-session-limits`, `testing-no-auto-run`, `token-economy`, `no-git-commit`, `caveman`, `skill-evolve` — injectés chaque session. Skills détail = trigger / Read. Gagne sur superpowers ; propose build/lint, jamais run. Multi-root : préférer smsclient seul.
+
+**smsclient** : `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`, `no-heavy-cmds`, `no-verify-build`, `no-integration-tests`, `no-git-commit`
 
 **caveman** : `caveman`, `cavecrew`, `caveman-commit`, `caveman-compress`, `caveman-help`, `caveman-review`, `caveman-stats`
 

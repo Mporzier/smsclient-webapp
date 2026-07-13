@@ -383,12 +383,50 @@ export type ImportBatchResult = {
   inserted: number;
   skippedDuplicateInFile: number;
   skippedDuplicateInDb: number;
+  /** E164 des lignes ignorées (doublon fichier ou déjà en base). */
+  duplicatePhoneE164s: string[];
+  /** Contacts déjà en base rattachés au(x) groupe(s) du payload (additif). */
+  linkedExistingToGroup: number;
   skippedInvalidRow: number;
   otherErrors: number;
 };
 
+async function linkExistingClientToGroupLabels(
+  supabase: SupabaseClient,
+  userId: string,
+  phoneE164: string,
+  groupLabels: string[],
+): Promise<boolean> {
+  const labels = normalizeGroupLabels(groupLabels);
+  if (labels.length === 0) return false;
+
+  const { data: existing, error: findErr } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("phone_e164", phoneE164)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (findErr || !existing?.id) return false;
+
+  let linked = false;
+  for (const name of labels) {
+    const { error } = await addClientsToGroupByName(
+      supabase,
+      userId,
+      [existing.id],
+      name,
+    );
+    if (!error) linked = true;
+  }
+  return linked;
+}
+
 /**
  * Import ligne par ligne pour isoler les doublons et erreurs (MVP).
+ * Si un numéro existe déjà et que le payload porte des `groupLabels`,
+ * rattache le contact existant au(x) groupe(s) sans écraser les autres.
  */
 export async function insertClientsFromImport(
   supabase: SupabaseClient,
@@ -400,6 +438,8 @@ export async function insertClientsFromImport(
     inserted: 0,
     skippedDuplicateInFile: 0,
     skippedDuplicateInDb: 0,
+    duplicatePhoneE164s: [],
+    linkedExistingToGroup: 0,
     skippedInvalidRow: 0,
     otherErrors: 0,
   };
@@ -412,6 +452,7 @@ export async function insertClientsFromImport(
     }
     if (seen.has(e164)) {
       result.skippedDuplicateInFile++;
+      result.duplicatePhoneE164s.push(e164);
       continue;
     }
     seen.add(e164);
@@ -425,6 +466,14 @@ export async function insertClientsFromImport(
         error.message.includes("duplicate")
       ) {
         result.skippedDuplicateInDb++;
+        result.duplicatePhoneE164s.push(e164);
+        const linked = await linkExistingClientToGroupLabels(
+          supabase,
+          userId,
+          e164,
+          payload.groupLabels,
+        );
+        if (linked) result.linkedExistingToGroup++;
       } else {
         result.otherErrors++;
       }

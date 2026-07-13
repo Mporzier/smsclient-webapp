@@ -3,7 +3,8 @@
 import { QrCapturePreviewModal } from "@/components/smsclient/modals/QrCapturePreviewModal";
 import { QrWelcomeSmsSettingsModal } from "@/components/smsclient/modals/QrWelcomeSmsSettingsModal";
 import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSettingsModal";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { downloadShopQrPdf } from "@/lib/qr/downloadShopQrPdf";
 import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
@@ -354,14 +355,16 @@ export function QrCodeView({
                     aria-hidden={captureMode !== "welcome"}
                   >
                     <div className="flex flex-wrap gap-1.5 rounded-xl border border-[#2f6fed]/15 bg-[#eef4ff]/40 p-2.5">
-                      <ProtoBtn
+                      <Button
                         type="button"
-                        className="h-8 px-3 text-xs"
+                        variant="outline"
+                        size="lg"
+                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
                         disabled={templateSaving}
                         onClick={() => setWelcomeModalOpen(true)}
                       >
                         Configurer
-                      </ProtoBtn>
+                      </Button>
                     </div>
                   </div>
 
@@ -375,22 +378,26 @@ export function QrCodeView({
                     aria-hidden={captureMode !== "wheel"}
                   >
                     <div className="flex flex-wrap gap-1.5 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-2.5">
-                      <ProtoBtn
+                      <Button
                         type="button"
-                        className="h-8 px-3 text-xs"
+                        variant="outline"
+                        size="lg"
+                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
                         disabled={wheelSaving}
                         onClick={() => setPreviewModalOpen(true)}
                       >
                         Prévisualiser
-                      </ProtoBtn>
-                      <ProtoBtn
+                      </Button>
+                      <Button
                         type="button"
-                        className="h-8 px-3 text-xs"
+                        variant="outline"
+                        size="lg"
+                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
                         disabled={wheelSaving}
                         onClick={() => setWheelModalOpen(true)}
                       >
                         Configurer
-                      </ProtoBtn>
+                      </Button>
                     </div>
                   </div>
 

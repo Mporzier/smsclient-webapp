@@ -1,7 +1,9 @@
 "use client";
 
 import { DataTable } from "@/components/smsclient/DataTable";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -26,15 +28,17 @@ export function InvoicesTable({
               header: "PDF",
               size: 140,
               cell: ({ row }: { row: { original: CreditPurchaseRowData } }) => (
-                <ProtoBtn
-                  className="h-8 px-2.5 text-xs"
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={cn(brandBtnCls, "h-8 px-2.5 text-xs")}
                   onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     onInvoiceClick(row.original.invoiceRef);
                   }}
                 >
                   Télécharger
-                </ProtoBtn>
+                </Button>
               ),
             } as ColumnDef<CreditPurchaseRowData, unknown>,
           ]

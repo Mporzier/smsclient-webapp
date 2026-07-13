@@ -1,7 +1,9 @@
 "use client";
 
 import { SmsLinkPicker } from "@/components/smsclient/CreateCampaign/SmsLinkPicker";
-import { ProtoBtn } from "@/components/smsclient/ui";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import type { LinkRowData } from "@/lib/types/link";
 import { Link2, Wand2 } from "lucide-react";
 
@@ -35,15 +37,16 @@ export function SmsManualComposeOptions({
       </div>
 
       <div className="flex flex-col gap-2">
-        <ProtoBtn
-          primary
-          className="h-10 w-full gap-2 text-sm"
+        <Button
+          variant="default"
+          size="lg"
+          className={cn(brandBtnPrimaryCls, "h-10 w-full gap-2 text-sm")}
           onClick={onCorrectAndReformulate}
           disabled={disabled}
         >
           <Wand2 className="h-4 w-4" aria-hidden />
           Correction et reformulation
-        </ProtoBtn>
+        </Button>
 
         <div className="rounded-xl border border-slate-200 bg-white p-3">
           <div className="flex items-start gap-2">
