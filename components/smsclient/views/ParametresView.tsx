@@ -189,7 +189,7 @@ export function ParametresView({
               <div className="grid gap-3">
                 <div>
                   <label className={parametresFieldLbl}>Nom de l&apos;entreprise</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("companyName") &&
@@ -222,7 +222,7 @@ export function ParametresView({
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div>
                   <label className={parametresFieldLbl}>SIRET</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("siret") && "border-blue-400 ring-2 ring-blue-100"
@@ -233,7 +233,7 @@ export function ParametresView({
                 </div>
                 <div>
                   <label className={parametresFieldLbl}>TVA</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("tva") && "border-blue-400 ring-2 ring-blue-100"
@@ -251,7 +251,7 @@ export function ParametresView({
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div className="col-span-2">
                   <label className={parametresFieldLbl}>Adresse</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("address") && "border-blue-400 ring-2 ring-blue-100"
@@ -262,7 +262,7 @@ export function ParametresView({
                 </div>
                 <div>
                   <label className={parametresFieldLbl}>Code postal</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("zip") && "border-blue-400 ring-2 ring-blue-100"
@@ -273,7 +273,7 @@ export function ParametresView({
                 </div>
                 <div>
                   <label className={parametresFieldLbl}>Ville</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("city") && "border-blue-400 ring-2 ring-blue-100"
@@ -284,7 +284,7 @@ export function ParametresView({
                 </div>
                 <div className="col-span-2 max-[480px]:col-span-1">
                   <label className={parametresFieldLbl}>Pays</label>
-                  <parametresFieldInput
+                  <input
                     className={cn(
                       parametresFieldInp,
                       changed("country") && "border-blue-400 ring-2 ring-blue-100"
@@ -301,7 +301,7 @@ export function ParametresView({
             <ModalPanel>
               <div>
                 <label className={parametresFieldLbl}>Contact facturation</label>
-                <parametresFieldInput
+                <input
                   className={cn(
                     parametresFieldInp,
                     changed("billingContact") &&
@@ -367,7 +367,7 @@ export function ParametresView({
                 <label className={parametresFieldLbl}>
                   Nom d&apos;expéditeur SMS (11 car. max)
                 </label>
-                <parametresFieldInput
+                <input
                   className={cn(
                     parametresFieldInp,
                     changed("sender") && "border-blue-400 ring-2 ring-blue-100"
@@ -388,7 +388,7 @@ export function ParametresView({
           {openSetting === "notifications-email" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <parametresFieldInput
+                <input
                   type="checkbox"
                   className="mt-0.5 h-[18px] w-[18px]"
                   checked={draftForm.notifyInvoices}
@@ -402,7 +402,7 @@ export function ParametresView({
           {openSetting === "resume-mensuel" && (
             <ModalPanel>
               <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <parametresFieldInput
+                <input
                   type="checkbox"
                   className="mt-0.5 h-[18px] w-[18px]"
                   checked={draftForm.notifySummary}

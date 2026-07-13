@@ -120,7 +120,7 @@ export function LiensView({
         header: "URL d'origine",
         size: 220,
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="font-semibold text-slate-700">
+          <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>()}
           </CellTruncate>
         ),
@@ -131,7 +131,7 @@ export function LiensView({
         size: 118,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-1.5">
-            <CellTruncate as="span" className="font-extrabold text-[#1f3b77]">
+            <CellTruncate as="span" className="text-primary">
               {row.original.shortUrl}
             </CellTruncate>
             <button
@@ -153,12 +153,13 @@ export function LiensView({
         header: "Clics",
         size: 40,
         cell: ({ getValue }) => (
-          <span className="font-black tabular-nums">{getValue<number>()}</span>
+          <span className="tabular-nums">{getValue<number>()}</span>
         ),
       },
       {
         id: "actions",
         size: 48,
+        enableResizing: false,
         cell: ({ row }) => (
           <button
             type="button"

@@ -9,9 +9,9 @@ import {
   type ColumnDef,
   type Row,
 } from "@tanstack/react-table";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 import { Pager } from "./views/Pager";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
 type DataTableProps<T> = {
   columns: ColumnDef<T, unknown>[];
@@ -28,6 +28,29 @@ type DataTableProps<T> = {
   clipHorizontalOverflow?: boolean;
 };
 
+function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
+  if (col.id) return col.id;
+  if ("accessorKey" in col && col.accessorKey != null) {
+    return String(col.accessorKey);
+  }
+  return undefined;
+}
+
+function withResizeDefaults<T>(
+  columns: ColumnDef<T, unknown>[]
+): ColumnDef<T, unknown>[] {
+  return columns.map((col) => {
+    const id = columnId(col);
+    const noResize = id === "select" || id === "actions";
+    return {
+      ...col,
+      enableResizing: noResize ? false : (col.enableResizing ?? true),
+      minSize: col.minSize ?? (noResize ? 40 : 80),
+      maxSize: col.maxSize ?? 800,
+    };
+  });
+}
+
 export function DataTable<T>({
   columns,
   data,
@@ -41,19 +64,32 @@ export function DataTable<T>({
   footer,
   clipHorizontalOverflow = false,
 }: DataTableProps<T>) {
+  const sizedColumns = useMemo(
+    () => withResizeDefaults(columns),
+    [columns]
+  );
+
   const table = useReactTable({
     data,
-    columns,
+    columns: sizedColumns,
     state: { globalFilter },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    columnResizeMode: "onChange",
+    enableColumnResizing: true,
+    defaultColumn: {
+      size: 160,
+      minSize: 80,
+      maxSize: 800,
+    },
     initialState: { pagination: { pageSize } },
   });
 
   const { rows: tableRows } = table.getRowModel();
   const pageCount = table.getPageCount();
   const pageIndex = table.getState().pagination.pageIndex;
+  const totalSize = table.getTotalSize();
 
   const isEmpty = !loading && data.length === 0;
   const isSearchEmpty =
@@ -63,19 +99,28 @@ export function DataTable<T>({
     globalFilter.trim() !== "";
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto",
-          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-auto"
+          "min-h-0 w-full flex-1 overflow-y-auto",
+          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
         <table
-          className={cn(
-            "w-full border-separate border-spacing-0 text-[15px]",
-            clipHorizontalOverflow && "table-fixed"
-          )}
+          className="w-full table-fixed border-separate border-spacing-0 text-[15px]"
+          style={{
+            width: "100%",
+            minWidth: totalSize,
+          }}
         >
+          <colgroup>
+            {table.getVisibleLeafColumns().map((column) => (
+              <col
+                key={column.id}
+                style={{ width: column.getSize(), minWidth: column.getSize() }}
+              />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 z-10">
             <tr>
               {table.getHeaderGroups()[0].headers.map((header) => {
@@ -84,16 +129,11 @@ export function DataTable<T>({
                   <th
                     key={header.id}
                     className={cn(
-                      "whitespace-nowrap border-b border-slate-200 bg-slate-50 py-3.5 text-sm font-extrabold text-slate-900",
+                      "relative whitespace-nowrap border-b border-border bg-muted py-3.5 text-sm font-medium text-foreground",
                       isSelectCol
-                        ? "w-10 px-3 text-center"
+                        ? "px-3 text-center"
                         : "px-[18px] text-left"
                     )}
-                    style={
-                      header.column.getSize() !== 150
-                        ? { width: `${header.column.getSize()}px` }
-                        : undefined
-                    }
                   >
                     {header.isPlaceholder
                       ? null
@@ -101,6 +141,32 @@ export function DataTable<T>({
                           header.column.columnDef.header,
                           header.getContext()
                         )}
+                    {header.column.getCanResize() ? (
+                      <div
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Redimensionner la colonne"
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          header.getResizeHandler()(e);
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          header.getResizeHandler()(e);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          header.column.resetSize();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "absolute top-0 right-0 z-30 h-full w-3 translate-x-1/2 cursor-col-resize touch-none select-none",
+                          "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-border",
+                          "hover:after:bg-primary",
+                          header.column.getIsResizing() && "after:bg-primary"
+                        )}
+                      />
+                    ) : null}
                   </th>
                 );
               })}
@@ -111,7 +177,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="border-b border-slate-100 px-[18px] py-12 text-center text-sm font-semibold text-slate-500"
+                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
                 >
                   {loadingMessage}
                 </td>
@@ -121,7 +187,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="border-b border-slate-100 px-[18px] py-12 text-center text-sm font-bold text-slate-500"
+                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
                 >
                   {emptyMessage}
                 </td>
@@ -131,7 +197,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="border-b border-slate-100 px-[18px] py-12 text-center text-sm font-bold text-slate-500"
+                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
                 >
                   {searchNoResultsMessage}
                 </td>
@@ -144,7 +210,7 @@ export function DataTable<T>({
                 <tr
                   key={row.id}
                   className={cn(
-                    onRowClick && "cursor-pointer hover:bg-indigo-50/60"
+                    onRowClick && "cursor-pointer hover:bg-accent/60"
                   )}
                   tabIndex={onRowClick ? 0 : undefined}
                   role={onRowClick ? "button" : undefined}
@@ -168,8 +234,8 @@ export function DataTable<T>({
                       <td
                         key={cell.id}
                         className={cn(
-                          "min-w-0 border-b border-slate-100 py-3.5 align-middle text-slate-900",
-                          isSelectCol ? "w-10 px-3 text-center" : "px-[18px]"
+                          "min-w-0 overflow-hidden border-b border-border/60 py-3.5 align-middle font-normal text-foreground",
+                          isSelectCol ? "px-3 text-center" : "px-[18px]"
                         )}
                         onClick={
                           isSelectCol
@@ -195,7 +261,7 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-3.5 py-3 text-sm font-semibold text-slate-600">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border px-3.5 py-3 text-sm font-medium text-muted-foreground">
         <span>
           {loading
             ? "…"

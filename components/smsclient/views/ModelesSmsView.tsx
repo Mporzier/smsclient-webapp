@@ -128,7 +128,7 @@ export function ModelesSmsView({
         header: "Titre",
         size: 140,
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="font-black text-slate-900">
+          <CellTruncate as="div" className="text-foreground">
             {getValue<string>()}
           </CellTruncate>
         ),
@@ -148,7 +148,7 @@ export function ModelesSmsView({
         header: "Message",
         size: 280,
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="font-semibold text-slate-700">
+          <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>()}
           </CellTruncate>
         ),
@@ -156,6 +156,7 @@ export function ModelesSmsView({
       {
         id: "actions",
         size: 48,
+        enableResizing: false,
         cell: ({ row }) => (
           <button
             type="button"

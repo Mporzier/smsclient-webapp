@@ -1,3 +1,2 @@
-export function cn(...parts: Array<string | false | undefined | null>): string {
-  return parts.filter(Boolean).join(" ");
-}
+/** @deprecated Prefer `@/lib/utils` — kept for legacy imports. */
+export { cn } from "./utils";

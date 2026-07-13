@@ -1,9 +1,24 @@
 "use client";
 
-import { ProtoBtn } from "@/components/smsclient/ui";
-import { overlayCls, overlayStackedCls } from "./modalChrome";
-import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  confirmDialogContentCls,
+  dialogContentStackedZCls,
+  dialogContentZCls,
+  dialogOverlayCls,
+  dialogOverlayStackedCls,
+} from "./modalChrome";
 
 type ConfirmDeleteModalProps = {
   open: boolean;
@@ -35,15 +50,6 @@ export function ConfirmDeleteModal({
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
-
   const handleConfirm = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -55,49 +61,71 @@ export function ConfirmDeleteModal({
     }
   }, [onConfirm]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className={stacked ? overlayStackedCls : overlayCls}
-      role="alertdialog"
-      aria-modal
-      aria-label={title}
-      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !loading) onCancel();
+      }}
     >
-      <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_28px_70px_rgba(15,23,42,0.20)]">
-        <div className="flex items-start gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName={stacked ? dialogOverlayStackedCls : dialogOverlayCls}
+        className={cn(
+          confirmDialogContentCls,
+          "sm:max-w-[420px]",
+          stacked ? dialogContentStackedZCls : dialogContentZCls
+        )}
+        onPointerDownOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (loading) e.preventDefault();
+        }}
+      >
+        <DialogHeader className="flex-row items-start gap-3 space-y-0 text-left">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" aria-hidden />
           </div>
-          <div>
-            <h2 className="m-0 text-base font-black text-slate-900">{title}</h2>
-            <p className="mt-1.5 text-sm font-semibold leading-relaxed text-slate-600">
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="text-base font-black text-foreground">
+              {title}
+            </DialogTitle>
+            <DialogDescription className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">
               {description}
-            </p>
+            </DialogDescription>
           </div>
-        </div>
+        </DialogHeader>
 
         {error && (
-          <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-900">
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
             {error}
           </p>
         )}
 
-        <div className="mt-5 flex justify-end gap-2">
-          <ProtoBtn disabled={loading} onClick={onCancel}>
-            Annuler
-          </ProtoBtn>
-          <button
+        <DialogFooter className="-mx-0 -mb-0 mt-1 rounded-none border-0 bg-transparent p-0 sm:justify-end">
+          <Button
             type="button"
+            variant="outline"
+            size="lg"
+            disabled={loading}
+            onClick={onCancel}
+            className="h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold"
+          >
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="lg"
             disabled={loading}
             onClick={() => void handleConfirm()}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border-none bg-rose-500 px-4 py-2.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(225,29,72,0.2)] transition-all hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 cursor-pointer rounded-[14px] bg-destructive px-4 text-[15px] font-bold text-white hover:bg-destructive/90 hover:text-white"
           >
             {loading ? "Suppression…" : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

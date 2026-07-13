@@ -1,5 +1,6 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
 export function SearchBar({
@@ -13,15 +14,15 @@ export function SearchBar({
 }) {
   return (
     <div
-      className="mt-3.5 flex h-11 max-w-full items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 font-semibold text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] sm:max-w-[520px] w-full"
+      className="mt-3.5 flex h-11 max-w-full w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 shadow-sm sm:max-w-[520px]"
       role="search"
     >
       <Search
-        className="h-[18px] w-[18px] shrink-0 text-slate-500"
+        className="h-[18px] w-[18px] shrink-0 text-muted-foreground"
         aria-hidden
       />
-      <input
-        className="w-full border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+      <Input
+        className="h-auto flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
         placeholder={placeholder}
         value={value ?? ""}
         onChange={(e) => onChange?.(e.target.value)}

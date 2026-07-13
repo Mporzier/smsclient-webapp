@@ -6,29 +6,30 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   BarChart3, CalendarSync, CircleHelp, CircleUserRound, LayoutTemplate, Link, Megaphone, MessageSquareText, QrCode, Scale, Users, type LucideIcon,
 } from "lucide-react";
+import type { AppRoute } from "@/lib/proto/routes";
 
 /** Fond applicatif (canvas entre sidebar et contenu) */
-export const APP_CANVAS_CLASS = "bg-[#e5eaf2]";
+export const APP_CANVAS_CLASS = "bg-canvas";
 
 /** Panneau principal (carte blanche comme la sidebar) */
 export const MAIN_PANEL_CLASS =
-  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-[#e5edf6] bg-white";
+  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card";
 
 /** Largeur du menu latéral */
 export const SIDEBAR_W_EXPANDED = "w-[260px]";
 export const SIDEBAR_W_COLLAPSED = "w-[84px]";
 
 const navIconWrapClass =
-  "grid h-[18px] w-[18px] shrink-0 place-items-center text-[#1831c9]";
+  "grid h-[18px] w-[18px] shrink-0 place-items-center text-primary";
 const navMainIconClass = "h-[17px] w-[17px] shrink-0";
 export const navMainIconStroke = 1.85;
 
 const sidebarTextClass = "text-[13px] font-bold leading-none";
 const sidebarSectionLabelClass =
-  "px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#7d8ba0]";
+  "px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground";
 
 const navItemBase = cn(
-  "group flex h-[34px] w-full cursor-pointer select-none items-center gap-[9px] rounded-full border border-transparent px-2.5 text-left no-underline transition-[background-color,color] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1831c9]",
+  "group flex h-[34px] w-full cursor-pointer select-none items-center gap-[9px] rounded-full border border-transparent px-2.5 text-left no-underline transition-[background-color,color] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
   sidebarTextClass
 );
 
@@ -36,8 +37,8 @@ function sidebarNavItemClass(isActive: boolean) {
   return cn(
     navItemBase,
     isActive
-      ? "bg-[#e9f5ff] text-[#1831c9] hover:bg-[#dfeefb]"
-      : "text-[#33415a] hover:bg-slate-100"
+      ? "bg-accent text-primary hover:bg-accent/80"
+      : "text-foreground/80 hover:bg-muted"
   );
 }
 
@@ -56,7 +57,7 @@ function SidebarNavIcon({ icon: Icon }: { icon: LucideIcon }) {
 export function SidebarMenuIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span
-      className="grid h-[17px] w-[17px] shrink-0 place-items-center text-[#1831c9]"
+      className="grid h-[17px] w-[17px] shrink-0 place-items-center text-primary"
       aria-hidden
     >
       <Icon className="h-4 w-4" strokeWidth={navMainIconStroke} aria-hidden />
@@ -79,7 +80,7 @@ type NavKey =
   | "liens"
   | "modeles-sms";
 
-type ShellProps = {
+export type ShellProps = {
   route: AppRoute;
   go: (path: string) => void;
   onNewCampaign: () => void;
@@ -213,7 +214,7 @@ export function SidebarHoverTooltip({
         createPortal(
           <div
             role="tooltip"
-            className="pointer-events-none fixed z-[100] -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[#e5edf6] bg-white px-2.5 py-1.5 text-xs font-bold text-[#293852] shadow-[0_8px_24px_rgba(15,31,56,0.12)]"
+            className="pointer-events-none fixed z-[100] -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-border bg-popover px-2.5 py-1.5 text-xs font-bold text-popover-foreground shadow-md"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}
@@ -273,7 +274,7 @@ export function SidebarNavSection({
     <div
       className={cn(
         "flex flex-col gap-[3px]",
-        bordered && "mt-2.5 border-t border-[#dfe6f0] pt-2.5"
+        bordered && "mt-2.5 border-t border-border pt-2.5"
       )}
     >
       {!collapsed && <p className={sidebarSectionLabelClass}>{label}</p>}

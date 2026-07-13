@@ -19,7 +19,7 @@ import { useMemo, useState } from "react";
 import { Phone, Send, Trash2, UserRound } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const tagBase = groupTagBase + " py-1 text-[12px] font-bold";
+const tagBase = groupTagBase + " py-1 text-[12px] font-medium";
 
 type ContactsProps = {
   rows: ContactRowData[];
@@ -43,7 +43,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
       return (
         <div
           className={cn(
-            "grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold",
+            "grid h-8 w-8 place-items-center rounded-full text-xs font-medium",
             c.bg,
             c.text
           )}
@@ -224,6 +224,7 @@ export function ContactsView({
     {
       id: "select",
       size: 40,
+      enableResizing: false,
       header: () => (
         <div className="flex items-center justify-center">
           <input

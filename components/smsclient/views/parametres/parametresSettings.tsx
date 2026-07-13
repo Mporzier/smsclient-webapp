@@ -70,7 +70,7 @@ export const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
     accessorKey: "packLabel",
     header: "Pack",
     cell: ({ getValue }) => (
-      <span className="font-bold">{getValue<string>()}</span>
+      <span>{getValue<string>()}</span>
     ),
   },
   { accessorKey: "amountLabel", header: "Prix", size: 90 },
@@ -81,11 +81,11 @@ export const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
     cell: ({ getValue }) => {
       const status = getValue<string>();
       return status === "paid" ? (
-        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-500/12 px-2 py-0.5 text-[11px] font-black text-emerald-800">
+        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
           Payée
         </span>
       ) : (
-        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-400/15 px-2 py-0.5 text-[11px] font-black text-slate-700">
+        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-400/15 px-2 py-0.5 text-[11px] font-medium text-slate-700">
           Remboursée
         </span>
       );

@@ -7,6 +7,10 @@ alwaysApply: true
 
 Objectif : une requête Cursor doit rester courte. L'utilisateur valide manuellement entre les étapes.
 
+Miroir skill : `.cursor/skills/no-heavy-cmds`.
+
+Tu proposes les commandes. Je les run. Pas de commandes lourdes par toi.
+
 ## Shell — plafonds
 
 | Règle | Limite |
@@ -16,15 +20,19 @@ Objectif : une requête Cursor doit rester courte. L'utilisateur valide manuelle
 | Retry après échec | 0 — stop, résumer, demander à l'utilisateur |
 | Processus long / watch / dev server | Interdit (`pnpm dev`, `next dev`, `watch`, serveurs en arrière-plan) |
 
-## Commandes interdites (lentes ou volumineuses)
+## Commandes lourdes — INTERDIT (agent propose seulement)
 
-- `pnpm install`, `npm install`, `pnpm add`
-- `pnpm build`, `next build`
-- `pnpm test`, `vitest`, `playwright test`
-- `tsc`, `tsc --noEmit`
-- `docker`, `docker compose`
-- `grep -r` / `rg` sans chemin restreint ni `head_limit`
-- `find` sur tout le repo
+Coût tokens = gros stdout/stderr injecté dans le chat + timeouts.
+
+- **Build / types** : `pnpm build`, `next build`, `tsc`, `tsc --noEmit`
+- **Tests** : `pnpm test*`, `vitest`, `playwright test`, `pnpm test:e2e*`
+- **Install / deps** : `pnpm install`, `pnpm add`, `pnpm update`, `npm i`, `pnpm dlx`, `npx` (packages)
+- **Lint** : `pnpm lint`, `eslint`, `eslint .`
+- **Dev / watch** : `pnpm dev`, `next dev`, `vitest watch`, tout `--watch`
+- **Docker** : `docker`, `docker compose`
+- **CLI lourdes** : `shadcn` via dlx/npx, `playwright install`
+- **Disk dump** : `find` repo-wide, `grep -r` / `rg` sans path ni `head_limit`, lire `.next` / `node_modules` / gros lockfiles
+- **Git volumineux** : `git log -p`, `git diff` sans path sur gros arbres
 
 ## Boucles interdites
 
@@ -42,7 +50,7 @@ Objectif : une requête Cursor doit rester courte. L'utilisateur valide manuelle
 
 1. **Une hypothèse** → **un correctif minimal** → **réponse**
 2. Bloqué après 2 hypothèses infructueuses → stop, exposer ce qui manque, demander l'erreur ou la décision utilisateur
-3. Vérifications (tests, type-check, build) → commandes à copier pour l'utilisateur, jamais exécutées
+3. Vérifications (tests, type-check, build, lint, install) → **proposer** la commande à copier, **jamais** l'exécuter
 
 ## Outils préférés (rapides)
 

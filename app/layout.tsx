@@ -4,8 +4,11 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { UserProfileProvider } from "@/components/auth/UserProfileProvider";
 import { OpenWidgetLoader } from "@/components/OpenWidgetLoader";
 import type { Metadata } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", inter.variable, geistMono.variable, "font-sans", geist.variable)}
     >
       <body className="relative h-full w-full overflow-hidden">
         <AuthProvider>

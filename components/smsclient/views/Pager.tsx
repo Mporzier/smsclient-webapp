@@ -1,6 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type PagerProps = {
   page: number;
@@ -15,42 +16,45 @@ export function Pager({ page, totalPages, onPageChange }: PagerProps) {
 
   return (
     <div className="flex items-center gap-1">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon-xs"
         disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
-        className={cn(
-          "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-black leading-none text-slate-700",
-          page === 0 && "cursor-not-allowed opacity-40"
-        )}
+        className="h-7 w-7 cursor-pointer rounded-lg text-sm font-medium"
+        aria-label="Page précédente"
       >
         ‹
-      </button>
+      </Button>
       {pages.map((i) => (
-        <button
+        <Button
           key={i}
           type="button"
+          variant={page === i ? "default" : "outline"}
+          size="icon-xs"
           onClick={() => onPageChange(i)}
           className={cn(
-            "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-extrabold leading-none text-slate-700",
-            page === i &&
-              "border-[#2f6fed] bg-[#2f6fed] text-white shadow-[0_6px_12px_rgba(47,111,237,0.25)]"
+            "h-7 w-7 cursor-pointer rounded-lg text-sm font-medium",
+            page === i && "shadow-sm"
           )}
+          aria-label={`Page ${i + 1}`}
+          aria-current={page === i ? "page" : undefined}
         >
           {i + 1}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon-xs"
         disabled={page === totalPages - 1}
         onClick={() => onPageChange(page + 1)}
-        className={cn(
-          "grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-sm font-black leading-none text-slate-700",
-          page === totalPages - 1 && "cursor-not-allowed opacity-40"
-        )}
+        className="h-7 w-7 cursor-pointer rounded-lg text-sm font-medium"
+        aria-label="Page suivante"
       >
         ›
-      </button>
+      </Button>
     </div>
   );
 }

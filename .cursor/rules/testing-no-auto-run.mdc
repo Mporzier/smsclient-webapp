@@ -7,6 +7,11 @@ alwaysApply: true
 
 Ne jamais lancer tests ni commandes de vérification. L'utilisateur les exécute lui-même.
 
+Miroirs skills : `.cursor/skills/no-verify-build`, `.cursor/skills/no-heavy-cmds`.
+
+Pas de verification build. Le build est fait par moi.
+Tu proposes les commandes. Je les run. Pas de commandes lourdes par toi.
+
 ## Interdit
 
 - `pnpm test`, `pnpm test:unit`, `pnpm test:integration`, `pnpm test:all`
@@ -14,6 +19,8 @@ Ne jamais lancer tests ni commandes de vérification. L'utilisateur les exécute
 - `playwright test`, `pnpm test:e2e`, `pnpm test:e2e:ui`
 - `pnpm build`, `next build`
 - `tsc`, `tsc --noEmit`
+- `pnpm lint`, `eslint`
+- `pnpm install`, `pnpm add`, `pnpm dlx`, `npx` (packages)
 - Boucles run → fix → run, y compris via subagents ou « verification before completion »
 - Ouvrir `playwright-report/**` ou `test-results/**` sans que l'utilisateur fournisse le chemin ou l'erreur
 
@@ -22,7 +29,8 @@ Ne jamais lancer tests ni commandes de vérification. L'utilisateur les exécute
 Donner les commandes à lancer manuellement, sans les exécuter :
 
 ```bash
+pnpm build
+pnpm lint
 pnpm test:unit
 pnpm test:integration
-pnpm test:e2e -- tests/e2e/public/auth-login.spec.ts
 ```

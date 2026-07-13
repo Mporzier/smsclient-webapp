@@ -45,7 +45,7 @@ const columns: ColumnDef<CampaignRowData, unknown>[] = [
     accessorKey: "name",
     header: "Campagne",
     cell: ({ getValue }) => (
-      <span className="font-extrabold">{getValue<string>()}</span>
+      <span>{getValue<string>()}</span>
     ),
   },
   { accessorKey: "recipients", header: "Destinataires", size: 110 },

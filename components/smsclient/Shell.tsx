@@ -5,47 +5,50 @@ import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
 import { MonProfilModal } from "@/components/smsclient/modals/MonProfilModal";
 import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
-import type { AppRoute } from "@/lib/proto/routes";
 import {
   navOverrideForRoute,
   ROUTE_TITLES,
   isCampaignWizardRoute,
 } from "@/lib/proto/routes";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useMemo, useState } from "react";
 import {
-  BarChart3,
   Bell,
-  CalendarSync,
   ChevronLeft,
   ChevronRight,
-  CircleHelp,
-  CircleUserRound,
   Coins,
-  LayoutDashboard,
-  Link,
   LogOut,
-  Megaphone,
   MoreHorizontal,
   Plus,
-  Search,
   MessageSquareText,
-  QrCode,
-  Scale,
   Settings,
   UserRound,
-  Users,
-  type LucideIcon,
-  LayoutTemplate,
 } from "lucide-react";
 import { LogoMark } from "@/components/smsclient/shell/LogoMark";
 import {
-  APP_CANVAS_CLASS, MAIN_PANEL_CLASS, SIDEBAR_W_COLLAPSED, SIDEBAR_W_EXPANDED,
-  assistanceNav, generalNav, toolsNav, SidebarNavSection, SidebarHoverTooltip, SidebarMenuIcon, navMainIconStroke,
+  APP_CANVAS_CLASS,
+  MAIN_PANEL_CLASS,
+  SIDEBAR_W_COLLAPSED,
+  SIDEBAR_W_EXPANDED,
+  assistanceNav,
+  generalNav,
+  toolsNav,
+  SidebarNavSection,
+  SidebarHoverTooltip,
+  SidebarMenuIcon,
+  navMainIconStroke,
+  type ShellProps,
 } from "@/components/smsclient/shell/SidebarNav";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 export { SearchBar } from "@/components/smsclient/shell/SearchBar";
 
 export function AppShell({
@@ -93,15 +96,6 @@ export function AppShell({
     return local ? local.slice(0, 2).toUpperCase() : "?";
   }, [profile, profileLoading, email]);
 
-  useEffect(() => {
-    if (!profileOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setProfileOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [profileOpen]);
-
   async function handleLogout() {
     setProfileOpen(false);
     await signOut();
@@ -126,7 +120,7 @@ export function AppShell({
             sidebarCollapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W_EXPANDED
           )}
         >
-          <div className="relative flex h-full min-h-0 w-full flex-col overflow-visible rounded-3xl border border-[#e5edf6] bg-white px-3 py-3.5">
+          <div className="relative flex h-full min-h-0 w-full flex-col overflow-visible rounded-3xl border border-border bg-card px-3 py-3.5">
             <button
               type="button"
               onClick={toggleSidebar}
@@ -136,7 +130,7 @@ export function AppShell({
                   ? "Ouvrir le menu latéral"
                   : "Fermer le menu latéral"
               }
-              className="absolute right-0 top-8 z-40 grid h-7 w-7 translate-x-1/2 cursor-pointer place-items-center rounded-full border border-[#e5edf6] bg-white text-[#1831c9] transition-colors hover:bg-slate-50"
+              className="absolute right-0 top-8 z-40 grid h-7 w-7 translate-x-1/2 cursor-pointer place-items-center rounded-full border border-border bg-card text-primary transition-colors hover:bg-muted"
             >
               {sidebarCollapsed ? (
                 <ChevronRight
@@ -166,7 +160,7 @@ export function AppShell({
                 <LogoMark size={27} />
               </div>
               {!sidebarCollapsed && (
-                <span className="min-w-0 truncate text-lg font-extrabold leading-none text-[#14284f]">
+                <span className="min-w-0 truncate text-lg font-extrabold leading-none text-foreground">
                   smsclient.fr
                 </span>
               )}
@@ -203,110 +197,13 @@ export function AppShell({
               />
             </div>
 
-            <div className="relative shrink-0 border-t border-[#dfe6f0] pt-2.5">
-              {profileOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40 cursor-default"
-                    onClick={() => setProfileOpen(false)}
-                    aria-hidden
-                  />
-                  <div
-                    className={cn(
-                      "absolute z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl",
-                      sidebarCollapsed
-                        ? "bottom-0 left-full ml-2.5 w-56"
-                        : "bottom-full left-0 right-0 mb-2"
-                    )}
-                    role="menu"
-                    aria-label="Menu du compte"
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        setProfileModalOpen(true);
-                      }}
-                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
-                    >
-                      <SidebarMenuIcon icon={UserRound} />
-                      Mon profil
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        go("parametres");
-                      }}
-                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
-                    >
-                      <SidebarMenuIcon icon={Settings} />
-                      Paramètres
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        go("acheter-credits");
-                      }}
-                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
-                    >
-                      <SidebarMenuIcon icon={Coins} />
-                      Crédits
-                      {creditsLabel ? (
-                        <span className="ml-auto rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold tabular-nums text-slate-600">
-                          {creditsLabel}
-                        </span>
-                      ) : null}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        go("soumettre-avis");
-                      }}
-                      className="flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#293852] transition-colors hover:bg-[#f5f8fd]"
-                    >
-                      <SidebarMenuIcon icon={MessageSquareText} />
-                      Soumettre un avis
-                    </button>
-                    <div
-                      className="mx-1 my-1.5 h-px bg-[#edf1f6]"
-                      role="separator"
-                      aria-hidden
-                    />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => void handleLogout()}
-                      className="group flex h-[35px] w-full cursor-pointer items-center gap-[9px] rounded-full px-2.5 text-left text-xs font-bold text-[#e13b54] transition-colors hover:bg-[#f5f8fd]"
-                    >
-                      <span
-                        className="grid h-[17px] w-[17px] shrink-0 place-items-center text-[#e13b54]"
-                        aria-hidden
-                      >
-                        <LogOut
-                          className="h-4 w-4"
-                          strokeWidth={navMainIconStroke}
-                          aria-hidden
-                        />
-                      </span>
-                      Se déconnecter
-                    </button>
-                  </div>
-                </>
-              )}
-
+            <div className="relative shrink-0 border-t border-border pt-2.5">
               <div
                 className={cn(
                   "items-center",
                   sidebarCollapsed
                     ? "flex flex-col gap-2"
-                    : "grid grid-cols-[32px_1fr_24px] gap-2"
+                    : "grid grid-cols-[32px_1fr_34px] gap-2"
                 )}
               >
                 <SidebarHoverTooltip
@@ -314,7 +211,7 @@ export function AppShell({
                   enabled={sidebarCollapsed}
                 >
                   <div
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-[#1831c9] text-[11px] font-extrabold text-white"
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-primary text-[11px] font-extrabold text-primary-foreground"
                     aria-hidden
                   >
                     {initials ?? (
@@ -325,30 +222,71 @@ export function AppShell({
                   </div>
                 </SidebarHoverTooltip>
                 {!sidebarCollapsed && (
-                  <span className="min-w-0 truncate text-xs font-bold leading-tight text-[#14284f]">
+                  <span className="min-w-0 truncate text-xs font-bold leading-tight text-foreground">
                     {displayName ?? (
-                      <span className="inline-block h-3 w-16 animate-pulse rounded bg-slate-200/80 align-middle" />
+                      <span className="inline-block h-3 w-16 animate-pulse rounded bg-muted align-middle" />
                     )}
                   </span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setProfileOpen((open) => !open)}
-                  aria-expanded={profileOpen}
-                  aria-haspopup="menu"
-                  aria-label="Menu du compte"
-                  className={cn(
-                    "grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-[#7d8ba0] transition-colors hover:bg-slate-100 hover:text-[#18243a]",
-                    profileOpen && "bg-[#e9f5ff] text-[#1831c9]",
-                    sidebarCollapsed && "mx-auto"
-                  )}
-                >
-                  <MoreHorizontal
-                    className="h-4 w-4"
-                    strokeWidth={navMainIconStroke}
-                    aria-hidden
-                  />
-                </button>
+                <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
+                  <DropdownMenuTrigger
+                    aria-label="Menu du compte"
+                    className={cn(
+                      "grid h-[34px] w-[34px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                      profileOpen && "bg-accent text-primary",
+                      sidebarCollapsed && "mx-auto"
+                    )}
+                  >
+                    <MoreHorizontal
+                      className="h-4 w-4"
+                      strokeWidth={navMainIconStroke}
+                      aria-hidden
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side={sidebarCollapsed ? "right" : "top"}
+                    align={sidebarCollapsed ? "end" : "start"}
+                    sideOffset={10}
+                    className="w-56"
+                    aria-label="Menu du compte"
+                  >
+                    <DropdownMenuItem
+                      onSelect={() => setProfileModalOpen(true)}
+                    >
+                      <SidebarMenuIcon icon={UserRound} />
+                      Mon profil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => go("parametres")}>
+                      <SidebarMenuIcon icon={Settings} />
+                      Paramètres
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => go("acheter-credits")}>
+                      <SidebarMenuIcon icon={Coins} />
+                      Crédits
+                      {creditsLabel ? (
+                        <span className="ml-auto rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
+                          {creditsLabel}
+                        </span>
+                      ) : null}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => go("soumettre-avis")}>
+                      <SidebarMenuIcon icon={MessageSquareText} />
+                      Soumettre un avis
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => void handleLogout()}
+                    >
+                      <LogOut
+                        className="h-4 w-4"
+                        strokeWidth={navMainIconStroke}
+                        aria-hidden
+                      />
+                      Se déconnecter
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -356,7 +294,7 @@ export function AppShell({
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 pl-0 max-[860px]:pl-3">
           <div className={MAIN_PANEL_CLASS}>
-          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-[#e5edf6] px-4 pr-[22px] md:px-5">
+          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border px-4 pr-[22px] md:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="hidden min-w-0 items-center gap-1.5 max-[860px]:flex">
                 <div
@@ -365,11 +303,11 @@ export function AppShell({
                 >
                   <LogoMark size={40} />
                 </div>
-                <span className="min-w-0 truncate text-lg font-semibold leading-none text-slate-900">
+                <span className="min-w-0 truncate text-lg font-semibold leading-none text-foreground">
                   smsclient.fr
                 </span>
               </div>
-              <h1 className="m-0 shrink-0 text-lg font-extrabold text-slate-700">
+              <h1 className="m-0 shrink-0 text-lg font-extrabold text-foreground/80">
                 {ROUTE_TITLES[route]}
               </h1>
               {isCampaignWizard && campaignWizardStep != null && (
@@ -378,38 +316,41 @@ export function AppShell({
             </div>
             <div className="flex items-center gap-2.5">
               {creditsLabel && (
-                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">
-                  <Coins className="h-4 w-4 text-[#2f6fed]" aria-hidden />
+                <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 text-sm font-bold text-foreground">
+                  <Coins className="h-4 w-4 text-ring" aria-hidden />
                   {creditsLabel} · Crédits restants
                 </div>
               )}
-              <button
+              <Button
                 type="button"
+                size="sm"
                 onClick={onNewCampaign}
-                className="flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-3.5 py-1.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(47,111,237,0.2)] transition-all hover:brightness-[1.03]"
+                className="h-auto cursor-pointer gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold shadow-md"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                 Nouvelle campagne
-              </button>
+              </Button>
               <HeaderHelpMenu />
-              <button
+              <Button
                 type="button"
-                className="grid h-10 w-10 cursor-pointer place-items-center rounded-xl border border-slate-200 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                variant="outline"
+                size="icon-lg"
+                className="cursor-pointer rounded-xl shadow-sm"
                 title="Notifications"
                 aria-label="Notifications"
               >
                 <Bell
-                  className="h-[18px] w-[18px] shrink-0 text-slate-900"
+                  className="h-[18px] w-[18px] shrink-0 text-foreground"
                   aria-hidden
                 />
-              </button>
+              </Button>
             </div>
           </header>
 
           <main
             data-app-main-scroll
             className={cn(
-              "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-white px-4 md:px-5",
+              "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-card px-4 md:px-5",
               route === "nouvelle-campagne" ||
                 route === "reglementations-sms" ||
                 route === "qr-boutique"

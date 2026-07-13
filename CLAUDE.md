@@ -36,21 +36,22 @@ Layout: **flat** (app à la racine, pas de dossier app `smsclient/`).
 
 `.cursor/rules/` — injecté chaque chat :
 
-- `agent-session-limits` — ≤3 shells, pas de chaînes, pas de Task sauf demande
-- `testing-no-auto-run` — pas de test/build/tsc auto
+- `agent-session-limits` — ≤3 shells, pas de chaînes, pas de Task sauf demande, **pas de commandes lourdes** (skill `no-heavy-cmds`)
+- `testing-no-auto-run` — pas de test/build/tsc/lint/install auto (skills `no-verify-build`, `no-heavy-cmds`)
 - `token-economy` — anti-boucle + doute→question + lectures/edits frugales
 - `caveman` — sortie compressée (full) ; off = `stop caveman` / `normal mode`
 - `skill-evolve` — proposer improve/add skill avant d’implémenter
 
-Skills détail (manuel / trigger) : `anti-loop`, `token-diet`, `caveman`, `skill-evolve`, …
+Skills détail (manuel / trigger) : `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `skill-evolve`, …
 
 ## Vérif manuelle
 
 ```bash
+pnpm build
+pnpm lint
 pnpm test:unit
 pnpm test:integration
 ```
-
 ## Next 16
 
 Lire `node_modules/next/dist/docs/` avant code Next. Skill `next16-guard`.

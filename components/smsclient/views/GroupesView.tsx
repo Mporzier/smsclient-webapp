@@ -14,9 +14,7 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
     accessorKey: "name",
     header: "Nom du groupe",
     cell: ({ getValue }) => (
-      <CellTruncate as="div" className="font-semibold">
-        {getValue<string>()}
-      </CellTruncate>
+      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
   },
   {
@@ -95,6 +93,7 @@ export function GroupesView({
     {
       id: "select",
       size: 40,
+      enableResizing: false,
       header: () => (
         <div className="flex items-center justify-center">
           <input

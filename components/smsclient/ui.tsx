@@ -1,4 +1,5 @@
-import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
@@ -19,31 +20,37 @@ export function CellTruncate({
   );
 }
 
+/**
+ * Compat wrapper autour de shadcn `Button`.
+ * Préférer `Button` directement pour le code neuf.
+ */
 export function ProtoBtn({
   className,
   primary,
   green,
   children,
+  type = "button",
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   primary?: boolean;
   green?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      type={type}
+      variant={primary || green ? "default" : "outline"}
+      size="lg"
       className={cn(
-        "inline-flex h-11 cursor-pointer items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 text-[15px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
-        primary &&
-          "border-transparent bg-gradient-to-br from-[#4a86ff] to-[#2f6fed] px-[18px] text-white shadow-[0_18px_30px_rgba(47,111,237,0.22)] disabled:border-transparent disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500",
+        "h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold shadow-sm",
+        primary && "shadow-md",
         green &&
-          "border-emerald-500/85 bg-emerald-500/85 text-white hover:brightness-[0.98]",
+          "border-transparent bg-emerald-500/85 text-white hover:bg-emerald-500 hover:text-white",
         className
       )}
       {...rest}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -59,7 +66,7 @@ export function PlusIcon({ className }: { className?: string }) {
 
 export function BadgeSent({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1.5 text-xs font-extrabold text-cyan-800">
+    <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1.5 text-xs font-medium text-cyan-800">
       <span className="h-2 w-2 rounded-full bg-current opacity-90" />
       {children}
     </span>
@@ -68,7 +75,7 @@ export function BadgeSent({ children }: { children: ReactNode }) {
 
 export function BadgeScheduled({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700">
+    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-blue-700">
       <span className="h-2 w-2 rounded-full bg-current opacity-90" />
       {children}
     </span>
@@ -77,7 +84,7 @@ export function BadgeScheduled({ children }: { children: ReactNode }) {
 
 export function BadgeDraft({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs font-extrabold text-slate-700">
+    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700">
       <span className="h-2 w-2 rounded-full bg-current opacity-90" />
       {children}
     </span>
@@ -86,7 +93,7 @@ export function BadgeDraft({ children }: { children: ReactNode }) {
 
 export function BadgeFailed({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-extrabold text-rose-700">
+    <span className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700">
       <span className="h-2 w-2 rounded-full bg-current opacity-90" />
       {children}
     </span>

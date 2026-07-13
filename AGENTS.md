@@ -18,7 +18,7 @@ Lire `CLAUDE.md` (stack, carte, entrées, always-on).
 
 ## Skills (sur trigger / `/nom`)
 
-`.cursor/skills/` — dont `anti-loop`, `token-diet`, `caveman`, `smsclient-map`.
+`.cursor/skills/` — dont `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `smsclient-map`.
 
 ## Mémoire session
 
