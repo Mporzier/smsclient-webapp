@@ -75,7 +75,8 @@ Installés : `button`, `dropdown-menu`, `dialog`, `input`.
 - [ ] ProtoBtn → Button direct (opportuniste)
 - [ ] Hex vues (opportuniste)
 - [x] DataTable tokens + Pager Button — **pas** Table shadcn / AG Grid
-- [ ] L2 : tri colonnes UI + Checkbox shadcn
+- [x] L2a : tri colonnes UI
+- [ ] L2b : Checkbox shadcn
 - [ ] L3 : virtualisation si besoin
 
 ### Hors scope
@@ -88,7 +89,8 @@ Installés : `button`, `dropdown-menu`, `dialog`, `input`.
 
 4. Petites modales + `Input`  
 5. Moyennes / grosses  
-L2. Tri colonnes + checkbox  
+L2a. Tri colonnes — fait  
+L2b. Checkbox shadcn  
 L3. Virtual si perf  
 
 Vérif manuelle :

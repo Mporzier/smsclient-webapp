@@ -1,7 +1,7 @@
 ---
 title: DataTable — tri colonnes
 date: 2026-07-13
-status: draft
+status: approved
 ---
 
 # DataTable — tri colonnes (design)
@@ -19,7 +19,7 @@ Design system L2 : « tri colonnes UI ».
 | Périmètre | Toutes les DataTable |
 | Interaction | Clic header : none → asc → desc → none |
 | Multi-colonne | Non (une seule colonne à la fois) |
-| Persistance | Non (MVP) |
+| Persistance | **Non** — pas d’URL, pas de `localStorage`, pas de storage. État React local seulement (perdu au unmount / navigation) |
 | Lieu | Central dans `DataTable` (approche A) |
 | Tri serveur | Hors scope |
 
@@ -30,7 +30,7 @@ Design system L2 : « tri colonnes UI ».
 3. Ordre pipeline TanStack : filtre → **tri** → pagination.
 4. Colonnes non triables par défaut (ids) : `select`, `actions`, `avatar`. Une vue peut forcer `enableSorting: false` / `true` sur une `ColumnDef`.
 5. Poignée de resize : `stopPropagation` déjà en place — ne déclenche pas le tri.
-6. Accessibilité : `aria-sort` (`none` | `ascending` | `descending`) sur le `<th>` ; bouton / zone cliquable focusable au clavier.
+6. Accessibilité : `aria-sort` (`none` | `ascending` | `descending`) sur le `<th>` ; zone cliquable focusable au clavier.
 
 ## UI
 
@@ -46,20 +46,20 @@ Design system L2 : « tri colonnes UI ».
 
 Fichier principal : `components/smsclient/DataTable.tsx`
 
-- Imports : `getSortedRowModel`, `SortingState`, `OnChangeFn` (si besoin).
-- État local `sorting` + `onSortingChange`.
-- `useReactTable` : `state: { globalFilter, sorting }`, `getSortedRowModel()`, `enableSorting: true`, `enableMultiSort: false`, `enableSortingRemoval: true` (pour revenir à none).
-- Header : wrapper cliquable qui appelle `header.column.getToggleSortingHandler()` (ou équivalent cycle TanStack).
-- `withResizeDefaults` (ou helper voisin) : `enableSorting: false` si `id` ∈ `{ select, actions, avatar }` sauf override colonne.
+- Imports : `getSortedRowModel`, `SortingState`.
+- État local `useState<SortingState>([])` + `onSortingChange`.
+- `useReactTable` : `state: { globalFilter, sorting }`, `getSortedRowModel()`, `enableSorting: true`, `enableMultiSort: false`, `enableSortingRemoval: true`.
+- Header : wrapper cliquable → `header.column.getToggleSortingHandler()`.
+- Helper colonnes : `enableSorting: false` si `id` ∈ `{ select, actions, avatar }` sauf override.
 
-Vues : **pas de changement obligatoire**. Vérifier rapidement colonnes sans `accessorKey` / valeur triable (ex. rendu custom) — désactiver si tri nonsense.
+Vues : **pas de changement obligatoire**. Vérifier rapidement colonnes sans valeur triable — désactiver si nonsense.
 
 ## Hors scope
 
 - Checkbox shadcn (autre moitié L2)
 - Virtualisation (L3)
 - Tri côté Supabase / `order=`
-- Persistance URL ou `localStorage`
+- Persistance URL / `localStorage` / session
 - Tri dans `ImportContactsModal` (aperçu CSV)
 
 ## Vérif manuelle
@@ -68,4 +68,4 @@ Vues : **pas de changement obligatoire**. Vérifier rapidement colonnes sans `ac
 pnpm build
 ```
 
-Tester : Contacts — clic Prénom / Nom / Date ; vérifier cycle et pagination ; Groupes + Campagnes smoke ; colonnes select/actions non cliquables pour tri.
+Tester : Contacts — clic Prénom / Nom / Date ; cycle + pagination ; Groupes + Campagnes smoke ; select/actions non triables. Recharger / quitter la vue = tri perdu (attendu).
