@@ -5,13 +5,16 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
   type ColumnDef,
   type Row,
+  type SortingState,
 } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { Pager } from "./views/Pager";
-import { useMemo, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 
 type DataTableProps<T> = {
   columns: ColumnDef<T, unknown>[];
@@ -28,6 +31,8 @@ type DataTableProps<T> = {
   clipHorizontalOverflow?: boolean;
 };
 
+const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
+
 function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
   if (col.id) return col.id;
   if ("accessorKey" in col && col.accessorKey != null) {
@@ -36,15 +41,17 @@ function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
   return undefined;
 }
 
-function withResizeDefaults<T>(
+function withColumnDefaults<T>(
   columns: ColumnDef<T, unknown>[]
 ): ColumnDef<T, unknown>[] {
   return columns.map((col) => {
     const id = columnId(col);
     const noResize = id === "select" || id === "actions";
+    const noSort = id != null && NO_SORT_IDS.has(id);
     return {
       ...col,
       enableResizing: noResize ? false : (col.enableResizing ?? true),
+      enableSorting: noSort ? false : (col.enableSorting ?? true),
       minSize: col.minSize ?? (noResize ? 40 : 80),
       maxSize: col.maxSize ?? 800,
     };
@@ -64,18 +71,25 @@ export function DataTable<T>({
   footer,
   clipHorizontalOverflow = false,
 }: DataTableProps<T>) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
   const sizedColumns = useMemo(
-    () => withResizeDefaults(columns),
+    () => withColumnDefaults(columns),
     [columns]
   );
 
   const table = useReactTable({
     data,
     columns: sizedColumns,
-    state: { globalFilter },
+    state: { globalFilter, sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    enableSorting: true,
+    enableMultiSort: false,
+    enableSortingRemoval: true,
     columnResizeMode: "onChange",
     enableColumnResizing: true,
     defaultColumn: {
@@ -125,9 +139,20 @@ export function DataTable<T>({
             <tr>
               {table.getHeaderGroups()[0].headers.map((header) => {
                 const isSelectCol = header.column.id === "select";
+                const canSort = header.column.getCanSort();
+                const sorted = header.column.getIsSorted();
+                const ariaSort =
+                  sorted === "asc"
+                    ? "ascending"
+                    : sorted === "desc"
+                      ? "descending"
+                      : canSort
+                        ? "none"
+                        : undefined;
                 return (
                   <th
                     key={header.id}
+                    aria-sort={ariaSort}
                     className={cn(
                       "relative whitespace-nowrap border-b border-border bg-muted py-3.5 text-sm font-medium text-foreground",
                       isSelectCol
@@ -135,12 +160,44 @@ export function DataTable<T>({
                         : "px-[18px] text-left"
                     )}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                    {header.isPlaceholder ? null : canSort ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex max-w-full items-center gap-1.5 rounded-md text-left",
+                          "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         )}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <span className="min-w-0 truncate">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </span>
+                        {sorted === "asc" ? (
+                          <ArrowUp
+                            className="h-3.5 w-3.5 shrink-0 text-foreground"
+                            aria-hidden
+                          />
+                        ) : sorted === "desc" ? (
+                          <ArrowDown
+                            className="h-3.5 w-3.5 shrink-0 text-foreground"
+                            aria-hidden
+                          />
+                        ) : (
+                          <ArrowUpDown
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    ) : (
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )
+                    )}
                     {header.column.getCanResize() ? (
                       <div
                         role="separator"
