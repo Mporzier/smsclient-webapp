@@ -36,7 +36,7 @@ Lire `wiki/hot.md` d'abord si session récente documentée.
 
 `.cursor/skills/` (workspace root).
 
-**smsclient** : `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`
+**smsclient** : `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`
 
 **caveman** : `caveman`, `cavecrew`, `caveman-commit`, `caveman-compress`, `caveman-help`, `caveman-review`, `caveman-stats`
 

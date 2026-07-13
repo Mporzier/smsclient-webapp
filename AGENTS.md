@@ -6,18 +6,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # smsclient-webapp — agent rules
 
-Workspace root = Next.js app (flat). No nested `smsclient/` app folder.
+Workspace = Next.js app (flat).
 
-## Skills
+## Carte d'identité
 
-`.cursor/skills/` — project skills.
+Lire `CLAUDE.md` (stack, carte, entrées, always-on).
 
-Invoke: `/caveman`, `/caveman-commit`, skill name in chat, or attach skill manually.
+## Always-on rules
 
-## Rules
+`.cursor/rules/` — `agent-session-limits`, `testing-no-auto-run`, `token-economy`, `caveman`, `skill-evolve`.
 
-`.cursor/rules/` — session limits, no auto test run.
+## Skills (sur trigger / `/nom`)
 
-## App docs
+`.cursor/skills/` — dont `anti-loop`, `token-diet`, `caveman`, `smsclient-map`.
 
-See `CLAUDE.md` and `wiki/`.
+## Mémoire session
+
+`wiki/hot.md` → `wiki/index.md` → code.

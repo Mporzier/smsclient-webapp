@@ -1,0 +1,33 @@
+---
+description: Économie tokens — anti-boucle, doute→humain, lectures/edits frugales (always-on)
+alwaysApply: true
+---
+
+# token-economy (always-on)
+
+Miroir compressé des skills `anti-loop` + `token-diet`. Détail : `.cursor/skills/anti-loop`, `.cursor/skills/token-diet`.
+
+## Boucles / retry
+
+- Commande échoue → **retry = 0**. Stop, citer 1 ligne, demander.
+- Interdit : run→fix→run, Grep/Read en spirale (> **2** tours sans hypothèse), Task sauf demande user.
+- Shell : ≤ 3 / requête ; une intention = une commande (voir `agent-session-limits`).
+
+## Doute = frein hard
+
+Ne **pas** finaliser (done / patch large / commit) si : ≥2 causes sans preuve, comportement inconnu, spec floue, log incomplet, choix produit non tranché.
+
+Alors : stop outils → 2–4 lignes (sûr / manque / options) → **une** question → attendre.
+
+Finaliser seulement si : hypothèse unique + fix, ou user a tranché, ou demande non ambiguë.
+
+## Lectures / edits
+
+- Doc web HTML : `npx defuddle parse <URL> --md` (pas dump HTML). `.md` raw → WebFetch OK.
+- Grep : toujours `path` + `head_limit`. Pas de recherche globale.
+- Gros fichiers : `Read` avec `offset`/`limit` (`CampaignWizard.tsx`, `Shell.tsx`, `ParametresView.tsx`).
+- Patch : `StrReplace`. Pas de `Write` full file sauf fichier neuf ou changement >~50 %.
+
+## Tests / build
+
+Ne pas lancer (rule `testing-no-auto-run`). Donner commandes à copier.

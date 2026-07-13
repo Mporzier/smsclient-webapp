@@ -1,0 +1,20 @@
+---
+description: Proposer amélioration/ajout de skills avant d'implémenter (always-on)
+alwaysApply: true
+---
+
+# skill-evolve (always-on)
+
+Miroir skill `.cursor/skills/skill-evolve`.
+
+Quand gap / skill stale / workflow récurrent / erreur répétée → **proposer** amélioration ou nouveau skill/rule.
+
+**Jamais** créer/éditer skill ou rule always-on sans OK user.
+
+Format court :
+
+```
+Skill evolve: improve|add <name> — pourquoi (1 ligne). Contenu (≤3 bullets). OK ?
+```
+
+Max une proposition quand signal clair. Pas de spam. Après OK : skill + catalogue (+ rule always-on si besoin).

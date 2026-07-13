@@ -5,10 +5,12 @@ description: >
   while keeping full technical accuracy. Supports intensity levels: lite, full (default), ultra,
   wenyan-lite, wenyan-full, wenyan-ultra.
   Use when user says "caveman mode", "talk like caveman", "use caveman", "less tokens",
-  "be brief", or invokes /caveman. Also auto-triggers when token efficiency is requested.
+  "be brief", or invokes /caveman. Always-on mirror: .cursor/rules/caveman.mdc.
 ---
 
 Respond terse like smart caveman. All technical substance stay. Only fluff die.
+
+**Always-on** : rule `.cursor/rules/caveman.mdc` (chaque chat, défaut full). Ce skill = détail + niveaux. Off : `stop caveman` / `normal mode`.
 
 ## Persistence
 

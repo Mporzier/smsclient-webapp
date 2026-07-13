@@ -3,17 +3,9 @@
 import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
 import { CellTruncate, ProtoBtn, PlusIcon } from "@/components/smsclient/ui";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { fieldBox } from "@/components/smsclient/flowFieldStyles";
-import { cn } from "@/lib/cn";
-import {
-  normalizeUrl,
-  isValidLinkUrl,
-  isValidLinkLabel,
-  SMS_LINK_LABEL_MAX_LENGTH,
-  SMS_LINK_LABEL_MIN_LENGTH,
-} from "@/components/smsclient/CreateCampaign/campaignTextUtils";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -41,10 +33,7 @@ export function LiensView({
   onToast,
 }: LiensViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [originalUrl, setOriginalUrl] = useState("");
-  const [label, setLabel] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LinkRowData | null>(null);
 
   useEffect(() => {
@@ -73,41 +62,30 @@ export function LiensView({
     [onToast]
   );
 
-  const handleCreate = useCallback(async () => {
-    const normalized = normalizeUrl(originalUrl);
-    if (!isValidLinkUrl(originalUrl)) {
-      setFormError(
-        "Saisissez une URL valide (ex. https://votre-site.fr/promo)."
-      );
-      return;
-    }
-    const trimmedLabel = label.trim().slice(0, SMS_LINK_LABEL_MAX_LENGTH);
-    if (!isValidLinkLabel(trimmedLabel)) {
-      setFormError(
-        `Le libellé est obligatoire (${SMS_LINK_LABEL_MIN_LENGTH} caractères minimum).`
-      );
-      return;
-    }
-    if (!userId) {
-      setFormError("Connectez-vous pour créer un lien.");
-      return;
-    }
-    setCreating(true);
-    setFormError(null);
-    const { data, error: createError } = await createSmsShortLink(supabase, {
-      originalUrl: normalized,
-      label: trimmedLabel,
-    });
-    setCreating(false);
-    if (createError || !data) {
-      setFormError(createError?.message ?? "Création impossible.");
-      return;
-    }
-    setOriginalUrl("");
-    setLabel("");
+  const handleCreate = useCallback(
+    async (args: { originalUrl: string; label: string }) => {
+      if (!userId) {
+        return { data: null, error: "Connectez-vous pour créer un lien." };
+      }
+      const { data, error: createError } = await createSmsShortLink(supabase, {
+        originalUrl: args.originalUrl,
+        label: args.label,
+      });
+      if (createError || !data) {
+        return {
+          data: null,
+          error: createError?.message ?? "Création impossible.",
+        };
+      }
+      return { data, error: null };
+    },
+    [userId, supabase]
+  );
+
+  const handleCreated = useCallback(async () => {
     await onRefresh();
     onToast?.("Lien court créé");
-  }, [originalUrl, label, userId, supabase, onRefresh, onToast]);
+  }, [onRefresh, onToast]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
@@ -121,10 +99,6 @@ export function LiensView({
     await onRefresh();
     onToast?.("Lien supprimé");
   }, [deleteTarget, userId, supabase, onRefresh, onToast]);
-
-  const urlValid = isValidLinkUrl(originalUrl);
-  const labelValid = isValidLinkLabel(label);
-  const canCreate = urlValid && labelValid && !creating;
 
   const columns: ColumnDef<LinkRowData, unknown>[] = useMemo(
     () => [
@@ -212,128 +186,62 @@ export function LiensView({
       {showBigEmpty && (
         <SectionGuideCard
           section="liens"
-          onPrimaryAction={() =>
-            document.getElementById("liens-create-url")?.focus()
-          }
+          onPrimaryAction={() => setCreateOpen(true)}
         />
       )}
 
-      <div className={cn(fieldBox, "shrink-0 py-4")}>
-        <div className="mb-3 flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
-            <Link2 className="h-4 w-4" aria-hidden />
-          </span>
-          <div>
-            <h2 className="m-0 text-sm font-black text-slate-900">
-              Créer un lien court
-            </h2>
-            <p className="m-0 text-xs font-semibold text-slate-500">
-              L&apos;URL sera enregistrée et un lien court traçable sera généré.
-            </p>
-          </div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <SearchBar
+            placeholder="Rechercher un lien…"
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <div className="min-w-0">
-            <label
-              htmlFor="liens-create-url"
-              className="mb-1.5 block text-xs font-bold text-slate-700"
-            >
-              URL
-            </label>
-            <input
-              id="liens-create-url"
-              type="url"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
-              placeholder="www.votre-site.fr/promo"
-              value={originalUrl}
-              onChange={(e) => {
-                setOriginalUrl(e.target.value);
-                if (formError) setFormError(null);
-              }}
-            />
-          </div>
-          <div className="min-w-0">
-            <label
-              htmlFor="liens-create-label"
-              className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-slate-700"
-            >
-              <span>Libellé</span>
-              <span className="text-[10px] font-semibold tabular-nums text-slate-400">
-                {label.trim().length}/{SMS_LINK_LABEL_MAX_LENGTH} (min.{" "}
-                {SMS_LINK_LABEL_MIN_LENGTH})
-              </span>
-            </label>
-            <input
-              id="liens-create-label"
-              type="text"
-              required
-              minLength={SMS_LINK_LABEL_MIN_LENGTH}
-              maxLength={SMS_LINK_LABEL_MAX_LENGTH}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-[#2f6fed]/40 focus:ring-2 focus:ring-[#2f6fed]/15"
-              placeholder="Promo été"
-              value={label}
-              onChange={(e) => {
-                setLabel(e.target.value);
-                if (formError) setFormError(null);
-              }}
-            />
-          </div>
-          <ProtoBtn
-            primary
-            className="h-10 w-full px-4 sm:w-auto"
-            onClick={() => void handleCreate()}
-            disabled={!canCreate}
-          >
-            {!creating ? <PlusIcon /> : null}
-            {creating ? "Création…" : "Créer"}
+        <div className="mt-0.5">
+          <ProtoBtn primary onClick={() => setCreateOpen(true)}>
+            <PlusIcon />
+            Créer un lien
           </ProtoBtn>
         </div>
+      </div>
 
-        {formError ? (
-          <p className="m-0 mt-2 text-xs font-bold text-rose-700">
-            {formError}
+      {error ? (
+        <p className="m-0 text-sm font-bold text-rose-700">{error}</p>
+      ) : null}
+
+      {showBigEmpty ? (
+        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+          <Link2 className="mb-3 h-10 w-10 text-slate-300" aria-hidden />
+          <p className="m-0 text-sm font-extrabold text-slate-700">
+            Aucun lien court pour le moment
           </p>
-        ) : null}
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <SearchBar
-          placeholder="Rechercher un lien…"
-          value={searchQuery}
-          onChange={setSearchQuery}
+          <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-slate-500">
+            Créez votre premier lien ou activez le suivi des liens dans une
+            campagne SMS.
+          </p>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={loading}
+          pageSize={20}
+          globalFilter={searchQuery}
+          emptyMessage="Aucun lien."
+          searchNoResultsMessage="Aucun résultat pour cette recherche."
+          footer={footerLabel}
+          clipHorizontalOverflow
+          onRowClick={(row) => void copyToClipboard(row.shortUrl)}
         />
+      )}
 
-        {error ? (
-          <p className="m-0 text-sm font-bold text-rose-700">{error}</p>
-        ) : null}
-
-        {showBigEmpty ? (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
-            <Link2 className="mb-3 h-10 w-10 text-slate-300" aria-hidden />
-            <p className="m-0 text-sm font-extrabold text-slate-700">
-              Aucun lien court pour le moment
-            </p>
-            <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-slate-500">
-              Créez votre premier lien ci-dessus ou activez le suivi des liens
-              dans une campagne SMS.
-            </p>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={rows}
-            loading={loading}
-            pageSize={20}
-            globalFilter={searchQuery}
-            emptyMessage="Aucun lien."
-            searchNoResultsMessage="Aucun résultat pour cette recherche."
-            footer={footerLabel}
-            clipHorizontalOverflow
-            onRowClick={(row) => void copyToClipboard(row.shortUrl)}
-          />
-        )}
-      </div>
+      <CreateSmsLinkModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+        onCreated={() => void handleCreated()}
+      />
 
       <ConfirmDeleteModal
         open={deleteTarget !== null}

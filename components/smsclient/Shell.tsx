@@ -213,9 +213,9 @@ export function AppShell({
                   />
                   <div
                     className={cn(
-                      "absolute z-50 overflow-hidden rounded-2xl border border-[#e5edf6] bg-white p-1.5 shadow-[0_18px_48px_rgba(15,31,56,0.16)]",
+                      "absolute z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl",
                       sidebarCollapsed
-                        ? "bottom-0 left-[calc(100%+10px)] mb-0 w-[220px]"
+                        ? "bottom-0 left-full ml-2.5 w-56"
                         : "bottom-full left-0 right-0 mb-2"
                     )}
                     role="menu"
