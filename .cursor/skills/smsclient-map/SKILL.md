@@ -22,11 +22,11 @@ Read `wiki/index.md` first. Max 4 files per domain (`view-scoped-edit`).
 
 ## Domain map — lire d'abord
 
-| Domain | Files |
-|--------|-------|
-| Contacts | `views/ContactsView.tsx`, `hooks/useContacts.ts`, `lib/supabase/clients.ts` |
-| Wizard | `CreateCampaign/CampaignWizard.tsx`, `prototypeApp/useCampaignWizard.ts` |
-| Wiki edits | skill `obsidian-markdown` — `wiki/` |
+| Domain     | Files                                                                       |
+| ---------- | --------------------------------------------------------------------------- |
+| Contacts   | `views/ContactsView.tsx`, `hooks/useContacts.ts`, `lib/supabase/clients.ts` |
+| Wizard     | `CreateCampaign/CampaignWizard.tsx`, `prototypeApp/useCampaignWizard.ts`    |
+| Wiki edits | skill `obsidian-markdown` — `wiki/`                                         |
 
 ## Skills catalogue
 

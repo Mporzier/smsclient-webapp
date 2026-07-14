@@ -64,7 +64,11 @@ export function ConfirmUnsubscribeModal({
       <DialogContent
         showCloseButton={false}
         overlayClassName={dialogOverlayStackedCls}
-        className={cn(confirmDialogContentCls, dialogContentStackedZCls)}
+        className={cn(
+          confirmDialogContentCls,
+          "rounded-xl shadow-lg",
+          dialogContentStackedZCls
+        )}
         onPointerDownOutside={(e) => {
           if (loading) e.preventDefault();
         }}
@@ -77,13 +81,13 @@ export function ConfirmUnsubscribeModal({
             <BellOff className="h-5 w-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-black text-foreground">
+            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
               Désabonner ce contact ?
             </DialogTitle>
             <DialogDescription asChild>
-              <div className="mt-1.5 space-y-2 text-sm font-semibold leading-relaxed text-muted-foreground">
+              <div className="mt-1.5 space-y-2 text-sm font-normal leading-relaxed text-muted-foreground">
                 <p>
-                  <strong className="font-extrabold text-foreground">
+                  <strong className="font-semibold text-foreground">
                     {contactLabel}
                   </strong>{" "}
                   ne recevra plus vos SMS marketing. Le contact reste dans votre
@@ -100,7 +104,7 @@ export function ConfirmUnsubscribeModal({
         </DialogHeader>
 
         {error && (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </p>
         )}
@@ -109,19 +113,17 @@ export function ConfirmUnsubscribeModal({
           <Button
             type="button"
             variant="outline"
-            size="lg"
             disabled={loading}
             onClick={onCancel}
-            className="h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold"
+            className="cursor-pointer"
           >
             Annuler
           </Button>
           <Button
             type="button"
-            size="lg"
             disabled={loading}
             onClick={() => void handleConfirm()}
-            className="h-11 cursor-pointer rounded-[14px] bg-amber-600 px-4 text-[15px] font-bold text-white hover:bg-amber-700 hover:text-white"
+            className="cursor-pointer bg-amber-600 text-white hover:bg-amber-700 hover:text-white"
           >
             {loading ? "Désabonnement…" : "Désabonner"}
           </Button>

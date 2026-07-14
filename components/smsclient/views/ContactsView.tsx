@@ -446,9 +446,7 @@ export function ContactsView({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem
-              onSelect={() => onRowClick(row.original)}
-            >
+            <DropdownMenuItem onSelect={() => onRowClick(row.original)}>
               Éditer
             </DropdownMenuItem>
             <DropdownMenuItem

@@ -75,7 +75,7 @@ export function ConfirmDeleteModal({
         overlayClassName={stacked ? dialogOverlayStackedCls : dialogOverlayCls}
         className={cn(
           confirmDialogContentCls,
-          "sm:max-w-[420px]",
+          "rounded-xl shadow-lg sm:max-w-[420px]",
           stacked ? dialogContentStackedZCls : dialogContentZCls
         )}
         onPointerDownOutside={(e) => {
@@ -90,17 +90,17 @@ export function ConfirmDeleteModal({
             <AlertTriangle className="h-5 w-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-black text-foreground">
+            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
               {title}
             </DialogTitle>
-            <DialogDescription className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">
+            <DialogDescription className="mt-1.5 text-sm font-normal leading-relaxed text-muted-foreground">
               {description}
             </DialogDescription>
           </div>
         </DialogHeader>
 
         {error && (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </p>
         )}
@@ -109,20 +109,18 @@ export function ConfirmDeleteModal({
           <Button
             type="button"
             variant="outline"
-            size="lg"
             disabled={loading}
             onClick={onCancel}
-            className="h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold"
+            className="cursor-pointer"
           >
             Annuler
           </Button>
           <Button
             type="button"
             variant="destructive"
-            size="lg"
             disabled={loading}
             onClick={() => void handleConfirm()}
-            className="h-11 cursor-pointer rounded-[14px] bg-destructive px-4 text-[15px] font-bold text-white hover:bg-destructive/90 hover:text-white"
+            className="cursor-pointer"
           >
             {loading ? "Suppression…" : confirmLabel}
           </Button>
