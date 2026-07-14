@@ -219,7 +219,6 @@ export function useCampaignWizardStep1State({
       recipientMode,
       contacts,
       selectedGroupNames,
-      selectedGroupNames.length,
       selectedIdsFromGroups,
       effectiveSelectedIds,
       excludedContactIds,

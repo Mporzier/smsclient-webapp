@@ -82,7 +82,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
     await contactsState.refresh();
     showToast("Contact désabonné.");
   }, [
-    user?.id,
+    user,
     contactEditRow,
     supabase,
     cmFirst,

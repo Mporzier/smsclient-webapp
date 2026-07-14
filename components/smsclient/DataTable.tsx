@@ -187,6 +187,8 @@ export function DataTable<T>({
     [sizingWeights, clampSizingToContainer]
   );
 
+  // TanStack Table returns unstable function identities — React Compiler skips this hook on purpose.
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable
   const table = useReactTable({
     data,
     columns: sizedColumns,

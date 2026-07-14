@@ -2,7 +2,7 @@
 
 import { RewardWheel } from "@/components/public/RewardWheel";
 import type { QrWheelConfig, QrWheelPublicSegment } from "@/lib/types/qrWheel";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type QrWheelPreviewProps = {
   wheelConfig: QrWheelConfig | null;
@@ -37,9 +37,11 @@ export function QrWheelPreview({
     setWinIndex(null);
   }, []);
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) resetPreview();
-  }, [open, resetPreview]);
+  }
 
   const handleSpin = useCallback(() => {
     if (segments.length === 0 || spinning || winIndex != null) return;

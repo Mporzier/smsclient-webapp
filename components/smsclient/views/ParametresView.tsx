@@ -23,7 +23,7 @@ import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivity
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
 export type ParametresViewProps = {
   profileForm: UserProfileForm | null;
@@ -68,11 +68,13 @@ export function ParametresView({
 
   const openCard = allSettingCards.find((c) => c.id === openSetting);
 
-  useEffect(() => {
-    if (!profileForm || dirty) return;
+  const profileSyncKey = profileForm ? JSON.stringify(profileForm) : null;
+  const [syncedProfileKey, setSyncedProfileKey] = useState<string | null>(null);
+  if (profileForm && !dirty && profileSyncKey !== syncedProfileKey) {
+    setSyncedProfileKey(profileSyncKey);
     setSavedForm(profileForm);
     setDraftForm(profileForm);
-  }, [profileForm, dirty]);
+  }
 
   const setField = <K extends keyof UserProfileForm>(
     key: K,

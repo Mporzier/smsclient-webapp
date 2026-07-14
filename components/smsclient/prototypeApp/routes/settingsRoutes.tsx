@@ -25,7 +25,6 @@ export function renderSettingsRoute(
   if (!SETTINGS_ROUTES.has(r)) return null;
   const { data, modals, wizard, actions } = ctx;
   const {
-    contactsState,
     creditsState,
     profileState,
     userQrState,

@@ -25,6 +25,12 @@ export function PrototypeAppModals({ ctx }: Props) {
     user,
     supabase,
   } = data;
+  const {
+    pendingWizardLeaveActionRef,
+    setLeaveWizardConfirmOpen,
+    leaveWizardConfirmOpen,
+    confirmWizardLeave,
+  } = wizard;
 
   return (
     <>
@@ -138,12 +144,12 @@ export function PrototypeAppModals({ ctx }: Props) {
       />
 
       <CampaignWizardLeaveConfirmModal
-        open={wizard.leaveWizardConfirmOpen}
+        open={leaveWizardConfirmOpen}
         onStay={() => {
-          wizard.pendingWizardLeaveActionRef.current = null;
-          wizard.setLeaveWizardConfirmOpen(false);
+          pendingWizardLeaveActionRef.current = null;
+          setLeaveWizardConfirmOpen(false);
         }}
-        onLeave={wizard.confirmWizardLeave}
+        onLeave={confirmWizardLeave}
       />
     </>
   );

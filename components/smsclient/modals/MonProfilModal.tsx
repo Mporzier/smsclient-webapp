@@ -45,23 +45,27 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const email = user?.email ?? "";
-    const base = profile
-      ? profileToForm(profile)
-      : defaultProfileForm(email);
-    const slice = {
-      firstName: base.firstName,
-      lastName: base.lastName,
-      email: base.email,
-      phone: base.phone,
-    };
+  const email = user?.email ?? "";
+  const base = profile ? profileToForm(profile) : defaultProfileForm(email);
+  const slice = {
+    firstName: base.firstName,
+    lastName: base.lastName,
+    email: base.email,
+    phone: base.phone,
+  };
+  const syncKey = `${open}:${profile?.userId ?? ""}:${email}`;
+  const [prevSyncKey, setPrevSyncKey] = useState("");
+
+  if (open && syncKey !== prevSyncKey) {
+    setPrevSyncKey(syncKey);
     setSaved(slice);
     setDraft(slice);
     setError(null);
     setFeedback(null);
-  }, [open, profile, user?.email]);
+  }
+  if (!open && prevSyncKey !== "") {
+    setPrevSyncKey("");
+  }
 
   useEffect(() => {
     if (!feedback) return;
@@ -84,11 +88,11 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
     setError(null);
     setSaving(true);
     try {
-      const email = user?.email ?? draft.email;
+      const nextEmail = user?.email ?? draft.email;
       const full = profile
         ? profileToForm(profile)
-        : defaultProfileForm(email);
-      await saveProfile({ ...full, ...draft, email });
+        : defaultProfileForm(nextEmail);
+      await saveProfile({ ...full, ...draft, email: nextEmail });
       setSaved(draft);
       setFeedback("Profil mis à jour.");
     } catch (e) {
@@ -96,7 +100,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
     } finally {
       setSaving(false);
     }
-  }, [draft, profile, saveProfile, user?.email]);
+  }, [draft, profile, saveProfile, user]);
 
   return (
     <Dialog

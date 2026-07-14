@@ -10,7 +10,6 @@ import { useGroups } from "@/hooks/useGroups";
 import { useLinks } from "@/hooks/useLinks";
 import { useQrWheel } from "@/hooks/useQrWheel";
 import { useSmsTemplates } from "@/hooks/useSmsTemplates";
-import { useStatistics } from "@/hooks/useStatistics";
 import { useTrashItems } from "@/hooks/useTrashItems";
 import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";

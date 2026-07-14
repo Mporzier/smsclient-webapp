@@ -4,7 +4,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { fetchStatisticsSnapshot } from "@/lib/supabase/statistics";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import { createClient } from "@/lib/supabase/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function emptyData(): StatisticsSnapshot {
   return {
@@ -21,39 +21,86 @@ function emptyData(): StatisticsSnapshot {
 
 export function useStatistics(range: { from: string; to: string }) {
   const { user, loading: authLoading } = useAuth();
-  const userId = user?.id;
+  const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
-  const [data, setData] = useState<StatisticsSnapshot>(emptyData());
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<StatisticsSnapshot>(emptyData);
   const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const [settled, setSettled] = useState<{
+    nonce: number;
+    userId: string | null;
+    from: string;
+    to: string;
+  } | null>(null);
+  const waitersRef = useRef<Array<() => void>>([]);
 
-  const refresh = useCallback(async () => {
-    if (!userId) {
-      setData(emptyData());
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    setLoading(true);
+  const flushWaiters = useCallback(() => {
+    const waiters = waitersRef.current.splice(0);
+    for (const resolve of waiters) resolve();
+  }, []);
+
+  if (!userId && settled !== null) {
+    setSettled(null);
+    setData(emptyData());
     setError(null);
-    const result = await fetchStatisticsSnapshot(supabase, userId, {
-      from: range.from,
-      to: range.to,
-    });
-    if (result.error) {
-      setError(result.error.message);
-      setData(emptyData());
-      setLoading(false);
-      return;
-    }
-    setData(result.data);
-    setLoading(false);
-  }, [supabase, userId, range.from, range.to]);
+  }
+
+  const rangeDirty =
+    settled != null &&
+    (settled.from !== range.from || settled.to !== range.to);
+
+  const loading =
+    authLoading ||
+    (userId != null &&
+      (settled == null ||
+        settled.nonce !== nonce ||
+        settled.userId !== userId ||
+        rangeDirty));
 
   useEffect(() => {
-    if (authLoading) return;
-    void refresh();
-  }, [authLoading, refresh]);
+    if (userId) return;
+    flushWaiters();
+  }, [userId, flushWaiters]);
+
+  useEffect(() => {
+    if (authLoading || !userId) return;
+    let cancelled = false;
+    const requestNonce = nonce;
+    const requestUserId = userId;
+    const from = range.from;
+    const to = range.to;
+
+    void fetchStatisticsSnapshot(supabase, requestUserId, { from, to }).then(
+      (result) => {
+        if (cancelled) return;
+        if (result.error) {
+          setError(result.error.message);
+          setData(emptyData());
+        } else {
+          setError(null);
+          setData(result.data);
+        }
+        setSettled({
+          nonce: requestNonce,
+          userId: requestUserId,
+          from,
+          to,
+        });
+        flushWaiters();
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, userId, supabase, nonce, range.from, range.to, flushWaiters]);
+
+  const refresh = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      waitersRef.current.push(resolve);
+      setNonce((n) => n + 1);
+    });
+  }, []);
 
   return { data, loading, error, refresh };
 }

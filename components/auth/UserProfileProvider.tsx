@@ -4,7 +4,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { sanitizeSender } from "@/lib/proto/smsUtils";
 import {
   completeUserOnboarding,
-  defaultProfileForm,
   getOrCreateUserProfile,
   profileToForm,
   updateUserProfile,
@@ -17,6 +16,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -41,9 +41,22 @@ const UserProfileContext = createContext<UserProfileContextValue | null>(null);
 export function UserProfileProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const supabase = useMemo(() => createClient(), []);
+  const userId = user?.id ?? null;
+  const userEmail = user?.email ?? "";
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const [settled, setSettled] = useState<{
+    nonce: number;
+    userId: string | null;
+  } | null>(null);
+  const waitersRef = useRef<Array<() => void>>([]);
+
+  const flushWaiters = useCallback(() => {
+    const waiters = waitersRef.current.splice(0);
+    for (const resolve of waiters) resolve();
+  }, []);
 
   const readLegacySender = useCallback((): string => {
     try {
@@ -63,44 +76,78 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const refresh = useCallback(async () => {
-    if (!user?.id) {
-      setProfile(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+  if (!userId && settled !== null) {
+    setSettled(null);
+    setProfile(null);
     setError(null);
-    const email = user.email ?? "";
-    const { data, error: err } = await getOrCreateUserProfile(
-      supabase,
-      user.id,
-      email,
-    );
-    if (err) {
-      setError(err.message);
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-    if (data && !data.sender && !data.onboardingCompleted) {
-      const legacy = readLegacySender();
-      if (legacy) {
-        data.sender = legacy;
-      }
-    }
-    if (data?.sender) {
-      persistLegacySender(data.sender);
-    }
-    setProfile(data);
-    setLoading(false);
-  }, [user?.id, user?.email, supabase, readLegacySender, persistLegacySender]);
+  }
+
+  const loading =
+    authLoading ||
+    (userId != null &&
+      (settled == null ||
+        settled.nonce !== nonce ||
+        settled.userId !== userId));
 
   useEffect(() => {
-    if (authLoading) return;
-    void refresh();
-  }, [authLoading, refresh]);
+    if (userId) return;
+    flushWaiters();
+  }, [userId, flushWaiters]);
+
+  useEffect(() => {
+    if (authLoading || !userId) return;
+    let cancelled = false;
+    const requestNonce = nonce;
+    const requestUserId = userId;
+    const email = userEmail;
+
+    void getOrCreateUserProfile(supabase, requestUserId, email).then(
+      ({ data, error: err }) => {
+        if (cancelled) return;
+        if (err) {
+          setError(err.message);
+          setProfile(null);
+          setSettled({ nonce: requestNonce, userId: requestUserId });
+          flushWaiters();
+          return;
+        }
+        let next = data;
+        if (next && !next.sender && !next.onboardingCompleted) {
+          const legacy = readLegacySender();
+          if (legacy) {
+            next = { ...next, sender: legacy };
+          }
+        }
+        if (next?.sender) {
+          persistLegacySender(next.sender);
+        }
+        setError(null);
+        setProfile(next);
+        setSettled({ nonce: requestNonce, userId: requestUserId });
+        flushWaiters();
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authLoading,
+    userId,
+    userEmail,
+    supabase,
+    nonce,
+    readLegacySender,
+    persistLegacySender,
+    flushWaiters,
+  ]);
+
+  const refresh = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      waitersRef.current.push(resolve);
+      setNonce((n) => n + 1);
+    });
+  }, []);
 
   const saveProfile = useCallback(
     async (form: UserProfileForm) => {
@@ -118,7 +165,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         if (data.sender) persistLegacySender(data.sender);
       }
     },
-    [user?.id, user?.email, supabase, persistLegacySender],
+    [user, supabase, persistLegacySender],
   );
 
   const completeOnboarding = useCallback(
@@ -137,7 +184,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         if (data.sender) persistLegacySender(data.sender);
       }
     },
-    [user?.id, user?.email, supabase, persistLegacySender],
+    [user, supabase, persistLegacySender],
   );
 
   const setSmsSender = useCallback(
@@ -145,15 +192,13 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       const sender = sanitizeSender(v);
       persistLegacySender(sender);
       if (!profile || !user?.id) {
-        setProfile((prev) =>
-          prev ? { ...prev, sender } : null,
-        );
+        setProfile((prev) => (prev ? { ...prev, sender } : null));
         return;
       }
       const form = { ...profileToForm(profile), sender };
       await saveProfile(form);
     },
-    [profile, user?.id, persistLegacySender, saveProfile],
+    [profile, user, persistLegacySender, saveProfile],
   );
 
   const smsSender = profile?.sender || readLegacySender();

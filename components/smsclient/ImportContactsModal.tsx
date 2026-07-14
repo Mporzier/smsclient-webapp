@@ -182,7 +182,7 @@ export function ImportContactsModal({
   const [targetGroupName, setTargetGroupName] = useState("");
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [duplicatePhoneE164s, setDuplicatePhoneE164s] = useState<string[]>([]);
+  const [, setDuplicatePhoneE164s] = useState<string[]>([]);
   const [existingDbPhones, setExistingDbPhones] = useState<Set<string>>(
     () => new Set()
   );
@@ -205,19 +205,19 @@ export function ImportContactsModal({
     setDragActive(false);
   }, []);
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) {
       reset();
-      return;
+      setExistingDbPhones(new Set());
+    } else {
+      setTargetGroupName(defaultGroupLabel?.trim() ?? "");
     }
-    setTargetGroupName(defaultGroupLabel?.trim() ?? "");
-  }, [open, reset, defaultGroupLabel]);
+  }
 
   useEffect(() => {
-    if (!open) {
-      setExistingDbPhones(new Set());
-      return;
-    }
+    if (!open) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -236,6 +236,34 @@ export function ImportContactsModal({
     };
   }, [open, supabase, userId]);
 
+  const [parsedForRaw, setParsedForRaw] = useState<string | null>(null);
+  if (rawText !== parsedForRaw) {
+    setParsedForRaw(rawText);
+    if (!rawText) {
+      setParsed(null);
+      setRoles([]);
+      setParseError(null);
+    } else {
+      try {
+        const p = parseCsvText(rawText);
+        if (p.headers.length === 0) {
+          setParseError("Le fichier ne contient pas d’en-têtes de colonnes.");
+          setParsed(null);
+          setRoles([]);
+        } else {
+          setParseError(null);
+          setParsed(p);
+          setRoles(suggestColumnRoles(p.headers, p.rows));
+        }
+      } catch {
+        setParseError(
+          "Impossible d’analyser ce fichier. Vérifiez l’encodage (UTF-8 recommandé)."
+        );
+        setParsed(null);
+        setRoles([]);
+      }
+    }
+  }
   const onPickFile = useCallback((file: File | null) => {
     setParseError(null);
     setParsed(null);
@@ -318,33 +346,6 @@ export function ImportContactsModal({
     },
     [onPickFile]
   );
-
-  useEffect(() => {
-    if (!rawText) {
-      setParsed(null);
-      setRoles([]);
-      setParseError(null);
-      return;
-    }
-    try {
-      const p = parseCsvText(rawText);
-      if (p.headers.length === 0) {
-        setParseError("Le fichier ne contient pas d’en-têtes de colonnes.");
-        setParsed(null);
-        setRoles([]);
-        return;
-      }
-      setParseError(null);
-      setParsed(p);
-      setRoles(suggestColumnRoles(p.headers, p.rows));
-    } catch {
-      setParseError(
-        "Impossible d’analyser ce fichier. Vérifiez l’encodage (UTF-8 recommandé)."
-      );
-      setParsed(null);
-      setRoles([]);
-    }
-  }, [rawText]);
 
   const setRole = useCallback((index: number, role: ImportColumnRole) => {
     setDuplicatePhoneE164s([]);
@@ -749,7 +750,7 @@ export function ImportContactsModal({
                 </label>
                 <select
                   id="import-contacts-target-group"
-                  className="mt-1 flex h-9 w-full max-w-md cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-1 flex h-9 w-full max-w-md cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                   value={targetGroupName}
                   disabled={importing || groupOptions.length === 0}
                   onChange={(e) => setTargetGroupName(e.target.value)}

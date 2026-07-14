@@ -22,14 +22,13 @@ export function useProtoNavigation() {
     return () => window.removeEventListener("hashchange", sync);
   }, []);
 
+  // Migration hash legacy → externe only ; state via hashchange.
   useEffect(() => {
     const legacyStep = parseLegacyCampaignWizardStep(window.location.hash);
     const path = readHashPath();
-    if (legacyStep !== null && path !== "nouvelle-campagne") {
-      setStoredCampaignWizardStep(legacyStep);
-      window.location.hash = "nouvelle-campagne";
-      setHashPath("nouvelle-campagne");
-    }
+    if (legacyStep === null || path === "nouvelle-campagne") return;
+    setStoredCampaignWizardStep(legacyStep);
+    window.location.hash = "nouvelle-campagne";
   }, []);
 
   const go = useCallback((path: string) => {

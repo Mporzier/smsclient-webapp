@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   confirmDialogContentCls,
   dialogContentStackedZCls,
@@ -42,13 +42,15 @@ export function ConfirmDeleteModal({
 }: ConfirmDeleteModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wasOpen, setWasOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) {
       setLoading(false);
       setError(null);
     }
-  }, [open]);
+  }
 
   const handleConfirm = useCallback(async () => {
     setLoading(true);

@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import {
   dialogContentZCls,
@@ -34,10 +34,12 @@ export function UnsubscribedContactsModal({
   onClose,
 }: UnsubscribedContactsModalProps) {
   const [search, setSearch] = useState("");
+  const [wasOpen, setWasOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) setSearch("");
-  }, [open]);
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

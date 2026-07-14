@@ -30,16 +30,14 @@ import { useLinks } from "@/hooks/useLinks";
 import { useSmsTemplates } from "@/hooks/useSmsTemplates";
 import { createSmsShortLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import {
   Calendar,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import type { CampaignWizardProps } from "./campaignTypes";
 import {
   CampaignWizardStep1Provider,
@@ -106,23 +104,18 @@ export function CampaignWizard({
   setSendMode,
   scheduleAt,
   setScheduleAt,
-  aiOpen: _aiOpen,
-  setAiOpen: _setAiOpen,
   groups,
   groupsLoading,
   contacts,
   contactsLoading,
   recipientMode,
   setRecipientMode,
-  manualNumbers: _manualNumbers,
-  setManualNumbers: _setManualNumbers,
   selectedGroupNames,
   setSelectedGroupNames,
   selectedContactIds,
   setSelectedContactIds,
   excludedContactIds,
   setExcludedContactIds,
-  recipientSelectedRaw,
   recipientExcludedStop,
   recipientExcludedInvalid,
   recipientCount,
@@ -259,9 +252,12 @@ export function CampaignWizard({
   const displayTitle = title.trim() || defaultCampaignTitle;
   const hasEnoughCredits = totalCredits <= creditsAvailable;
 
-  useEffect(() => {
+  const confirmClearKey = `${sms}\0${recipientCount}\0${sendMode}`;
+  const [prevConfirmClearKey, setPrevConfirmClearKey] = useState(confirmClearKey);
+  if (confirmClearKey !== prevConfirmClearKey) {
+    setPrevConfirmClearKey(confirmClearKey);
     setConfirmError(null);
-  }, [sms, recipientCount, sendMode]);
+  }
 
   const showAiPromptComposer =
     composeApproach === "ai" && aiVariants.length === 0;
@@ -522,10 +518,13 @@ export function CampaignWizard({
   const scheduleInPast =
     sendMode === "sched" && !!scheduleAt && isParisDateInPast(scheduleAt);
 
-  useEffect(() => {
+  const stepClearKey = `${step}\0${recipients}\0${sms}\0${sender}\0${sendMode}\0${scheduleAt}`;
+  const [prevStepClearKey, setPrevStepClearKey] = useState(stepClearKey);
+  if (stepClearKey !== prevStepClearKey) {
+    setPrevStepClearKey(stepClearKey);
     setStepErrors([]);
     setStepWarnings([]);
-  }, [step, recipients, sms, sender, sendMode, scheduleAt]);
+  }
 
   const validateStep1 = useCallback((): boolean => {
     const errors: string[] = [];

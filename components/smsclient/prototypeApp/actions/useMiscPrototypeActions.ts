@@ -35,7 +35,7 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
         }.`
       );
     },
-    [supabase, user?.id, contactsState, showToast]
+    [supabase, user, contactsState, showToast]
   );
 
   const handleRestoreTrashGroups = useCallback(
@@ -50,7 +50,7 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
         }.`
       );
     },
-    [supabase, user?.id, groupsState, showToast]
+    [supabase, user, groupsState, showToast]
   );
 
   const handleAutomationSave = useCallback(
@@ -69,7 +69,7 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
           : "Automatisation enregistrée."
       );
     },
-    [user?.id, supabase, automationsState, showToast]
+    [user, supabase, automationsState, showToast]
   );
 
   const applyStatsPreset = useCallback(

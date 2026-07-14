@@ -67,9 +67,6 @@ export type ContactCreateModalProps = {
 const fieldShell =
   "rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 
-const inpText =
-  "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal";
-
 const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
 const fieldLabelCls = "text-xs font-semibold text-foreground";
 const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";

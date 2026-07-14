@@ -14,7 +14,7 @@ import {
 } from "@/lib/proto/smsPersonalization";
 import { cn } from "@/lib/utils";
 import { MessageCircle, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   brandBtnCls,
   brandBtnPrimaryCls,
@@ -41,10 +41,12 @@ export function QrWelcomeSmsSettingsModal({
   onSave,
 }: QrWelcomeSmsSettingsModalProps) {
   const [localTemplate, setLocalTemplate] = useState(template);
+  const [prevSync, setPrevSync] = useState({ open, template });
 
-  useEffect(() => {
+  if (open !== prevSync.open || template !== prevSync.template) {
+    setPrevSync({ open, template });
     if (open) setLocalTemplate(template);
-  }, [open, template]);
+  }
 
   const normalizedLocal = useMemo(
     () => normalizePrenomTokens(localTemplate),

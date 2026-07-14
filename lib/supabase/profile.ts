@@ -55,7 +55,9 @@ function recordToProfile(
 }
 
 export function profileToForm(profile: UserProfile): UserProfileForm {
-  const { userId: _u, onboardingCompleted: _o, ...form } = profile;
+  const { userId, onboardingCompleted, ...form } = profile;
+  void userId;
+  void onboardingCompleted;
   return form;
 }
 

@@ -87,9 +87,8 @@ export function useCampaignWizard({
     useState<SmsComposeApproach | null>(null);
   const [leaveWizardConfirmOpen, setLeaveWizardConfirmOpen] = useState(false);
 
-  const initialWizardSnapshotRef = useRef<CampaignWizardFormSnapshot | null>(
-    null
-  );
+  const [initialWizardSnapshot, setInitialWizardSnapshot] =
+    useState<CampaignWizardFormSnapshot | null>(null);
   const pendingWizardLeaveActionRef = useRef<PendingWizardLeaveAction | null>(
     null
   );
@@ -198,14 +197,14 @@ export function useCampaignWizard({
   );
 
   const wizardIsDirty = useMemo(() => {
-    if (route !== "nouvelle-campagne" || !initialWizardSnapshotRef.current) {
+    if (route !== "nouvelle-campagne" || !initialWizardSnapshot) {
       return false;
     }
     return isCampaignWizardDirty(
       buildCurrentWizardSnapshot(),
-      initialWizardSnapshotRef.current
+      initialWizardSnapshot
     );
-  }, [route, buildCurrentWizardSnapshot]);
+  }, [route, buildCurrentWizardSnapshot, initialWizardSnapshot]);
 
   const openCampaignComposerInternal = useCallback(
     (preset?: CampaignComposerPreset) => {
@@ -245,7 +244,7 @@ export function useCampaignWizard({
       setCampaignWizardStep(1);
       setStoredCampaignWizardStep(1);
 
-      initialWizardSnapshotRef.current = {
+      setInitialWizardSnapshot({
         step: 1,
         title: nextTitle,
         sender: smsSender,
@@ -258,7 +257,7 @@ export function useCampaignWizard({
         selectedGroupNames: groupNames,
         excludedContactIds: [],
         composeApproach: null,
-      };
+      });
 
       go("nouvelle-campagne");
     },
@@ -334,15 +333,13 @@ export function useCampaignWizard({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [route, wizardIsDirty]);
 
-  useEffect(() => {
-    if (route !== "nouvelle-campagne") {
-      initialWizardSnapshotRef.current = null;
-      return;
+  if (route === "nouvelle-campagne") {
+    if (initialWizardSnapshot === null) {
+      setInitialWizardSnapshot(buildCurrentWizardSnapshot());
     }
-    if (!initialWizardSnapshotRef.current) {
-      initialWizardSnapshotRef.current = buildCurrentWizardSnapshot();
-    }
-  }, [route, buildCurrentWizardSnapshot]);
+  } else if (initialWizardSnapshot !== null) {
+    setInitialWizardSnapshot(null);
+  }
 
   useEffect(() => {
     if (route !== "nouvelle-campagne") {

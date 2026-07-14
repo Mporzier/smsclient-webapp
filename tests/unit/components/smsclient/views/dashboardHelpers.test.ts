@@ -6,14 +6,13 @@ import type { CampaignRowData } from "@/lib/types/campaign";
 import { describe, expect, it } from "vitest";
 
 function campaign(
-  partial: Partial<CampaignRowData> & Pick<CampaignRowData, "status">,
+  partial: Partial<CampaignRowData> & Pick<CampaignRowData, "status">
 ): CampaignRowData {
   return {
     id: "1",
     createdLabel: "01/01/2026",
     name: "Test",
     recipients: 10,
-    status: partial.status,
     sendLabel: "—",
     creditsLabel: "1",
     ...partial,
@@ -26,7 +25,7 @@ describe("dashboardHelpers", () => {
       hasUserSentSms([
         campaign({ status: "draft" }),
         campaign({ status: "sent", sentAt: "2026-06-01T10:00:00.000Z" }),
-      ]),
+      ])
     ).toBe(true);
   });
 
@@ -35,7 +34,7 @@ describe("dashboardHelpers", () => {
       hasUserSentSms([
         campaign({ status: "draft" }),
         campaign({ status: "scheduled" }),
-      ]),
+      ])
     ).toBe(false);
   });
 
@@ -45,7 +44,7 @@ describe("dashboardHelpers", () => {
         campaign({ status: "sent", recipients: 12 }),
         campaign({ status: "sent", recipients: 8 }),
         campaign({ status: "draft", recipients: 100 }),
-      ]),
+      ])
     ).toBe(20);
   });
 });

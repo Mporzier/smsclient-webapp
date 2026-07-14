@@ -62,11 +62,14 @@ export function RewardWheel({
   const showIdle = !spinning && winIndex == null && !animating;
   const showSpinning = animating;
 
+  if (winIndex == null && !spinning && (animating || rotation !== 0)) {
+    setAnimating(false);
+    setRotation(0);
+  }
+
   useEffect(() => {
     if (winIndex == null && !spinning) {
       spinStartedRef.current = false;
-      setAnimating(false);
-      setRotation(0);
     }
   }, [winIndex, spinning]);
 

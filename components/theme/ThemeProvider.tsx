@@ -12,7 +12,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -24,27 +24,41 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+const THEME_EVENT = "smsclient-theme";
+
+function subscribe(onStoreChange: () => void) {
+  window.addEventListener(THEME_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(THEME_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getSnapshot(): ThemeMode {
+  return readStoredTheme() ?? "light";
+}
+
+function getServerSnapshot(): ThemeMode {
+  return "light";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
-  const [ready, setReady] = useState(false);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    setThemeState(readStoredTheme() ?? "light");
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
     applyThemeClass(theme);
-    writeStoredTheme(theme);
-  }, [theme, ready]);
+  }, [theme]);
 
   const setTheme = useCallback((next: ThemeMode) => {
-    setThemeState(next);
+    writeStoredTheme(next);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((current) => (current === "dark" ? "light" : "dark"));
+    const next: ThemeMode = getSnapshot() === "dark" ? "light" : "dark";
+    writeStoredTheme(next);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   const value = useMemo(

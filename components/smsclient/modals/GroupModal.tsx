@@ -24,9 +24,7 @@ import {
 import type { GroupRowData } from "@/lib/types/group";
 import {
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -255,7 +253,6 @@ function GroupModalContactsPanel({
   allFilteredSelected,
   someFilteredSelected,
   toggleSelectAllFiltered,
-  groupLabel,
   listAriaLabel,
 }: GroupModalContactsPanelProps) {
   return (
@@ -508,7 +505,10 @@ function GroupModalContactsPanel({
 export function GroupModal(props: GroupModalProps) {
   const isCreate = props.mode === "create";
   const group = isCreate ? null : props.group;
-  const contacts = props.contacts ?? [];
+  const contacts = useMemo(
+    () => props.contacts ?? [],
+    [props.contacts],
+  );
   const contactsLoading = props.contactsLoading ?? false;
   const stackedDialogOpen = props.stackedDialogOpen ?? false;
 
@@ -519,12 +519,17 @@ export function GroupModal(props: GroupModalProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-  const selectionSyncRef = useRef<{ key: string; contactCount: number } | null>(
-    null
-  );
   const [formBaseline, setFormBaseline] = useState<GroupFormSnapshot | null>(
     null
   );
+  const [wasGroupOpen, setWasGroupOpen] = useState(props.open);
+  const [syncedEditGroupId, setSyncedEditGroupId] = useState<string | null>(
+    null,
+  );
+  const [selectionSync, setSelectionSync] = useState<{
+    key: string;
+    contactCount: number;
+  } | null>(null);
 
   const filteredContacts = useMemo(() => {
     const q = contactQuery.trim().toLowerCase();
@@ -588,7 +593,8 @@ export function GroupModal(props: GroupModalProps) {
     return !sortedStringArraysEqual(selectedIds, formBaseline.selectedIds);
   }, [isCreate, formBaseline, selectedIds]);
 
-  useEffect(() => {
+  if (props.open !== wasGroupOpen) {
+    setWasGroupOpen(props.open);
     if (!props.open) {
       setName("");
       setDescription("");
@@ -597,41 +603,42 @@ export function GroupModal(props: GroupModalProps) {
       setSaving(false);
       setError(null);
       setSaveConfirmOpen(false);
-      selectionSyncRef.current = null;
       setFormBaseline(null);
-      return;
+      setSyncedEditGroupId(null);
+      setSelectionSync(null);
     }
-    if (isCreate) return;
-    if (!group) return;
+  }
+
+  if (props.open && !isCreate && group && syncedEditGroupId !== group.id) {
+    setSyncedEditGroupId(group.id);
     setName(group.name);
     setDescription(group.description ?? "");
     setError(null);
-  }, [props.open, isCreate, group]);
+  }
 
-  useEffect(() => {
-    if (isCreate || !props.open || !group) {
-      if (!props.open || isCreate) {
-        selectionSyncRef.current = null;
-      }
-      return;
+  if (isCreate || !props.open || !group) {
+    if ((!props.open || isCreate) && selectionSync !== null) {
+      setSelectionSync(null);
     }
+  } else {
     const key = `${group.id}:${group.name}`;
     const ids = contacts
       .filter((c) => contactInGroup(c, group.name))
       .map((c) => c.id);
-    const prev = selectionSyncRef.current;
-    if (!prev || prev.key !== key) {
-      selectionSyncRef.current = { key, contactCount: contacts.length };
+    if (!selectionSync || selectionSync.key !== key) {
+      setSelectionSync({ key, contactCount: contacts.length });
       setSelectedIds(ids);
       setFormBaseline({
         name: group.name,
         description: group.description ?? "",
         selectedIds: [...ids],
       });
-      return;
-    }
-    if (prev.contactCount === 0 && contacts.length > 0 && ids.length > 0) {
-      selectionSyncRef.current = { key, contactCount: contacts.length };
+    } else if (
+      selectionSync.contactCount === 0 &&
+      contacts.length > 0 &&
+      ids.length > 0
+    ) {
+      setSelectionSync({ key, contactCount: contacts.length });
       setSelectedIds(ids);
       setFormBaseline((prevBaseline) =>
         prevBaseline
@@ -640,12 +647,12 @@ export function GroupModal(props: GroupModalProps) {
               name: group.name,
               description: group.description ?? "",
               selectedIds: [...ids],
-            }
+            },
       );
-    } else {
-      selectionSyncRef.current = { key, contactCount: contacts.length };
+    } else if (selectionSync.contactCount !== contacts.length) {
+      setSelectionSync({ key, contactCount: contacts.length });
     }
-  }, [props.open, isCreate, group, contacts]);
+  }
 
   const onClose = props.onClose;
   const onCreated = isCreate ? props.onCreated : undefined;

@@ -15,7 +15,7 @@ import { sanitizeSender } from "@/lib/proto/smsUtils";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Building2, MessageSquare, Store, UserRound } from "lucide-react";
 
 function suggestSender(company: string) {
@@ -49,8 +49,12 @@ export function OnboardingWizard() {
     };
   });
 
-  useEffect(() => {
-    if (!profile) return;
+  const profileSyncKey = profile
+    ? `${profile.userId}:${user?.email ?? ""}`
+    : null;
+  const [syncedProfileKey, setSyncedProfileKey] = useState<string | null>(null);
+  if (profile && profileSyncKey !== syncedProfileKey) {
+    setSyncedProfileKey(profileSyncKey);
     const email = user?.email ?? "";
     const fromProfile = profileToForm(profile);
     setForm({
@@ -59,7 +63,7 @@ export function OnboardingWizard() {
       billingContact: fromProfile.billingContact || email,
       sender: fromProfile.sender || suggestSender(fromProfile.companyName),
     });
-  }, [profile, user?.email]);
+  }
 
   const setField = <K extends keyof UserProfileForm>(
     key: K,

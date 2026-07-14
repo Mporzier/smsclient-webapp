@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import { hasE2ECredentials } from "../helpers/env";
 import {
   APP_ROUTES,

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useState } from "react";
 import type { MouseEvent } from "react";
 
 /** Compare deux listes de chaînes (ordre indépendant). */
@@ -79,23 +79,23 @@ export function handleModalBackdropClick(
 
 /**
  * Mémorise l’état du formulaire à l’ouverture de la modale et détecte les modifications.
+ * Capture via setState pendant le render (transition open), pas via refs.
  */
 export function useModalFormDirty<T>(
   open: boolean,
   snapshot: T,
   equals: (a: T, b: T) => boolean,
 ): boolean {
-  const initialRef = useRef<T | null>(null);
-  const wasOpenRef = useRef(false);
+  const [initial, setInitial] = useState<T | null>(null);
 
-  if (open && !wasOpenRef.current) {
-    initialRef.current = snapshot;
+  if (open) {
+    if (initial === null) {
+      setInitial(snapshot);
+    }
+  } else if (initial !== null) {
+    setInitial(null);
   }
-  if (!open) {
-    initialRef.current = null;
-  }
-  wasOpenRef.current = open;
 
-  if (!open || initialRef.current === null) return false;
-  return !equals(snapshot, initialRef.current);
+  if (!open || initial === null) return false;
+  return !equals(snapshot, initial);
 }

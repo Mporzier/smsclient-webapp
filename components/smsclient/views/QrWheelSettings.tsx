@@ -217,10 +217,12 @@ export function QrWheelSettings({
 }: QrWheelSettingsProps) {
   const [draft, setDraft] = useState<QrWheelConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [prevConfig, setPrevConfig] = useState(config);
 
-  useEffect(() => {
+  if (config !== prevConfig) {
+    setPrevConfig(config);
     if (config) setDraft(structuredClone(config));
-  }, [config]);
+  }
 
   useEffect(() => {
     if (!onDirtyChange || !config || !draft) {

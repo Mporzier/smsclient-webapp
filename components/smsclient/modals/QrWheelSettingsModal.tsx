@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Gift, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
@@ -38,15 +38,17 @@ export function QrWheelSettingsModal({
   onEnableWithDefaults,
 }: QrWheelSettingsModalProps) {
   const [dirty, setDirty] = useState(false);
+  const [wasOpen, setWasOpen] = useState(open);
+
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (!open) setDirty(false);
+  }
 
   const handleClose = useCallback(() => {
     if (saving) return;
     onClose();
   }, [onClose, saving]);
-
-  useEffect(() => {
-    if (!open) setDirty(false);
-  }, [open]);
 
   return (
     <Dialog
