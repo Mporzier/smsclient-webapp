@@ -6,6 +6,7 @@ import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { GroupRowData } from "@/lib/types/group";
 import { useMemo, useState } from "react";
@@ -16,6 +17,7 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
   {
     accessorKey: "name",
     header: "Nom du groupe",
+    size: GROUP_COL.name,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -23,15 +25,20 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
   {
     accessorKey: "description",
     header: "Description",
+    size: GROUP_COL.description,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
     ),
   },
-  { accessorKey: "contactCount", header: "Contacts", size: 90 },
+  {
+    accessorKey: "contactCount",
+    header: "Contacts",
+    size: GROUP_COL.contactCount,
+  },
   {
     accessorKey: "lastCampaignLabel",
     header: "Dernière campagne",
-    size: 160,
+    size: GROUP_COL.lastCampaign,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -39,7 +46,7 @@ const columns: ColumnDef<GroupRowData, unknown>[] = [
   {
     accessorKey: "createdLabel",
     header: "Création",
-    size: 130,
+    size: GROUP_COL.created,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -95,7 +102,9 @@ export function GroupesView({
   const selectColumns: ColumnDef<GroupRowData, unknown>[] = [
     {
       id: "select",
-      size: 40,
+      size: GROUP_COL.select,
+      minSize: GROUP_COL.select,
+      maxSize: GROUP_COL.select,
       enableResizing: false,
       header: () => (
         <div className="flex items-center justify-center">
@@ -108,7 +117,6 @@ export function GroupesView({
                   : false
             }
             onCheckedChange={() => toggleAll()}
-            className="cursor-pointer"
             aria-label="Tout sélectionner les groupes"
           />
         </div>
@@ -119,7 +127,6 @@ export function GroupesView({
             checked={selectedIds.has(row.original.id)}
             onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-pointer"
             aria-label={`Sélectionner ${row.original.name}`}
           />
         </div>

@@ -1,8 +1,20 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 
-/** Texte sur une ligne dans une cellule de liste : tronqué sans infobulle au survol. */
+/**
+ * Texte une ligne dans cellule de liste. Si tronqué, tip hover/focus (portail).
+ */
 export function CellTruncate({
   children,
   className,
@@ -12,12 +24,95 @@ export function CellTruncate({
   className?: string;
   as?: "span" | "div";
 }) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [truncated, setTruncated] = useState(false);
+  const [label, setLabel] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setTruncated(el.scrollWidth > el.clientWidth + 1);
+    const text = (el.textContent ?? "").trim();
+    setLabel(text);
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [children, measure]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  const updatePosition = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 6,
+      left: Math.min(
+        Math.max(8, rect.left),
+        window.innerWidth - 16
+      ),
+    });
+  }, []);
+
+  const show = useCallback(() => {
+    measure();
+    const el = ref.current;
+    if (!el || el.scrollWidth <= el.clientWidth + 1) return;
+    updatePosition();
+    setVisible(true);
+  }, [measure, updatePosition]);
+
+  const hide = useCallback(() => setVisible(false), []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const onScrollOrResize = () => updatePosition();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [visible, updatePosition]);
+
   return (
-    <Tag className={cn("min-w-0 max-w-full truncate", className)}>
-      {children}
-    </Tag>
+    <>
+      <Tag
+        ref={(node) => {
+          ref.current = node;
+        }}
+        className={cn("min-w-0 max-w-full truncate", className)}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+      >
+        {children}
+      </Tag>
+      {visible &&
+        truncated &&
+        label &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[100] max-w-[min(360px,calc(100vw-16px))] break-words rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-md"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {label}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
+
 export function PlusIcon({ className }: { className?: string }) {
   return (
     <Plus

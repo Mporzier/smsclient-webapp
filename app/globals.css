@@ -14,37 +14,73 @@
   --card-foreground: oklch(0.284 0.076 262.2);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.284 0.076 262.2);
-  --primary: oklch(0.424 0.230 266.4);
+  --primary: oklch(0.424 0.23 266.4);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.964 0.019 243.0);
-  --secondary-foreground: oklch(0.424 0.230 266.4);
-  --muted: oklch(0.964 0.019 243.0);
+  --secondary: oklch(0.964 0.019 243);
+  --secondary-foreground: oklch(0.424 0.23 266.4);
+  --muted: oklch(0.964 0.019 243);
   --muted-foreground: oklch(0.556 0.04 262);
-  --accent: oklch(0.964 0.019 243.0);
-  --accent-foreground: oklch(0.424 0.230 266.4);
+  --accent: oklch(0.964 0.019 243);
+  --accent-foreground: oklch(0.424 0.23 266.4);
   --destructive: oklch(0.608 0.201 17.5);
   --border: oklch(0.922 0.01 255);
-  --input: oklch(0.922 0.01 255);
-  --ring: oklch(0.574 0.202 262.0);
-  --chart-1: oklch(0.574 0.202 262.0);
+  --input: oklch(0.78 0.015 255);
+  --ring: oklch(0.574 0.202 262);
+  --chart-1: oklch(0.574 0.202 262);
   --chart-2: oklch(0.643 0.191 262.5);
-  --chart-3: oklch(0.424 0.230 266.4);
+  --chart-3: oklch(0.424 0.23 266.4);
   --chart-4: oklch(0.439 0.08 262);
   --chart-5: oklch(0.284 0.076 262.2);
   --radius: 0.625rem;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.284 0.076 262.2);
-  --sidebar-primary: oklch(0.424 0.230 266.4);
+  --sidebar-primary: oklch(0.424 0.23 266.4);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.964 0.019 243.0);
-  --sidebar-accent-foreground: oklch(0.424 0.230 266.4);
+  --sidebar-accent: oklch(0.964 0.019 243);
+  --sidebar-accent-foreground: oklch(0.424 0.23 266.4);
   --sidebar-border: oklch(0.922 0.01 255);
-  --sidebar-ring: oklch(0.574 0.202 262.0);
+  --sidebar-ring: oklch(0.574 0.202 262);
+
+  /* Modal header icon shell — override size/color per instance via CSS vars */
+  --modal-icon-bg: color-mix(in oklch, var(--muted) 50%, transparent);
+  --modal-icon-border: var(--border);
+  --modal-icon-fg: var(--muted-foreground);
+  --modal-icon-radius: var(--radius);
+  --modal-icon-size: 2.25rem;
+  --modal-icon-glyph-size: 1.25rem;
 }
 
 /* OpenWidget — décalage dynamique (voir openwidgetOffset.ts) */
 #chat-widget-container {
   right: var(--openwidget-right-offset) !important;
+}
+
+/* Shell icône header modale (globals: --modal-icon-*) */
+.modal-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--modal-icon-size);
+  height: var(--modal-icon-size);
+  border-radius: var(--modal-icon-radius);
+  border: 1px solid var(--modal-icon-border);
+  background: var(--modal-icon-bg);
+  color: var(--modal-icon-fg);
+}
+
+.modal-icon > svg {
+  width: var(--modal-icon-glyph-size);
+  height: var(--modal-icon-glyph-size);
+}
+
+.modal-icon--sm {
+  --modal-icon-size: 2rem;
+  --modal-icon-glyph-size: 1rem;
+}
+
+.modal-icon--lg {
+  --modal-icon-size: 2.5rem;
+  --modal-icon-glyph-size: 1.25rem;
 }
 
 /* Réserve la place de la scrollbar dans la colonne principale */
@@ -162,14 +198,14 @@
   --muted: oklch(0.269 0.03 262);
   --muted-foreground: oklch(0.708 0.03 262);
   --accent: oklch(0.269 0.04 262);
-  --accent-foreground: oklch(0.964 0.019 243.0);
+  --accent-foreground: oklch(0.964 0.019 243);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.574 0.202 262.0);
+  --ring: oklch(0.574 0.202 262);
   --chart-1: oklch(0.643 0.191 262.5);
-  --chart-2: oklch(0.574 0.202 262.0);
-  --chart-3: oklch(0.424 0.230 266.4);
+  --chart-2: oklch(0.574 0.202 262);
+  --chart-3: oklch(0.424 0.23 266.4);
   --chart-4: oklch(0.439 0.08 262);
   --chart-5: oklch(0.708 0.03 262);
   --sidebar: oklch(0.205 0.02 262);
@@ -177,9 +213,9 @@
   --sidebar-primary: oklch(0.643 0.191 262.5);
   --sidebar-primary-foreground: oklch(0.205 0.05 266);
   --sidebar-accent: oklch(0.269 0.04 262);
-  --sidebar-accent-foreground: oklch(0.964 0.019 243.0);
+  --sidebar-accent-foreground: oklch(0.964 0.019 243);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.574 0.202 262.0);
+  --sidebar-ring: oklch(0.574 0.202 262);
 }
 
 @layer base {

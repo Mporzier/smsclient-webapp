@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
@@ -17,24 +19,33 @@ import {
 } from "@/lib/import/contactImportMap";
 import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { frDisplayToE164 } from "@/lib/proto/smsUtils";
-import { insertClientsFromImport } from "@/lib/supabase/clients";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  fetchExistingClientPhoneE164s,
+  insertClientsFromImport,
+} from "@/lib/supabase/clients";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  CircleAlert,
   CloudUpload,
   FileSpreadsheet,
   Info,
   Loader2,
   Upload,
-  X,
 } from "lucide-react";
 import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  modalIconCls,
 } from "./modals/modalChrome";
 
 const ROLE_OPTIONS: ImportColumnRole[] = [
@@ -57,6 +68,86 @@ function fileFromDataTransfer(dt: DataTransfer): File | null {
     }
   }
   return null;
+}
+
+/** Raison prioritaire pour tip ligne (format > déjà en base > doublon fichier). */
+function rowIssueReason(
+  invalid: boolean,
+  existing: boolean,
+  fileDupe: boolean
+): string | null {
+  if (invalid) return "Format invalide";
+  if (existing) return "Contact déjà enregistré";
+  if (fileDupe) return "Doublon dans le fichier";
+  return null;
+}
+
+/** Tip portail — évite clip du overflow-x du tableau (title SVG casse souvent). */
+function RowIssueTip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const updatePosition = useCallback(() => {
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({
+      top: rect.top - 8,
+      left: Math.min(rect.right, window.innerWidth - 12),
+    });
+  }, []);
+
+  const show = useCallback(() => {
+    updatePosition();
+    setVisible(true);
+  }, [updatePosition]);
+
+  const hide = useCallback(() => setVisible(false), []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const onScrollOrResize = () => updatePosition();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [visible, updatePosition]);
+
+  return (
+    <>
+      <span
+        ref={anchorRef}
+        tabIndex={0}
+        aria-label={label}
+        className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+      >
+        {children}
+      </span>
+      {visible &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[10001] max-w-[220px] -translate-x-full -translate-y-full rounded-md border border-border bg-popover px-2 py-1 text-left text-[11px] font-medium leading-snug text-popover-foreground shadow-md"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {label}
+          </div>,
+          document.body
+        )}
+    </>
+  );
 }
 
 type ImportContactsModalProps = {
@@ -92,6 +183,9 @@ export function ImportContactsModal({
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [duplicatePhoneE164s, setDuplicatePhoneE164s] = useState<string[]>([]);
+  const [existingDbPhones, setExistingDbPhones] = useState<Set<string>>(
+    () => new Set()
+  );
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** Ignore le clic synthétique qui suit un drop (sinon input.click() → onChange vide → reset). */
@@ -118,6 +212,29 @@ export function ImportContactsModal({
     }
     setTargetGroupName(defaultGroupLabel?.trim() ?? "");
   }, [open, reset, defaultGroupLabel]);
+
+  useEffect(() => {
+    if (!open) {
+      setExistingDbPhones(new Set());
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data, error } = await fetchExistingClientPhoneE164s(
+          supabase,
+          userId
+        );
+        if (cancelled || error) return;
+        setExistingDbPhones(new Set(data));
+      } catch {
+        if (!cancelled) setExistingDbPhones(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, supabase, userId]);
 
   const onPickFile = useCallback((file: File | null) => {
     setParseError(null);
@@ -249,29 +366,89 @@ export function ImportContactsModal({
     [roles]
   );
 
-  const duplicatePhoneSet = useMemo(
-    () => new Set(duplicatePhoneE164s),
-    [duplicatePhoneE164s]
+  const phoneColIdx = useMemo(() => roles.indexOf("phone"), [roles]);
+
+  const rowPhoneMeta = useCallback(
+    (cells: string[]) => {
+      if (phoneColIdx < 0) {
+        return { e164: null as string | null, invalid: false };
+      }
+      const phoneVal = (cells[phoneColIdx] ?? "").trim();
+      if (!phoneVal) {
+        return { e164: null, invalid: true };
+      }
+      if (!looksLikeFrPhone(phoneVal)) {
+        return { e164: null, invalid: true };
+      }
+      const p = buildPayloadFromMappedRow(cells, roles);
+      if (!p) {
+        return { e164: null, invalid: true };
+      }
+      const e164 = frDisplayToE164(p.phoneDisplay);
+      if (!e164) {
+        return { e164: null, invalid: true };
+      }
+      return { e164, invalid: false };
+    },
+    [phoneColIdx, roles]
   );
 
-  const duplicateCount = duplicatePhoneE164s.length;
+  /** Index des lignes 2e+ occurrence d’un même numéro (1re occurrence OK). */
+  const fileDuplicateRowIndexes = useMemo(() => {
+    if (!parsed || phoneColIdx < 0) return new Set<number>();
+    const seen = new Set<string>();
+    const dupes = new Set<number>();
+    parsed.rows.forEach((row, idx) => {
+      const { e164, invalid } = rowPhoneMeta(row);
+      if (invalid || !e164) return;
+      if (seen.has(e164)) {
+        dupes.add(idx);
+      } else {
+        seen.add(e164);
+      }
+    });
+    return dupes;
+  }, [parsed, phoneColIdx, rowPhoneMeta]);
+
+  const rowIssueStats = useMemo(() => {
+    if (!parsed || phoneColIdx < 0) {
+      return { invalid: 0, existing: 0, fileDupes: 0 };
+    }
+    let invalid = 0;
+    let existing = 0;
+    for (const row of parsed.rows) {
+      const { e164, invalid: bad } = rowPhoneMeta(row);
+      if (bad) {
+        invalid++;
+        continue;
+      }
+      if (e164 && existingDbPhones.has(e164)) existing++;
+    }
+    return {
+      invalid,
+      existing,
+      fileDupes: fileDuplicateRowIndexes.size,
+    };
+  }, [
+    parsed,
+    phoneColIdx,
+    rowPhoneMeta,
+    existingDbPhones,
+    fileDuplicateRowIndexes,
+  ]);
+
+  const hasRowIssues =
+    rowIssueStats.invalid > 0 ||
+    rowIssueStats.existing > 0 ||
+    rowIssueStats.fileDupes > 0;
 
   const previewRows = useMemo(() => {
     if (!parsed) return [];
-    if (duplicateCount > 0) return parsed.rows;
+    if (hasRowIssues) return parsed.rows;
     return parsed.rows.slice(0, 5);
-  }, [parsed, duplicateCount]);
+  }, [parsed, hasRowIssues]);
 
   const rowCount = parsed?.rows.length ?? 0;
-
-  const rowPhoneE164 = useCallback(
-    (cells: string[]) => {
-      const p = buildPayloadFromMappedRow(cells, roles);
-      if (!p) return null;
-      return frDisplayToE164(p.phoneDisplay);
-    },
-    [roles]
-  );
 
   const handleImport = useCallback(async () => {
     if (!parsed || !hasPhoneColumn || importing) return;
@@ -337,11 +514,12 @@ export function ImportContactsModal({
         );
       }
       if (groupLabel) {
-        const linked =
-          batch.inserted + batch.linkedExistingToGroup;
+        const linked = batch.inserted + batch.linkedExistingToGroup;
         if (linked > 0) {
           parts.push(
-            `${linked} ajouté${linked > 1 ? "s" : ""} au groupe « ${groupLabel} »`
+            `${linked} ajouté${
+              linked > 1 ? "s" : ""
+            } au groupe « ${groupLabel} »`
           );
         }
       } else if (batch.linkedExistingToGroup > 0) {
@@ -415,11 +593,11 @@ export function ImportContactsModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!importing}
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
-          "max-h-[min(90vh,820px)] sm:max-w-[960px]",
+          "max-h-[min(90vh,820px)] rounded-xl shadow-lg sm:max-w-[960px]",
           dialogContentZCls
         )}
         onPointerDownOutside={(e) => {
@@ -429,29 +607,16 @@ export function ImportContactsModal({
           if (importing || isDirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-[18px] py-4">
-          <div>
-            <div className="flex items-center gap-2.5 text-xl font-black text-foreground">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border bg-accent">
-                <CloudUpload className="h-6 w-6 text-ring" aria-hidden />
-              </div>
-              <DialogTitle className="m-0 text-xl font-black text-foreground">
-                Importer des contacts
-              </DialogTitle>
-            </div>
+        <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
+          <div className={modalIconCls("sm")} aria-hidden>
+            <CloudUpload />
           </div>
-          <button
-            type="button"
-            disabled={importing}
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+          <DialogTitle className="min-w-0 flex-1 pr-8 text-base font-semibold leading-none tracking-tight">
+            Importer des contacts
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 p-[18px]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           <input
             ref={fileInputRef}
             type="file"
@@ -467,123 +632,124 @@ export function ImportContactsModal({
           />
 
           {!parsed && (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-              <div
-                aria-label="Zone de dépôt pour fichier CSV"
-                onDragEnter={onDragEnter}
-                onDragLeave={onDragLeave}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                className={cn(
-                  "rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors",
-                  dragActive
-                    ? "border-ring bg-accent"
-                    : "border-border bg-muted/50",
-                  importing &&
-                    "pointer-events-none cursor-not-allowed opacity-60"
-                )}
-              >
-                {fileLoading ? (
-                  <>
-                    <Loader2
-                      className="mx-auto h-8 w-8 animate-spin text-ring"
-                      aria-hidden
-                    />
-                    <p className="mt-3 text-sm font-extrabold text-foreground">
-                      Analyse du fichier en cours…
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                      {fileName}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-emerald-100 bg-emerald-50">
-                      <FileSpreadsheet
-                        className="h-6 w-6 text-emerald-500"
-                        aria-hidden
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-extrabold text-foreground">
-                      {dragActive
-                        ? "Dépose le fichier ici…"
-                        : "Glissez-déposez un fichier CSV ici"}
-                    </p>
-                    <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
-                      ou
-                    </p>
-                    <Button
-                      type="button"
-                      variant="default"
-                      disabled={importing}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (importing || suppressPickerClickRef.current) return;
-                        fileInputRef.current?.click();
-                      }}
-                      className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold shadow-md"
-                    >
-                      <Upload className="h-4 w-4" aria-hidden />
-                      Choisir un fichier CSV
-                    </Button>
-                  </>
-                )}
-              </div>
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-accent/60 px-3 py-2.5">
-                <Info className="h-4 w-4 shrink-0 text-ring" aria-hidden />
-                <p className="m-0 text-center text-xs font-semibold leading-relaxed text-muted-foreground">
-                  Depuis Excel : Fichier → Enregistrer sous → Format CSV
-                </p>
-              </div>
+            <div
+              aria-label="Zone de dépôt pour fichier CSV"
+              role="button"
+              tabIndex={importing ? -1 : 0}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onClick={() => {
+                if (importing || fileLoading || suppressPickerClickRef.current)
+                  return;
+                fileInputRef.current?.click();
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                if (importing || fileLoading || suppressPickerClickRef.current)
+                  return;
+                fileInputRef.current?.click();
+              }}
+              className={cn(
+                "rounded-lg border border-dashed px-4 py-10 text-center transition-colors",
+                dragActive
+                  ? "border-foreground/40 bg-muted/40"
+                  : "border-border",
+                importing || fileLoading
+                  ? "pointer-events-none cursor-not-allowed opacity-60"
+                  : "cursor-pointer"
+              )}
+            >
+              {fileLoading ? (
+                <>
+                  <Loader2
+                    className="mx-auto h-7 w-7 animate-spin text-muted-foreground"
+                    aria-hidden
+                  />
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    Analyse du fichier en cours…
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {fileName}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet
+                    className="mx-auto h-7 w-7 text-green-600"
+                    aria-hidden
+                  />
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {dragActive
+                      ? "Déposez le fichier ici…"
+                      : "Glisser-déposer un fichier CSV, ou"}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={importing}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (importing || suppressPickerClickRef.current) return;
+                      fileInputRef.current?.click();
+                    }}
+                    className="mt-3 cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4" aria-hidden />
+                    Parcourir…
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
           {parseError && (
-            <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive">
+            <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {parseError}
             </div>
           )}
 
           {parsed && parsed.headers.length > 0 && (
-            <>
+            <div className="flex flex-col gap-4">
               {fileName && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <FileSpreadsheet
-                    className="h-4 w-4 shrink-0 text-emerald-500"
+                    className="h-4 w-4 shrink-0 text-green-600"
                     aria-hidden
                   />
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="font-medium text-foreground">
                     {fileName}
                   </span>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    — {parsed.rows.length} ligne
-                    {parsed.rows.length > 1 ? "s" : ""} détectée
+                  <span>
+                    · {parsed.rows.length} ligne
                     {parsed.rows.length > 1 ? "s" : ""}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={reset}
                     disabled={importing}
-                    className="ml-auto cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    className="ml-auto cursor-pointer"
                   >
-                    Changer de fichier
-                  </button>
+                    Changer
+                  </Button>
                 </div>
               )}
-              <div className="mb-3 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
+
+              <div className="space-y-1.5">
                 <label
                   htmlFor="import-contacts-target-group"
-                  className="block text-[13px] font-black text-foreground"
+                  className="text-sm font-medium text-foreground"
                 >
                   Ajouter au groupe
                 </label>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                  Optionnel — les contacts importés (et ceux déjà en base) sont
-                  rattachés à ce groupe existant.
-                </p>
                 <select
                   id="import-contacts-target-group"
-                  className="mt-2 w-full max-w-md rounded-xl border border-border bg-card px-3 py-2 text-sm font-extrabold text-foreground"
+                  className="mt-1 flex h-9 w-full max-w-md cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                   value={targetGroupName}
                   disabled={importing || groupOptions.length === 0}
                   onChange={(e) => setTargetGroupName(e.target.value)}
@@ -600,51 +766,44 @@ export function ImportContactsModal({
                   ))}
                 </select>
               </div>
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
-                <div className="text-[13px] font-black text-foreground">
-                  Aperçu des lignes ({rowCount} ligne
-                  {rowCount > 1 ? "s" : ""})
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-foreground">
+                  Aperçu
                 </div>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                  Associe chaque colonne directement dans son en-tête. Le champ{" "}
-                  <strong className="text-foreground">Téléphone</strong> est
-                  obligatoire.
-                </p>
                 {!hasPhoneColumn && (
-                  <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
-                    Choisissez la colonne qui contient le numéro de téléphone.
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                    Choisissez la colonne téléphone.
                   </p>
                 )}
-                <div className="mt-2 overflow-x-auto rounded-xl border border-border">
-                  <table className="w-full min-w-[760px] text-[12px]">
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full min-w-[760px] text-xs">
                     <thead>
-                      <tr className="bg-muted/50">
+                      <tr className="bg-muted/40">
                         {parsed.headers.map((h, i) => {
                           const role = roles[i];
                           return (
                             <th
                               key={`ph-${i}`}
-                              className={cn(
-                                "border-b border-border px-2 py-2 text-left align-top",
-                                role && role !== "skip"
-                                  ? "text-ring"
-                                  : "text-muted-foreground"
-                              )}
+                              className="border-b border-border px-2 py-2 text-left align-top font-medium"
                             >
                               <div className="min-w-[170px] space-y-1.5">
-                                <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                                <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                                   {h || `Colonne ${i + 1}`}
                                 </div>
                                 <select
                                   className={cn(
-                                    "w-full rounded-xl border border-border bg-card px-2 py-1.5 text-[12px] font-extrabold text-foreground",
+                                    "flex h-8 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
                                     role === "phone" &&
-                                      "border-ring ring-2 ring-ring/20"
+                                      "border-foreground ring-[3px] ring-foreground/10"
                                   )}
                                   value={role ?? "skip"}
                                   disabled={importing}
                                   onChange={(e) =>
-                                    setRole(i, e.target.value as ImportColumnRole)
+                                    setRole(
+                                      i,
+                                      e.target.value as ImportColumnRole
+                                    )
                                   }
                                 >
                                   {ROLE_OPTIONS.map((r) => (
@@ -661,23 +820,20 @@ export function ImportContactsModal({
                     </thead>
                     <tbody>
                       {previewRows.map((cells, ri) => {
-                        const phoneColIdx = roles.indexOf("phone");
-                        const phoneVal =
-                          phoneColIdx >= 0 ? cells[phoneColIdx] ?? "" : "";
-                        const isInvalid =
-                          phoneColIdx >= 0 && !looksLikeFrPhone(phoneVal);
-                        const e164 = rowPhoneE164(cells);
-                        const isDuplicate =
-                          !!e164 && duplicatePhoneSet.has(e164);
+                        const { e164, invalid: isInvalid } =
+                          rowPhoneMeta(cells);
+                        const isExisting = !!e164 && existingDbPhones.has(e164);
+                        const isFileDupe = fileDuplicateRowIndexes.has(ri);
+                        const isBad = isInvalid || isExisting || isFileDupe;
+                        const issueReason = rowIssueReason(
+                          isInvalid,
+                          isExisting,
+                          isFileDupe
+                        );
                         return (
                           <tr
                             key={ri}
-                            className={cn(
-                              isInvalid && "bg-rose-50/60",
-                              isDuplicate &&
-                                !isInvalid &&
-                                "bg-muted/50 opacity-55"
-                            )}
+                            className={cn(isBad && "bg-destructive/10")}
                           >
                             {parsed.headers.map((_, ci) => {
                               const raw = cells[ci] ?? "";
@@ -685,21 +841,35 @@ export function ImportContactsModal({
                                 ci === phoneColIdx && raw
                                   ? formatFrPhoneDisplay(raw)
                                   : raw;
+                              const showIssueIcon =
+                                ci === phoneColIdx && !!issueReason;
                               return (
                                 <td
                                   key={ci}
                                   className={cn(
-                                    "border-b border-border/50 px-2 py-1.5 font-semibold",
-                                    isInvalid
+                                    "border-b border-border/60 px-2 py-1.5",
+                                    isBad
                                       ? "text-destructive"
-                                      : isDuplicate
-                                        ? "text-muted-foreground"
-                                        : "text-muted-foreground"
+                                      : "text-muted-foreground"
                                   )}
                                 >
-                                  <span className="line-clamp-2 break-all">
-                                    {display}
-                                  </span>
+                                  {showIssueIcon ? (
+                                    <span className="flex w-full min-w-0 items-center gap-1.5">
+                                      <span className="min-w-0 flex-1 line-clamp-2 break-all">
+                                        {display}
+                                      </span>
+                                      <RowIssueTip label={issueReason!}>
+                                        <CircleAlert
+                                          className="h-3.5 w-3.5 text-destructive"
+                                          aria-hidden
+                                        />
+                                      </RowIssueTip>
+                                    </span>
+                                  ) : (
+                                    <span className="line-clamp-2 break-all">
+                                      {display}
+                                    </span>
+                                  )}
                                 </td>
                               );
                             })}
@@ -710,28 +880,40 @@ export function ImportContactsModal({
                   </table>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {importError && (
-          <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-[18px] py-2 text-sm font-bold text-destructive">
+          <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-6 py-2 text-sm text-destructive">
             {importError}
           </div>
         )}
 
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-[18px] py-3.5">
+        <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-between gap-2 rounded-b-xl p-2.5 px-4 sm:justify-between">
           <div className="min-w-0 flex-1">
-            {duplicateCount > 0 && (
-              <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
-                <Info
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
+            {hasRowIssues && (
+              <div className="flex items-center gap-1.5 text-xs text-destructive">
+                <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span>
-                  {duplicateCount} doublon
-                  {duplicateCount > 1 ? "s" : ""} détecté
-                  {duplicateCount > 1 ? "s" : ""}
+                  {[
+                    rowIssueStats.invalid > 0 &&
+                      `${rowIssueStats.invalid} contact${
+                        rowIssueStats.invalid > 1 ? "s" : ""
+                      } invalide${rowIssueStats.invalid > 1 ? "s" : ""}`,
+                    rowIssueStats.existing > 0 &&
+                      `${rowIssueStats.existing} contact${
+                        rowIssueStats.existing > 1 ? "s" : ""
+                      } déjà enregistré${
+                        rowIssueStats.existing > 1 ? "s" : ""
+                      }`,
+                    rowIssueStats.fileDupes > 0 &&
+                      `${rowIssueStats.fileDupes} contact${
+                        rowIssueStats.fileDupes > 1 ? "s" : ""
+                      } en doublon dans le fichier`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </div>
             )}
@@ -740,29 +922,27 @@ export function ImportContactsModal({
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              className={brandBtnCls}
               disabled={importing}
               onClick={onClose}
+              className="cursor-pointer"
             >
               Annuler
             </Button>
             <Button
               type="button"
               variant="default"
-              size="lg"
-              className={brandBtnPrimaryCls}
               disabled={
                 importing || !parsed || !hasPhoneColumn || rowCount === 0
               }
               onClick={() => void handleImport()}
+              className="cursor-pointer"
             >
               {importing
                 ? "Import…"
                 : `Importer ${rowCount} ligne${rowCount > 1 ? "s" : ""}`}
             </Button>
           </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

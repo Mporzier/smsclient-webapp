@@ -1,15 +1,22 @@
 "use client";
 
-import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
-import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
-} from "@/components/smsclient/modals/modalChrome";
-import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { cn } from "@/lib/cn";
 import {
   avatarColor,
@@ -18,14 +25,197 @@ import {
   groupTagBase,
 } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
+import { isCampaignEligibleContact } from "@/lib/types/contact";
 import {
-  isCampaignEligibleContact,
-} from "@/lib/types/contact";
-import { useMemo, useState } from "react";
-import { Phone, Send, Trash2, UserRound } from "lucide-react";
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  Download,
+  MoreHorizontal,
+  Phone,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const tagBase = groupTagBase + " py-1 text-[12px] font-medium";
+const tagBase = groupTagBase;
+const GROUPS_GAP_PX = 4;
+
+function ContactGroupsCell({ groups }: { groups: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const ellipsisRef = useRef<HTMLSpanElement>(null);
+  const tipAnchorRef = useRef<HTMLSpanElement>(null);
+  const [visibleCount, setVisibleCount] = useState(groups.length);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [tipPos, setTipPos] = useState({ top: 0, left: 0 });
+
+  const recompute = useCallback(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    const ellipsis = ellipsisRef.current;
+    if (!container || !measure || !ellipsis) return;
+
+    const avail = container.clientWidth;
+    if (avail <= 0) return;
+
+    const pills = Array.from(
+      measure.querySelectorAll<HTMLElement>("[data-group-pill]")
+    );
+    const ellipsisW = ellipsis.offsetWidth;
+    let used = 0;
+    let count = 0;
+
+    for (let i = 0; i < pills.length; i++) {
+      const w = pills[i]!.offsetWidth;
+      const nextUsed = used + (count > 0 ? GROUPS_GAP_PX : 0) + w;
+      const hasMore = i < pills.length - 1;
+      if (hasMore) {
+        if (nextUsed + GROUPS_GAP_PX + ellipsisW <= avail) {
+          used = nextUsed;
+          count = i + 1;
+        } else {
+          break;
+        }
+      } else if (nextUsed <= avail) {
+        count = i + 1;
+      }
+    }
+
+    if (count === 0 && groups.length > 0) {
+      setVisibleCount(0);
+      return;
+    }
+    setVisibleCount(count);
+  }, [groups.length]);
+
+  useLayoutEffect(() => {
+    recompute();
+  }, [groups, recompute]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => recompute());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [recompute]);
+
+  const updateTipPos = useCallback(() => {
+    const el = tipAnchorRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setTipPos({
+      top: rect.bottom + 6,
+      left: Math.min(Math.max(8, rect.left), window.innerWidth - 16),
+    });
+  }, []);
+
+  const showTip = useCallback(() => {
+    updateTipPos();
+    setTipOpen(true);
+  }, [updateTipPos]);
+
+  const hideTip = useCallback(() => setTipOpen(false), []);
+
+  useEffect(() => {
+    if (!tipOpen) return;
+    const onScrollOrResize = () => updateTipPos();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [tipOpen, updateTipPos]);
+
+  if (groups.length === 0) {
+    return <span className="text-sm text-slate-400">—</span>;
+  }
+
+  const overflow = groups.length - visibleCount;
+  const tipLabel = groups.join(" · ");
+
+  return (
+    <>
+      <div ref={containerRef} className="relative min-w-0 w-full">
+        <div
+          ref={measureRef}
+          className="pointer-events-none invisible absolute left-0 top-0 flex whitespace-nowrap"
+          style={{ gap: GROUPS_GAP_PX }}
+          aria-hidden
+        >
+          {groups.map((g) => {
+            const c = groupColor(g);
+            return (
+              <span
+                key={g}
+                data-group-pill
+                className={cn(tagBase, c.bg, c.border, c.text, "shrink-0")}
+              >
+                {g}
+              </span>
+            );
+          })}
+          <span ref={ellipsisRef} className={cn(tagBase, "shrink-0")}>
+            …
+          </span>
+        </div>
+
+        <div
+          className="flex min-w-0 items-center overflow-hidden"
+          style={{ gap: GROUPS_GAP_PX }}
+        >
+          {groups.slice(0, visibleCount).map((g) => {
+            const c = groupColor(g);
+            return (
+              <span
+                key={g}
+                className={cn(tagBase, c.bg, c.border, c.text, "shrink-0")}
+              >
+                {g}
+              </span>
+            );
+          })}
+          {overflow > 0 && (
+            <span
+              ref={tipAnchorRef}
+              className={cn(
+                tagBase,
+                "shrink-0 border-border bg-muted text-muted-foreground"
+              )}
+              onMouseEnter={showTip}
+              onMouseLeave={hideTip}
+            >
+              …
+            </span>
+          )}
+        </div>
+      </div>
+      {tipOpen &&
+        overflow > 0 &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[100] max-w-[min(360px,calc(100vw-16px))] break-words rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-md"
+            style={{ top: tipPos.top, left: tipPos.left }}
+          >
+            {tipLabel}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
 
 type ContactsProps = {
   rows: ContactRowData[];
@@ -41,7 +231,9 @@ type ContactsProps = {
 const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     id: "avatar",
-    size: 44,
+    size: CONTACT_COL.avatar,
+    minSize: CONTACT_COL.avatar,
+    maxSize: CONTACT_COL.avatar,
     header: "",
     cell: ({ row }) => {
       const initials = contactInitials(row.original);
@@ -49,7 +241,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
       return (
         <div
           className={cn(
-            "grid h-8 w-8 place-items-center rounded-full text-xs font-medium",
+            "grid h-7 w-7 place-items-center rounded-full text-[11px] font-medium",
             c.bg,
             c.text
           )}
@@ -62,7 +254,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "firstName",
     header: "Prénom",
-    size: 100,
+    size: CONTACT_COL.firstName,
     cell: ({ getValue }) => (
       <CellTruncate as="div" className="">
         {getValue<string>().trim() || "—"}
@@ -72,7 +264,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "lastName",
     header: "Nom",
-    size: 100,
+    size: CONTACT_COL.lastName,
     cell: ({ getValue }) => (
       <CellTruncate as="div" className="">
         {getValue<string>().trim() || "—"}
@@ -82,7 +274,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "phone",
     header: "Téléphone",
-    size: 140,
+    size: CONTACT_COL.phone,
     cell: ({ getValue }) => (
       <div className="flex items-center gap-1.5">
         <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
@@ -93,38 +285,10 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "groups",
     header: "Groupes",
-    size: 200,
-    cell: ({ getValue }) => {
-      const groups = getValue<string[]>();
-      if (groups.length === 0) {
-        return (
-          <span className="text-sm font-semibold text-slate-500">
-            Non classé
-          </span>
-        );
-      }
-      return (
-        <div className="flex max-h-12 min-w-0 flex-wrap content-start gap-1 overflow-hidden">
-          {groups.map((g) => {
-            const c = groupColor(g);
-            return (
-              <span
-                key={g}
-                className={cn(
-                  tagBase,
-                  c.bg,
-                  c.border,
-                  c.text,
-                  "min-w-0 max-w-full truncate sm:max-w-[9rem]"
-                )}
-              >
-                {g}
-              </span>
-            );
-          })}
-        </div>
-      );
-    },
+    size: CONTACT_COL.groups,
+    cell: ({ getValue }) => (
+      <ContactGroupsCell groups={getValue<string[]>() ?? []} />
+    ),
     filterFn: (row, _columnId, filterValue: string) => {
       if (!filterValue) return true;
       return row.original.groups.some((g) =>
@@ -135,7 +299,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "notes",
     header: "Notes",
-    size: 160,
+    size: CONTACT_COL.notes,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
     ),
@@ -143,7 +307,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "lastSms",
     header: "Dernier SMS",
-    size: 180,
+    size: CONTACT_COL.lastSms,
     cell: ({ row, getValue }) => {
       const date = getValue<string>();
       const body = row.original.lastSmsBody;
@@ -167,7 +331,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "source",
     header: "Source",
-    size: 90,
+    size: CONTACT_COL.source,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -175,7 +339,7 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
   {
     accessorKey: "created",
     header: "Date d'ajout",
-    size: 100,
+    size: CONTACT_COL.created,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -229,7 +393,9 @@ export function ContactsView({
   const selectColumns: ColumnDef<ContactRowData, unknown>[] = [
     {
       id: "select",
-      size: 40,
+      size: CONTACT_COL.select,
+      minSize: CONTACT_COL.select,
+      maxSize: CONTACT_COL.select,
       enableResizing: false,
       header: () => (
         <div className="flex items-center justify-center">
@@ -238,11 +404,10 @@ export function ContactsView({
               selectedIds.size > 0 && selectedIds.size === eligibleRows.length
                 ? true
                 : selectedIds.size > 0
-                  ? "indeterminate"
-                  : false
+                ? "indeterminate"
+                : false
             }
             onCheckedChange={() => toggleAll()}
-            className="cursor-pointer"
             aria-label="Tout sélectionner les contacts"
           />
         </div>
@@ -253,13 +418,49 @@ export function ContactsView({
             checked={selectedIds.has(row.original.id)}
             onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-pointer"
             aria-label={`Sélectionner ${row.original.name}`}
           />
         </div>
       ),
     },
     ...columns,
+    {
+      id: "actions",
+      size: CONTACT_COL.actions,
+      minSize: CONTACT_COL.actions,
+      maxSize: CONTACT_COL.actions,
+      enableResizing: false,
+      header: () => null,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full text-muted-foreground"
+              aria-label={`Actions pour ${row.original.name}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem
+              onSelect={() => onRowClick(row.original)}
+            >
+              Éditer
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => onDeleteContacts([row.original.id])}
+            >
+              Supprimer
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ];
 
   return (
@@ -267,38 +468,46 @@ export function ContactsView({
       {showBigEmpty && (
         <SectionGuideCard section="contacts" onPrimaryAction={onAddContact} />
       )}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <SearchBar
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <InputGroup
+          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          role="search"
+        >
+          <InputGroupAddon align="inline-start">
+            <Search aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
             placeholder="Rechercher un contact…"
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Rechercher un contact"
           />
-        </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-3">
+        </InputGroup>
+        <div className="flex flex-wrap items-center gap-2">
           {hasSelection ? (
             <>
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                size="lg"
+                className="rounded-full"
                 onClick={() => {
                   onDeleteContacts(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100"
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <Trash2 aria-hidden />
                 Supprimer ({selectedIds.size})
-              </button>
+              </Button>
               <Button
                 variant="default"
                 size="lg"
-                className={brandBtnPrimaryCls}
+                className="rounded-full"
                 onClick={() => {
                   onCreateCampaignFromContacts(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
               >
-                <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden />
+                <Send aria-hidden />
                 Créer une campagne
               </Button>
             </>
@@ -307,18 +516,19 @@ export function ContactsView({
               <Button
                 variant="outline"
                 size="lg"
-                className={brandBtnCls}
+                className="rounded-full"
                 onClick={onImport}
               >
+                <Download aria-hidden />
                 Importer
               </Button>
               <Button
                 variant="default"
                 size="lg"
-                className={brandBtnPrimaryCls}
+                className="rounded-full"
                 onClick={onAddContact}
               >
-                <PlusIcon />
+                <Plus aria-hidden />
                 Ajouter un contact
               </Button>
             </>

@@ -143,6 +143,28 @@ async function fetchMembershipsByClientIds(
   return { map, error: null };
 }
 
+/** Numéros E164 déjà en base (non soft-deleted) — preview import CSV. */
+export async function fetchExistingClientPhoneE164s(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ data: string[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select("phone_e164")
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+
+  if (error) {
+    return { data: [], error: new Error(error.message) };
+  }
+  return {
+    data: (data ?? [])
+      .map((r) => (r as { phone_e164: string | null }).phone_e164)
+      .filter((p): p is string => Boolean(p)),
+    error: null,
+  };
+}
+
 export async function fetchClients(
   supabase: SupabaseClient,
 ): Promise<{ data: ContactRowData[]; error: Error | null }> {

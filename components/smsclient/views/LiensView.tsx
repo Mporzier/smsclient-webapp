@@ -8,6 +8,7 @@ import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { LINK_COL } from "@/components/smsclient/listColumnSizes";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -107,12 +108,12 @@ export function LiensView({
       {
         accessorKey: "createdLabel",
         header: "Créé le",
-        size: 130,
+        size: LINK_COL.created,
       },
       {
         accessorKey: "label",
         header: "Libellé",
-        size: 140,
+        size: LINK_COL.label,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>() || "—"}</CellTruncate>
         ),
@@ -120,7 +121,7 @@ export function LiensView({
       {
         accessorKey: "originalUrl",
         header: "URL d'origine",
-        size: 220,
+        size: LINK_COL.originalUrl,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>()}
@@ -130,7 +131,7 @@ export function LiensView({
       {
         accessorKey: "shortUrl",
         header: "Lien court",
-        size: 118,
+        size: LINK_COL.shortUrl,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-1.5">
             <CellTruncate as="span" className="text-primary">
@@ -153,14 +154,16 @@ export function LiensView({
       {
         accessorKey: "clickCount",
         header: "Clics",
-        size: 40,
+        size: LINK_COL.clickCount,
         cell: ({ getValue }) => (
           <span className="tabular-nums">{getValue<number>()}</span>
         ),
       },
       {
         id: "actions",
-        size: 48,
+        size: LINK_COL.actions,
+        minSize: LINK_COL.actions,
+        maxSize: LINK_COL.actions,
         enableResizing: false,
         cell: ({ row }) => (
           <button

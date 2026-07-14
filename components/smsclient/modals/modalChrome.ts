@@ -28,3 +28,12 @@ export const brandBtnPrimaryCls = `${brandBtnCls} shadow-md`;
 /** Input brand (ex-classes `inp` locales). */
 export const brandInputCls =
   "h-11 rounded-[14px] border-border bg-card px-3.5 text-[15px] font-bold text-foreground";
+
+/** Shell icône header Dialog — styles via `.modal-icon` + CSS vars `--modal-icon-*`. */
+export type ModalIconSize = "sm" | "md" | "lg";
+
+export function modalIconCls(size: ModalIconSize = "md"): string {
+  if (size === "sm") return "modal-icon modal-icon--sm";
+  if (size === "lg") return "modal-icon modal-icon--lg";
+  return "modal-icon";
+}

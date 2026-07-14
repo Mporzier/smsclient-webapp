@@ -12,6 +12,7 @@ import {
 } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { CAMPAIGN_COL } from "@/components/smsclient/listColumnSizes";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -41,25 +42,40 @@ function StatusBadge({ status }: { status: SmsCampaignStatus }) {
 }
 
 const columns: ColumnDef<CampaignRowData, unknown>[] = [
-  { accessorKey: "createdLabel", header: "Date", size: 120 },
+  {
+    accessorKey: "createdLabel",
+    header: "Date",
+    size: CAMPAIGN_COL.created,
+  },
   {
     accessorKey: "name",
     header: "Campagne",
-    cell: ({ getValue }) => (
-      <span>{getValue<string>()}</span>
-    ),
+    size: CAMPAIGN_COL.name,
+    cell: ({ getValue }) => <span>{getValue<string>()}</span>,
   },
-  { accessorKey: "recipients", header: "Destinataires", size: 110 },
+  {
+    accessorKey: "recipients",
+    header: "Destinataires",
+    size: CAMPAIGN_COL.recipients,
+  },
   {
     accessorKey: "status",
     header: "Statut",
-    size: 120,
+    size: CAMPAIGN_COL.status,
     cell: ({ getValue }) => (
       <StatusBadge status={getValue<SmsCampaignStatus>()} />
     ),
   },
-  { accessorKey: "sendLabel", header: "Envoi", size: 160 },
-  { accessorKey: "creditsLabel", header: "Crédit SMS", size: 100 },
+  {
+    accessorKey: "sendLabel",
+    header: "Envoi",
+    size: CAMPAIGN_COL.send,
+  },
+  {
+    accessorKey: "creditsLabel",
+    header: "Crédit SMS",
+    size: CAMPAIGN_COL.credits,
+  },
 ];
 
 type CampagnesProps = {

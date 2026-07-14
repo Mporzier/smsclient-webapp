@@ -8,13 +8,23 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ColumnSizingState,
   type Row,
   type SortingState,
 } from "@tanstack/react-table";
+import { distributeColumnWidths } from "@/components/smsclient/listColumnSizes";
 import { cn } from "@/lib/utils";
 import { Pager } from "./views/Pager";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 
 type DataTableProps<T> = {
   columns: ColumnDef<T, unknown>[];
@@ -52,8 +62,9 @@ function withColumnDefaults<T>(
       ...col,
       enableResizing: noResize ? false : (col.enableResizing ?? true),
       enableSorting: noSort ? false : (col.enableSorting ?? true),
-      minSize: col.minSize ?? (noResize ? 40 : 80),
-      maxSize: col.maxSize ?? 800,
+      minSize: col.minSize ?? (noResize ? 36 : 64),
+      /** Plafond haut pour autoriser agrandissement après le fill % initial. */
+      maxSize: col.maxSize ?? 2400,
     };
   });
 }
@@ -72,17 +83,116 @@ export function DataTable<T>({
   clipHorizontalOverflow = false,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const userResizedRef = useRef(false);
 
   const sizedColumns = useMemo(
     () => withColumnDefaults(columns),
     [columns]
   );
 
+  const sizingWeights = useMemo(
+    () =>
+      sizedColumns.map((col) => {
+        const id = columnId(col) ?? "col";
+        return {
+          id,
+          weight: col.size ?? 120,
+          minSize: col.minSize ?? 64,
+          maxSize: col.maxSize ?? 2400,
+        };
+      }),
+    [sizedColumns]
+  );
+
+  /** Somme des largeurs ≥ clientWidth — sinon blanc + pas de scroll. */
+  const clampSizingToContainer = useCallback(
+    (
+      sizing: ColumnSizingState,
+      avail: number,
+      preferGrowId?: string
+    ): ColumnSizingState => {
+      if (avail <= 0 || sizingWeights.length === 0) return sizing;
+
+      let sum = 0;
+      const resolved: ColumnSizingState = {};
+      for (const w of sizingWeights) {
+        const size = sizing[w.id] ?? w.weight;
+        resolved[w.id] = size;
+        sum += size;
+      }
+      if (sum >= avail) return sizing;
+
+      const deficit = avail - sum;
+      const growId =
+        preferGrowId && resolved[preferGrowId] != null
+          ? preferGrowId
+          : [...sizingWeights]
+              .reverse()
+              .find((w) => w.id !== "select" && w.id !== "actions")?.id ??
+            sizingWeights[sizingWeights.length - 1]!.id;
+
+      return {
+        ...resolved,
+        [growId]: (resolved[growId] ?? 0) + deficit,
+      };
+    },
+    [sizingWeights]
+  );
+
+  const applyContainerFill = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const avail = el.clientWidth;
+    if (avail <= 0) return;
+    if (!userResizedRef.current) {
+      setColumnSizing(distributeColumnWidths(sizingWeights, avail));
+      return;
+    }
+    setColumnSizing((prev) => clampSizingToContainer(prev, avail));
+  }, [sizingWeights, clampSizingToContainer]);
+
+  useLayoutEffect(() => {
+    applyContainerFill();
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => applyContainerFill());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [applyContainerFill]);
+
+  const handleColumnSizingChange = useCallback(
+    (updater: SetStateAction<ColumnSizingState>) => {
+      userResizedRef.current = true;
+      setColumnSizing((prev) => {
+        const proposed =
+          typeof updater === "function" ? updater(prev) : updater;
+        const avail = scrollRef.current?.clientWidth ?? 0;
+        if (avail <= 0) return proposed;
+
+        let shrunkId: string | undefined;
+        for (const w of sizingWeights) {
+          const before = prev[w.id] ?? w.weight;
+          const after = proposed[w.id] ?? prev[w.id] ?? w.weight;
+          if (after < before) {
+            shrunkId = w.id;
+            break;
+          }
+        }
+
+        return clampSizingToContainer(proposed, avail, shrunkId);
+      });
+    },
+    [sizingWeights, clampSizingToContainer]
+  );
+
   const table = useReactTable({
     data,
     columns: sizedColumns,
-    state: { globalFilter, sorting },
+    state: { globalFilter, sorting, columnSizing },
     onSortingChange: setSorting,
+    onColumnSizingChange: handleColumnSizingChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -93,9 +203,9 @@ export function DataTable<T>({
     columnResizeMode: "onChange",
     enableColumnResizing: true,
     defaultColumn: {
-      size: 160,
-      minSize: 80,
-      maxSize: 800,
+      size: 120,
+      minSize: 64,
+      maxSize: 2400,
     },
     initialState: { pagination: { pageSize } },
   });
@@ -115,15 +225,16 @@ export function DataTable<T>({
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div
+        ref={scrollRef}
         className={cn(
           "min-h-0 w-full flex-1 overflow-y-auto",
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
         <table
-          className="w-full table-fixed border-separate border-spacing-0 text-[15px]"
+          className="table-fixed border-separate border-spacing-0 text-sm"
           style={{
-            width: "100%",
+            width: totalSize,
             minWidth: totalSize,
           }}
         >
@@ -131,7 +242,11 @@ export function DataTable<T>({
             {table.getVisibleLeafColumns().map((column) => (
               <col
                 key={column.id}
-                style={{ width: column.getSize(), minWidth: column.getSize() }}
+                style={{
+                  width: column.getSize(),
+                  minWidth: column.getSize(),
+                  maxWidth: column.getSize(),
+                }}
               />
             ))}
           </colgroup>
@@ -139,6 +254,7 @@ export function DataTable<T>({
             <tr>
               {table.getHeaderGroups()[0].headers.map((header) => {
                 const isSelectCol = header.column.id === "select";
+                const isActionsCol = header.column.id === "actions";
                 const canSort = header.column.getCanSort();
                 const sorted = header.column.getIsSorted();
                 const ariaSort =
@@ -154,10 +270,14 @@ export function DataTable<T>({
                     key={header.id}
                     aria-sort={ariaSort}
                     className={cn(
-                      "relative whitespace-nowrap border-b border-border bg-muted py-3.5 text-sm font-medium text-foreground",
-                      isSelectCol
-                        ? "px-3 text-center"
-                        : "px-[18px] text-left",
+                      "relative whitespace-nowrap border-b border-border bg-muted py-2 text-xs font-medium text-foreground",
+                      isSelectCol || isActionsCol
+                        ? "px-2 text-center"
+                        : "px-3 text-left",
+                      isSelectCol &&
+                        "sticky left-0 z-20 shadow-[1px_0_0_0_var(--border)]",
+                      isActionsCol &&
+                        "sticky right-0 z-20 shadow-[-1px_0_0_0_var(--border)]",
                       canSort && "cursor-pointer"
                     )}
                   >
@@ -268,6 +388,7 @@ export function DataTable<T>({
                 <tr
                   key={row.id}
                   className={cn(
+                    "group",
                     onRowClick && "cursor-pointer hover:bg-accent/60"
                   )}
                   tabIndex={onRowClick ? 0 : undefined}
@@ -288,12 +409,19 @@ export function DataTable<T>({
                 >
                   {row.getVisibleCells().map((cell) => {
                     const isSelectCol = cell.column.id === "select";
+                    const isActionsCol = cell.column.id === "actions";
                     return (
                       <td
                         key={cell.id}
                         className={cn(
-                          "min-w-0 overflow-hidden border-b border-border/60 py-3.5 align-middle font-normal text-foreground",
-                          isSelectCol ? "px-3 text-center" : "px-[18px]"
+                          "min-w-0 overflow-hidden border-b border-border/60 bg-card py-1.5 align-middle font-normal text-foreground group-hover:bg-accent/60",
+                          isSelectCol || isActionsCol
+                            ? "px-2 text-center"
+                            : "px-3",
+                          isSelectCol &&
+                            "sticky left-0 z-[1] shadow-[1px_0_0_0_var(--border)]",
+                          isActionsCol &&
+                            "sticky right-0 z-[1] shadow-[-1px_0_0_0_var(--border)]"
                         )}
                         onClick={
                           isSelectCol
@@ -304,7 +432,9 @@ export function DataTable<T>({
                                 ) as HTMLInputElement | null;
                                 if (input) input.click();
                               }
-                            : undefined
+                            : isActionsCol
+                              ? (e) => e.stopPropagation()
+                              : undefined
                         }
                       >
                         {flexRender(

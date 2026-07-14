@@ -18,25 +18,32 @@ export const IMPORT_ROLE_LABELS: Record<ImportColumnRole, string> = {
   last_name: "Nom",
 };
 
-const FR_PHONE_RE = /^(?:\+33|0033|0)[67]\d{8}$|^[67]\d{8}$/;
-
-/** Teste si une valeur brute ressemble à un numéro de mobile français. */
+/** Teste si une valeur brute est un mobile FR importable (même règles que l’insert). */
 export function looksLikeFrPhone(raw: string): boolean {
-  const cleaned = raw.replace(/[\s.\-()]/g, "");
-  return FR_PHONE_RE.test(cleaned);
+  const phoneDisplay = normalizeFRPhone(coerceFrPhoneForImport(raw));
+  return Boolean(phoneDisplay && isValidFrMobile(phoneDisplay));
 }
 
-/** Formate un numéro FR en "06 12 34 56 78". Retourne la valeur brute si non-parsable. */
+/** Formate un numéro FR en "06 12 34 56 78" (+33 / 0033 → 0X). Brut si non-parsable. */
 export function formatFrPhoneDisplay(raw: string): string {
-  const cleaned = raw.replace(/[\s.\-()]/g, "");
+  const coerced = coerceFrPhoneForImport(raw);
+  const normalized = normalizeFRPhone(coerced);
+  if (normalized && isValidFrMobile(normalized)) {
+    return normalized;
+  }
+  const compact = coerced.replace(/[\s.\-()]/g, "");
   let digits: string;
-  if (cleaned.startsWith("+33")) digits = "0" + cleaned.slice(3);
-  else if (cleaned.startsWith("0033")) digits = "0" + cleaned.slice(4);
-  else if (/^[67]\d{8}$/.test(cleaned)) digits = "0" + cleaned;
-  else digits = cleaned;
+  if (compact.startsWith("+33")) digits = `0${compact.slice(3)}`;
+  else if (compact.startsWith("0033")) digits = `0${compact.slice(4)}`;
+  else if (/^33[67]\d{8}$/.test(compact)) digits = `0${compact.slice(2)}`;
+  else if (/^[67]\d{8}$/.test(compact)) digits = `0${compact}`;
+  else digits = compact;
 
   if (/^0[67]\d{8}$/.test(digits)) {
-    return digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5");
+    return digits.replace(
+      /(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+      "$1 $2 $3 $4 $5"
+    );
   }
   return raw;
 }
@@ -46,6 +53,7 @@ export function suggestColumnRoles(
   headers: string[],
   rows?: string[][],
 ): ImportColumnRole[] {
+  let phoneAssigned = false;
   const roles: ImportColumnRole[] = headers.map((h) => {
     const x = h
       .toLowerCase()
@@ -58,6 +66,8 @@ export function suggestColumnRoles(
       /tel|phone|mobile|portable|gsm|numero|n°|no\s*tel/.test(x) &&
       !/nom/.test(x)
     ) {
+      if (phoneAssigned) return "skip";
+      phoneAssigned = true;
       return "phone";
     }
     if (/prenom|firstname|first\s*name/.test(x)) return "first_name";
@@ -70,13 +80,14 @@ export function suggestColumnRoles(
     return "skip";
   });
 
-  if (!roles.includes("phone") && rows && rows.length > 0) {
-    const sample = rows.slice(0, Math.min(5, rows.length));
+  if (!phoneAssigned && rows && rows.length > 0) {
+    const sample = rows.slice(0, Math.min(20, rows.length));
+    const need = Math.max(1, Math.ceil(sample.length * 0.5));
     for (let col = 0; col < headers.length; col++) {
       const matches = sample.filter(
         (row) => row[col] && looksLikeFrPhone(row[col]),
       ).length;
-      if (matches >= Math.ceil(sample.length * 0.6)) {
+      if (matches >= need) {
         roles[col] = "phone";
         break;
       }

@@ -7,6 +7,7 @@ import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { MODELE_SMS_COL } from "@/components/smsclient/listColumnSizes";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
 import {
@@ -123,12 +124,12 @@ export function ModelesSmsView({
       {
         accessorKey: "createdLabel",
         header: "Créé le",
-        size: 130,
+        size: MODELE_SMS_COL.created,
       },
       {
         accessorKey: "title",
         header: "Titre",
-        size: 140,
+        size: MODELE_SMS_COL.title,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-foreground">
             {getValue<string>()}
@@ -138,7 +139,7 @@ export function ModelesSmsView({
       {
         accessorKey: "description",
         header: "Description",
-        size: 160,
+        size: MODELE_SMS_COL.description,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>() || "—"}
@@ -148,7 +149,7 @@ export function ModelesSmsView({
       {
         accessorKey: "body",
         header: "Message",
-        size: 280,
+        size: MODELE_SMS_COL.body,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
             {getValue<string>()}
@@ -157,7 +158,9 @@ export function ModelesSmsView({
       },
       {
         id: "actions",
-        size: 48,
+        size: MODELE_SMS_COL.actions,
+        minSize: MODELE_SMS_COL.actions,
+        maxSize: MODELE_SMS_COL.actions,
         enableResizing: false,
         cell: ({ row }) => (
           <button
