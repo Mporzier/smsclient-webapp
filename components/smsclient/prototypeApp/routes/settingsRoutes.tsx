@@ -30,6 +30,7 @@ export function renderSettingsRoute(
     userQrState,
     qrWheelState,
     trashState,
+    customFieldsState,
     user,
   } = data;
 
@@ -105,6 +106,12 @@ export function renderSettingsRoute(
           onRestoreTrashContacts={actions.handleRestoreTrashContacts}
           onRestoreTrashGroups={actions.handleRestoreTrashGroups}
           onRefreshTrash={trashState.refresh}
+          customFieldDefs={customFieldsState.defs}
+          customFieldsLoading={customFieldsState.loading}
+          customFieldsError={customFieldsState.error}
+          onCreateCustomField={customFieldsState.createDef}
+          onRenameCustomField={customFieldsState.renameDef}
+          onRemoveCustomField={customFieldsState.removeDef}
         />
       );
     case "acheter-credits":
@@ -146,12 +153,13 @@ export function renderSettingsRoute(
 
 export function renderDefaultRoute(ctx: PrototypeAppContext): ReactNode {
   const { data, modals, wizard, actions } = ctx;
-  const { contactsState } = data;
+  const { contactsState, customFieldsState } = data;
   return (
     <ContactsView
       rows={contactsState.rows}
       loading={contactsState.loading}
       error={contactsState.error}
+      customFieldDefs={customFieldsState.defs}
       onImport={() => modals.setImportContactsOpen(true)}
       onAddContact={modals.openContactAdd}
       onRowClick={modals.openContactEdit}

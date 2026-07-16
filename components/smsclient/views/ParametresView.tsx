@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
 import {
   ModalPanel,
@@ -21,6 +22,7 @@ import {
 } from "@/components/smsclient/views/parametres/parametresSettings";
 import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
+import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import { useState } from "react";
@@ -39,6 +41,18 @@ export type ParametresViewProps = {
   onRestoreTrashContacts?: (ids: string[]) => Promise<void>;
   onRestoreTrashGroups?: (ids: string[]) => Promise<void>;
   onRefreshTrash?: () => Promise<void>;
+  customFieldDefs?: CustomFieldDef[];
+  customFieldsLoading?: boolean;
+  customFieldsError?: string | null;
+  onCreateCustomField?: (input: {
+    label: string;
+    fieldType: CustomFieldType;
+  }) => Promise<{ error: Error | null }>;
+  onRenameCustomField?: (
+    fieldId: string,
+    label: string,
+  ) => Promise<{ error: Error | null }>;
+  onRemoveCustomField?: (fieldId: string) => Promise<{ error: Error | null }>;
 };
 
 export function ParametresView({
@@ -55,6 +69,12 @@ export function ParametresView({
   onRestoreTrashContacts,
   onRestoreTrashGroups,
   onRefreshTrash,
+  customFieldDefs = [],
+  customFieldsLoading = false,
+  customFieldsError = null,
+  onCreateCustomField,
+  onRenameCustomField,
+  onRemoveCustomField,
 }: ParametresViewProps) {
   const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyProfileForm);
   const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyProfileForm);
@@ -175,6 +195,7 @@ export function ParametresView({
           wide={
             openSetting === "factures" ||
             openSetting === "corbeille" ||
+            openSetting === "champs-perso" ||
             openSetting === "adresse-facturation"
           }
         >
@@ -423,6 +444,20 @@ export function ParametresView({
               </label>
             </ModalPanel>
           )}
+
+          {openSetting === "champs-perso" &&
+            onCreateCustomField &&
+            onRenameCustomField &&
+            onRemoveCustomField && (
+              <CustomFieldsSettingsPanel
+                defs={customFieldDefs}
+                loading={customFieldsLoading}
+                error={customFieldsError}
+                onCreate={onCreateCustomField}
+                onRename={onRenameCustomField}
+                onRemove={onRemoveCustomField}
+              />
+            )}
 
           {openSetting === "corbeille" && trashAvailable && (
             <ParametresTrashSection

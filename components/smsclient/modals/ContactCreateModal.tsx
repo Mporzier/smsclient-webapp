@@ -13,9 +13,13 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
+import { normalizeCustomFieldValue } from "@/lib/customFields/validate";
+import type { CustomFieldDef } from "@/lib/types/customFields";
+import type { CustomFieldValues } from "@/lib/types/customFields";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useState } from "react";
 import { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
+import { ContactCustomFieldsList } from "./ContactCustomFieldsList";
 import {
   BellOff,
   Check,
@@ -34,6 +38,7 @@ import {
 } from "./modalChrome";
 import {
   contactFormSnapshotsEqual,
+  hasStackedOpenDialog,
   useModalFormDirty,
   type ContactFormSnapshot,
 } from "./modalFormGuard";
@@ -42,16 +47,14 @@ export type ContactCreateModalProps = {
   open: boolean;
   onClose: () => void;
   mode: "add" | "edit";
+  /** Seeds à l’ouverture — draft local ensuite (perf). */
   first: string;
-  setFirst: (v: string) => void;
   last: string;
-  setLast: (v: string) => void;
   phone: string;
-  setPhone: (v: string) => void;
   birthday: string;
-  setBirthday: (v: string) => void;
   notes: string;
-  setNotes: (v: string) => void;
+  customFieldDefs?: CustomFieldDef[];
+  customFields: CustomFieldValues;
   groups: string[];
   setGroups: Dispatch<SetStateAction<string[]>>;
   groupOptions: string[];
@@ -65,7 +68,6 @@ export type ContactCreateModalProps = {
 const fieldLabelCls = "text-xs font-semibold text-foreground";
 const fieldMetaCls = "text-xs font-normal text-muted-foreground";
 const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
-const errorTextCls = "text-xs font-medium text-destructive";
 /** Ring Input UI trop épais en Dialog — border + ring-0 comme Import. */
 const modalFieldCls =
   "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
@@ -91,16 +93,13 @@ export function ContactCreateModal({
   open,
   onClose,
   mode,
-  first,
-  setFirst,
-  last,
-  setLast,
-  phone,
-  setPhone,
-  birthday,
-  setBirthday,
-  notes,
-  setNotes,
+  first: seedFirst,
+  last: seedLast,
+  phone: seedPhone,
+  birthday: seedBirthday,
+  notes: seedNotes,
+  customFieldDefs = [],
+  customFields,
   groups,
   setGroups,
   groupOptions,
@@ -112,24 +111,43 @@ export function ContactCreateModal({
 }: ContactCreateModalProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [firstError, setFirstError] = useState<string | null>(null);
+  const [phoneSubmitError, setPhoneSubmitError] = useState<string | null>(null);
+  const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [phoneBlurred, setPhoneBlurred] = useState(false);
   const [confirmUnsubscribeOpen, setConfirmUnsubscribeOpen] = useState(false);
+  const [first, setFirst] = useState(seedFirst);
+  const [last, setLast] = useState(seedLast);
+  const [phone, setPhone] = useState(seedPhone);
+  const [birthday, setBirthday] = useState(seedBirthday);
+  const [notes, setNotes] = useState(seedNotes);
+  const [draftCustomFields, setDraftCustomFields] =
+    useState<CustomFieldValues>({});
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
       setSaveError(null);
-      setValidationError(null);
+      setFirstError(null);
+      setPhoneSubmitError(null);
+      setCustomErrors({});
       setPhoneBlurred(false);
       setConfirmUnsubscribeOpen(false);
+      setFirst(seedFirst);
+      setLast(seedLast);
+      setPhone(seedPhone);
+      setBirthday(seedBirthday);
+      setNotes(seedNotes);
+      setDraftCustomFields({ ...customFields });
     }
   }
 
   const handleClose = useCallback(() => {
     setSaveError(null);
-    setValidationError(null);
+    setFirstError(null);
+    setPhoneSubmitError(null);
+    setCustomErrors({});
     onClose();
   }, [onClose]);
 
@@ -150,17 +168,35 @@ export function ContactCreateModal({
   );
 
   const handleFinalSave = useCallback(async () => {
-    if (!first.trim()) {
-      setValidationError("Le prénom est obligatoire.");
-      return;
-    }
-    if (!isValidFrMobile(phone)) {
-      setValidationError(
-        "Indiquez un numéro mobile français à 10 chiffres (ex. 06 12 34 56 78)."
+    const nextFirstError = !first.trim() ? "Le prénom est obligatoire." : null;
+    const nextPhoneError = !isValidFrMobile(phone)
+      ? "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78)."
+      : null;
+    const nextCustom: Record<string, string> = {};
+    const normalizedCustom: CustomFieldValues = {};
+    for (const def of customFieldDefs) {
+      const normalized = normalizeCustomFieldValue(
+        draftCustomFields[def.id] ?? "",
+        def.fieldType,
       );
+      if (normalized === null) {
+        nextCustom[def.id] =
+          def.fieldType === "date"
+            ? "Date invalide."
+            : def.fieldType === "number"
+              ? "Nombre invalide."
+              : "Valeur invalide.";
+        continue;
+      }
+      if (normalized) normalizedCustom[def.id] = normalized;
+    }
+    setFirstError(nextFirstError);
+    setPhoneSubmitError(nextPhoneError);
+    setCustomErrors(nextCustom);
+    if (nextFirstError || nextPhoneError || Object.keys(nextCustom).length > 0) {
+      if (nextPhoneError) setPhoneBlurred(true);
       return;
     }
-    setValidationError(null);
     if (!onSaveContact) {
       handleClose();
       return;
@@ -176,6 +212,7 @@ export function ContactCreateModal({
         groupLabels: groups,
         birthday,
         notes,
+        customFields: normalizedCustom,
         optIn,
         stop,
       });
@@ -193,6 +230,8 @@ export function ContactCreateModal({
     phone,
     birthday,
     notes,
+    customFieldDefs,
+    draftCustomFields,
     groups,
     consentSnapshot,
   ]);
@@ -204,6 +243,7 @@ export function ContactCreateModal({
     birthday,
     notes,
     groups,
+    customFields: draftCustomFields,
   };
   const isDirty = useModalFormDirty(
     open,
@@ -213,7 +253,13 @@ export function ContactCreateModal({
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneInvalid =
-    phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone);
+    (phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone)) ||
+    Boolean(phoneSubmitError);
+  const phoneErrorMsg =
+    phoneSubmitError ??
+    (phoneInvalid
+      ? "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78)."
+      : null);
 
   const isUnsubscribed =
     mode === "edit" &&
@@ -233,7 +279,10 @@ export function ContactCreateModal({
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!next && !saving && !confirmUnsubscribeOpen) handleClose();
+          if (!next) {
+            if (saving || isDirty || hasStackedOpenDialog()) return;
+            handleClose();
+          }
         }}
       >
         <DialogContent
@@ -244,11 +293,17 @@ export function ContactCreateModal({
             "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] rounded-xl shadow-lg sm:max-w-[640px]",
             dialogContentZCls
           )}
+          onOpenAutoFocus={(e) => {
+            if (mode === "edit") e.preventDefault();
+          }}
           onPointerDownOutside={(e) => {
-            if (saving || isDirty || confirmUnsubscribeOpen) e.preventDefault();
+            // Confirm empilée : ne pas preventDefault (sinon elle ne se ferme pas).
+            if (hasStackedOpenDialog()) return;
+            if (saving || isDirty) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
-            if (saving || isDirty || confirmUnsubscribeOpen) e.preventDefault();
+            if (hasStackedOpenDialog()) return;
+            if (saving || isDirty) e.preventDefault();
           }}
         >
           <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
@@ -261,17 +316,6 @@ export function ContactCreateModal({
           </DialogHeader>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-            {validationError && (
-              <p
-                className={cn(
-                  "rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5",
-                  errorTextCls
-                )}
-              >
-                {validationError}
-              </p>
-            )}
-
             {isUnsubscribed && (
               <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
                 <BellOff
@@ -298,11 +342,23 @@ export function ContactCreateModal({
                   className={modalFieldCls}
                   maxLength={30}
                   value={first}
+                  aria-invalid={Boolean(firstError)}
+                  aria-describedby={
+                    firstError ? "contact-create-first-err" : undefined
+                  }
                   onChange={(e) => {
                     setFirst(e.target.value);
-                    setValidationError(null);
+                    setFirstError(null);
                   }}
                 />
+                {firstError && (
+                  <p
+                    id="contact-create-first-err"
+                    className={cn(hintTextCls, "text-destructive")}
+                  >
+                    {firstError}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="flex justify-between gap-2" htmlFor="contact-create-last">
@@ -326,7 +382,7 @@ export function ContactCreateModal({
                 </Label>
                 <span
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                  title="Numéro mobile français : 10 chiffres, commence par 0 (ex. 06 12 34 56 78)."
+                  title="Numéro mobile français : 06 ou 07, 10 chiffres (ex. 06 12 34 56 78)."
                 >
                   <FrFlagIcon />
                   France
@@ -354,21 +410,21 @@ export function ContactCreateModal({
                   value={phone}
                   onChange={(e) => {
                     setPhone(formatFrPhoneInput(e.target.value));
-                    setValidationError(null);
+                    setPhoneSubmitError(null);
                   }}
                   onBlur={() => setPhoneBlurred(true)}
                   aria-invalid={phoneInvalid}
                   aria-describedby={
-                    phoneInvalid ? "contact-create-phone-err" : undefined
+                    phoneErrorMsg ? "contact-create-phone-err" : undefined
                   }
                 />
               </div>
-              {phoneInvalid && (
+              {phoneErrorMsg && (
                 <p
                   id="contact-create-phone-err"
                   className={cn(hintTextCls, "text-destructive")}
                 >
-                  Indiquez un mobile à 10 chiffres (ex. 06 12 34 56 78).
+                  {phoneErrorMsg}
                 </p>
               )}
             </div>
@@ -406,6 +462,23 @@ export function ContactCreateModal({
                 placeholder="Optionnel — contexte, préférences, informations utiles…"
               />
             </div>
+
+            {customFieldDefs.length > 0 && (
+              <ContactCustomFieldsList
+                defs={customFieldDefs}
+                values={draftCustomFields}
+                setValues={setDraftCustomFields}
+                errors={customErrors}
+                onClearError={(fieldId) => {
+                  setCustomErrors((prev) => {
+                    if (!prev[fieldId]) return prev;
+                    const next = { ...prev };
+                    delete next[fieldId];
+                    return next;
+                  });
+                }}
+              />
+            )}
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-between gap-2">

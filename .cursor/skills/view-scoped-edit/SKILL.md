@@ -7,20 +7,23 @@ description: >
 
 # view-scoped-edit
 
-Read skill `smsclient-map` first. Then **max 4 files** unless user asks broader refactor.
+Read skill `smsclient-map` first (+ `wiki/conventions-ui.md` si modale / tel / DataTable). Then **max 4 files** unless user asks broader refactor.
 
 ## Per domain — read only these
 
-| Domain     | Max files                                                                        |
-| ---------- | -------------------------------------------------------------------------------- |
-| contacts   | `ContactsView.tsx`, `useContacts.ts`, `lib/supabase/clients.ts`, test if failing |
-| groupes    | `GroupesView.tsx`, `useGroups.ts`, `lib/supabase/groups.ts`                      |
-| campagnes  | `CampagnesView.tsx`, `useCampaigns.ts`, `lib/supabase/campaigns.ts`              |
-| wizard     | `CampaignWizard.tsx` (offset), `useCampaignWizard.ts`, `campaignTypes.ts`        |
-| qr         | `QrCodeView.tsx`, `useQrWheel.ts`, `lib/supabase/qrWheel.ts`                     |
-| paramètres | `ParametresView.tsx`, `useTrashItems.ts`, `lib/supabase/profile.ts`              |
-| shell      | `Shell.tsx` (offset), `lib/proto/routes.ts`                                      |
-| auth       | `AuthGate.tsx`, `lib/supabase/client.ts`, `lib/auth/authErrors.ts`               |
+| Domain        | Max files                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| contacts      | `ContactsView.tsx`, `useContacts.ts`, `clients.ts` **ou** `ContactCreateModal.tsx` / `smsUtils.ts`  |
+| contact-modal | `ContactCreateModal.tsx`, `modalFormGuard.ts`, `ContactCustomFieldsList.tsx`, `smsUtils.ts`         |
+| import        | `ImportContactsModal.tsx`, `contactImportMap.ts`, `smsUtils.ts`                                    |
+| listes        | `DataTable.tsx`, `listColumnSizes.ts`, view concernée                                              |
+| groupes       | `GroupesView.tsx`, `useGroups.ts`, `lib/supabase/groups.ts`                                        |
+| campagnes     | `CampagnesView.tsx`, `useCampaigns.ts`, `lib/supabase/campaigns.ts`                                |
+| wizard        | `CampaignWizard.tsx` (offset), `useCampaignWizard.ts`, `campaignTypes.ts`                          |
+| qr            | `QrCodeView.tsx`, `useQrWheel.ts`, `lib/supabase/qrWheel.ts`                                       |
+| paramètres    | `ParametresView.tsx`, `useTrashItems.ts`, `lib/supabase/profile.ts`                                |
+| shell         | `Shell.tsx` (offset), `lib/proto/routes.ts`                                                        |
+| auth          | `AuthGate.tsx`, `lib/supabase/client.ts`, `lib/auth/authErrors.ts`                                 |
 
 ## Forbidden without explicit ask
 

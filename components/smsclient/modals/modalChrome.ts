@@ -12,10 +12,6 @@ export const dialogOverlayStackedCls =
 export const dialogContentZCls = "z-[9999]";
 export const dialogContentStackedZCls = "z-[10001]";
 
-/** Contenu confirm type alertdialog. */
-export const confirmDialogContentCls =
-  "max-h-[min(82vh,640px)] w-full max-w-[calc(100%-2rem)] gap-0 rounded-2xl border border-border bg-card p-5 text-left shadow-2xl ring-0 sm:max-w-[440px]";
-
 /** Shell Dialog formulaire (header / body scroll / footer). */
 export const formDialogContentCls =
   "flex w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-[22px] border border-border bg-card p-0 text-left shadow-2xl ring-0";

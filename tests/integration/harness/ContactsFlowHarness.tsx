@@ -5,6 +5,7 @@ import { ContactCreateModal } from "@/components/smsclient/modals/ContactCreateM
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
+import type { CustomFieldValues } from "@/lib/types/customFields";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
 import { useCallback, useState } from "react";
 import { nextMockId } from "../helpers/mockData";
@@ -29,6 +30,7 @@ export function ContactsFlowHarness({
   const [phone, setPhone] = useState("");
   const [birthday, setBirthday] = useState("");
   const [notes, setNotes] = useState("");
+  const [customFields, setCustomFields] = useState<CustomFieldValues>({});
   const [groups, setGroups] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
@@ -41,6 +43,7 @@ export function ContactsFlowHarness({
     setPhone("");
     setBirthday("");
     setNotes("");
+    setCustomFields({});
     setGroups([]);
     setModalOpen(true);
   }, []);
@@ -53,6 +56,7 @@ export function ContactsFlowHarness({
     setPhone(formatFrPhoneInput(row.phone));
     setBirthday(row.birthday);
     setNotes(row.notes);
+    setCustomFields({ ...(row.customFields ?? {}) });
     setGroups([...row.groups]);
     setModalOpen(true);
   }, []);
@@ -68,6 +72,7 @@ export function ContactsFlowHarness({
       groups: payload.groupLabels,
       birthday: payload.birthday,
       notes: payload.notes,
+      customFields: payload.customFields ?? {},
       lastSms: "—",
       lastSmsBody: "",
       unsubscribed: "",
@@ -126,15 +131,11 @@ export function ContactsFlowHarness({
         onClose={() => setModalOpen(false)}
         mode={modalMode === "add" ? "add" : "edit"}
         first={first}
-        setFirst={setFirst}
         last={last}
-        setLast={setLast}
         phone={phone}
-        setPhone={setPhone}
         birthday={birthday}
-        setBirthday={setBirthday}
         notes={notes}
-        setNotes={setNotes}
+        customFields={customFields}
         groups={groups}
         setGroups={setGroups}
         groupOptions={groupOptions}

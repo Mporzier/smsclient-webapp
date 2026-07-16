@@ -1,18 +1,18 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AlertTriangle } from "lucide-react";
 import {
-  confirmDialogContentCls,
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
 } from "@/components/smsclient/modals/modalChrome";
@@ -29,53 +29,39 @@ export function CampaignWizardLeaveConfirmModal({
   onLeave,
 }: CampaignWizardLeaveConfirmModalProps) {
   return (
-    <Dialog
+    <AlertDialog
       open={open}
       onOpenChange={(next) => {
         if (!next) onStay();
       }}
     >
-      <DialogContent
-        showCloseButton={false}
+      <AlertDialogContent
         overlayClassName={dialogOverlayStackedCls}
-        className={cn(confirmDialogContentCls, dialogContentStackedZCls)}
+        className={dialogContentStackedZCls}
+        onOutsideDismiss={onStay}
       >
-        <DialogHeader className="flex-row items-start gap-3 space-y-0 text-left">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700">
-            <AlertTriangle className="h-5 w-5" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-black text-foreground">
-              Quitter la création de campagne ?
-            </DialogTitle>
-            <DialogDescription className="mt-1.5 text-sm font-semibold leading-relaxed text-muted-foreground">
-              Vous avez commencé à remplir le formulaire (destinataires,
-              message, etc.). Si vous quittez maintenant, ces modifications
-              seront perdues.
-            </DialogDescription>
-          </div>
-        </DialogHeader>
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+            <AlertTriangle aria-hidden />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Quitter la création de campagne ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Vous avez commencé à remplir le formulaire (destinataires, message,
+            etc.). Si vous quittez maintenant, ces modifications seront perdues.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-        <DialogFooter className="-mx-0 -mb-0 mt-1 rounded-none border-0 bg-transparent p-0 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onStay}
-            className="h-11 cursor-pointer rounded-[14px] px-4 text-[15px] font-bold"
-          >
-            Rester
-          </Button>
-          <Button
-            type="button"
-            size="lg"
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onStay}>Rester</AlertDialogCancel>
+          <AlertDialogAction
+            variant="default"
+            className="bg-amber-600 text-white hover:bg-amber-700 hover:text-white"
             onClick={onLeave}
-            className="h-11 cursor-pointer rounded-[14px] bg-amber-600 px-4 text-[15px] font-bold text-white hover:bg-amber-700 hover:text-white"
           >
             Quitter sans enregistrer
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

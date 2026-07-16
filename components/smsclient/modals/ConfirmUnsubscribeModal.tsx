@@ -2,18 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BellOff } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
-  confirmDialogContentCls,
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
 } from "./modalChrome";
@@ -55,53 +55,45 @@ export function ConfirmUnsubscribeModal({
   }, [onConfirm]);
 
   return (
-    <Dialog
+    <AlertDialog
       open={open}
       onOpenChange={(next) => {
         if (!next && !loading) onCancel();
       }}
     >
-      <DialogContent
-        showCloseButton={false}
+      <AlertDialogContent
+        size="default"
         overlayClassName={dialogOverlayStackedCls}
-        className={cn(
-          confirmDialogContentCls,
-          "rounded-xl shadow-lg",
-          dialogContentStackedZCls
-        )}
-        onPointerDownOutside={(e) => {
-          if (loading) e.preventDefault();
+        className={dialogContentStackedZCls}
+        onOutsideDismiss={() => {
+          if (!loading) onCancel();
         }}
         onEscapeKeyDown={(e) => {
           if (loading) e.preventDefault();
         }}
       >
-        <DialogHeader className="flex-row items-start gap-3 space-y-0 text-left">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700">
-            <BellOff className="h-5 w-5" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
-              Désabonner ce contact ?
-            </DialogTitle>
-            <DialogDescription asChild>
-              <div className="mt-1.5 space-y-2 text-sm font-normal leading-relaxed text-muted-foreground">
-                <p>
-                  <strong className="font-semibold text-foreground">
-                    {contactLabel}
-                  </strong>{" "}
-                  ne recevra plus vos SMS marketing. Le contact reste dans votre
-                  liste, mais il sera exclu des prochaines campagnes et des
-                  envois groupés.
-                </p>
-                <p className="text-muted-foreground/90">
-                  Cette action enregistre son droit de retrait (STOP SMS)
-                  conformément aux règles d&apos;envoi.
-                </p>
-              </div>
-            </DialogDescription>
-          </div>
-        </DialogHeader>
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
+            <BellOff aria-hidden />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Désabonner ce contact ?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                <strong className="font-semibold text-foreground">
+                  {contactLabel}
+                </strong>{" "}
+                ne recevra plus vos SMS marketing. Le contact reste dans votre
+                liste, mais il sera exclu des prochaines campagnes et des envois
+                groupés.
+              </p>
+              <p className="text-muted-foreground/90">
+                Cette action enregistre son droit de retrait (STOP SMS)
+                conformément aux règles d&apos;envoi.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
         {error && (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -109,16 +101,10 @@ export function ConfirmUnsubscribeModal({
           </p>
         )}
 
-        <DialogFooter className="-mx-0 -mb-0 mt-1 rounded-none border-0 bg-transparent p-0 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={loading}
-            onClick={onCancel}
-            className="cursor-pointer"
-          >
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading} className="cursor-pointer">
             Annuler
-          </Button>
+          </AlertDialogCancel>
           <Button
             type="button"
             disabled={loading}
@@ -127,8 +113,8 @@ export function ConfirmUnsubscribeModal({
           >
             {loading ? "Désabonnement…" : "Désabonner"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

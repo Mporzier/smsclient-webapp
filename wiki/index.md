@@ -1,6 +1,6 @@
 # smsclient — index agent
 
-Lire `wiki/hot.md` d'abord si session récente documentée.
+Lire [[hot]] d'abord si session récente documentée. Conventions UI durables : [[conventions-ui]].
 
 ## Routes → fichiers (max 3)
 
@@ -21,10 +21,20 @@ Lire `wiki/hot.md` d'abord si session récente documentée.
 
 ## Shell / navigation
 
-- `Shell.tsx` — layout (offset read)
+- `Shell.tsx` — layout (offset read) ; logo + marque → `dashboard`
 - `shell/` — LogoMark, SidebarNav, SearchBar
 - `lib/proto/routes.ts` — `AppRoute` enum
 - `prototypeApp/usePrototypeApp.ts` — compositor proto
+
+## Contacts / listes / modales (complément)
+
+- Largeurs : `listColumnSizes.ts` (`CONTACT_COL`)
+- Table : `DataTable.tsx` (maxSize 600, séparateurs)
+- Tel FR 06/07 : `lib/proto/smsUtils.ts`
+- Modale contact : `modals/ContactCreateModal.tsx` + `ContactCustomFieldsList.tsx`
+- Dismiss / dirty : `modals/modalFormGuard.ts`
+- Import : `ImportContactsModal.tsx` + `lib/import/contactImportMap.ts`
+- Conventions : [[conventions-ui]]
 
 ## Tests
 

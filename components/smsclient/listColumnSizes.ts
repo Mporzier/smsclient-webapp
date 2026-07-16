@@ -13,14 +13,16 @@ export const CONTACT_COL = {
   phone: 160,
   /** 1–2 pastilles groupe */
   groups: 180,
+  /** Champ perso (label dynamique) */
+  customField: 130,
   notes: 120,
   lastSms: 160,
   /** Import CSV / QR / Manuel */
   source: 140,
   /** JJ/MM/AAAA court */
   created: 140,
-  /** Menu … sticky droite */
-  actions: 48,
+  /** Menu … sticky droite — même largeur que select */
+  actions: 40,
 } as const;
 
 export const GROUP_COL = {
@@ -30,6 +32,8 @@ export const GROUP_COL = {
   contactCount: 90,
   lastCampaign: 160,
   created: 130,
+  /** Menu … sticky droite — même largeur que select */
+  actions: 40,
 } as const;
 
 export const CAMPAIGN_COL = {
@@ -39,6 +43,8 @@ export const CAMPAIGN_COL = {
   status: 120,
   send: 160,
   credits: 100,
+  /** Menu … sticky droite — même largeur que select contacts */
+  actions: 40,
 } as const;
 
 export const LINK_COL = {

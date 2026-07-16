@@ -3,11 +3,19 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
@@ -22,11 +30,7 @@ import {
   groupTagBase,
 } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
-import {
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   CheckCheck,
   Eraser,
@@ -39,7 +43,6 @@ import {
 } from "lucide-react";
 import {
   brandBtnPrimaryCls,
-  confirmDialogContentCls,
   dialogContentStackedZCls,
   dialogContentZCls,
   dialogOverlayCls,
@@ -49,6 +52,7 @@ import {
 } from "./modalChrome";
 import {
   groupFormSnapshotsEqual,
+  hasStackedOpenDialog,
   sortedStringArraysEqual,
   useModalFormDirty,
   type GroupFormSnapshot,
@@ -106,7 +110,8 @@ const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
 const fieldLabelCls = "text-xs font-medium text-foreground";
 const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
 const sectionTitleCls = "text-s font-extrabold text-foreground";
-const hintTextCls = "text-[11px] font-normal leading-snug text-muted-foreground";
+const hintTextCls =
+  "text-[11px] font-normal leading-snug text-muted-foreground";
 const errorTextCls = "text-xs font-medium text-destructive";
 const labelIconBadgeCls =
   "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring";
@@ -130,7 +135,7 @@ function contactInGroup(
 function buildSaveContactsConfirmCopy(
   selectedIds: string[],
   baselineIds: string[],
-  groupLabel: string,
+  groupLabel: string
 ): { title: string; description: string; confirmLabel: string } {
   const baselineSet = new Set(baselineIds);
   const selectedSet = new Set(selectedIds);
@@ -172,54 +177,32 @@ function GroupContactSelectionConfirm({
   onCancel,
 }: GroupContactSelectionConfirmProps) {
   return (
-    <Dialog
+    <AlertDialog
       open={open}
       onOpenChange={(next) => {
         if (!next) onCancel();
       }}
     >
-      <DialogContent
-        showCloseButton={false}
+      <AlertDialogContent
         overlayClassName={dialogOverlayStackedCls}
-        className={cn(
-          confirmDialogContentCls,
-          "sm:max-w-[400px]",
-          dialogContentStackedZCls
-        )}
+        className={dialogContentStackedZCls}
+        onOutsideDismiss={onCancel}
       >
-        <DialogHeader className="flex-row items-start gap-2.5 space-y-0 text-left">
-          <div className={cn(labelIconBadgeCls, "h-9 w-9")} aria-hidden>
-            <UserRound className="h-4 w-4" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <DialogTitle className={cn("m-0", modalTitleCls)}>{title}</DialogTitle>
-            <DialogDescription className={cn("mt-1.5", hintTextCls)}>
-              {description}
-            </DialogDescription>
-          </div>
-        </DialogHeader>
-        <DialogFooter className="-mx-0 -mb-0 mt-4 rounded-none border-0 bg-transparent p-0 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className={footerBtnCls}
-            onClick={onCancel}
-          >
-            Annuler
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="lg"
-            className={footerBtnCls}
-            onClick={onConfirm}
-          >
+        <AlertDialogHeader>
+          <AlertDialogMedia className={labelIconBadgeCls}>
+            <UserRound strokeWidth={2} aria-hidden />
+          </AlertDialogMedia>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
             {confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -301,7 +284,10 @@ function GroupModalContactsPanel({
           "h-9 shrink-0 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
         )}
       >
-        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <Search
+          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
         <input
           className={cn(inpText, "min-w-0 flex-1")}
           placeholder="Filtrer par nom, téléphone, groupe…"
@@ -348,8 +334,8 @@ function GroupModalContactsPanel({
                       allFilteredSelected
                         ? true
                         : someFilteredSelected
-                          ? "indeterminate"
-                          : false
+                        ? "indeterminate"
+                        : false
                     }
                     onCheckedChange={() => toggleSelectAllFiltered()}
                     disabled={contactsLoading || filteredContacts.length === 0}
@@ -505,10 +491,7 @@ function GroupModalContactsPanel({
 export function GroupModal(props: GroupModalProps) {
   const isCreate = props.mode === "create";
   const group = isCreate ? null : props.group;
-  const contacts = useMemo(
-    () => props.contacts ?? [],
-    [props.contacts],
-  );
+  const contacts = useMemo(() => props.contacts ?? [], [props.contacts]);
   const contactsLoading = props.contactsLoading ?? false;
   const stackedDialogOpen = props.stackedDialogOpen ?? false;
 
@@ -524,7 +507,7 @@ export function GroupModal(props: GroupModalProps) {
   );
   const [wasGroupOpen, setWasGroupOpen] = useState(props.open);
   const [syncedEditGroupId, setSyncedEditGroupId] = useState<string | null>(
-    null,
+    null
   );
   const [selectionSync, setSelectionSync] = useState<{
     key: string;
@@ -647,7 +630,7 @@ export function GroupModal(props: GroupModalProps) {
               name: group.name,
               description: group.description ?? "",
               selectedIds: [...ids],
-            },
+            }
       );
     } else if (selectionSync.contactCount !== contacts.length) {
       setSelectionSync({ key, contactCount: contacts.length });
@@ -750,19 +733,22 @@ export function GroupModal(props: GroupModalProps) {
       ? buildSaveContactsConfirmCopy(
           selectedIds,
           formBaseline.selectedIds,
-          groupLabel,
+          groupLabel
         )
       : null;
 
   const canDismissMain =
-    !saving && !stackedDialogOpen && !saveConfirmOpen;
+    !saving && !stackedDialogOpen && !saveConfirmOpen && !isDirty;
 
   return (
     <>
       <Dialog
         open={dialogOpen}
         onOpenChange={(next) => {
-          if (!next && canDismissMain) onClose();
+          if (!next) {
+            if (!canDismissMain || hasStackedOpenDialog()) return;
+            onClose();
+          }
         }}
       >
         <DialogContent
@@ -774,14 +760,25 @@ export function GroupModal(props: GroupModalProps) {
             dialogContentZCls
           )}
           onPointerDownOutside={(e) => {
-            if (saving || isDirty || stackedDialogOpen || saveConfirmOpen) {
-              e.preventDefault();
+            // Confirm / delete empilés : laisser l’event pour les fermer.
+            if (
+              stackedDialogOpen ||
+              saveConfirmOpen ||
+              hasStackedOpenDialog()
+            ) {
+              return;
             }
+            if (saving || isDirty) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
-            if (saving || isDirty || stackedDialogOpen || saveConfirmOpen) {
-              e.preventDefault();
+            if (
+              stackedDialogOpen ||
+              saveConfirmOpen ||
+              hasStackedOpenDialog()
+            ) {
+              return;
             }
+            if (saving || isDirty) e.preventDefault();
           }}
         >
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">

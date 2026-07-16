@@ -2,6 +2,7 @@
 
 import type { CampaignRowData } from "@/lib/types/campaign";
 import type { ContactRowData } from "@/lib/types/contact";
+import type { CustomFieldValues } from "@/lib/types/customFields";
 import type { GroupRowData } from "@/lib/types/group";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
 import type { StatsPeriodPreset } from "@/lib/statsDateRanges";
@@ -34,6 +35,7 @@ export function usePrototypeModals(
   const [cmPhone, setCmPhone] = useState("");
   const [cmBirthday, setCmBirthday] = useState("");
   const [cmNotes, setCmNotes] = useState("");
+  const [cmCustomFields, setCmCustomFields] = useState<CustomFieldValues>({});
   const [cmGroups, setCmGroups] = useState<string[]>([]);
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -102,6 +104,7 @@ export function usePrototypeModals(
     setCmPhone("");
     setCmBirthday("");
     setCmNotes("");
+    setCmCustomFields({});
     setCmGroups([]);
     setContactModalOpen(true);
   }, []);
@@ -114,6 +117,7 @@ export function usePrototypeModals(
     setCmPhone(formatFrPhoneInput(row.phone));
     setCmBirthday(row.birthday);
     setCmNotes(row.notes);
+    setCmCustomFields({ ...(row.customFields ?? {}) });
     setCmGroups([...row.groups]);
     setContactModalOpen(true);
   }, []);
@@ -152,6 +156,8 @@ export function usePrototypeModals(
     setCmBirthday,
     cmNotes,
     setCmNotes,
+    cmCustomFields,
+    setCmCustomFields,
     cmGroups,
     setCmGroups,
     confirmDeleteOpen,

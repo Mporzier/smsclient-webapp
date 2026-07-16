@@ -19,6 +19,7 @@ export function PrototypeAppModals({ ctx }: Props) {
   const { data, modals, wizard, actions } = ctx;
   const {
     contactsState,
+    customFieldsState,
     groupsState,
     groupModalContacts,
     groupOptions,
@@ -67,15 +68,12 @@ export function PrototypeAppModals({ ctx }: Props) {
         onClose={() => modals.setContactModalOpen(false)}
         mode={modals.contactModalMode}
         first={modals.cmFirst}
-        setFirst={modals.setCmFirst}
         last={modals.cmLast}
-        setLast={modals.setCmLast}
         phone={modals.cmPhone}
-        setPhone={modals.setCmPhone}
         birthday={modals.cmBirthday}
-        setBirthday={modals.setCmBirthday}
         notes={modals.cmNotes}
-        setNotes={modals.setCmNotes}
+        customFieldDefs={customFieldsState.defs}
+        customFields={modals.cmCustomFields}
         groups={modals.cmGroups}
         setGroups={modals.setCmGroups}
         groupOptions={groupOptions}
@@ -123,6 +121,7 @@ export function PrototypeAppModals({ ctx }: Props) {
           supabase={supabase}
           userId={user.id}
           groupOptions={groupsState.rows.map((g) => g.name)}
+          customFieldDefs={customFieldsState.defs}
           onImported={async () => {
             await contactsState.refresh();
             await groupsState.refresh();

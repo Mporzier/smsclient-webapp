@@ -29,6 +29,7 @@ export function makeContact(
     groups: [],
     birthday: "",
     notes: "",
+    customFields: {},
     lastSms: "—",
     lastSmsBody: "",
     unsubscribed: "",

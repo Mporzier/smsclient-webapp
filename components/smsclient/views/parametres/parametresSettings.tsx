@@ -16,6 +16,7 @@ import {
   Sparkles,
   Trash2,
   UserCircle,
+  ListPlus,
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -31,6 +32,7 @@ export type SettingId =
   | "expediteur-sms"
   | "notifications-email"
   | "resume-mensuel"
+  | "champs-perso"
   | "corbeille";
 
 export type SettingCardDef = {
@@ -167,6 +169,12 @@ export const allSettingCards: SettingCardDef[] = [
     description: "Synthèse de vos campagnes par email.",
     icon: BarChart3,
     savable: true,
+  },
+  {
+    id: "champs-perso",
+    title: "Champs personnalisés",
+    description: "Champs date, texte ou nombre sur les contacts.",
+    icon: ListPlus,
   },
   {
     id: "corbeille",

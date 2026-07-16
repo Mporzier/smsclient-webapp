@@ -5,6 +5,7 @@ import {
 } from "@/lib/proto/smsUtils";
 import { formatParisCalendarDate } from "@/lib/proto/timezone";
 import type { ContactRowData } from "@/lib/types/contact";
+import type { CustomFieldValues } from "@/lib/types/customFields";
 
 export type ClientRecord = {
   id: string;
@@ -16,6 +17,7 @@ export type ClientRecord = {
   group_label: string;
   notes: string;
   birthday: string | null;
+  custom_fields: CustomFieldValues | null;
   source: string;
   opt_in: boolean;
   stop_sms: boolean;
@@ -34,6 +36,7 @@ export type ContactFormSubmitPayload = {
   /** YYYY-MM-DD, vide pour effacer */
   birthday: string;
   notes: string;
+  customFields: CustomFieldValues;
   optIn: boolean;
   stop: boolean;
 };
@@ -59,6 +62,29 @@ function birthdayToDb(value: string): string | null {
   const t = value.trim();
   if (!t) return null;
   return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : null;
+}
+
+function customFieldsFromDb(
+  raw: CustomFieldValues | null | undefined,
+): CustomFieldValues {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: CustomFieldValues = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === "string") out[k] = v;
+    else if (v == null) out[k] = "";
+    else out[k] = String(v);
+  }
+  return out;
+}
+
+function customFieldsToDb(values: CustomFieldValues | undefined): CustomFieldValues {
+  const out: CustomFieldValues = {};
+  if (!values) return out;
+  for (const [k, v] of Object.entries(values)) {
+    const t = (v ?? "").trim();
+    if (t) out[k] = t;
+  }
+  return out;
 }
 
 function mirrorGroupColumn(labels: string[]): string {
@@ -94,6 +120,7 @@ export function clientRecordToRow(
     groups: mergedGroups,
     birthday: birthdayFromDb(row.birthday),
     notes: row.notes?.trim() ?? "",
+    customFields: customFieldsFromDb(row.custom_fields),
     lastSms: formatParisCalendarDate(row.last_sms_sent_at),
     lastSmsBody: row.last_sms_body?.trim() ?? "",
     unsubscribed: formatParisCalendarDate(row.unsubscribed_at),
@@ -285,6 +312,7 @@ export async function insertClient(
       group_label,
       birthday: birthdayToDb(payload.birthday),
       notes: payload.notes.trim(),
+      custom_fields: customFieldsToDb(payload.customFields),
       source: options?.source ?? "Ajout manuel",
       opt_in: payload.optIn,
       stop_sms: payload.stop,
@@ -526,6 +554,7 @@ export async function updateClient(
       group_label,
       birthday: birthdayToDb(payload.birthday),
       notes: payload.notes.trim(),
+      custom_fields: customFieldsToDb(payload.customFields),
       opt_in: payload.optIn,
       stop_sms: payload.stop,
     })
@@ -563,6 +592,30 @@ export async function stampLastSmsOnContacts(
       .update({ last_sms_sent_at: now, last_sms_body: smsBody })
       .in("id", batch);
   }
+}
+
+/**
+ * Réabonne des contacts (opt-in SMS, lève STOP).
+ * `unsubscribed_at` est effacé par trigger DB quand `stop_sms` passe à false.
+ */
+export async function resubscribeClients(
+  supabase: SupabaseClient,
+  userId: string,
+  ids: string[],
+): Promise<{ error: Error | null }> {
+  if (ids.length === 0) return { error: null };
+  const BATCH = 200;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const { error } = await supabase
+      .from("clients")
+      .update({ opt_in: true, stop_sms: false })
+      .in("id", batch)
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+    if (error) return { error: new Error(error.message) };
+  }
+  return { error: null };
 }
 
 export async function deleteClients(

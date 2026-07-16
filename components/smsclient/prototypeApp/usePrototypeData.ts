@@ -6,6 +6,7 @@ import { useAutomations } from "@/hooks/useAutomations";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useContacts } from "@/hooks/useContacts";
 import { useCredits } from "@/hooks/useCredits";
+import { useCustomFieldDefs } from "@/hooks/useCustomFieldDefs";
 import { useGroups } from "@/hooks/useGroups";
 import { useLinks } from "@/hooks/useLinks";
 import { useQrWheel } from "@/hooks/useQrWheel";
@@ -15,6 +16,7 @@ import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import type { AppRoute } from "@/lib/proto/routes";
 import { statsMonthRange } from "@/lib/statsDateRanges";
+import { isCampaignEligibleContact } from "@/lib/types/contact";
 import { useMemo } from "react";
 
 export function usePrototypeData(route: AppRoute) {
@@ -22,6 +24,7 @@ export function usePrototypeData(route: AppRoute) {
   const supabase = useMemo(() => createClient(), []);
 
   const contactsState = useContacts();
+  const customFieldsState = useCustomFieldDefs();
   const groupsState = useGroups();
   const campaignsState = useCampaigns();
   const linksState = useLinks();
@@ -59,8 +62,11 @@ export function usePrototypeData(route: AppRoute) {
   const unsubscribedContacts = useMemo(
     () =>
       contactsState.rows
-        .filter((c) => c.stopSms)
+        .filter((c) => !isCampaignEligibleContact(c))
         .map((c) => ({
+          id: c.id,
+          firstName: c.firstName,
+          lastName: c.lastName,
           name: c.name,
           phone: c.phone,
           date: c.unsubscribed !== "—" ? c.unsubscribed : c.created,
@@ -72,6 +78,7 @@ export function usePrototypeData(route: AppRoute) {
     user,
     supabase,
     contactsState,
+    customFieldsState,
     groupsState,
     campaignsState,
     linksState,

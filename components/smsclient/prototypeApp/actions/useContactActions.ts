@@ -3,6 +3,7 @@
 import {
   deleteClients,
   insertClient,
+  resubscribeClients,
   updateClient,
   type ContactFormSubmitPayload,
 } from "@/lib/supabase/clients";
@@ -10,16 +11,10 @@ import { useCallback } from "react";
 import type { ActionsContext } from "./types";
 
 export function useContactActions({ data, modals }: ActionsContext) {
-  const { user, supabase, contactsState, trashState } = data;
+  const { user, supabase, contactsState, groupsState, trashState } = data;
   const {
     contactEditRow,
     contactModalMode,
-    cmFirst,
-    cmLast,
-    cmPhone,
-    cmGroups,
-    cmBirthday,
-    cmNotes,
     setConfirmDeleteOpen,
     setContactModalOpen,
     showToast,
@@ -41,6 +36,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
           if (error) throw error;
           setConfirmDeleteOpen(false);
           contactsState.refresh();
+          groupsState.refresh();
           void trashState.refresh();
           showToast(
             `${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
@@ -52,6 +48,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
       openConfirmDelete,
       supabase,
       contactsState,
+      groupsState,
       trashState,
       showToast,
       setConfirmDeleteOpen,
@@ -69,31 +66,20 @@ export function useContactActions({ data, modals }: ActionsContext) {
       throw new Error("Vous devez être connecté pour désabonner un contact.");
     }
     const { error } = await updateClient(supabase, user.id, contactEditRow.id, {
-      firstName: cmFirst.trim() || contactEditRow.firstName,
-      lastName: cmLast.trim() || contactEditRow.lastName,
-      phoneDisplay: cmPhone,
-      groupLabels: cmGroups,
-      birthday: cmBirthday,
-      notes: cmNotes,
+      firstName: contactEditRow.firstName,
+      lastName: contactEditRow.lastName,
+      phoneDisplay: contactEditRow.phone,
+      groupLabels: contactEditRow.groups,
+      birthday: contactEditRow.birthday,
+      notes: contactEditRow.notes,
+      customFields: contactEditRow.customFields ?? {},
       optIn: false,
       stop: true,
     });
     if (error) throw error;
     await contactsState.refresh();
     showToast("Contact désabonné.");
-  }, [
-    user,
-    contactEditRow,
-    supabase,
-    cmFirst,
-    cmLast,
-    cmPhone,
-    cmGroups,
-    cmBirthday,
-    cmNotes,
-    contactsState,
-    showToast,
-  ]);
+  }, [user, contactEditRow, supabase, contactsState, showToast]);
 
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
@@ -115,6 +101,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
         if (error) throw error;
       }
       await contactsState.refresh();
+      await groupsState.refresh();
       showToast("Contact enregistré");
     },
     [
@@ -123,8 +110,26 @@ export function useContactActions({ data, modals }: ActionsContext) {
       contactModalMode,
       contactEditRow,
       contactsState,
+      groupsState,
       showToast,
     ]
+  );
+
+  const handleResubscribeContacts = useCallback(
+    async (ids: string[]) => {
+      if (!user?.id) {
+        throw new Error("Vous devez être connecté pour réabonner des contacts.");
+      }
+      const { error } = await resubscribeClients(supabase, user.id, ids);
+      if (error) throw error;
+      await contactsState.refresh();
+      showToast(
+        `${ids.length} contact${ids.length > 1 ? "s" : ""} réabonné${
+          ids.length > 1 ? "s" : ""
+        }.`
+      );
+    },
+    [user, supabase, contactsState, showToast]
   );
 
   return {
@@ -132,5 +137,6 @@ export function useContactActions({ data, modals }: ActionsContext) {
     handleDeleteContactFromModal,
     handleUnsubscribeContact,
     handleContactSave,
+    handleResubscribeContacts,
   };
 }

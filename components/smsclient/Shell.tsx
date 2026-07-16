@@ -147,9 +147,12 @@ export function AppShell({
               )}
             </button>
 
-            <div
+            <button
+              type="button"
+              onClick={() => go("dashboard")}
+              aria-label="Retour à l'accueil"
               className={cn(
-                "mb-7 flex shrink-0 items-center",
+                "mb-7 flex shrink-0 cursor-pointer items-center rounded-lg border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring",
                 sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
               )}
             >
@@ -164,7 +167,7 @@ export function AppShell({
                   smsclient.fr
                 </span>
               )}
-            </div>
+            </button>
 
             <div
               className={cn(
@@ -296,7 +299,12 @@ export function AppShell({
           <div className={MAIN_PANEL_CLASS}>
           <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border px-4 pr-[22px] md:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="hidden min-w-0 items-center gap-1.5 max-[860px]:flex">
+              <button
+                type="button"
+                onClick={() => go("dashboard")}
+                aria-label="Retour à l'accueil"
+                className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring max-[860px]:flex"
+              >
                 <div
                   className="grid h-10 w-10 shrink-0 place-items-center"
                   aria-hidden
@@ -306,7 +314,7 @@ export function AppShell({
                 <span className="min-w-0 truncate text-lg font-semibold leading-none text-foreground">
                   smsclient.fr
                 </span>
-              </div>
+              </button>
               <h1 className="m-0 shrink-0 text-lg font-extrabold text-foreground/80">
                 {ROUTE_TITLES[route]}
               </h1>

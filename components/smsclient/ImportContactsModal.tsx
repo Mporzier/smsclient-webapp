@@ -10,10 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import {
+  buildImportRoleLabels,
   buildPayloadFromMappedRow,
+  customImportRole,
   formatFrPhoneDisplay,
+  type FixedImportColumnRole,
   type ImportColumnRole,
-  IMPORT_ROLE_LABELS,
   looksLikeFrPhone,
   suggestColumnRoles,
 } from "@/lib/import/contactImportMap";
@@ -23,6 +25,7 @@ import {
   fetchExistingClientPhoneE164s,
   insertClientsFromImport,
 } from "@/lib/supabase/clients";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   useCallback,
@@ -48,7 +51,7 @@ import {
   modalIconCls,
 } from "./modals/modalChrome";
 
-const ROLE_OPTIONS: ImportColumnRole[] = [
+const FIXED_ROLE_OPTIONS: FixedImportColumnRole[] = [
   "skip",
   "phone",
   "first_name",
@@ -161,6 +164,8 @@ type ImportContactsModalProps = {
   groupOptions?: string[];
   /** Pré-sélection d’un groupe (ex. import depuis une fiche groupe). */
   defaultGroupLabel?: string | null;
+  /** Définitions champs perso pour mapping CSV. */
+  customFieldDefs?: CustomFieldDef[];
 };
 
 export function ImportContactsModal({
@@ -172,6 +177,7 @@ export function ImportContactsModal({
   onNotify,
   groupOptions = [],
   defaultGroupLabel = null,
+  customFieldDefs = [],
 }: ImportContactsModalProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string | null>(null);
@@ -253,7 +259,7 @@ export function ImportContactsModal({
         } else {
           setParseError(null);
           setParsed(p);
-          setRoles(suggestColumnRoles(p.headers, p.rows));
+          setRoles(suggestColumnRoles(p.headers, p.rows, customFieldDefs));
         }
       } catch {
         setParseError(
@@ -367,6 +373,18 @@ export function ImportContactsModal({
     [roles]
   );
 
+  const roleOptions = useMemo((): ImportColumnRole[] => {
+    return [
+      ...FIXED_ROLE_OPTIONS,
+      ...customFieldDefs.map((d) => customImportRole(d.id)),
+    ];
+  }, [customFieldDefs]);
+
+  const roleLabels = useMemo(
+    () => buildImportRoleLabels(customFieldDefs),
+    [customFieldDefs],
+  );
+
   const phoneColIdx = useMemo(() => roles.indexOf("phone"), [roles]);
 
   const rowPhoneMeta = useCallback(
@@ -381,7 +399,7 @@ export function ImportContactsModal({
       if (!looksLikeFrPhone(phoneVal)) {
         return { e164: null, invalid: true };
       }
-      const p = buildPayloadFromMappedRow(cells, roles);
+      const p = buildPayloadFromMappedRow(cells, roles, customFieldDefs);
       if (!p) {
         return { e164: null, invalid: true };
       }
@@ -391,7 +409,7 @@ export function ImportContactsModal({
       }
       return { e164, invalid: false };
     },
-    [phoneColIdx, roles]
+    [phoneColIdx, roles, customFieldDefs]
   );
 
   /** Index des lignes 2e+ occurrence d’un même numéro (1re occurrence OK). */
@@ -461,7 +479,7 @@ export function ImportContactsModal({
       const payloads = [];
       let skippedInvalid = 0;
       for (const row of parsed.rows) {
-        const p = buildPayloadFromMappedRow(row, roles);
+        const p = buildPayloadFromMappedRow(row, roles, customFieldDefs);
         if (!p) {
           skippedInvalid++;
           continue;
@@ -574,6 +592,7 @@ export function ImportContactsModal({
   }, [
     parsed,
     roles,
+    customFieldDefs,
     hasPhoneColumn,
     importing,
     targetGroupName,
@@ -807,9 +826,9 @@ export function ImportContactsModal({
                                     )
                                   }
                                 >
-                                  {ROLE_OPTIONS.map((r) => (
+                                  {roleOptions.map((r) => (
                                     <option key={r} value={r}>
-                                      {IMPORT_ROLE_LABELS[r]}
+                                      {roleLabels[r] ?? r}
                                     </option>
                                   ))}
                                 </select>

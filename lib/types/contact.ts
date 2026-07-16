@@ -1,3 +1,5 @@
+import type { CustomFieldValues } from "@/lib/types/customFields";
+
 /** Ligne affichée dans la liste Contacts (clients + segments via `client_group_members`). */
 export type ContactRowData = {
   id: string;
@@ -12,6 +14,8 @@ export type ContactRowData = {
   /** YYYY-MM-DD pour le formulaire, vide si non renseigné */
   birthday: string;
   notes: string;
+  /** Valeurs champs perso (clés = id définition). */
+  customFields: CustomFieldValues;
   lastSms: string;
   lastSmsBody: string;
   /** Date de désinscription (STOP), vide si abonné */

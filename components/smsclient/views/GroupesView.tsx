@@ -1,19 +1,28 @@
 "use client";
 
-import { SearchBar } from "@/components/smsclient/Shell";
 import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
-import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
-import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import type { GroupRowData } from "@/lib/types/group";
-import { useMemo, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const columns: ColumnDef<GroupRowData, unknown>[] = [
+const dataColumns: ColumnDef<GroupRowData, unknown>[] = [
   {
     accessorKey: "name",
     header: "Nom du groupe",
@@ -82,96 +91,150 @@ export function GroupesView({
     return `${rows.length} groupe${rows.length > 1 ? "s" : ""}`;
   }, [rows]);
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const toggleAll = () => {
-    if (selectedIds.size === rows.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(rows.map((r) => r.id)));
-    }
-  };
+  const toggleAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === rows.length) return new Set();
+      return new Set(rows.map((r) => r.id));
+    });
+  }, [rows]);
 
-  const selectColumns: ColumnDef<GroupRowData, unknown>[] = [
-    {
-      id: "select",
-      size: GROUP_COL.select,
-      minSize: GROUP_COL.select,
-      maxSize: GROUP_COL.select,
-      enableResizing: false,
-      header: () => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              selectedIds.size > 0 && selectedIds.size === rows.length
-                ? true
-                : selectedIds.size > 0
-                  ? "indeterminate"
-                  : false
-            }
-            onCheckedChange={() => toggleAll()}
-            aria-label="Tout sélectionner les groupes"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={selectedIds.has(row.original.id)}
-            onCheckedChange={() => toggleSelect(row.original.id)}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Sélectionner ${row.original.name}`}
-          />
-        </div>
-      ),
-    },
-    ...columns,
-  ];
+  const selectColumns: ColumnDef<GroupRowData, unknown>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        size: GROUP_COL.select,
+        minSize: GROUP_COL.select,
+        maxSize: GROUP_COL.select,
+        enableResizing: false,
+        header: () => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                selectedIds.size > 0 && selectedIds.size === rows.length
+                  ? true
+                  : selectedIds.size > 0
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={() => toggleAll()}
+              aria-label="Tout sélectionner les groupes"
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={selectedIds.has(row.original.id)}
+              onCheckedChange={() => toggleSelect(row.original.id)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Sélectionner ${row.original.name}`}
+            />
+          </div>
+        ),
+      },
+      ...dataColumns,
+      {
+        id: "actions",
+        size: GROUP_COL.actions,
+        minSize: GROUP_COL.actions,
+        maxSize: GROUP_COL.actions,
+        enableResizing: false,
+        header: () => null,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-7 rounded-full text-muted-foreground"
+                  aria-label={`Actions pour ${row.original.name}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="size-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onSelect={() => onEditGroup(row.original)}>
+                  Éditer
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => onDeleteGroups([row.original.id])}
+                >
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    [
+      selectedIds,
+      rows.length,
+      toggleAll,
+      toggleSelect,
+      onEditGroup,
+      onDeleteGroups,
+    ],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       {showBigEmpty && (
         <SectionGuideCard section="groupes" onPrimaryAction={onCreateGroup} />
       )}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <SearchBar
-            placeholder="Rechercher un groupe..."
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <InputGroup
+          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          role="search"
+        >
+          <InputGroupAddon align="inline-start">
+            <Search aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
+            placeholder="Rechercher un groupe…"
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Rechercher un groupe"
           />
-        </div>
-        <div className="mt-0.5 flex flex-wrap gap-3">
+        </InputGroup>
+        <div className="flex flex-wrap items-center gap-2">
           {hasSelection ? (
             <>
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                size="lg"
+                className="rounded-full"
                 onClick={() => {
                   onDeleteGroups(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-bold text-rose-600 transition-all hover:bg-rose-100"
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <Trash2 aria-hidden />
                 Supprimer ({selectedIds.size})
-              </button>
+              </Button>
               <Button
                 variant="default"
                 size="lg"
-                className={brandBtnPrimaryCls}
+                className="rounded-full"
                 onClick={() => {
                   onCreateCampaignFromGroups(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
               >
-                <Send className="mr-2 h-4 w-4 shrink-0" aria-hidden />
+                <Send aria-hidden />
                 Créer une campagne
               </Button>
             </>
@@ -179,10 +242,10 @@ export function GroupesView({
             <Button
               variant="default"
               size="lg"
-              className={brandBtnPrimaryCls}
+              className="rounded-full"
               onClick={onCreateGroup}
             >
-              <PlusIcon />
+              <Plus aria-hidden />
               Créer un groupe
             </Button>
           )}
@@ -196,20 +259,27 @@ export function GroupesView({
       )}
 
       {showBigEmpty ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-12 text-center">
-          <p className="m-0 text-base font-extrabold text-slate-800">
-            Aucun groupe
-          </p>
-          <p className="mt-2 text-sm font-semibold text-slate-600">
-            Créez votre premier segment avec « Créer un groupe ».
-          </p>
-        </div>
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <Users
+              className="h-14 w-14 text-slate-400"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+            <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
+              Aucun groupe
+            </p>
+            <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
+              Créez votre premier segment avec « Créer un groupe ».
+            </p>
+          </div>
+        </section>
       ) : (
         <DataTable
           columns={selectColumns}
           data={rows}
           loading={loading}
-          pageSize={20}
+          pageSize={25}
           globalFilter={searchQuery}
           emptyMessage="Aucun groupe."
           searchNoResultsMessage="Aucun groupe ne correspond à votre recherche."

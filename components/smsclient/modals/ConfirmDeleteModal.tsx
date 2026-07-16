@@ -2,18 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
-  confirmDialogContentCls,
   dialogContentStackedZCls,
   dialogContentZCls,
   dialogOverlayCls,
@@ -64,40 +65,31 @@ export function ConfirmDeleteModal({
   }, [onConfirm]);
 
   return (
-    <Dialog
+    <AlertDialog
       open={open}
       onOpenChange={(next) => {
         if (!next && !loading) onCancel();
       }}
     >
-      <DialogContent
-        showCloseButton={false}
+      <AlertDialogContent
         overlayClassName={stacked ? dialogOverlayStackedCls : dialogOverlayCls}
         className={cn(
-          confirmDialogContentCls,
-          "rounded-xl shadow-lg sm:max-w-[420px]",
           stacked ? dialogContentStackedZCls : dialogContentZCls
         )}
-        onPointerDownOutside={(e) => {
-          if (loading) e.preventDefault();
+        onOutsideDismiss={() => {
+          if (!loading) onCancel();
         }}
         onEscapeKeyDown={(e) => {
           if (loading) e.preventDefault();
         }}
       >
-        <DialogHeader className="flex-row items-start gap-3 space-y-0 text-left">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive">
-            <AlertTriangle className="h-5 w-5" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
-              {title}
-            </DialogTitle>
-            <DialogDescription className="mt-1.5 text-sm font-normal leading-relaxed text-muted-foreground">
-              {description}
-            </DialogDescription>
-          </div>
-        </DialogHeader>
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+            <AlertTriangle aria-hidden />
+          </AlertDialogMedia>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
 
         {error && (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -105,16 +97,10 @@ export function ConfirmDeleteModal({
           </p>
         )}
 
-        <DialogFooter className="-mx-0 -mb-0 mt-1 rounded-none border-0 bg-transparent p-0 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={loading}
-            onClick={onCancel}
-            className="cursor-pointer"
-          >
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading} className="cursor-pointer">
             Annuler
-          </Button>
+          </AlertDialogCancel>
           <Button
             type="button"
             variant="destructive"
@@ -124,8 +110,8 @@ export function ConfirmDeleteModal({
           >
             {loading ? "Suppression…" : confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

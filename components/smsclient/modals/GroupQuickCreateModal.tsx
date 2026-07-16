@@ -99,7 +99,10 @@ export function GroupQuickCreateModal({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next && !saving) handleClose();
+        if (!next) {
+          if (saving || isDirty) return;
+          handleClose();
+        }
       }}
     >
       <DialogContent

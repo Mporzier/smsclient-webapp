@@ -7,7 +7,7 @@ description: >
 
 # smsclient-map
 
-Read `wiki/index.md` first. Max 4 files per domain (`view-scoped-edit`).
+Read `wiki/index.md` first (+ `wiki/hot.md`, `wiki/conventions-ui.md` si UI/modales). Max 4 fichiers par domaine (`view-scoped-edit`).
 
 ## Skills location
 
@@ -18,15 +18,25 @@ Read `wiki/index.md` first. Max 4 files per domain (`view-scoped-edit`).
 - Routes: `lib/proto/routes.ts`
 - Compositor: `prototypeApp/usePrototypeApp.ts`
 - Routes render: `prototypeApp/routes/`
-- Shell: `Shell.tsx` + `shell/`
+- Shell: `Shell.tsx` + `shell/` (logo → `dashboard`)
 
 ## Domain map — lire d'abord
 
-| Domain     | Files                                                                       |
-| ---------- | --------------------------------------------------------------------------- |
-| Contacts   | `views/ContactsView.tsx`, `hooks/useContacts.ts`, `lib/supabase/clients.ts` |
-| Wizard     | `CreateCampaign/CampaignWizard.tsx`, `prototypeApp/useCampaignWizard.ts`    |
-| Wiki edits | skill `obsidian-markdown` — `wiki/`                                         |
+| Domain       | Files                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Contacts     | `ContactsView.tsx`, `useContacts.ts`, `lib/supabase/clients.ts`                          |
+| Modales      | `modals/ContactCreateModal.tsx`, `modals/modalFormGuard.ts`, `ConfirmDeleteModal.tsx`    |
+| Tel / import | `lib/proto/smsUtils.ts`, `lib/import/contactImportMap.ts`, `ImportContactsModal.tsx`     |
+| Listes       | `DataTable.tsx`, `listColumnSizes.ts`                                                    |
+| Wizard       | `CreateCampaign/CampaignWizard.tsx`, `prototypeApp/useCampaignWizard.ts`                 |
+| Wiki         | skill `obsidian-markdown` — `wiki/` (`hot`, `index`, `conventions-ui`)                   |
+
+## Conventions rapides (détail wiki/conventions-ui.md)
+
+- Tel mobile FR = **06/07** only (`smsUtils`)
+- Erreurs form modale = **sous champ**
+- Dismiss dehors si pas dirty ; confirms empilées : `hasStackedOpenDialog()` — pas `preventDefault` parent
+- `CONTACT_COL.actions` = `select` (40) ; DataTable `maxSize` défaut 600
 
 ## Skills catalogue
 

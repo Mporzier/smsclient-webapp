@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  UnsubscribedContactsModal,
+  type UnsubscribedContactRow,
+} from "@/components/smsclient/modals/UnsubscribedContactsModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   InputGroup,
@@ -26,6 +30,8 @@ import {
 } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
+import { formatCustomFieldDisplay } from "@/lib/customFields/validate";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import {
   useCallback,
   useEffect,
@@ -221,14 +227,36 @@ type ContactsProps = {
   rows: ContactRowData[];
   loading: boolean;
   error: string | null;
+  customFieldDefs?: CustomFieldDef[];
+  unsubscribedContacts?: UnsubscribedContactRow[];
   onImport: () => void;
   onAddContact: () => void;
   onRowClick: (row: ContactRowData) => void;
   onDeleteContacts: (ids: string[]) => void;
   onCreateCampaignFromContacts: (ids: string[]) => void;
+  onResubscribeContacts?: (ids: string[]) => Promise<void>;
 };
 
-const columns: ColumnDef<ContactRowData, unknown>[] = [
+function buildContactColumns(
+  customFieldDefs: CustomFieldDef[],
+): ColumnDef<ContactRowData, unknown>[] {
+  const customCols: ColumnDef<ContactRowData, unknown>[] = customFieldDefs.map(
+    (def) => ({
+      id: `custom_${def.id}`,
+      header: def.label,
+      size: CONTACT_COL.customField,
+      cell: ({ row }) => (
+        <CellTruncate as="div">
+          {formatCustomFieldDisplay(
+            row.original.customFields?.[def.id],
+            def.fieldType,
+          )}
+        </CellTruncate>
+      ),
+    }),
+  );
+
+  return [
   {
     id: "avatar",
     size: CONTACT_COL.avatar,
@@ -344,53 +372,111 @@ const columns: ColumnDef<ContactRowData, unknown>[] = [
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
   },
+  /** Champs perso à droite (avant actions sticky). */
+  ...customCols,
 ];
+}
+
+/** Largeur naturelle base + champs perso — force scroll horizontal si defs. */
+function contactsTableMinWidth(customFieldCount: number): number | undefined {
+  if (customFieldCount <= 0) return undefined;
+  const base =
+    CONTACT_COL.select +
+    CONTACT_COL.avatar +
+    CONTACT_COL.firstName +
+    CONTACT_COL.lastName +
+    CONTACT_COL.phone +
+    CONTACT_COL.groups +
+    CONTACT_COL.notes +
+    CONTACT_COL.lastSms +
+    CONTACT_COL.source +
+    CONTACT_COL.created +
+    CONTACT_COL.actions;
+  return base + customFieldCount * CONTACT_COL.customField;
+}
 
 export function ContactsView({
   rows,
   loading,
   error,
+  customFieldDefs = [],
+  unsubscribedContacts = [],
   onImport,
   onAddContact,
   onRowClick,
   onDeleteContacts,
   onCreateCampaignFromContacts,
+  onResubscribeContacts,
 }: ContactsProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [unsubModalOpen, setUnsubModalOpen] = useState(false);
 
   const eligibleRows = useMemo(
     () => rows.filter((r) => isCampaignEligibleContact(r)),
     [rows]
   );
 
+  const unsubCount = unsubscribedContacts.length;
+
   const hasSelection = selectedIds.size > 0;
   const showBigEmpty = !loading && !error && rows.length === 0;
 
-  const footerLabel = useMemo(() => {
+  const footer = useMemo(() => {
     if (loading) return "…";
     const total = eligibleRows.length;
-    return `${total} contact${total > 1 ? "s" : ""}`;
-  }, [loading, eligibleRows]);
+    const contactsLabel = `${total} contact${total > 1 ? "s" : ""}`;
+    if (unsubCount === 0) return contactsLabel;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <span>
+          {contactsLabel}
+          <span className="text-muted-foreground/80">
+            {" "}
+            · {unsubCount} désabonné{unsubCount > 1 ? "s" : ""}
+          </span>
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 cursor-pointer px-2.5 text-xs font-semibold"
+          onClick={() => setUnsubModalOpen(true)}
+        >
+          Voir la liste
+        </Button>
+      </div>
+    );
+  }, [loading, eligibleRows.length, unsubCount]);
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const toggleAll = () => {
-    if (selectedIds.size === eligibleRows.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(eligibleRows.map((r) => r.id)));
-    }
-  };
+  const toggleAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === eligibleRows.length) return new Set();
+      return new Set(eligibleRows.map((r) => r.id));
+    });
+  }, [eligibleRows]);
 
-  const selectColumns: ColumnDef<ContactRowData, unknown>[] = [
+  const columns = useMemo(
+    () => buildContactColumns(customFieldDefs),
+    [customFieldDefs],
+  );
+
+  const minContentWidth = useMemo(
+    () => contactsTableMinWidth(customFieldDefs.length),
+    [customFieldDefs.length],
+  );
+
+  const selectColumns: ColumnDef<ContactRowData, unknown>[] = useMemo(
+    () => [
     {
       id: "select",
       size: CONTACT_COL.select,
@@ -432,34 +518,46 @@ export function ContactsView({
       enableResizing: false,
       header: () => null,
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-full text-muted-foreground"
-              aria-label={`Actions pour ${row.original.name}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onSelect={() => onRowClick(row.original)}>
-              Éditer
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onDeleteContacts([row.original.id])}
-            >
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-7 rounded-full text-muted-foreground"
+                aria-label={`Actions pour ${row.original.name}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onSelect={() => onRowClick(row.original)}>
+                Éditer
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => onDeleteContacts([row.original.id])}
+              >
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
-  ];
+  ],
+    [
+      columns,
+      selectedIds,
+      eligibleRows.length,
+      toggleAll,
+      toggleSelect,
+      onRowClick,
+      onDeleteContacts,
+    ],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -567,9 +665,17 @@ export function ContactsView({
           emptyMessage="Aucune cible disponible."
           searchNoResultsMessage="Aucun contact ne correspond à votre recherche."
           onRowClick={onRowClick}
-          footer={footerLabel}
+          footer={footer}
+          minContentWidth={minContentWidth}
         />
       )}
+
+      <UnsubscribedContactsModal
+        open={unsubModalOpen}
+        contacts={unsubscribedContacts}
+        onClose={() => setUnsubModalOpen(false)}
+        onResubscribe={onResubscribeContacts}
+      />
     </div>
   );
 }

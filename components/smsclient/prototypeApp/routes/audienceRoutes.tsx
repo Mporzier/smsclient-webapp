@@ -25,6 +25,7 @@ export function renderAudienceRoute(
   const { data, modals, wizard, actions } = ctx;
   const {
     contactsState,
+    customFieldsState,
     groupsState,
     campaignsState,
     smsTemplatesState,
@@ -58,6 +59,8 @@ export function renderAudienceRoute(
           rows={contactsState.rows}
           loading={contactsState.loading}
           error={contactsState.error}
+          customFieldDefs={customFieldsState.defs}
+          unsubscribedContacts={data.unsubscribedContacts}
           onImport={() => modals.setImportContactsOpen(true)}
           onAddContact={modals.openContactAdd}
           onRowClick={modals.openContactEdit}
@@ -65,6 +68,7 @@ export function renderAudienceRoute(
           onCreateCampaignFromContacts={(ids) =>
             wizard.openCampaignComposer({ contactIds: ids })
           }
+          onResubscribeContacts={actions.handleResubscribeContacts}
         />
       );
     case "groupes":

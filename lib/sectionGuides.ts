@@ -31,8 +31,6 @@ export type SectionGuideContent = {
   primaryLabel?: string;
   primaryRoute?: AppRoute;
   kbSlug: KnowledgeBaseArticleSlug;
-  accent: string;
-  iconBg: string;
 };
 
 export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
@@ -50,8 +48,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Envoyer un SMS",
     primaryRoute: "campagnes",
     kbSlug: "accueil",
-    accent: "from-primary to-ring",
-    iconBg: "bg-primary",
   },
   contacts: {
     icon: CircleUserRound,
@@ -67,8 +63,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Ajouter un contact",
     primaryRoute: "contacts",
     kbSlug: "contacts",
-    accent: "from-sky-500 to-primary",
-    iconBg: "bg-primary",
   },
   groupes: {
     icon: Users,
@@ -84,8 +78,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Créer un groupe",
     primaryRoute: "groupes",
     kbSlug: "groupes",
-    accent: "from-[#8057ff] to-primary",
-    iconBg: "bg-[#8057ff]",
   },
   campagnes: {
     icon: Megaphone,
@@ -101,8 +93,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Nouvelle campagne",
     primaryRoute: "campagnes",
     kbSlug: "campagnes",
-    accent: "from-primary to-sky-400",
-    iconBg: "bg-primary",
   },
   statistiques: {
     icon: BarChart3,
@@ -116,8 +106,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
       "Filtrez la période pour comparer vos campagnes dans le temps.",
     ],
     kbSlug: "statistiques",
-    accent: "from-emerald-500 to-sky-500",
-    iconBg: "bg-emerald-500",
   },
   automatisations: {
     icon: CalendarSync,
@@ -131,8 +119,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
       "Personnalisez le message et l’expéditeur avant activation.",
     ],
     kbSlug: "automatisations",
-    accent: "from-amber-500 to-primary",
-    iconBg: "bg-amber-500",
   },
   liens: {
     icon: Link,
@@ -148,8 +134,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Créer un lien",
     primaryRoute: "liens",
     kbSlug: "liens",
-    accent: "from-primary to-indigo-500",
-    iconBg: "bg-primary",
   },
   "modeles-sms": {
     icon: MessageSquareText,
@@ -165,7 +149,5 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideContent> = {
     primaryLabel: "Découvrir les modèles",
     primaryRoute: "modeles-sms",
     kbSlug: "modeles-sms",
-    accent: "from-primary to-[#8057ff]",
-    iconBg: "bg-primary",
   },
 };

@@ -19,12 +19,20 @@ export type ContactFormSnapshot = {
   birthday: string;
   notes: string;
   groups: string[];
+  customFields: Record<string, string>;
 };
 
 export function contactFormSnapshotsEqual(
   a: ContactFormSnapshot,
   b: ContactFormSnapshot,
 ): boolean {
+  const customKeys = new Set([
+    ...Object.keys(a.customFields),
+    ...Object.keys(b.customFields),
+  ]);
+  for (const k of customKeys) {
+    if ((a.customFields[k] ?? "") !== (b.customFields[k] ?? "")) return false;
+  }
   return (
     a.first === b.first &&
     a.last === b.last &&
@@ -77,25 +85,53 @@ export function handleModalBackdropClick(
   onClose();
 }
 
+/** True s’il y a plus d’une Dialog / AlertDialog ouverte (confirm empilée, etc.). */
+export function hasStackedOpenDialog(): boolean {
+  if (typeof document === "undefined") return false;
+  const nodes = document.querySelectorAll(
+    '[data-slot="dialog-content"], [data-slot="alert-dialog-content"]',
+  );
+  let openCount = 0;
+  for (const el of nodes) {
+    if (
+      el.getAttribute("data-state") === "open" ||
+      el.hasAttribute("data-open")
+    ) {
+      openCount += 1;
+    }
+  }
+  return openCount > 1;
+}
+
 /**
- * Mémorise l’état du formulaire à l’ouverture de la modale et détecte les modifications.
- * Capture via setState pendant le render (transition open), pas via refs.
+ * Mémorise l’état du formulaire à l’ouverture et détecte les modifications.
+ * Baseline capturée au render suivant l’ouverture (après reset des seeds).
  */
 export function useModalFormDirty<T>(
   open: boolean,
   snapshot: T,
   equals: (a: T, b: T) => boolean,
 ): boolean {
-  const [initial, setInitial] = useState<T | null>(null);
+  const [baseline, setBaseline] = useState<T | null>(null);
+  const [captureNext, setCaptureNext] = useState(open);
+  const [wasOpen, setWasOpen] = useState(open);
 
-  if (open) {
-    if (initial === null) {
-      setInitial(snapshot);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setBaseline(null);
+      setCaptureNext(true);
+    } else {
+      setBaseline(null);
+      setCaptureNext(false);
     }
-  } else if (initial !== null) {
-    setInitial(null);
   }
 
-  if (!open || initial === null) return false;
-  return !equals(snapshot, initial);
+  if (open && captureNext) {
+    setCaptureNext(false);
+    setBaseline(snapshot);
+  }
+
+  if (!open || baseline === null) return false;
+  return !equals(snapshot, baseline);
 }

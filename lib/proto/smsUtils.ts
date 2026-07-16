@@ -69,9 +69,11 @@ export function coerceFrPhoneForImport(raw: unknown): string {
 
 function frPhoneDigitsOnly(raw: string): string {
   let digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("0033")) digits = `0${digits.slice(4)}`;
-  else if (digits.startsWith("33") && digits.length > 2) digits = `0${digits.slice(2)}`;
-  else if (digits.length === 9 && /^[67]/.test(digits)) digits = `0${digits}`;
+  // +33 / 0033 / 33… → national ; ne pas re-préfixer 0 si déjà présent (ex. +3306…).
+  if (digits.startsWith("0033")) digits = digits.slice(4);
+  else if (digits.startsWith("33") && digits.length >= 11) digits = digits.slice(2);
+  if (digits.startsWith("0")) return digits.slice(0, 10);
+  if (digits.length === 9 && /^[67]/.test(digits)) return `0${digits}`;
   return digits.slice(0, 10);
 }
 
@@ -96,20 +98,9 @@ export function normalizeFRPhone(v: string): string {
 
 /** Mobile FR affiché (ex. 06 …) → +33… pour stockage / unique constraint */
 export function frDisplayToE164(display: string): string | null {
-  const compact = display.replace(/[^\d+]/g, "");
-  if (compact.startsWith("+33") && compact.length === 12) {
-    return compact;
-  }
-  let d = display.replace(/\D/g, "");
-  if (d.length === 11 && d.startsWith("33")) {
-    d = "0" + d.slice(2);
-  } else if (d.length === 9 && /^[6-7]/.test(d)) {
-    d = "0" + d;
-  }
-  if (d.length === 10 && d.startsWith("0")) {
-    return `+33${d.slice(1)}`;
-  }
-  return null;
+  const d = frPhoneDigitsOnly(display);
+  if (!/^0[67]\d{8}$/.test(d)) return null;
+  return `+33${d.slice(1)}`;
 }
 
 export function e164ToFrDisplay(e164: string): string {
@@ -119,7 +110,7 @@ export function e164ToFrDisplay(e164: string): string {
   return e164;
 }
 
+/** Mobile FR uniquement (06 / 07), national ou +33 / 0033. */
 export function isValidFrMobile(display: string): boolean {
-  const d = display.replace(/\D/g, "");
-  return d.length === 10 && d.startsWith("0");
+  return /^0[67]\d{8}$/.test(frPhoneDigitsOnly(display));
 }

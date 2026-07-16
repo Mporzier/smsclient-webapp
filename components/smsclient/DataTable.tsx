@@ -39,6 +39,11 @@ type DataTableProps<T> = {
   footer?: ReactNode;
   /** Tronque le contenu au lieu de faire défiler horizontalement. */
   clipHorizontalOverflow?: boolean;
+  /**
+   * Largeur min du tableau (px). Si > viewport, scroll horizontal.
+   * Sans ça : colonnes compressées pour remplir exactement le conteneur.
+   */
+  minContentWidth?: number;
 };
 
 const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
@@ -63,8 +68,8 @@ function withColumnDefaults<T>(
       enableResizing: noResize ? false : (col.enableResizing ?? true),
       enableSorting: noSort ? false : (col.enableSorting ?? true),
       minSize: col.minSize ?? (noResize ? 36 : 64),
-      /** Plafond haut pour autoriser agrandissement après le fill % initial. */
-      maxSize: col.maxSize ?? 2400,
+      /** Plafond resize manuel (évite colonnes trop larges). */
+      maxSize: col.maxSize ?? 600,
     };
   });
 }
@@ -81,6 +86,7 @@ export function DataTable<T>({
   onRowClick,
   footer,
   clipHorizontalOverflow = false,
+  minContentWidth,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
@@ -100,7 +106,7 @@ export function DataTable<T>({
           id,
           weight: col.size ?? 120,
           minSize: col.minSize ?? 64,
-          maxSize: col.maxSize ?? 2400,
+          maxSize: col.maxSize ?? 600,
         };
       }),
     [sizedColumns]
@@ -146,12 +152,13 @@ export function DataTable<T>({
     if (!el) return;
     const avail = el.clientWidth;
     if (avail <= 0) return;
+    const target = Math.max(avail, minContentWidth ?? 0);
     if (!userResizedRef.current) {
-      setColumnSizing(distributeColumnWidths(sizingWeights, avail));
+      setColumnSizing(distributeColumnWidths(sizingWeights, target));
       return;
     }
-    setColumnSizing((prev) => clampSizingToContainer(prev, avail));
-  }, [sizingWeights, clampSizingToContainer]);
+    setColumnSizing((prev) => clampSizingToContainer(prev, target));
+  }, [sizingWeights, clampSizingToContainer, minContentWidth]);
 
   useLayoutEffect(() => {
     applyContainerFill();
@@ -170,6 +177,7 @@ export function DataTable<T>({
           typeof updater === "function" ? updater(prev) : updater;
         const avail = scrollRef.current?.clientWidth ?? 0;
         if (avail <= 0) return proposed;
+        const target = Math.max(avail, minContentWidth ?? 0);
 
         let shrunkId: string | undefined;
         for (const w of sizingWeights) {
@@ -181,10 +189,10 @@ export function DataTable<T>({
           }
         }
 
-        return clampSizingToContainer(proposed, avail, shrunkId);
+        return clampSizingToContainer(proposed, target, shrunkId);
       });
     },
-    [sizingWeights, clampSizingToContainer]
+    [sizingWeights, clampSizingToContainer, minContentWidth]
   );
 
   // TanStack Table returns unstable function identities — React Compiler skips this hook on purpose.
@@ -207,7 +215,7 @@ export function DataTable<T>({
     defaultColumn: {
       size: 120,
       minSize: 64,
-      maxSize: 2400,
+      maxSize: 600,
     },
     initialState: { pagination: { pageSize } },
   });
@@ -341,7 +349,7 @@ export function DataTable<T>({
                         onClick={(e) => e.stopPropagation()}
                         className={cn(
                           "absolute top-0 right-0 z-30 h-full w-3 translate-x-1/2 cursor-col-resize touch-none select-none",
-                          "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-border",
+                          "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-muted-foreground/45",
                           "hover:after:bg-primary",
                           header.column.getIsResizing() && "after:bg-primary"
                         )}
