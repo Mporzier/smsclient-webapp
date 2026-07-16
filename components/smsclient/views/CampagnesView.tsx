@@ -25,7 +25,7 @@ import {
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useMemo, useState } from "react";
-import { Megaphone, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Megaphone, MoreHorizontal, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const statusLabel: Record<SmsCampaignStatus, string> = {
@@ -187,17 +187,6 @@ export function CampagnesView({
             aria-label="Rechercher une campagne"
           />
         </InputGroup>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="default"
-            size="lg"
-            className="rounded-full"
-            onClick={onNewCampaign}
-          >
-            <Plus aria-hidden />
-            Nouvelle campagne
-          </Button>
-        </div>
       </div>
 
       {error && (
