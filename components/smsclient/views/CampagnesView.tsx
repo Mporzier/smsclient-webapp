@@ -23,6 +23,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
+import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useMemo, useState } from "react";
 import { Megaphone, MoreHorizontal, Plus, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -80,6 +81,8 @@ export function CampagnesView({
         accessorKey: "createdLabel",
         header: "Date",
         size: CAMPAIGN_COL.created,
+        sortingFn: (a, b) =>
+          compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
@@ -112,6 +115,11 @@ export function CampagnesView({
         accessorKey: "sendLabel",
         header: "Envoi",
         size: CAMPAIGN_COL.send,
+        sortingFn: (a, b) =>
+          compareIsoTimestamps(
+            a.original.sentAt ?? a.original.scheduledAt,
+            b.original.sentAt ?? b.original.scheduledAt,
+          ),
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),

@@ -3,7 +3,10 @@ import type { CustomFieldValues } from "@/lib/types/customFields";
 /** Ligne affichée dans la liste Contacts (clients + segments via `client_group_members`). */
 export type ContactRowData = {
   id: string;
+  /** Affichage JJ/MM/AAAA (Paris). */
   created: string;
+  /** ISO pour tri chronologique. */
+  createdAt: string;
   firstName: string;
   lastName: string;
   /** Prénom + nom pour affichage tableau */
@@ -16,7 +19,10 @@ export type ContactRowData = {
   notes: string;
   /** Valeurs champs perso (clés = id définition). */
   customFields: CustomFieldValues;
+  /** Affichage JJ/MM/AAAA ou "—". */
   lastSms: string;
+  /** ISO dernier SMS, null si aucun. */
+  lastSmsAt: string | null;
   lastSmsBody: string;
   /** Date de désinscription (STOP), vide si abonné */
   unsubscribed: string;

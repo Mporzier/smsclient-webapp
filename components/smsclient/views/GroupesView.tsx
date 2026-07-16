@@ -18,6 +18,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import type { GroupRowData } from "@/lib/types/group";
+import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -48,6 +49,8 @@ const dataColumns: ColumnDef<GroupRowData, unknown>[] = [
     accessorKey: "lastCampaignLabel",
     header: "Dernière campagne",
     size: GROUP_COL.lastCampaign,
+    sortingFn: (a, b) =>
+      compareIsoTimestamps(a.original.lastCampaignAt, b.original.lastCampaignAt),
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),
@@ -56,6 +59,8 @@ const dataColumns: ColumnDef<GroupRowData, unknown>[] = [
     accessorKey: "createdLabel",
     header: "Création",
     size: GROUP_COL.created,
+    sortingFn: (a, b) =>
+      compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
     ),

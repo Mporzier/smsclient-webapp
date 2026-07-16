@@ -65,6 +65,7 @@ export function ContactsFlowHarness({
     (payload: ContactFormSubmitPayload, id: string): ContactRowData => ({
       id,
       created: "17/06/2025",
+      createdAt: "2025-06-17T10:00:00.000Z",
       firstName: payload.firstName,
       lastName: payload.lastName,
       name: [payload.firstName, payload.lastName].filter(Boolean).join(" "),
@@ -74,6 +75,7 @@ export function ContactsFlowHarness({
       notes: payload.notes,
       customFields: payload.customFields ?? {},
       lastSms: "—",
+      lastSmsAt: null,
       lastSmsBody: "",
       unsubscribed: "",
       source: "Manuel",

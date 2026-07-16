@@ -68,7 +68,9 @@ export function GroupesFlowHarness({
           description,
           contactCount: selectedContactIds.length,
           lastCampaignLabel: "—",
+          lastCampaignAt: null,
           createdLabel: "17/06/2025",
+          createdAt: "2025-06-17T10:00:00.000Z",
         },
       ]);
       syncContactMembership(name, selectedContactIds);

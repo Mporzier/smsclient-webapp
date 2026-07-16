@@ -30,6 +30,8 @@ import {
 } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
+import { compareIsoTimestampsStable } from "@/lib/proto/compareIso";
+import { sortContactRows } from "@/lib/proto/sortContactRows";
 import { formatCustomFieldDisplay } from "@/lib/customFields/validate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import {
@@ -51,7 +53,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
 
 const tagBase = groupTagBase;
 const GROUPS_GAP_PX = 4;
@@ -245,6 +247,14 @@ function buildContactColumns(
       id: `custom_${def.id}`,
       header: def.label,
       size: CONTACT_COL.customField,
+      accessorFn: (row) => {
+        const raw = row.customFields?.[def.id];
+        if (raw == null) return undefined;
+        const text = formatCustomFieldDisplay(raw, def.fieldType).trim();
+        return text && text !== "—" ? text : undefined;
+      },
+      sortUndefined: "last",
+      sortDescFirst: false,
       cell: ({ row }) => (
         <CellTruncate as="div">
           {formatCustomFieldDisplay(
@@ -314,6 +324,7 @@ function buildContactColumns(
     accessorKey: "groups",
     header: "Groupes",
     size: CONTACT_COL.groups,
+    enableSorting: false,
     cell: ({ getValue }) => (
       <ContactGroupsCell groups={getValue<string[]>() ?? []} />
     ),
@@ -325,19 +336,37 @@ function buildContactColumns(
     },
   },
   {
-    accessorKey: "notes",
+    id: "notes",
     header: "Notes",
     size: CONTACT_COL.notes,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
+    accessorFn: (row) => {
+      const n = row.notes.trim();
+      return n || undefined;
+    },
+    sortUndefined: "last",
+    sortDescFirst: false,
+    cell: ({ row }) => (
+      <CellTruncate as="div">
+        {row.original.notes.trim() || "—"}
+      </CellTruncate>
     ),
   },
   {
-    accessorKey: "lastSms",
+    id: "lastSms",
     header: "Dernier SMS",
     size: CONTACT_COL.lastSms,
-    cell: ({ row, getValue }) => {
-      const date = getValue<string>();
+    accessorFn: (row) => row.lastSmsAt ?? undefined,
+    sortingFn: (a, b) =>
+      compareIsoTimestampsStable(
+        a.original.lastSmsAt,
+        b.original.lastSmsAt,
+        a.original.id,
+        b.original.id,
+      ),
+    sortUndefined: "last",
+    sortDescFirst: false,
+    cell: ({ row }) => {
+      const date = row.original.lastSms;
       const body = row.original.lastSmsBody;
       if (!body && date === "—")
         return <span className="text-sm text-slate-400">—</span>;
@@ -365,11 +394,20 @@ function buildContactColumns(
     ),
   },
   {
-    accessorKey: "created",
+    id: "created",
     header: "Date d'ajout",
     size: CONTACT_COL.created,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+    accessorFn: (row) => row.createdAt,
+    sortingFn: (a, b) =>
+      compareIsoTimestampsStable(
+        a.original.createdAt,
+        b.original.createdAt,
+        a.original.id,
+        b.original.id,
+      ),
+    sortDescFirst: false,
+    cell: ({ row }) => (
+      <CellTruncate as="div">{row.original.created}</CellTruncate>
     ),
   },
   /** Champs perso à droite (avant actions sticky). */
@@ -410,12 +448,27 @@ export function ContactsView({
 }: ContactsProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
 
   const eligibleRows = useMemo(
     () => rows.filter((r) => isCampaignEligibleContact(r)),
     [rows]
   );
+
+  const sortedRows = useMemo(
+    () => sortContactRows(eligibleRows, sorting, customFieldDefs),
+    [eligibleRows, sorting, customFieldDefs],
+  );
+
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
+  const eligibleRowsRef = useRef(eligibleRows);
+  eligibleRowsRef.current = eligibleRows;
+  const onRowClickRef = useRef(onRowClick);
+  onRowClickRef.current = onRowClick;
+  const onDeleteContactsRef = useRef(onDeleteContacts);
+  onDeleteContactsRef.current = onDeleteContacts;
 
   const unsubCount = unsubscribedContacts.length;
 
@@ -460,10 +513,11 @@ export function ContactsView({
 
   const toggleAll = useCallback(() => {
     setSelectedIds((prev) => {
-      if (prev.size === eligibleRows.length) return new Set();
-      return new Set(eligibleRows.map((r) => r.id));
+      const rows = eligibleRowsRef.current;
+      if (prev.size === rows.length) return new Set();
+      return new Set(rows.map((r) => r.id));
     });
-  }, [eligibleRows]);
+  }, []);
 
   const columns = useMemo(
     () => buildContactColumns(customFieldDefs),
@@ -483,25 +537,29 @@ export function ContactsView({
       minSize: CONTACT_COL.select,
       maxSize: CONTACT_COL.select,
       enableResizing: false,
-      header: () => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              selectedIds.size > 0 && selectedIds.size === eligibleRows.length
-                ? true
-                : selectedIds.size > 0
-                ? "indeterminate"
-                : false
-            }
-            onCheckedChange={() => toggleAll()}
-            aria-label="Tout sélectionner les contacts"
-          />
-        </div>
-      ),
+      header: () => {
+        const ids = selectedIdsRef.current;
+        const total = eligibleRowsRef.current.length;
+        return (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                ids.size > 0 && ids.size === total
+                  ? true
+                  : ids.size > 0
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={() => toggleAll()}
+              aria-label="Tout sélectionner les contacts"
+            />
+          </div>
+        );
+      },
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <Checkbox
-            checked={selectedIds.has(row.original.id)}
+            checked={selectedIdsRef.current.has(row.original.id)}
             onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Sélectionner ${row.original.name}`}
@@ -533,12 +591,16 @@ export function ContactsView({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onRowClick(row.original)}>
+              <DropdownMenuItem
+                onSelect={() => onRowClickRef.current(row.original)}
+              >
                 Éditer
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                onSelect={() => onDeleteContacts([row.original.id])}
+                onSelect={() =>
+                  onDeleteContactsRef.current([row.original.id])
+                }
               >
                 Supprimer
               </DropdownMenuItem>
@@ -548,15 +610,7 @@ export function ContactsView({
       ),
     },
   ],
-    [
-      columns,
-      selectedIds,
-      eligibleRows.length,
-      toggleAll,
-      toggleSelect,
-      onRowClick,
-      onDeleteContacts,
-    ],
+    [columns],
   );
 
   return (
@@ -658,7 +712,7 @@ export function ContactsView({
       ) : (
         <DataTable
           columns={selectColumns}
-          data={eligibleRows}
+          data={sortedRows}
           loading={loading}
           pageSize={25}
           globalFilter={searchQuery}
@@ -667,6 +721,9 @@ export function ContactsView({
           onRowClick={onRowClick}
           footer={footer}
           minContentWidth={minContentWidth}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          manualSorting
         />
       )}
 

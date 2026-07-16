@@ -44,6 +44,14 @@ type DataTableProps<T> = {
    * Sans ça : colonnes compressées pour remplir exactement le conteneur.
    */
   minContentWidth?: number;
+  /** Tri contrôlé (ex. ContactsView) — survit au remount interne de la table. */
+  sorting?: SortingState;
+  onSortingChange?: (updater: SetStateAction<SortingState>) => void;
+  /**
+   * Données déjà triées par le parent — TanStack n’applique pas getSortedRowModel.
+   * Utile liste Contacts (tris multi-colonnes d’affilée).
+   */
+  manualSorting?: boolean;
 };
 
 const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
@@ -87,11 +95,16 @@ export function DataTable<T>({
   footer,
   clipHorizontalOverflow = false,
   minContentWidth,
+  sorting: sortingProp,
+  onSortingChange: onSortingChangeProp,
+  manualSorting = false,
 }: DataTableProps<T>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+  const sorting = sortingProp ?? internalSorting;
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const userResizedRef = useRef(false);
+  const fillKeyRef = useRef("");
 
   const sizedColumns = useMemo(
     () => withColumnDefaults(columns),
@@ -153,7 +166,12 @@ export function DataTable<T>({
     const avail = el.clientWidth;
     if (avail <= 0) return;
     const target = Math.max(avail, minContentWidth ?? 0);
+    const fillKey = `${target}|${sizingWeights
+      .map((w) => `${w.id}:${w.weight}:${w.minSize}:${w.maxSize}`)
+      .join(",")}`;
     if (!userResizedRef.current) {
+      if (fillKeyRef.current === fillKey) return;
+      fillKeyRef.current = fillKey;
       setColumnSizing(distributeColumnWidths(sizingWeights, target));
       return;
     }
@@ -195,13 +213,24 @@ export function DataTable<T>({
     [sizingWeights, clampSizingToContainer, minContentWidth]
   );
 
+  const handleSortingChange = useCallback(
+    (updater: SetStateAction<SortingState>) => {
+      if (onSortingChangeProp) {
+        onSortingChangeProp(updater);
+      } else {
+        setInternalSorting(updater);
+      }
+    },
+    [onSortingChangeProp]
+  );
+
   // TanStack Table returns unstable function identities — React Compiler skips this hook on purpose.
   // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable
   const table = useReactTable({
     data,
     columns: sizedColumns,
     state: { globalFilter, sorting, columnSizing },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     onColumnSizingChange: handleColumnSizingChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -209,18 +238,35 @@ export function DataTable<T>({
     getPaginationRowModel: getPaginationRowModel(),
     enableSorting: true,
     enableMultiSort: false,
-    enableSortingRemoval: true,
+    /** Sinon 3e clic (ou clic rapide multi-detail) vide le tri → paraît « cassé ». */
+    enableSortingRemoval: false,
+    /** Évite 1er clic en desc sur dates / colonnes à sortUndefined. */
+    sortDescFirst: false,
+    manualSorting,
+    getRowId: (row, index) => {
+      if (
+        row &&
+        typeof row === "object" &&
+        "id" in row &&
+        typeof (row as { id: unknown }).id === "string"
+      ) {
+        return (row as { id: string }).id;
+      }
+      return String(index);
+    },
     columnResizeMode: "onChange",
     enableColumnResizing: true,
     defaultColumn: {
       size: 120,
       minSize: 64,
       maxSize: 600,
+      sortDescFirst: false,
     },
     initialState: { pagination: { pageSize } },
   });
 
   const { rows: tableRows } = table.getRowModel();
+
   const pageCount = table.getPageCount();
   const pageIndex = table.getState().pagination.pageIndex;
   const totalSize = table.getTotalSize();
@@ -295,12 +341,20 @@ export function DataTable<T>({
                       <button
                         type="button"
                         className={cn(
-                          "inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-md text-left",
+                          "-mx-3 -my-2 inline-flex w-[calc(100%+1.5rem)] min-w-0 cursor-pointer select-none items-center gap-1.5 px-3 py-2 text-left",
                           "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         )}
-                        onClick={header.column.getToggleSortingHandler()}
+                        onClick={() => {
+                          const columnId = header.column.id;
+                          // Toggle explicite : nouvelle colonne → asc ; déjà active → inverse.
+                          handleSortingChange((prev) => {
+                            const current = prev.find((s) => s.id === columnId);
+                            if (!current) return [{ id: columnId, desc: false }];
+                            return [{ id: columnId, desc: !current.desc }];
+                          });
+                        }}
                       >
-                        <span className="min-w-0 truncate">
+                        <span className="min-w-0 flex-1 truncate">
                           {flexRender(
                             header.column.columnDef.header,
                             header.getContext()
@@ -348,7 +402,7 @@ export function DataTable<T>({
                         }}
                         onClick={(e) => e.stopPropagation()}
                         className={cn(
-                          "absolute top-0 right-0 z-30 h-full w-3 translate-x-1/2 cursor-col-resize touch-none select-none",
+                          "absolute top-0 right-0 z-30 h-full w-1.5 cursor-col-resize touch-none select-none",
                           "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-muted-foreground/45",
                           "hover:after:bg-primary",
                           header.column.getIsResizing() && "after:bg-primary"

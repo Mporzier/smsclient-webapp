@@ -113,6 +113,7 @@ export function clientRecordToRow(
   return {
     id: row.id,
     created: formatParisCalendarDate(row.created_at),
+    createdAt: row.created_at,
     firstName,
     lastName,
     name,
@@ -122,6 +123,7 @@ export function clientRecordToRow(
     notes: row.notes?.trim() ?? "",
     customFields: customFieldsFromDb(row.custom_fields),
     lastSms: formatParisCalendarDate(row.last_sms_sent_at),
+    lastSmsAt: row.last_sms_sent_at,
     lastSmsBody: row.last_sms_body?.trim() ?? "",
     unsubscribed: formatParisCalendarDate(row.unsubscribed_at),
     source: row.source,

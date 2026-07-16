@@ -67,7 +67,9 @@ export async function fetchGroupsWithStats(
     lastCampaignLabel: g.last_campaign_at
       ? formatDateFr(g.last_campaign_at)
       : "—",
+    lastCampaignAt: g.last_campaign_at,
     createdLabel: formatDateFr(g.created_at),
+    createdAt: g.created_at,
   }));
 
   return { data: rows, error: null };

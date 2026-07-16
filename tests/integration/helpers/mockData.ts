@@ -22,6 +22,7 @@ export function makeContact(
   return {
     id,
     created: "01/06/2025",
+    createdAt: "2025-06-01T10:00:00.000Z",
     firstName,
     lastName,
     name: [firstName, lastName].filter(Boolean).join(" "),
@@ -31,6 +32,7 @@ export function makeContact(
     notes: "",
     customFields: {},
     lastSms: "—",
+    lastSmsAt: null,
     lastSmsBody: "",
     unsubscribed: "",
     source: "Manuel",
@@ -48,7 +50,9 @@ export function makeGroup(overrides: Partial<GroupRowData> = {}): GroupRowData {
     description: "Segment test",
     contactCount: 0,
     lastCampaignLabel: "—",
+    lastCampaignAt: null,
     createdLabel: "01/06/2025",
+    createdAt: "2025-06-01T10:00:00.000Z",
     ...overrides,
   };
 }
