@@ -1,7 +1,6 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
-import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
 import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
@@ -189,13 +188,6 @@ export function LiensView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      {showBigEmpty && (
-        <SectionGuideCard
-          section="liens"
-          onPrimaryAction={() => setCreateOpen(true)}
-        />
-      )}
-
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <SearchBar

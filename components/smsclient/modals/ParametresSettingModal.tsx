@@ -11,12 +11,11 @@ import { cn } from "@/lib/cn";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
   modalCloseBtnCompact,
+  modalIconCls,
 } from "./modalChrome";
 
 type ParametresSettingModalProps = {
@@ -69,20 +68,17 @@ export function ParametresSettingModal({
           if (saving || dirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring"
-              aria-hidden
-            >
+            <div className={modalIconCls("sm")} aria-hidden>
               {icon}
             </div>
             <div className="min-w-0">
-              <DialogTitle className="m-0 truncate text-base font-black text-foreground">
+              <DialogTitle className="m-0 truncate text-base font-semibold leading-none tracking-tight text-foreground">
                 {title}
               </DialogTitle>
               {description && (
-                <DialogDescription className="m-0 mt-0.5 text-xs font-semibold">
+                <DialogDescription className="m-0 mt-1 text-xs text-muted-foreground">
                   {description}
                 </DialogDescription>
               )}
@@ -99,29 +95,27 @@ export function ParametresSettingModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {children}
         </div>
 
         {onSave && (
-          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-card px-4 py-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-card p-2.5 px-4">
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              className={brandBtnCls}
               onClick={onClose}
               disabled={saving}
+              className="cursor-pointer"
             >
               Fermer
             </Button>
             <Button
               type="button"
               variant="default"
-              size="lg"
-              className={brandBtnPrimaryCls}
               onClick={() => void onSave()}
               disabled={saving || !dirty}
+              className="cursor-pointer"
             >
               {saving ? "Enregistrement…" : saveLabel}
             </Button>

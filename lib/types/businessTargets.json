@@ -1,0 +1,1295 @@
+{
+  "categories": [
+    {
+      "id": "commerce",
+      "label": "Commerce",
+      "emoji": "🛍️",
+      "types": [
+        {
+          "id": "cbd_shop",
+          "label": "CBD Shop",
+          "emoji": "🌿",
+          "examples": [
+            "boutique CBD",
+            "cannabis léger"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "promo",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "cigarette_electronique",
+          "label": "Cigarette électronique",
+          "emoji": "💨",
+          "examples": [
+            "vape shop",
+            "e-liquides"
+          ],
+          "smsHooks": [
+            "arrivage",
+            "promo",
+            "atelier"
+          ]
+        },
+        {
+          "id": "fleuriste",
+          "label": "Fleuriste",
+          "emoji": "💐",
+          "examples": [
+            "compositions",
+            "livraison fleurs"
+          ],
+          "smsHooks": [
+            "bouquet",
+            "fête",
+            "livraison"
+          ]
+        },
+        {
+          "id": "concept_store",
+          "label": "Concept store",
+          "emoji": "✨",
+          "examples": [
+            "boutique lifestyle",
+            "sélection curatée"
+          ],
+          "smsHooks": [
+            "collection",
+            "événement",
+            "privée"
+          ]
+        },
+        {
+          "id": "mode",
+          "label": "Mode",
+          "emoji": "👗",
+          "examples": [
+            "prêt-à-porter",
+            "boutique vêtements"
+          ],
+          "smsHooks": [
+            "soldes",
+            "collection",
+            "essayage"
+          ]
+        },
+        {
+          "id": "caviste",
+          "label": "Caviste",
+          "emoji": "🍷",
+          "examples": [
+            "cave à vins",
+            "dégustation"
+          ],
+          "smsHooks": [
+            "arrivage",
+            "dégustation",
+            "promo"
+          ]
+        },
+        {
+          "id": "transports",
+          "label": "Transports",
+          "emoji": "🚲",
+          "examples": [
+            "cyclisme",
+            "trottinette",
+            "mobilité douce"
+          ],
+          "smsHooks": [
+            "essai",
+            "entretien",
+            "promo"
+          ]
+        },
+        {
+          "id": "epicerie",
+          "label": "Épicerie",
+          "emoji": "🛒",
+          "examples": [
+            "épicerie fine",
+            "produits locaux"
+          ],
+          "smsHooks": [
+            "arrivage",
+            "promo",
+            "panier"
+          ]
+        },
+        {
+          "id": "boucherie",
+          "label": "Boucherie",
+          "emoji": "🥩",
+          "examples": [
+            "boucherie-charcuterie",
+            "traiteur viande"
+          ],
+          "smsHooks": [
+            "offre jour",
+            "commande",
+            "fêtes"
+          ]
+        },
+        {
+          "id": "bijouterie",
+          "label": "Bijouterie",
+          "emoji": "💍",
+          "examples": [
+            "joaillerie",
+            "montres"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "fête",
+            "privée"
+          ]
+        },
+        {
+          "id": "animalerie",
+          "label": "Animalerie",
+          "emoji": "🐾",
+          "examples": [
+            "animaux",
+            "accessoires pets"
+          ],
+          "smsHooks": [
+            "arrivage",
+            "fidélité",
+            "conseil"
+          ]
+        },
+        {
+          "id": "mercerie",
+          "label": "Mercerie",
+          "emoji": "🧵",
+          "examples": [
+            "tissus",
+            "loisirs créatifs"
+          ],
+          "smsHooks": [
+            "atelier",
+            "arrivage",
+            "promo"
+          ]
+        },
+        {
+          "id": "magasin_jouet",
+          "label": "Magasin de jouets",
+          "emoji": "🧸",
+          "examples": [
+            "jouets",
+            "jeux enfants"
+          ],
+          "smsHooks": [
+            "Noël",
+            "nouveauté",
+            "atelier"
+          ]
+        },
+        {
+          "id": "concessionnaire",
+          "label": "Concessionnaire",
+          "emoji": "🚗",
+          "examples": [
+            "auto",
+            "moto",
+            "véhicules"
+          ],
+          "smsHooks": [
+            "essai",
+            "offre",
+            "entretien"
+          ]
+        },
+        {
+          "id": "tabac_presse",
+          "label": "Tabac / Presse",
+          "emoji": "📰",
+          "examples": [
+            "tabac-presse",
+            "FDJ"
+          ],
+          "smsHooks": [
+            "presse",
+            "loto",
+            "horaires"
+          ]
+        },
+        {
+          "id": "librairie",
+          "label": "Librairie",
+          "emoji": "📚",
+          "examples": [
+            "livres",
+            "papeterie"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "dédicace",
+            "promo"
+          ]
+        },
+        {
+          "id": "jardinerie",
+          "label": "Jardinerie",
+          "emoji": "🌱",
+          "examples": [
+            "plantes",
+            "jardin"
+          ],
+          "smsHooks": [
+            "saison",
+            "atelier",
+            "promo"
+          ]
+        },
+        {
+          "id": "decoration_maison",
+          "label": "Décoration / Maison",
+          "emoji": "🏠",
+          "examples": [
+            "déco",
+            "ameublement"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "soldes",
+            "événement"
+          ]
+        },
+        {
+          "id": "sport_retail",
+          "label": "Articles de sport",
+          "emoji": "⚽",
+          "examples": [
+            "équipement sport",
+            "outdoor"
+          ],
+          "smsHooks": [
+            "collection",
+            "soldes",
+            "essai"
+          ]
+        },
+        {
+          "id": "high_tech",
+          "label": "High-tech",
+          "emoji": "📱",
+          "examples": [
+            "électronique",
+            "électroménager"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "promo",
+            "atelier"
+          ]
+        },
+        {
+          "id": "parfumerie",
+          "label": "Parfumerie",
+          "emoji": "💄",
+          "examples": [
+            "parfums",
+            "cosmétiques"
+          ],
+          "smsHooks": [
+            "nouveauté",
+            "échantillon",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "centre_commerciaux",
+          "label": "Centre commercial",
+          "emoji": "🏬",
+          "examples": [
+            "mall",
+            "galerie marchande"
+          ],
+          "smsHooks": [
+            "événement",
+            "soldes",
+            "horaires"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "restauration",
+      "label": "Restauration & bar",
+      "emoji": "🍽️",
+      "types": [
+        {
+          "id": "food_truck",
+          "label": "Food truck",
+          "emoji": "🚚",
+          "examples": [
+            "street food",
+            "emplacement mobile"
+          ],
+          "smsHooks": [
+            "emplacement",
+            "menu jour",
+            "promo"
+          ]
+        },
+        {
+          "id": "poke_bowl",
+          "label": "Poké bowl",
+          "emoji": "🥗",
+          "examples": [
+            "poké",
+            "bowls healthy"
+          ],
+          "smsHooks": [
+            "menu",
+            "click & collect",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "fast_food",
+          "label": "Fast food",
+          "emoji": "🍔",
+          "examples": [
+            "burger",
+            "restauration rapide"
+          ],
+          "smsHooks": [
+            "menu",
+            "promo",
+            "livraison"
+          ]
+        },
+        {
+          "id": "salon_the",
+          "label": "Salon de thé",
+          "emoji": "🫖",
+          "examples": [
+            "thés",
+            "pâtisseries"
+          ],
+          "smsHooks": [
+            "après-midi",
+            "nouveauté",
+            "événement"
+          ]
+        },
+        {
+          "id": "cafe",
+          "label": "Café",
+          "emoji": "☕",
+          "examples": [
+            "coffee shop",
+            "torréfaction"
+          ],
+          "smsHooks": [
+            "horaires",
+            "nouveauté",
+            "événement"
+          ]
+        },
+        {
+          "id": "patisserie",
+          "label": "Pâtisserie",
+          "emoji": "🧁",
+          "examples": [
+            "gâteaux",
+            "entremets"
+          ],
+          "smsHooks": [
+            "commande",
+            "fêtes",
+            "nouveauté"
+          ]
+        },
+        {
+          "id": "chocolaterie",
+          "label": "Chocolaterie",
+          "emoji": "🍫",
+          "examples": [
+            "chocolats",
+            "confiserie"
+          ],
+          "smsHooks": [
+            "saison",
+            "cadeau",
+            "dégustation"
+          ]
+        },
+        {
+          "id": "boulangerie",
+          "label": "Boulangerie",
+          "emoji": "🥐",
+          "examples": [
+            "pain",
+            "viennoiseries"
+          ],
+          "smsHooks": [
+            "matin",
+            "fêtes",
+            "promo"
+          ]
+        },
+        {
+          "id": "restaurant",
+          "label": "Restaurant",
+          "emoji": "🍴",
+          "examples": [
+            "table",
+            "carte"
+          ],
+          "smsHooks": [
+            "menu",
+            "réservation",
+            "soirée"
+          ]
+        },
+        {
+          "id": "bar",
+          "label": "Bar",
+          "emoji": "🍸",
+          "examples": [
+            "cocktails",
+            "bières"
+          ],
+          "smsHooks": [
+            "happy hour",
+            "live",
+            "brunch"
+          ]
+        },
+        {
+          "id": "traiteur",
+          "label": "Traiteur",
+          "emoji": "🍱",
+          "examples": [
+            "plateaux",
+            "événements"
+          ],
+          "smsHooks": [
+            "commande",
+            "événement",
+            "menu"
+          ]
+        },
+        {
+          "id": "brasserie",
+          "label": "Brasserie",
+          "emoji": "🍺",
+          "examples": [
+            "brasserie traditionnelle",
+            "plats du jour"
+          ],
+          "smsHooks": [
+            "plat jour",
+            "réservation",
+            "promo"
+          ]
+        },
+        {
+          "id": "glacier",
+          "label": "Glacier",
+          "emoji": "🍦",
+          "examples": [
+            "glaces artisanales",
+            "sorbets"
+          ],
+          "smsHooks": [
+            "parfum",
+            "saison",
+            "promo"
+          ]
+        },
+        {
+          "id": "pizzeria",
+          "label": "Pizzeria",
+          "emoji": "🍕",
+          "examples": [
+            "pizzas",
+            "livraison"
+          ],
+          "smsHooks": [
+            "menu",
+            "livraison",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "creperie",
+          "label": "Crêperie",
+          "emoji": "🥞",
+          "examples": [
+            "crêpes",
+            "galettes"
+          ],
+          "smsHooks": [
+            "menu",
+            "promo",
+            "réservation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "services",
+      "label": "Services & artisanat",
+      "emoji": "🛠️",
+      "types": [
+        {
+          "id": "coworking",
+          "label": "Co-working",
+          "emoji": "💼",
+          "examples": [
+            "espace partagé",
+            "salles réunion"
+          ],
+          "smsHooks": [
+            "dispo",
+            "événement",
+            "offre"
+          ]
+        },
+        {
+          "id": "reparation_telephonique",
+          "label": "Réparation téléphonique",
+          "emoji": "📲",
+          "examples": [
+            "réparation mobile",
+            "accessoires"
+          ],
+          "smsHooks": [
+            "prêt",
+            "promo",
+            "suivi"
+          ]
+        },
+        {
+          "id": "pressing",
+          "label": "Pressing",
+          "emoji": "👔",
+          "examples": [
+            "nettoyage",
+            "repassage"
+          ],
+          "smsHooks": [
+            "prêt",
+            "promo",
+            "relance"
+          ]
+        },
+        {
+          "id": "garage_auto",
+          "label": "Garage auto",
+          "emoji": "🛠️",
+          "examples": [
+            "mécanique",
+            "entretien"
+          ],
+          "smsHooks": [
+            "révision",
+            "pneus",
+            "contrôle"
+          ]
+        },
+        {
+          "id": "auto_ecole",
+          "label": "Auto-école",
+          "emoji": "🚘",
+          "examples": [
+            "permis",
+            "code"
+          ],
+          "smsHooks": [
+            "créneau",
+            "examen",
+            "promo"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sante",
+      "label": "Santé & bien-être",
+      "emoji": "❤️",
+      "types": [
+        {
+          "id": "pharmacie",
+          "label": "Pharmacie",
+          "emoji": "💊",
+          "examples": [
+            "officine",
+            "parapharmacie"
+          ],
+          "smsHooks": [
+            "ordonnance",
+            "para",
+            "garde"
+          ]
+        },
+        {
+          "id": "opticien",
+          "label": "Opticien",
+          "emoji": "👓",
+          "examples": [
+            "lunettes",
+            "lentilles"
+          ],
+          "smsHooks": [
+            "contrôle",
+            "promo montures",
+            "RDV"
+          ]
+        },
+        {
+          "id": "veterinaire",
+          "label": "Vétérinaire",
+          "emoji": "🩺",
+          "examples": [
+            "clinique véto",
+            "soins animaux"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "urgence"
+          ]
+        },
+        {
+          "id": "centre_sante",
+          "label": "Centre de santé",
+          "emoji": "🏥",
+          "examples": [
+            "maison de santé",
+            "polyclinique"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "horaires"
+          ]
+        },
+        {
+          "id": "medecin",
+          "label": "Médecin",
+          "emoji": "👨‍⚕️",
+          "examples": [
+            "cabinet médical",
+            "généraliste"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "résultats"
+          ]
+        },
+        {
+          "id": "dentiste",
+          "label": "Dentiste",
+          "emoji": "🦷",
+          "examples": [
+            "cabinet dentaire"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "suivi"
+          ]
+        },
+        {
+          "id": "kine",
+          "label": "Kiné / ostéo",
+          "emoji": "🦴",
+          "examples": [
+            "kinésithérapeute",
+            "ostéopathe"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "suivi"
+          ]
+        },
+        {
+          "id": "laboratoire",
+          "label": "Laboratoire",
+          "emoji": "🧪",
+          "examples": [
+            "analyses médicales",
+            "biologie"
+          ],
+          "smsHooks": [
+            "résultats",
+            "RDV",
+            "rappel"
+          ]
+        },
+        {
+          "id": "infirmier",
+          "label": "Infirmier / IDE",
+          "emoji": "💉",
+          "examples": [
+            "soins à domicile",
+            "cabinet"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "passage"
+          ]
+        },
+        {
+          "id": "bien_etre_beaute",
+          "label": "Bien-être & beauté",
+          "emoji": "💅",
+          "examples": [
+            "salon beauté",
+            "massage",
+            "onglerie"
+          ],
+          "smsHooks": [
+            "RDV",
+            "promo",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "coiffeur_barber",
+          "label": "Coiffeur & barber",
+          "emoji": "💇",
+          "examples": [
+            "salon coiffure",
+            "barbershop"
+          ],
+          "smsHooks": [
+            "RDV",
+            "promo",
+            "fidélité"
+          ]
+        },
+        {
+          "id": "tattoo",
+          "label": "Tattoo / piercing",
+          "emoji": "🖋️",
+          "examples": [
+            "salon tatouage",
+            "piercing"
+          ],
+          "smsHooks": [
+            "créneau",
+            "soins",
+            "événement"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hotellerie_tourisme",
+      "label": "Hôtellerie & Tourisme",
+      "emoji": "🏨",
+      "types": [
+        {
+          "id": "hotellerie",
+          "label": "Hôtellerie",
+          "emoji": "🏨",
+          "examples": [
+            "hôtel",
+            "chambres"
+          ],
+          "smsHooks": [
+            "offre",
+            "check-in",
+            "avis"
+          ]
+        },
+        {
+          "id": "camping",
+          "label": "Camping",
+          "emoji": "⛺",
+          "examples": [
+            "camping",
+            "mobil-home"
+          ],
+          "smsHooks": [
+            "réservation",
+            "saison",
+            "activité"
+          ]
+        },
+        {
+          "id": "office_tourisme",
+          "label": "Office de tourisme",
+          "emoji": "🗺️",
+          "examples": [
+            "accueil touristique",
+            "visites"
+          ],
+          "smsHooks": [
+            "événement",
+            "info",
+            "promo"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "btp_immobilier",
+      "label": "BTP & immobilier",
+      "emoji": "🏗️",
+      "types": [
+        {
+          "id": "entreprise_generale",
+          "label": "Entreprise générale",
+          "emoji": "🏗️",
+          "examples": [
+            "gros œuvre",
+            "rénovation globale"
+          ],
+          "smsHooks": [
+            "devis",
+            "chantier",
+            "RDV"
+          ]
+        },
+        {
+          "id": "plombier",
+          "label": "Plombier",
+          "emoji": "🔧",
+          "examples": [
+            "plomberie",
+            "chauffage"
+          ],
+          "smsHooks": [
+            "urgence",
+            "devis",
+            "RDV"
+          ]
+        },
+        {
+          "id": "electricien",
+          "label": "Électricien",
+          "emoji": "⚡",
+          "examples": [
+            "installation",
+            "tableau électrique"
+          ],
+          "smsHooks": [
+            "devis",
+            "RDV",
+            "intervention"
+          ]
+        },
+        {
+          "id": "maconnerie",
+          "label": "Maçonnerie",
+          "emoji": "🧱",
+          "examples": [
+            "murs",
+            "dalle",
+            "extension"
+          ],
+          "smsHooks": [
+            "devis",
+            "chantier",
+            "RDV"
+          ]
+        },
+        {
+          "id": "peinture",
+          "label": "Peinture",
+          "emoji": "🎨",
+          "examples": [
+            "intérieur",
+            "extérieur"
+          ],
+          "smsHooks": [
+            "devis",
+            "RDV",
+            "fin chantier"
+          ]
+        },
+        {
+          "id": "menuiserie",
+          "label": "Menuiserie",
+          "emoji": "🪵",
+          "examples": [
+            "fenêtres",
+            "portes",
+            "aménagement"
+          ],
+          "smsHooks": [
+            "devis",
+            "pose",
+            "RDV"
+          ]
+        },
+        {
+          "id": "couverture",
+          "label": "Couverture / toiture",
+          "emoji": "🏠",
+          "examples": [
+            "toit",
+            "zinguerie",
+            "isolation"
+          ],
+          "smsHooks": [
+            "devis",
+            "urgence",
+            "RDV"
+          ]
+        },
+        {
+          "id": "architecte",
+          "label": "Architecte",
+          "emoji": "📐",
+          "examples": [
+            "conception",
+            "permis"
+          ],
+          "smsHooks": [
+            "RDV",
+            "plans",
+            "suivi"
+          ]
+        },
+        {
+          "id": "agence_immobiliere",
+          "label": "Agence immobilière",
+          "emoji": "🔑",
+          "examples": [
+            "agence",
+            "location",
+            "vente"
+          ],
+          "smsHooks": [
+            "visite",
+            "annonce",
+            "RDV"
+          ]
+        },
+        {
+          "id": "promoteur",
+          "label": "Promoteur",
+          "emoji": "🏗️",
+          "examples": [
+            "programme neuf",
+            "vente en état futur"
+          ],
+          "smsHooks": [
+            "visite",
+            "lancement",
+            "offre"
+          ]
+        },
+        {
+          "id": "syndic",
+          "label": "Syndic",
+          "emoji": "🏢",
+          "examples": [
+            "copropriété",
+            "assemblée"
+          ],
+          "smsHooks": [
+            "AG",
+            "info",
+            "rappel"
+          ]
+        },
+        {
+          "id": "gestion_locative",
+          "label": "Gestion locative",
+          "emoji": "📋",
+          "examples": [
+            "location",
+            "gestion biens"
+          ],
+          "smsHooks": [
+            "visite",
+            "quittance",
+            "rappel"
+          ]
+        },
+        {
+          "id": "marchand_biens",
+          "label": "Marchand de biens",
+          "emoji": "🏠",
+          "examples": [
+            "achat-revente",
+            "rénovation"
+          ],
+          "smsHooks": [
+            "offre",
+            "visite",
+            "notaire"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "education_public",
+      "label": "Éducation & Secteur public",
+      "emoji": "🎓",
+      "types": [
+        {
+          "id": "universite",
+          "label": "Université",
+          "emoji": "🎒",
+          "examples": [
+            "campus",
+            "faculté"
+          ],
+          "smsHooks": [
+            "événement",
+            "rappel",
+            "info"
+          ]
+        },
+        {
+          "id": "mairie",
+          "label": "Mairie",
+          "emoji": "🏢",
+          "examples": [
+            "commune",
+            "services municipaux"
+          ],
+          "smsHooks": [
+            "info",
+            "événement",
+            "rappel"
+          ]
+        },
+        {
+          "id": "ecole_privee",
+          "label": "École privée",
+          "emoji": "🎓",
+          "examples": [
+            "établissement privé",
+            "formation"
+          ],
+          "smsHooks": [
+            "inscription",
+            "réunion",
+            "rappel"
+          ]
+        },
+        {
+          "id": "avocat",
+          "label": "Avocat",
+          "emoji": "⚖️",
+          "examples": [
+            "cabinet juridique"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "dossier"
+          ]
+        },
+        {
+          "id": "comptable",
+          "label": "Comptable",
+          "emoji": "📊",
+          "examples": [
+            "expert-comptable",
+            "cabinet"
+          ],
+          "smsHooks": [
+            "RDV",
+            "échéance",
+            "rappel"
+          ]
+        },
+        {
+          "id": "notaire",
+          "label": "Notaire",
+          "emoji": "📜",
+          "examples": [
+            "étude notariale"
+          ],
+          "smsHooks": [
+            "RDV",
+            "signature",
+            "rappel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loisirs_evenementiel",
+      "label": "Loisirs & Événementiel",
+      "emoji": "🎭",
+      "types": [
+        {
+          "id": "parc_loisirs",
+          "label": "Parc de loisirs",
+          "emoji": "🎢",
+          "examples": [
+            "attractions",
+            "parc familial"
+          ],
+          "smsHooks": [
+            "billet",
+            "événement",
+            "promo"
+          ]
+        },
+        {
+          "id": "jeux",
+          "label": "Jeux & activités",
+          "emoji": "🎯",
+          "examples": [
+            "escape game",
+            "laser game",
+            "bowling",
+            "paddle"
+          ],
+          "smsHooks": [
+            "créneau",
+            "groupe",
+            "promo"
+          ]
+        },
+        {
+          "id": "salle_sport",
+          "label": "Salle de sport",
+          "emoji": "🏋️",
+          "examples": [
+            "fitness",
+            "musculation"
+          ],
+          "smsHooks": [
+            "découverte",
+            "abonnement",
+            "cours"
+          ]
+        },
+        {
+          "id": "photographe",
+          "label": "Photographe",
+          "emoji": "📷",
+          "examples": [
+            "studio",
+            "reportage"
+          ],
+          "smsHooks": [
+            "RDV",
+            "galerie",
+            "promo"
+          ]
+        },
+        {
+          "id": "wedding_planner",
+          "label": "Wedding planner",
+          "emoji": "💍",
+          "examples": [
+            "organisation mariage",
+            "coordination"
+          ],
+          "smsHooks": [
+            "RDV",
+            "rappel",
+            "confirmation"
+          ]
+        },
+        {
+          "id": "salle_reception",
+          "label": "Salle de réception",
+          "emoji": "🏛️",
+          "examples": [
+            "mariage",
+            "séminaire",
+            "anniversaire"
+          ],
+          "smsHooks": [
+            "visite",
+            "devis",
+            "confirmation"
+          ]
+        },
+        {
+          "id": "dj_animation",
+          "label": "DJ / Animation",
+          "emoji": "🎧",
+          "examples": [
+            "soirée",
+            "mariage",
+            "animation"
+          ],
+          "smsHooks": [
+            "devis",
+            "confirmation",
+            "playlist"
+          ]
+        },
+        {
+          "id": "location_materiel_event",
+          "label": "Location matériel événement",
+          "emoji": "🪑",
+          "examples": [
+            "chapiteau",
+            "sono",
+            "mobilier"
+          ],
+          "smsHooks": [
+            "devis",
+            "livraison",
+            "retrait"
+          ]
+        },
+        {
+          "id": "traiteur_evenementiel",
+          "label": "Traiteur événementiel",
+          "emoji": "🥂",
+          "examples": [
+            "cocktail",
+            "buffet",
+            "mariage"
+          ],
+          "smsHooks": [
+            "devis",
+            "dégustation",
+            "confirmation"
+          ]
+        },
+        {
+          "id": "agence_evenementielle",
+          "label": "Agence événementielle",
+          "emoji": "✨",
+          "examples": [
+            "corporate",
+            "lancement",
+            "soirée"
+          ],
+          "smsHooks": [
+            "brief",
+            "RDV",
+            "rappel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "autre",
+      "label": "Autres",
+      "emoji": "✨",
+      "types": [
+        {
+          "id": "autre",
+          "label": "Autre activité",
+          "emoji": "✨",
+          "examples": [
+            "secteur non listé"
+          ],
+          "smsHooks": [
+            "promo",
+            "événement",
+            "relance"
+          ]
+        }
+      ]
+    }
+  ]
+}

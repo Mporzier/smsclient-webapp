@@ -9,7 +9,6 @@ import {
   estimateSmsFromCredits,
   hasUserSentSms,
 } from "@/components/smsclient/views/dashboard/dashboardHelpers";
-import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { cn } from "@/lib/cn";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import { SMS_STOP_SUFFIX } from "@/lib/proto/smsStopMention";
@@ -40,8 +39,6 @@ type DashboardViewProps = {
   contacts: ContactRowData[];
   contactsLoading?: boolean;
   campaignsLoading?: boolean;
-  modelesSmsCount?: number;
-  modelesSmsLoading?: boolean;
   onNewCampaign: () => void;
   onGo: (hash: string) => void;
 };
@@ -298,13 +295,6 @@ function DashboardFirstVisit({
 }) {
   const [noticeDismissed, setNoticeDismissed] = useState(false);
 
-  const showGuide =
-    !contactsLoading &&
-    !campaignsLoading &&
-    contactsCount === 0 &&
-    groupsCount === 0 &&
-    campaignRows.length === 0;
-
   const steps = [
     {
       icon: UserPlus,
@@ -346,14 +336,6 @@ function DashboardFirstVisit({
 
       <div className="grid gap-3 min-[1100px]:grid-cols-[1fr_240px]">
         <div className="flex flex-col gap-3">
-          {showGuide && (
-            <SectionGuideCard
-              section="dashboard"
-              onPrimaryAction={onNewCampaign}
-              onNavigate={onGo}
-            />
-          )}
-
           <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card min-[900px]:grid-cols-4">
             {steps.map((step, index) => (
               <button
@@ -450,8 +432,6 @@ function DashboardReturning({
   contacts,
   contactsLoading,
   campaignsLoading,
-  modelesSmsCount = 0,
-  modelesSmsLoading = false,
   onGo,
 }: {
   greetingName: string;
@@ -466,16 +446,12 @@ function DashboardReturning({
   contacts: ContactRowData[];
   contactsLoading?: boolean;
   campaignsLoading?: boolean;
-  modelesSmsCount?: number;
-  modelesSmsLoading?: boolean;
   onGo: (hash: string) => void;
 }) {
   const activities = useMemo(
     () => buildRecentActivities(campaignRows, contacts),
     [campaignRows, contacts],
   );
-
-  const showGuide = !modelesSmsLoading && modelesSmsCount === 0;
 
   const creditsHint =
     creditsBalance > 0
@@ -500,10 +476,6 @@ function DashboardReturning({
 
       <div className="grid gap-3 min-[1100px]:grid-cols-[1fr_240px]">
         <div className="flex flex-col gap-3">
-          {showGuide && (
-            <SectionGuideCard section="modeles-sms" onNavigate={onGo} />
-          )}
-
           <section>
             <SectionTitle>Activités récentes</SectionTitle>
             {campaignsLoading ? (
@@ -614,8 +586,6 @@ export function DashboardView({
   contacts,
   contactsLoading = false,
   campaignsLoading = false,
-  modelesSmsCount = 0,
-  modelesSmsLoading = false,
   onNewCampaign,
   onGo,
 }: DashboardViewProps) {
@@ -653,8 +623,6 @@ export function DashboardView({
         contacts={contacts}
         contactsLoading={contactsLoading}
         campaignsLoading={campaignsLoading}
-        modelesSmsCount={modelesSmsCount}
-        modelesSmsLoading={modelesSmsLoading}
         onGo={onGo}
       />
     );

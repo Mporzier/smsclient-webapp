@@ -47,8 +47,6 @@ export function renderAudienceRoute(
           contacts={contactsState.rows}
           contactsLoading={contactsState.loading}
           campaignsLoading={campaignsState.loading}
-          modelesSmsCount={smsTemplatesState.rows.length}
-          modelesSmsLoading={smsTemplatesState.loading}
           onNewCampaign={() => wizard.openCampaignComposer()}
           onGo={wizard.guardedGo}
         />

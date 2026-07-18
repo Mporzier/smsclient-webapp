@@ -1,7 +1,6 @@
 "use client";
 
 import { SearchBar } from "@/components/smsclient/Shell";
-import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
@@ -186,15 +185,6 @@ export function ModelesSmsView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      {showBigEmpty && (
-        <SectionGuideCard
-          section="modeles-sms"
-          onPrimaryAction={() =>
-            document.getElementById("modeles-create-title")?.focus()
-          }
-        />
-      )}
-
       <div className={cn(fieldBox, "shrink-0 py-4")}>
         <div className="mb-3 flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-xl border border-ring/20 bg-accent text-ring">

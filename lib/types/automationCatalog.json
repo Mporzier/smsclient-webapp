@@ -1,0 +1,1834 @@
+{
+  "version": 1,
+  "activityGroups": {
+    "all": [
+      "*"
+    ],
+    "commerce": [
+      "cbd_shop",
+      "cigarette_electronique",
+      "fleuriste",
+      "concept_store",
+      "mode",
+      "caviste",
+      "transports",
+      "epicerie",
+      "boucherie",
+      "bijouterie",
+      "animalerie",
+      "mercerie",
+      "magasin_jouet",
+      "concessionnaire",
+      "tabac_presse",
+      "librairie",
+      "jardinerie",
+      "decoration_maison",
+      "sport_retail",
+      "high_tech",
+      "parfumerie",
+      "centre_commerciaux"
+    ],
+    "retail": [
+      "cbd_shop",
+      "cigarette_electronique",
+      "fleuriste",
+      "concept_store",
+      "mode",
+      "caviste",
+      "transports",
+      "epicerie",
+      "boucherie",
+      "bijouterie",
+      "animalerie",
+      "mercerie",
+      "magasin_jouet",
+      "concessionnaire",
+      "tabac_presse",
+      "librairie",
+      "jardinerie",
+      "decoration_maison",
+      "sport_retail",
+      "high_tech",
+      "parfumerie",
+      "centre_commerciaux"
+    ],
+    "retail_ecommerce": [
+      "cbd_shop",
+      "cigarette_electronique",
+      "fleuriste",
+      "concept_store",
+      "mode",
+      "caviste",
+      "transports",
+      "epicerie",
+      "bijouterie",
+      "animalerie",
+      "mercerie",
+      "magasin_jouet",
+      "librairie",
+      "jardinerie",
+      "decoration_maison",
+      "sport_retail",
+      "high_tech",
+      "parfumerie"
+    ],
+    "retail_pos": [
+      "cbd_shop",
+      "cigarette_electronique",
+      "fleuriste",
+      "concept_store",
+      "mode",
+      "caviste",
+      "transports",
+      "epicerie",
+      "boucherie",
+      "bijouterie",
+      "animalerie",
+      "mercerie",
+      "magasin_jouet",
+      "concessionnaire",
+      "tabac_presse",
+      "librairie",
+      "jardinerie",
+      "decoration_maison",
+      "sport_retail",
+      "high_tech",
+      "parfumerie",
+      "boulangerie",
+      "patisserie",
+      "chocolaterie",
+      "glacier"
+    ],
+    "restauration": [
+      "food_truck",
+      "poke_bowl",
+      "fast_food",
+      "salon_the",
+      "cafe",
+      "patisserie",
+      "chocolaterie",
+      "boulangerie",
+      "restaurant",
+      "bar",
+      "traiteur",
+      "brasserie",
+      "glacier",
+      "pizzeria",
+      "creperie"
+    ],
+    "restauration_resa": [
+      "restaurant",
+      "bar",
+      "brasserie",
+      "pizzeria",
+      "creperie",
+      "salon_the",
+      "traiteur"
+    ],
+    "restauration_delivery": [
+      "food_truck",
+      "poke_bowl",
+      "fast_food",
+      "pizzeria",
+      "restaurant",
+      "traiteur",
+      "brasserie"
+    ],
+    "services": [
+      "coworking",
+      "reparation_telephonique",
+      "pressing",
+      "garage_auto",
+      "auto_ecole"
+    ],
+    "services_rdv": [
+      "coworking",
+      "reparation_telephonique",
+      "pressing",
+      "garage_auto",
+      "auto_ecole",
+      "pharmacie",
+      "opticien",
+      "veterinaire",
+      "centre_sante",
+      "medecin",
+      "dentiste",
+      "kine",
+      "laboratoire",
+      "infirmier",
+      "bien_etre_beaute",
+      "coiffeur_barber",
+      "tattoo",
+      "agence_immobiliere",
+      "auto_ecole",
+      "photographe"
+    ],
+    "beaute": [
+      "bien_etre_beaute",
+      "coiffeur_barber",
+      "parfumerie",
+      "tattoo"
+    ],
+    "sante": [
+      "pharmacie",
+      "opticien",
+      "veterinaire",
+      "centre_sante",
+      "medecin",
+      "dentiste",
+      "kine",
+      "laboratoire",
+      "infirmier",
+      "bien_etre_beaute",
+      "coiffeur_barber",
+      "tattoo"
+    ],
+    "sante_liberal": [
+      "pharmacie",
+      "opticien",
+      "veterinaire",
+      "medecin",
+      "dentiste",
+      "kine",
+      "centre_sante",
+      "laboratoire",
+      "infirmier"
+    ],
+    "hotellerie_tourisme": [
+      "hotellerie",
+      "camping",
+      "office_tourisme"
+    ],
+    "hotellerie_loisirs": [
+      "hotellerie",
+      "camping",
+      "office_tourisme",
+      "parc_loisirs",
+      "jeux",
+      "coworking"
+    ],
+    "btp_immobilier": [
+      "entreprise_generale",
+      "plombier",
+      "electricien",
+      "maconnerie",
+      "peinture",
+      "menuiserie",
+      "couverture",
+      "architecte",
+      "agence_immobiliere",
+      "promoteur",
+      "syndic",
+      "gestion_locative",
+      "marchand_biens"
+    ],
+    "immobilier": [
+      "agence_immobiliere",
+      "promoteur",
+      "syndic",
+      "gestion_locative",
+      "marchand_biens"
+    ],
+    "btp": [
+      "entreprise_generale",
+      "plombier",
+      "electricien",
+      "maconnerie",
+      "peinture",
+      "menuiserie",
+      "couverture",
+      "architecte"
+    ],
+    "education_public": [
+      "universite",
+      "mairie",
+      "ecole_privee",
+      "avocat",
+      "comptable",
+      "notaire"
+    ],
+    "public_pro": [
+      "universite",
+      "mairie",
+      "ecole_privee",
+      "avocat",
+      "comptable",
+      "notaire",
+      "centre_sante",
+      "medecin",
+      "dentiste",
+      "kine"
+    ],
+    "loisirs_evenementiel": [
+      "parc_loisirs",
+      "jeux",
+      "salle_sport",
+      "photographe",
+      "wedding_planner",
+      "salle_reception",
+      "dj_animation",
+      "location_materiel_event",
+      "traiteur_evenementiel",
+      "agence_evenementielle"
+    ],
+    "evenementiel": [
+      "wedding_planner",
+      "salle_reception",
+      "dj_animation",
+      "location_materiel_event",
+      "traiteur_evenementiel",
+      "agence_evenementielle"
+    ],
+    "auto_mobilite": [
+      "concessionnaire",
+      "garage_auto",
+      "transports",
+      "auto_ecole"
+    ],
+    "fleuriste_cadeau": [
+      "fleuriste",
+      "chocolaterie",
+      "bijouterie",
+      "patisserie",
+      "librairie",
+      "parfumerie"
+    ]
+  },
+  "integrations": [
+    {
+      "id": "shopify",
+      "label": "Shopify",
+      "category": "ecommerce",
+      "status": "planned",
+      "description": "Boutique en ligne, commandes, paniers, clients."
+    },
+    {
+      "id": "woocommerce",
+      "label": "WooCommerce",
+      "category": "ecommerce",
+      "status": "planned",
+      "description": "E-commerce WordPress."
+    },
+    {
+      "id": "prestashop",
+      "label": "PrestaShop",
+      "category": "ecommerce",
+      "status": "planned",
+      "description": "E-commerce FR / UE."
+    },
+    {
+      "id": "wix",
+      "label": "Wix",
+      "category": "ecommerce",
+      "status": "planned",
+      "description": "Site + boutique Wix."
+    },
+    {
+      "id": "sumup",
+      "label": "SumUp",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "TPE, caisse, paiements de proximité."
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "Paiements en ligne et Terminal."
+    },
+    {
+      "id": "paypal",
+      "label": "PayPal",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "Paiements et factures."
+    },
+    {
+      "id": "square",
+      "label": "Square",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "POS et paiements."
+    },
+    {
+      "id": "zettle",
+      "label": "PayPal Zettle",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "TPE / caisse PayPal."
+    },
+    {
+      "id": "lightspeed_retail",
+      "label": "Lightspeed Retail",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "Caisse commerce de détail."
+    },
+    {
+      "id": "lightspeed_restaurant",
+      "label": "Lightspeed Restaurant",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Caisse restaurant."
+    },
+    {
+      "id": "zelty",
+      "label": "Zelty",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Caisse & caisse en ligne restauration FR."
+    },
+    {
+      "id": "laddition",
+      "label": "L'Addition",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Caisse restaurant FR."
+    },
+    {
+      "id": "tiller",
+      "label": "Tiller (SumUp)",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Ancienne caisse Tiller / SumUp."
+    },
+    {
+      "id": "thefork",
+      "label": "TheFork",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Réservations restaurant."
+    },
+    {
+      "id": "zenchef",
+      "label": "Zenchef",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Réservations & CRM resto."
+    },
+    {
+      "id": "combo",
+      "label": "Combo",
+      "category": "restauration",
+      "status": "planned",
+      "description": "Réservations restaurant."
+    },
+    {
+      "id": "deliveroo",
+      "label": "Deliveroo",
+      "category": "livraison",
+      "status": "planned",
+      "description": "Commandes livraison."
+    },
+    {
+      "id": "uber_eats",
+      "label": "Uber Eats",
+      "category": "livraison",
+      "status": "planned",
+      "description": "Commandes livraison."
+    },
+    {
+      "id": "just_eat",
+      "label": "Just Eat",
+      "category": "livraison",
+      "status": "planned",
+      "description": "Commandes livraison."
+    },
+    {
+      "id": "planity",
+      "label": "Planity",
+      "category": "rdv",
+      "status": "planned",
+      "description": "Agenda beauté / coiffure FR."
+    },
+    {
+      "id": "treatwell",
+      "label": "Treatwell",
+      "category": "rdv",
+      "status": "planned",
+      "description": "Réservations beauté."
+    },
+    {
+      "id": "calendly",
+      "label": "Calendly",
+      "category": "rdv",
+      "status": "planned",
+      "description": "Prise de RDV générique."
+    },
+    {
+      "id": "google_calendar",
+      "label": "Google Calendar",
+      "category": "rdv",
+      "status": "planned",
+      "description": "Agenda Google."
+    },
+    {
+      "id": "simplybook",
+      "label": "SimplyBook.me",
+      "category": "rdv",
+      "status": "planned",
+      "description": "Booking multi-métiers."
+    },
+    {
+      "id": "doctolib",
+      "label": "Doctolib",
+      "category": "sante",
+      "status": "planned",
+      "description": "RDV santé."
+    },
+    {
+      "id": "maiia",
+      "label": "Maiia",
+      "category": "sante",
+      "status": "planned",
+      "description": "RDV santé / pharma."
+    },
+    {
+      "id": "booking",
+      "label": "Booking.com",
+      "category": "hotellerie",
+      "status": "planned",
+      "description": "Réservations hébergement."
+    },
+    {
+      "id": "airbnb",
+      "label": "Airbnb",
+      "category": "hotellerie",
+      "status": "planned",
+      "description": "Locations courte durée."
+    },
+    {
+      "id": "google_business",
+      "label": "Google Business Profile",
+      "category": "local",
+      "status": "planned",
+      "description": "Fiche Google, avis, posts."
+    },
+    {
+      "id": "meta",
+      "label": "Meta (Facebook / Instagram)",
+      "category": "social",
+      "status": "planned",
+      "description": "Leads, messages, pubs."
+    },
+    {
+      "id": "mailchimp",
+      "label": "Mailchimp",
+      "category": "crm",
+      "status": "planned",
+      "description": "Listes / sync contacts."
+    },
+    {
+      "id": "hubspot",
+      "label": "HubSpot",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM & pipelines."
+    },
+    {
+      "id": "odoo",
+      "label": "Odoo",
+      "category": "erp",
+      "status": "planned",
+      "description": "ERP / caisse / RDV."
+    },
+    {
+      "id": "zapier",
+      "label": "Zapier",
+      "category": "iPaaS",
+      "status": "planned",
+      "description": "Pont générique vers des centaines d’apps."
+    },
+    {
+      "id": "make",
+      "label": "Make",
+      "category": "iPaaS",
+      "status": "planned",
+      "description": "Automatisations multi-apps."
+    },
+    {
+      "id": "google_sheets",
+      "label": "Google Sheets",
+      "category": "data",
+      "status": "planned",
+      "description": "Import / sync contacts depuis tableur."
+    },
+    {
+      "id": "seloger",
+      "label": "SeLoger",
+      "category": "immobilier",
+      "status": "planned",
+      "description": "Annonces & leads immo."
+    },
+    {
+      "id": "leboncoin",
+      "label": "Leboncoin",
+      "category": "immobilier",
+      "status": "planned",
+      "description": "Annonces & leads."
+    },
+    {
+      "id": "funecap",
+      "label": "Logiciel caisse métier",
+      "category": "pos_paiement",
+      "status": "planned",
+      "description": "Caisses verticales (pharma, optique, etc.)."
+    },
+    {
+      "id": "native",
+      "label": "SmsClient (natif)",
+      "category": "native",
+      "status": "available",
+      "description": "Déclencheurs basés sur contacts / dates internes."
+    }
+  ],
+  "automations": [
+    {
+      "id": "birthday",
+      "label": "Anniversaire client",
+      "description": "SMS le jour anniversaire si date renseignée.",
+      "kind": "birthday",
+      "status": "available",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Joyeux anniversaire {prenom} ! Toute l'équipe vous souhaite une excellente journée.",
+      "tags": [
+        "calendrier",
+        "fidelisation"
+      ],
+      "relevance": 5
+    },
+    {
+      "id": "saint_valentin",
+      "label": "Saint-Valentin",
+      "description": "Campagne calendaire 14 février.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 2,
+      "fixedDay": 14,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Saint-Valentin : une pensée pour vous {prenom}. Passez une belle journée !",
+      "tags": [
+        "calendrier",
+        "cadeau"
+      ],
+      "relevance": 5
+    },
+    {
+      "id": "noel",
+      "label": "Noël",
+      "description": "Vœux / offre fin d’année.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 12,
+      "fixedDay": 24,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Joyeux Noël {prenom} ! Meilleurs vœux de la part de toute l'équipe.",
+      "tags": [
+        "calendrier"
+      ],
+      "relevance": 5
+    },
+    {
+      "id": "nouvel_an",
+      "label": "Nouvel An",
+      "description": "Vœux le 1er janvier.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 1,
+      "fixedDay": 1,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Bonne année {prenom} ! Tous nos vœux de bonheur et de réussite.",
+      "tags": [
+        "calendrier"
+      ],
+      "relevance": 5
+    },
+    {
+      "id": "fete_des_meres",
+      "label": "Fête des mères",
+      "description": "Rappel / offre fête des mères.",
+      "kind": "fixed_date",
+      "status": "available",
+      "activityGroups": [
+        "fleuriste_cadeau",
+        "restauration",
+        "retail"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "sumup"
+      ],
+      "defaultBody": "Bonne fête des mères {prenom} ! Pensez à commander / réserver dès maintenant.",
+      "tags": [
+        "calendrier",
+        "cadeau"
+      ],
+      "relevance": 4
+    },
+    {
+      "id": "fete_des_peres",
+      "label": "Fête des pères",
+      "description": "Rappel / offre fête des pères.",
+      "kind": "fixed_date",
+      "status": "planned",
+      "activityGroups": [
+        "fleuriste_cadeau",
+        "restauration",
+        "retail"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "sumup"
+      ],
+      "defaultBody": "Fête des pères approche {prenom} ! Découvrez nos idées cadeaux.",
+      "tags": [
+        "calendrier",
+        "cadeau"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "soldes",
+      "label": "Soldes (hiver / été)",
+      "description": "Ouverture soldes + accès anticipé VIP.",
+      "kind": "fixed_date",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce",
+        "retail_pos"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "sumup",
+        "lightspeed_retail"
+      ],
+      "defaultBody": "{prenom}, les soldes commencent ! -30 % sur une sélection en boutique et en ligne.",
+      "tags": [
+        "promo",
+        "retail"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "black_friday",
+      "label": "Black Friday",
+      "description": "Offre flash Black Friday / Cyber Monday.",
+      "kind": "fixed_date",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce"
+      ],
+      "businessActivityIds": [
+        "high_tech",
+        "mode",
+        "concept_store",
+        "sport_retail",
+        "parfumerie",
+        "decoration_maison",
+        "cbd_shop",
+        "cigarette_electronique"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "meta"
+      ],
+      "defaultBody": "{prenom}, Black Friday : offre flash 48h ! Ne manquez pas nos meilleures remises.",
+      "tags": [
+        "promo"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "welcome_contact",
+      "label": "Bienvenue nouveau contact",
+      "description": "SMS après ajout / 1re inscription (QR, formulaire, import).",
+      "kind": "event",
+      "trigger": "contact.created",
+      "status": "planned",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native",
+        "zapier",
+        "make",
+        "meta",
+        "google_sheets"
+      ],
+      "defaultBody": "Bienvenue {prenom} ! Merci de nous rejoindre. Répondez STOP pour vous désinscrire.",
+      "tags": [
+        "onboarding"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "inactive_reactivation",
+      "label": "Relance client inactif",
+      "description": "Relance si pas d’achat / visite depuis N jours.",
+      "kind": "event",
+      "trigger": "contact.inactive",
+      "status": "planned",
+      "activityGroups": [
+        "retail",
+        "restauration",
+        "services_rdv",
+        "beaute"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "sumup",
+        "woocommerce",
+        "prestashop",
+        "planity",
+        "zelty"
+      ],
+      "defaultBody": "{prenom}, ça fait un moment ! Profitez de -15 % sur votre prochaine visite.",
+      "tags": [
+        "fidelisation",
+        "relance"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "review_request",
+      "label": "Demande d’avis Google",
+      "description": "Après achat / RDV / séjour, demande d’avis fiche Google.",
+      "kind": "event",
+      "trigger": "transaction.completed",
+      "status": "planned",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "google_business",
+        "sumup",
+        "shopify",
+        "planity",
+        "doctolib",
+        "thefork",
+        "booking",
+        "zelty"
+      ],
+      "defaultBody": "Merci {prenom} ! Votre avis nous aide beaucoup : {lien_avis}",
+      "tags": [
+        "avis",
+        "local"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "abandoned_cart",
+      "label": "Panier abandonné",
+      "description": "Relance SMS après abandon de checkout e-commerce.",
+      "kind": "event",
+      "trigger": "checkout.abandoned",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce"
+      ],
+      "integrationIds": [
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "wix",
+        "stripe"
+      ],
+      "defaultBody": "{prenom}, votre panier vous attend ! Finalisez avant qu'il n'expire — {lien_panier}",
+      "tags": [
+        "ecommerce",
+        "conversion"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "order_confirmed",
+      "label": "Confirmation de commande",
+      "description": "Accusé de réception commande en ligne.",
+      "kind": "event",
+      "trigger": "order.created",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce",
+        "restauration_delivery"
+      ],
+      "integrationIds": [
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "stripe",
+        "deliveroo",
+        "uber_eats",
+        "just_eat"
+      ],
+      "defaultBody": "Commande confirmée {prenom} ! N° {numero_commande}. On s'occupe de tout.",
+      "tags": [
+        "ecommerce",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "order_shipped",
+      "label": "Commande expédiée",
+      "description": "SMS avec lien suivi colis.",
+      "kind": "event",
+      "trigger": "order.shipped",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce"
+      ],
+      "integrationIds": [
+        "shopify",
+        "woocommerce",
+        "prestashop"
+      ],
+      "defaultBody": "{prenom}, votre colis est en route ! Suivi : {lien_suivi}",
+      "tags": [
+        "ecommerce",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "order_ready_pickup",
+      "label": "Commande prête à retirer",
+      "description": "Click & collect / retrait magasin.",
+      "kind": "event",
+      "trigger": "order.ready_for_pickup",
+      "status": "planned",
+      "activityGroups": [
+        "retail_pos",
+        "restauration"
+      ],
+      "businessActivityIds": [
+        "pharmacie",
+        "opticien",
+        "pressing",
+        "reparation_telephonique",
+        "boulangerie",
+        "patisserie",
+        "fleuriste",
+        "high_tech",
+        "cbd_shop",
+        "cigarette_electronique",
+        "mode",
+        "concept_store"
+      ],
+      "integrationIds": [
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "sumup",
+        "zelty",
+        "lightspeed_retail"
+      ],
+      "defaultBody": "{prenom}, votre commande est prête ! Passez la retirer quand vous voulez.",
+      "tags": [
+        "click_collect",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "pos_thank_you",
+      "label": "Remerciement après paiement TPE",
+      "description": "SMS post-ticket SumUp / Stripe Terminal / Square.",
+      "kind": "event",
+      "trigger": "payment.succeeded",
+      "status": "planned",
+      "activityGroups": [
+        "retail_pos",
+        "restauration",
+        "beaute",
+        "services_rdv"
+      ],
+      "integrationIds": [
+        "sumup",
+        "stripe",
+        "square",
+        "zettle",
+        "lightspeed_retail",
+        "zelty"
+      ],
+      "defaultBody": "Merci {prenom} pour votre visite ! À très bientôt.",
+      "tags": [
+        "pos",
+        "fidelisation"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "loyalty_points_expiring",
+      "label": "Points fidélité bientôt expirés",
+      "description": "Rappel d’utiliser un solde / avantage fidélité.",
+      "kind": "event",
+      "trigger": "loyalty.points_expiring",
+      "status": "planned",
+      "activityGroups": [
+        "retail",
+        "restauration",
+        "beaute"
+      ],
+      "integrationIds": [
+        "shopify",
+        "sumup",
+        "odoo",
+        "zelty",
+        "planity",
+        "native"
+      ],
+      "defaultBody": "{prenom}, vos avantages fidélité expirent bientôt ! Venez en profiter.",
+      "tags": [
+        "fidelisation"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "new_collection",
+      "label": "Nouvelle collection / arrivage",
+      "description": "Annonce nouveautés boutique ou stock.",
+      "kind": "manual_or_event",
+      "trigger": "catalog.updated",
+      "status": "planned",
+      "activityGroups": [
+        "retail_ecommerce"
+      ],
+      "businessActivityIds": [
+        "mode",
+        "concept_store",
+        "fleuriste",
+        "caviste",
+        "librairie",
+        "decoration_maison",
+        "sport_retail",
+        "parfumerie",
+        "bijouterie",
+        "high_tech",
+        "cbd_shop",
+        "cigarette_electronique",
+        "magasin_jouet"
+      ],
+      "integrationIds": [
+        "shopify",
+        "woocommerce",
+        "prestashop",
+        "meta",
+        "native"
+      ],
+      "defaultBody": "{prenom}, nouveautés en boutique ! Venez découvrir notre dernière sélection.",
+      "tags": [
+        "retail",
+        "nouveauté"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "flash_promo",
+      "label": "Promo flash 24–48h",
+      "description": "Offre courte durée push SMS.",
+      "kind": "manual",
+      "status": "planned",
+      "activityGroups": [
+        "retail",
+        "restauration",
+        "beaute"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "sumup",
+        "meta"
+      ],
+      "defaultBody": "{prenom}, offre flash 48h : -20 % ! Présentez ce SMS.",
+      "tags": [
+        "promo"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "reservation_confirm",
+      "label": "Confirmation de réservation",
+      "description": "Accusé réservation table / activité.",
+      "kind": "event",
+      "trigger": "reservation.created",
+      "status": "planned",
+      "activityGroups": [
+        "restauration_resa",
+        "hotellerie_loisirs"
+      ],
+      "businessActivityIds": [
+        "restaurant",
+        "bar",
+        "brasserie",
+        "pizzeria",
+        "creperie",
+        "salon_the",
+        "traiteur",
+        "hotellerie",
+        "camping",
+        "jeux",
+        "parc_loisirs",
+        "coworking"
+      ],
+      "integrationIds": [
+        "thefork",
+        "zenchef",
+        "combo",
+        "lightspeed_restaurant",
+        "zelty",
+        "booking",
+        "simplybook"
+      ],
+      "defaultBody": "Réservation confirmée {prenom} : {date} à {heure} pour {couverts} pers. À bientôt !",
+      "tags": [
+        "réservation",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "reservation_reminder",
+      "label": "Rappel réservation J-1",
+      "description": "Rappel veille pour réduire no-show.",
+      "kind": "event",
+      "trigger": "reservation.reminder_24h",
+      "status": "planned",
+      "activityGroups": [
+        "restauration_resa",
+        "hotellerie_loisirs"
+      ],
+      "businessActivityIds": [
+        "restaurant",
+        "bar",
+        "brasserie",
+        "pizzeria",
+        "creperie",
+        "traiteur",
+        "hotellerie",
+        "camping",
+        "jeux",
+        "parc_loisirs"
+      ],
+      "integrationIds": [
+        "thefork",
+        "zenchef",
+        "combo",
+        "booking",
+        "zelty",
+        "simplybook"
+      ],
+      "defaultBody": "Rappel {prenom} : demain {heure}, nous vous attendons. Prévenez-nous si empêchement.",
+      "tags": [
+        "réservation",
+        "no_show"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "waitlist_table",
+      "label": "File d’attente / table libre",
+      "description": "SMS quand une table ou un créneau se libère.",
+      "kind": "event",
+      "trigger": "waitlist.available",
+      "status": "planned",
+      "activityGroups": [
+        "restauration_resa",
+        "hotellerie_loisirs"
+      ],
+      "businessActivityIds": [
+        "jeux",
+        "parc_loisirs"
+      ],
+      "integrationIds": [
+        "thefork",
+        "zenchef",
+        "combo",
+        "zelty",
+        "simplybook"
+      ],
+      "defaultBody": "{prenom}, une place s'est libérée ! Confirmez sous 15 min : {lien}",
+      "tags": [
+        "réservation"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "menu_du_jour",
+      "label": "Menu / plat du jour",
+      "description": "Push quotidien ou hebdo carte du jour.",
+      "kind": "schedule",
+      "trigger": "cron.daily",
+      "status": "planned",
+      "activityGroups": [
+        "restauration"
+      ],
+      "integrationIds": [
+        "native",
+        "zelty",
+        "laddition",
+        "lightspeed_restaurant",
+        "meta"
+      ],
+      "defaultBody": "Bonjour {prenom}, menu du jour : {menu}. On vous attend !",
+      "tags": [
+        "restauration",
+        "contenu"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "happy_hour",
+      "label": "Happy hour / soirée",
+      "description": "Annonce happy hour, live, brunch.",
+      "kind": "manual_or_schedule",
+      "status": "planned",
+      "businessActivityIds": [
+        "bar",
+        "cafe",
+        "brasserie",
+        "restaurant",
+        "salon_the"
+      ],
+      "integrationIds": [
+        "native",
+        "meta",
+        "zelty"
+      ],
+      "defaultBody": "{prenom}, happy hour ce soir 18h-20h : -30 % sur les cocktails !",
+      "tags": [
+        "restauration",
+        "promo"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "delivery_status",
+      "label": "Statut livraison repas",
+      "description": "Prise en charge / en route / livré.",
+      "kind": "event",
+      "trigger": "delivery.status_changed",
+      "status": "planned",
+      "activityGroups": [
+        "restauration_delivery"
+      ],
+      "integrationIds": [
+        "deliveroo",
+        "uber_eats",
+        "just_eat",
+        "zelty",
+        "shopify"
+      ],
+      "defaultBody": "{prenom}, votre commande est {statut}. ETA : {eta}.",
+      "tags": [
+        "livraison",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "appointment_confirm",
+      "label": "Confirmation de RDV",
+      "description": "Accusé après prise de rendez-vous.",
+      "kind": "event",
+      "trigger": "appointment.created",
+      "status": "planned",
+      "activityGroups": [
+        "services_rdv",
+        "beaute",
+        "sante_liberal",
+        "auto_mobilite"
+      ],
+      "integrationIds": [
+        "planity",
+        "treatwell",
+        "doctolib",
+        "maiia",
+        "calendly",
+        "google_calendar",
+        "simplybook"
+      ],
+      "defaultBody": "RDV confirmé {prenom} : {date} à {heure}. Adresse : {lieu}.",
+      "tags": [
+        "rdv",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "appointment_reminder_24h",
+      "label": "Rappel RDV J-1",
+      "description": "Rappel 24h avant pour limiter les absences.",
+      "kind": "event",
+      "trigger": "appointment.reminder_24h",
+      "status": "planned",
+      "activityGroups": [
+        "services_rdv",
+        "beaute",
+        "sante_liberal",
+        "auto_mobilite",
+        "public_pro"
+      ],
+      "integrationIds": [
+        "planity",
+        "treatwell",
+        "doctolib",
+        "maiia",
+        "calendly",
+        "google_calendar",
+        "simplybook",
+        "native"
+      ],
+      "defaultBody": "Rappel {prenom} : RDV demain à {heure}. Répondez ANNULER si besoin.",
+      "tags": [
+        "rdv",
+        "no_show"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "appointment_reminder_2h",
+      "label": "Rappel RDV H-2",
+      "description": "Rappel court avant le créneau.",
+      "kind": "event",
+      "trigger": "appointment.reminder_2h",
+      "status": "planned",
+      "activityGroups": [
+        "beaute",
+        "sante_liberal"
+      ],
+      "businessActivityIds": [
+        "coiffeur_barber",
+        "bien_etre_beaute",
+        "tattoo",
+        "medecin",
+        "dentiste",
+        "kine",
+        "veterinaire",
+        "garage_auto",
+        "reparation_telephonique",
+        "opticien"
+      ],
+      "integrationIds": [
+        "planity",
+        "doctolib",
+        "maiia",
+        "simplybook",
+        "treatwell"
+      ],
+      "defaultBody": "{prenom}, RDV dans 2h ({heure}). À tout de suite !",
+      "tags": [
+        "rdv"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "appointment_cancel_fill",
+      "label": "Créneau libéré → liste d’attente",
+      "description": "Propose un créneau annulé aux contacts en attente.",
+      "kind": "event",
+      "trigger": "appointment.slot_freed",
+      "status": "planned",
+      "activityGroups": [
+        "beaute",
+        "sante_liberal",
+        "services_rdv"
+      ],
+      "integrationIds": [
+        "planity",
+        "doctolib",
+        "treatwell",
+        "simplybook",
+        "maiia"
+      ],
+      "defaultBody": "{prenom}, un créneau s'est libéré le {date} à {heure}. Répondez OUI pour le prendre.",
+      "tags": [
+        "rdv",
+        "optimisation"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "rebook_cycle",
+      "label": "Rappel rebooking (cycle métier)",
+      "description": "Ex. coupe toutes les 6 sem., vidange, contrôle optique.",
+      "kind": "event",
+      "trigger": "appointment.rebook_due",
+      "status": "planned",
+      "businessActivityIds": [
+        "coiffeur_barber",
+        "bien_etre_beaute",
+        "opticien",
+        "dentiste",
+        "kine",
+        "veterinaire",
+        "garage_auto",
+        "pressing",
+        "salle_sport"
+      ],
+      "integrationIds": [
+        "planity",
+        "doctolib",
+        "maiia",
+        "treatwell",
+        "simplybook",
+        "native"
+      ],
+      "defaultBody": "{prenom}, il est temps de reprendre RDV ! Réservez votre prochain créneau.",
+      "tags": [
+        "rdv",
+        "fidelisation"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "prescription_ready",
+      "label": "Ordonnance / commande pharma prête",
+      "description": "Retrait ordonnance ou préparation prête.",
+      "kind": "event",
+      "trigger": "pharmacy.ready",
+      "status": "planned",
+      "businessActivityIds": [
+        "pharmacie"
+      ],
+      "integrationIds": [
+        "maiia",
+        "funecap",
+        "native"
+      ],
+      "defaultBody": "Bonjour {prenom}, votre préparation est prête à retirer en pharmacie.",
+      "tags": [
+        "sante",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "optical_ready",
+      "label": "Lunettes / lentilles prêtes",
+      "description": "Retrait commande optique.",
+      "kind": "event",
+      "trigger": "order.ready_for_pickup",
+      "status": "planned",
+      "businessActivityIds": [
+        "opticien"
+      ],
+      "integrationIds": [
+        "funecap",
+        "sumup",
+        "native"
+      ],
+      "defaultBody": "{prenom}, vos lunettes sont prêtes ! Passez quand vous voulez.",
+      "tags": [
+        "sante",
+        "click_collect"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "repair_device_ready",
+      "label": "Réparation terminée",
+      "description": "Appareil / véhicule prêt.",
+      "kind": "event",
+      "trigger": "repair.completed",
+      "status": "planned",
+      "businessActivityIds": [
+        "reparation_telephonique",
+        "garage_auto",
+        "pressing",
+        "high_tech"
+      ],
+      "integrationIds": [
+        "sumup",
+        "simplybook",
+        "native",
+        "google_calendar"
+      ],
+      "defaultBody": "{prenom}, c'est prêt ! Vous pouvez passer retirer dès maintenant.",
+      "tags": [
+        "services",
+        "transactionnel"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "hotel_pre_arrival",
+      "label": "Pré-arrivée séjour",
+      "description": "Infos check-in, Wi-Fi, horaires avant arrivée.",
+      "kind": "event",
+      "trigger": "booking.pre_arrival",
+      "status": "planned",
+      "businessActivityIds": [
+        "hotellerie",
+        "camping"
+      ],
+      "integrationIds": [
+        "booking",
+        "airbnb",
+        "native"
+      ],
+      "defaultBody": "À bientôt {prenom} ! Check-in à partir de {heure}. Infos : {lien}",
+      "tags": [
+        "hotellerie"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "hotel_checkout_thanks",
+      "label": "Post-séjour + avis",
+      "description": "Remerciement + demande avis après checkout.",
+      "kind": "event",
+      "trigger": "booking.checked_out",
+      "status": "planned",
+      "businessActivityIds": [
+        "hotellerie",
+        "camping"
+      ],
+      "integrationIds": [
+        "booking",
+        "airbnb",
+        "google_business"
+      ],
+      "defaultBody": "Merci {prenom} pour votre séjour ! Un avis ? {lien_avis}",
+      "tags": [
+        "hotellerie",
+        "avis"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "immo_lead_followup",
+      "label": "Relance lead immobilier",
+      "description": "Suite à une demande de visite / contact annonce.",
+      "kind": "event",
+      "trigger": "lead.created",
+      "status": "planned",
+      "businessActivityIds": [
+        "agence_immobiliere"
+      ],
+      "integrationIds": [
+        "seloger",
+        "leboncoin",
+        "hubspot",
+        "zapier",
+        "make"
+      ],
+      "defaultBody": "Bonjour {prenom}, suite à votre intérêt pour le bien : proposons une visite ?",
+      "tags": [
+        "lead",
+        "immobilier"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "immo_visit_reminder",
+      "label": "Rappel visite bien",
+      "description": "Rappel J-1 visite immobilière.",
+      "kind": "event",
+      "trigger": "appointment.reminder_24h",
+      "status": "planned",
+      "businessActivityIds": [
+        "agence_immobiliere"
+      ],
+      "integrationIds": [
+        "calendly",
+        "google_calendar",
+        "seloger",
+        "native"
+      ],
+      "defaultBody": "Rappel {prenom} : visite demain à {heure}, {adresse}.",
+      "tags": [
+        "immobilier",
+        "rdv"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "auto_essai_reminder",
+      "label": "Rappel essai véhicule",
+      "description": "Confirmation / rappel essai concession.",
+      "kind": "event",
+      "trigger": "appointment.reminder_24h",
+      "status": "planned",
+      "businessActivityIds": [
+        "concessionnaire",
+        "transports",
+        "auto_ecole"
+      ],
+      "integrationIds": [
+        "calendly",
+        "google_calendar",
+        "simplybook",
+        "native"
+      ],
+      "defaultBody": "{prenom}, essai prévu demain à {heure}. Merci d'arriver 10 min avant.",
+      "tags": [
+        "auto",
+        "rdv"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "garage_ct_reminder",
+      "label": "Rappel contrôle technique / entretien",
+      "description": "Échéance entretien ou CT.",
+      "kind": "event",
+      "trigger": "vehicle.service_due",
+      "status": "planned",
+      "businessActivityIds": [
+        "garage_auto",
+        "concessionnaire"
+      ],
+      "integrationIds": [
+        "native",
+        "google_calendar",
+        "sumup",
+        "odoo"
+      ],
+      "defaultBody": "{prenom}, pensez à l'entretien de votre véhicule. Prenez RDV au garage !",
+      "tags": [
+        "auto",
+        "relance"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "fitness_class_reminder",
+      "label": "Rappel cours / séance",
+      "description": "Rappel créneau sport / activité.",
+      "kind": "event",
+      "trigger": "appointment.reminder_24h",
+      "status": "planned",
+      "businessActivityIds": [
+        "salle_sport",
+        "jeux",
+        "parc_loisirs",
+        "coworking"
+      ],
+      "integrationIds": [
+        "simplybook",
+        "calendly",
+        "google_calendar",
+        "native"
+      ],
+      "defaultBody": "{prenom}, rappel : {activite} demain à {heure}. Annulation via {lien}.",
+      "tags": [
+        "loisirs",
+        "rdv"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "school_reminder",
+      "label": "Rappel inscription / réunion",
+      "description": "Infos parents / élèves (école, uni, mairie).",
+      "kind": "event",
+      "trigger": "event.reminder",
+      "status": "planned",
+      "businessActivityIds": [
+        "ecole_privee",
+        "universite",
+        "mairie",
+        "office_tourisme"
+      ],
+      "integrationIds": [
+        "native",
+        "google_calendar",
+        "google_sheets",
+        "zapier"
+      ],
+      "defaultBody": "Info {prenom} : {evenement} le {date} à {heure}.",
+      "tags": [
+        "public",
+        "info"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "legal_rdv_reminder",
+      "label": "Rappel RDV cabinet (droit / chiffre)",
+      "description": "Avocat, notaire, comptable.",
+      "kind": "event",
+      "trigger": "appointment.reminder_24h",
+      "status": "planned",
+      "businessActivityIds": [
+        "avocat",
+        "notaire",
+        "comptable"
+      ],
+      "integrationIds": [
+        "calendly",
+        "google_calendar",
+        "hubspot",
+        "native"
+      ],
+      "defaultBody": "Rappel {prenom} : RDV demain à {heure}. Documents à prévoir : {docs}.",
+      "tags": [
+        "public",
+        "rdv"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "mall_event",
+      "label": "Événement centre commercial",
+      "description": "Animation, soldes mall, horaires exceptionnels.",
+      "kind": "manual",
+      "status": "planned",
+      "businessActivityIds": [
+        "centre_commerciaux"
+      ],
+      "integrationIds": [
+        "native",
+        "meta",
+        "google_business"
+      ],
+      "defaultBody": "{prenom}, rendez-vous ce week-end pour {evenement} ! Horaires : {horaires}.",
+      "tags": [
+        "retail",
+        "événement"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "food_truck_location",
+      "label": "Emplacement du jour (food truck)",
+      "description": "Où se trouve le camion aujourd’hui.",
+      "kind": "schedule",
+      "trigger": "cron.daily",
+      "status": "planned",
+      "businessActivityIds": [
+        "food_truck"
+      ],
+      "integrationIds": [
+        "native",
+        "meta",
+        "google_business",
+        "google_sheets"
+      ],
+      "defaultBody": "{prenom}, aujourd'hui on est à {lieu} de {heure_debut} à {heure_fin} !",
+      "tags": [
+        "restauration",
+        "local"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "flower_occasion",
+      "label": "Rappel dates florales / cadeaux",
+      "description": "Fêtes, anniversaires couple, commandes anticipées.",
+      "kind": "fixed_date",
+      "status": "planned",
+      "activityGroups": [
+        "fleuriste_cadeau"
+      ],
+      "integrationIds": [
+        "native",
+        "shopify",
+        "sumup",
+        "woocommerce"
+      ],
+      "defaultBody": "{prenom}, {occasion} approche ! Réservez votre commande dès maintenant.",
+      "tags": [
+        "cadeau",
+        "calendrier"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "meta_lead_sms",
+      "label": "Lead Meta → SMS de qualification",
+      "description": "Nouveau lead Facebook/Instagram : premier SMS.",
+      "kind": "event",
+      "trigger": "lead.created",
+      "status": "planned",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "meta",
+        "zapier",
+        "make",
+        "hubspot"
+      ],
+      "defaultBody": "Bonjour {prenom}, merci pour votre intérêt ! On vous rappelle sous peu ou répondez à ce SMS.",
+      "tags": [
+        "lead",
+        "acquisition"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "sheets_sync_welcome",
+      "label": "Import Sheets → bienvenue",
+      "description": "Nouvelle ligne Google Sheets = contact + SMS welcome.",
+      "kind": "event",
+      "trigger": "sheets.row_added",
+      "status": "planned",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "google_sheets",
+        "zapier",
+        "make"
+      ],
+      "defaultBody": "Bienvenue {prenom} ! Vous êtes bien inscrit(e) à nos infos SMS.",
+      "tags": [
+        "onboarding",
+        "data"
+      ],
+      "relevance": 2
+    },
+    {
+      "id": "zapier_generic_webhook",
+      "label": "Webhook générique (Zapier / Make)",
+      "description": "Déclenche un SMS depuis n’importe quelle app connectée.",
+      "kind": "event",
+      "trigger": "webhook.inbound",
+      "status": "planned",
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "zapier",
+        "make"
+      ],
+      "defaultBody": "{message}",
+      "tags": [
+        "api",
+        "custom"
+      ],
+      "relevance": 2
+    }
+  ]
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
 import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -615,9 +614,6 @@ export function ContactsView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      {showBigEmpty && (
-        <SectionGuideCard section="contacts" onPrimaryAction={onAddContact} />
-      )}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <InputGroup
           className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"

@@ -80,7 +80,8 @@ export function OnboardingWizard() {
       return null;
     }
     if (s === 2) {
-      if (!form.businessActivity) return "Choisissez votre secteur d'activité.";
+      if (!form.businessActivity)
+        return "Choisissez votre type d'activité (secteur puis métier).";
       return null;
     }
     if (s === 3) {
@@ -137,7 +138,7 @@ export function OnboardingWizard() {
       case 1:
         return "Commençons par vous connaître.";
       case 2:
-        return "Quel est votre secteur d'activité ? Nous adapterons vos modèles SMS.";
+        return "Secteur puis métier précis — modèles SMS et automatisations adaptés.";
       case 3:
         return "Parlez-nous de votre commerce.";
       case 4:
@@ -245,11 +246,11 @@ export function OnboardingWizard() {
         {step === 2 && (
           <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <h2 className="m-0 text-base font-black text-foreground">
-              Secteur d&apos;activité
+              Votre activité
             </h2>
             <p className="m-0 text-sm font-semibold text-muted-foreground">
-              Choisissez votre domaine pour accéder à des modèles SMS prêts à
-              l&apos;emploi, adaptés à votre métier.
+              Choisissez d&apos;abord un secteur (retail, restauration…), puis
+              votre métier précis pour des modèles SMS adaptés.
             </p>
             <BusinessActivityPicker
               value={form.businessActivity}

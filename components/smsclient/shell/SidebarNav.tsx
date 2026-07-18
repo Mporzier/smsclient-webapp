@@ -4,7 +4,20 @@ import { cn } from "@/lib/cn";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  BarChart3, CalendarSync, CircleHelp, CircleUserRound, LayoutTemplate, Link, Megaphone, MessageSquareText, QrCode, Scale, Users, type LucideIcon,
+  BarChart3,
+  CalendarSync,
+  CircleHelp,
+  CircleUserRound,
+  Coins,
+  LayoutTemplate,
+  Link,
+  Megaphone,
+  MessageSquareText,
+  QrCode,
+  Scale,
+  Settings,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 import type { AppRoute } from "@/lib/proto/routes";
 
@@ -155,6 +168,25 @@ export const assistanceNav: NavItem[] = [
     icon: Scale,
   },
 ];
+
+/** Icône titre topbar — alignée sidebar / menu compte */
+export const ROUTE_ICONS: Record<AppRoute, LucideIcon> = {
+  dashboard: LayoutTemplate,
+  contacts: CircleUserRound,
+  groupes: Users,
+  campagnes: Megaphone,
+  automatisations: CalendarSync,
+  statistiques: BarChart3,
+  parametres: Settings,
+  "qr-boutique": QrCode,
+  liens: Link,
+  "modeles-sms": MessageSquareText,
+  "reglementations-sms": Scale,
+  aide: CircleHelp,
+  "soumettre-avis": MessageSquareText,
+  "nouvelle-campagne": Megaphone,
+  "acheter-credits": Coins,
+};
 
 export function SidebarHoverTooltip({
   label,

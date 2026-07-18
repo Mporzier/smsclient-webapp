@@ -1,6 +1,7 @@
 export type StatisticsKpis = {
   smsSent: number;
   deliveryRate: number | null;
+  inscriptionCount: number;
   stopCount: number;
   creditsConsumed: number;
 };

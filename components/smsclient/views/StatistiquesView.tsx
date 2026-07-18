@@ -8,8 +8,24 @@ import {
   brandBtnCls,
   brandBtnPrimaryCls,
 } from "@/components/smsclient/modals/modalChrome";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SectionGuideCard } from "@/components/smsclient/SectionGuideCard";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import {
@@ -18,7 +34,7 @@ import {
   type StatsPeriodPreset,
 } from "@/lib/statsDateRanges";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarRange,
   CheckCircle2,
@@ -31,6 +47,7 @@ import {
   Send,
   TriangleAlert,
   UserMinus,
+  UserPlus,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -97,8 +114,6 @@ export function StatistiquesView(props: StatsProps) {
     onExport,
     unsubscribedContacts = [],
   } = props;
-  const periodPickerRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
   const [chartWidth, setChartWidth] = useState(1000);
@@ -108,12 +123,6 @@ export function StatistiquesView(props: StatsProps) {
     appliedDateFrom,
     appliedDateTo
   );
-
-  const showGuide =
-    !loading &&
-    !error &&
-    data.kpis.smsSent === 0 &&
-    data.campaignSeries.length === 0;
 
   const kpis: KpiConfig[] = [
     {
@@ -136,6 +145,14 @@ export function StatistiquesView(props: StatsProps) {
       icon: CircleCheck,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
+    },
+    {
+      label: "Inscriptions",
+      value: formatStatsNumber(data.kpis.inscriptionCount),
+      hint: "via QR boutique sur la période",
+      icon: UserPlus,
+      iconBg: "bg-indigo-50",
+      iconColor: "text-indigo-600",
     },
     {
       label: "Désinscriptions",
@@ -185,19 +202,6 @@ export function StatistiquesView(props: StatsProps) {
     .map((point, idx) => `${xFor(idx)},${yFor(point.scheduled)}`)
     .join(" ");
 
-  const positionPop = useCallback(() => {
-    const anchor = periodPickerRef.current;
-    const pop = popRef.current;
-    if (!anchor || !pop) return;
-    const r = anchor.getBoundingClientRect();
-    const popW = pop.offsetWidth || 560;
-    const margin = 10;
-    let left = Math.min(window.innerWidth - popW - margin, r.right - popW);
-    left = Math.max(margin, left);
-    pop.style.left = `${left}px`;
-    pop.style.top = `${r.bottom + 12}px`;
-  }, []);
-
   useEffect(() => {
     const el = chartContainerRef.current;
     if (!el) return;
@@ -216,27 +220,6 @@ export function StatistiquesView(props: StatsProps) {
     setDateTo(appliedDateTo);
   }, [statsOpen, appliedDateFrom, appliedDateTo, setDateFrom, setDateTo]);
 
-  useEffect(() => {
-    if (!statsOpen) return;
-    positionPop();
-    const onResize = () => positionPop();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [statsOpen, positionPop]);
-
-  useEffect(() => {
-    if (!statsOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (popRef.current?.contains(t) || periodPickerRef.current?.contains(t)) {
-        return;
-      }
-      setStatsOpen(false);
-    };
-    document.addEventListener("click", onDoc);
-    return () => document.removeEventListener("click", onDoc);
-  }, [statsOpen, setStatsOpen]);
-
   return (
     <div className="relative -m-4 flex min-h-[calc(100dvh-60px)] w-full flex-col p-3 md:-m-5 md:p-4">
       <div
@@ -246,205 +229,342 @@ export function StatistiquesView(props: StatsProps) {
         )}
         aria-hidden={loading}
       >
-        {showGuide && (
-          <SectionGuideCard section="statistiques" className="shrink-0" />
-        )}
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2.5">
-            <button
-              ref={periodPickerRef}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setStatsOpen(!statsOpen);
-              }}
-              className={cn(
-                "flex h-11 cursor-pointer items-center gap-2 rounded-[14px] border border-slate-200 bg-white px-4 text-[14px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-colors hover:border-slate-300 hover:bg-slate-50",
-                statsOpen && "border-blue-200 bg-blue-50/50 text-blue-700",
-                statsPeriod === "custom" &&
-                  !statsOpen &&
-                  "border-blue-200 bg-blue-50/50"
-              )}
-              aria-expanded={statsOpen}
-              aria-haspopup="dialog"
+          <Popover open={statsOpen} onOpenChange={setStatsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className={cn(
+                  "h-11 gap-2 rounded-[14px] border-slate-200 bg-white px-4 text-[14px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:border-slate-300 hover:bg-slate-50",
+                  statsOpen && "border-blue-200 bg-blue-50/50 text-blue-700",
+                  statsPeriod === "custom" &&
+                    !statsOpen &&
+                    "border-blue-200 bg-blue-50/50"
+                )}
+              >
+                <CalendarRange
+                  className="h-[18px] w-[18px] shrink-0 text-blue-600"
+                  aria-hidden
+                />
+                {periodLabel}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              sideOffset={12}
+              className="w-[min(560px,calc(100vw-20px))] gap-0 overflow-hidden rounded-[18px] p-0"
+              aria-label="Choisir une période"
             >
-              <CalendarRange
-                className="h-[18px] w-[18px] shrink-0 text-blue-600"
-                aria-hidden
-              />
-              {periodLabel}
-            </button>
-            <Button
-              variant="default"
-              size="lg"
-              className={brandBtnPrimaryCls}
-              onClick={onExport}
-            >
-              Exporter
-            </Button>
+              <PopoverHeader className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3">
+                <PopoverTitle className="text-base font-black text-slate-900">
+                  Période
+                </PopoverTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 rounded-xl"
+                  aria-label="Fermer"
+                  onClick={() => setStatsOpen(false)}
+                >
+                  <X className="h-5 w-5" aria-hidden />
+                </Button>
+              </PopoverHeader>
+              <div className="flex flex-col sm:flex-row">
+                <div className="min-w-0 flex-1 p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
+                      <Label
+                        htmlFor="stats-date-from"
+                        className="text-sm font-black text-slate-600"
+                      >
+                        Du
+                      </Label>
+                      <DatePicker
+                        id="stats-date-from"
+                        value={dateFrom}
+                        onChange={setDateFrom}
+                        className="h-[46px] rounded-[14px] text-base font-black"
+                        contentClassName="z-[10050]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
+                      <Label
+                        htmlFor="stats-date-to"
+                        className="text-sm font-black text-slate-600"
+                      >
+                        Au
+                      </Label>
+                      <DatePicker
+                        id="stats-date-to"
+                        value={dateTo}
+                        onChange={setDateTo}
+                        className="h-[46px] rounded-[14px] text-base font-black"
+                        contentClassName="z-[10050]"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className={brandBtnCls}
+                      onClick={() => setStatsOpen(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className={brandBtnPrimaryCls}
+                      onClick={() => {
+                        applyRange();
+                        setStatsOpen(false);
+                      }}
+                    >
+                      Appliquer
+                    </Button>
+                  </div>
+                </div>
+                <div className="border-t border-slate-200 bg-slate-50/60 p-3 sm:w-[188px] sm:border-t-0 sm:border-l">
+                  <p className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
+                    Raccourcis
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {PERIOD_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => onSelectPeriod(preset.id)}
+                        className={quickPresetBtnCls(statsPeriod === preset.id)}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="default"
+            size="lg"
+            className={brandBtnPrimaryCls}
+            onClick={onExport}
+          >
+            Exporter
+          </Button>
         </div>
 
-        <div className="grid shrink-0 grid-cols-4 gap-3 max-[1200px]:grid-cols-2">
+        <div className="grid shrink-0 grid-cols-5 gap-3 max-[1400px]:grid-cols-3 max-[900px]:grid-cols-2">
           {kpis.map((kpi) => {
             const isUnsub = kpi.label === "Désinscriptions";
             const Icon = kpi.icon;
             return (
-              <div
+              <Card
                 key={kpi.label}
-                className="flex min-h-[108px] items-center gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
+                className="min-h-[108px] py-0 shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
               >
-                <span
-                  className={cn(
-                    "grid h-11 w-11 shrink-0 place-items-center rounded-full",
-                    kpi.iconBg,
-                    kpi.iconColor
-                  )}
-                  aria-hidden
-                >
-                  <Icon className="h-5 w-5" strokeWidth={2.25} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold text-slate-500">
-                    {kpi.label}
-                  </div>
-                  <div className="mt-1.5 text-3xl font-black text-slate-900">
-                    {kpi.value}
-                  </div>
-                  <div className="mt-1 text-xs font-semibold text-slate-600">
-                    {kpi.hint}
-                  </div>
-                </div>
-                {isUnsub && (
-                  <button
-                    type="button"
-                    onClick={() => setUnsubModalOpen(true)}
-                    className="shrink-0 cursor-pointer rounded-[18px] border border-blue-400/30 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-center text-[11px] font-black leading-tight text-white shadow-[0_10px_24px_rgba(37,99,235,0.38)] transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.48)] active:scale-[0.97]"
+                <CardContent className="flex min-h-[108px] items-center gap-3.5 py-4">
+                  <span
+                    className={cn(
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-full",
+                      kpi.iconBg,
+                      kpi.iconColor
+                    )}
+                    aria-hidden
                   >
-                    Voir la liste
-                  </button>
-                )}
-              </div>
+                    <Icon className="h-5 w-5" strokeWidth={2.25} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-slate-500">
+                      {kpi.label}
+                    </div>
+                    <div className="mt-1.5 text-3xl font-black text-slate-900">
+                      {kpi.value}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-slate-600">
+                      {kpi.hint}
+                    </div>
+                  </div>
+                  {isUnsub && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-auto shrink-0 rounded-[18px] border border-blue-400/30 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-center text-[11px] font-black leading-tight text-white shadow-[0_10px_24px_rgba(37,99,235,0.38)] hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.48)] active:scale-[0.97]"
+                      onClick={() => setUnsubModalOpen(true)}
+                    >
+                      Voir la liste
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             );
           })}
         </div>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.9fr)]">
-          <div className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)] md:p-5">
-            <h2 className="m-0 shrink-0 text-lg font-black text-slate-900">
-              Évolution des campagnes
-            </h2>
-            <div className="mt-3 flex min-h-0 flex-1 flex-col rounded-[14px] border border-slate-200 bg-slate-50 p-3 md:p-4">
-              {data.campaignSeries.length === 0 && (
-                <div className="flex min-h-[min(380px,calc(100dvh-340px))] flex-1 flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-white via-slate-50/50 to-slate-100/80 px-6 text-center">
-                  <ChartNoAxesCombined
-                    className="h-16 w-16 text-blue-400/70"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  <div className="max-w-[300px]">
-                    <p className="text-m font-bold text-slate-500">
-                      Aucune campagne sur cette période
-                    </p>
+          <Card className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <CardHeader>
+              <CardTitle className="text-lg font-black text-slate-900">
+                Évolution des campagnes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex min-h-0 flex-1 flex-col">
+              <div className="mt-0 flex min-h-0 flex-1 flex-col rounded-[14px] border border-slate-200 bg-slate-50 p-3 md:p-4">
+                {data.campaignSeries.length === 0 && (
+                  <div className="flex min-h-[min(380px,calc(100dvh-340px))] flex-1 flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-white via-slate-50/50 to-slate-100/80 px-6 text-center">
+                    <ChartNoAxesCombined
+                      className="h-16 w-16 text-blue-400/70"
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
+                    <div className="max-w-[300px]">
+                      <p className="text-m font-bold text-slate-500">
+                        Aucune campagne sur cette période
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {data.campaignSeries.length > 0 && (
-                <div className="flex min-h-0 flex-1 flex-col gap-3">
-                  <div
-                    ref={chartContainerRef}
-                    className="min-h-[min(380px,calc(100dvh-340px))] flex-1 rounded-xl border border-slate-200 bg-white p-2 md:p-3"
-                  >
-                    <svg
-                      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                      className="h-full min-h-[320px] w-full"
-                      aria-label="Graphique de l'évolution des campagnes"
-                      role="img"
+                )}
+                {data.campaignSeries.length > 0 && (
+                  <div className="flex min-h-0 flex-1 flex-col gap-3">
+                    <div
+                      ref={chartContainerRef}
+                      className="min-h-[min(380px,calc(100dvh-340px))] flex-1 rounded-xl border border-slate-200 bg-white p-2 md:p-3"
                     >
-                      {ticks.map((tick, i) => (
-                        <g key={`${tick.value}-${i}`}>
-                          <line
-                            x1={chartPadding.left}
-                            y1={tick.y}
-                            x2={chartWidth - chartPadding.right}
-                            y2={tick.y}
-                            className="stroke-slate-200"
-                            strokeDasharray={i === ticks.length - 1 ? undefined : "4 4"}
-                          />
-                          <text
-                            x={chartPadding.left - 8}
-                            y={tick.y + 3}
-                            textAnchor="end"
-                            className="fill-slate-400 text-[11px] font-bold"
-                          >
-                            {formatStatsNumber(tick.value)}
-                          </text>
-                        </g>
-                      ))}
+                      <svg
+                        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                        className="h-full min-h-[320px] w-full"
+                        aria-label="Graphique de l'évolution des campagnes"
+                        role="img"
+                      >
+                        {ticks.map((tick, i) => (
+                          <g key={`${tick.value}-${i}`}>
+                            <line
+                              x1={chartPadding.left}
+                              y1={tick.y}
+                              x2={chartWidth - chartPadding.right}
+                              y2={tick.y}
+                              className="stroke-slate-200"
+                              strokeDasharray={
+                                i === ticks.length - 1 ? undefined : "4 4"
+                              }
+                            />
+                            <text
+                              x={chartPadding.left - 8}
+                              y={tick.y + 3}
+                              textAnchor="end"
+                              className="fill-slate-400 text-[11px] font-bold"
+                            >
+                              {formatStatsNumber(tick.value)}
+                            </text>
+                          </g>
+                        ))}
 
-                      <polyline
-                        fill="none"
-                        points={sentPath}
-                        stroke="var(--chart-1)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <polyline
-                        fill="none"
-                        points={failedPath}
-                        stroke="var(--destructive)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <polyline
-                        fill="none"
-                        points={scheduledPath}
-                        stroke="var(--chart-2)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                        <polyline
+                          fill="none"
+                          points={sentPath}
+                          stroke="var(--chart-1)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <polyline
+                          fill="none"
+                          points={failedPath}
+                          stroke="var(--destructive)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <polyline
+                          fill="none"
+                          points={scheduledPath}
+                          stroke="var(--chart-2)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
 
-                      {data.campaignSeries.map((point, idx) => (
-                        <g key={point.label}>
-                          <circle cx={xFor(idx)} cy={yFor(point.sent)} r="4" fill="var(--chart-1)" />
-                          <circle cx={xFor(idx)} cy={yFor(point.failed)} r="4" fill="var(--destructive)" />
-                          <circle cx={xFor(idx)} cy={yFor(point.scheduled)} r="4" fill="var(--chart-2)" />
-                          <text
-                            x={xFor(idx)}
-                            y={chartHeight - 12}
-                            textAnchor="middle"
-                            className="fill-slate-500 text-[11px] font-bold"
-                          >
-                            {point.label}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
+                        {data.campaignSeries.map((point, idx) => (
+                          <g key={point.label}>
+                            <circle
+                              cx={xFor(idx)}
+                              cy={yFor(point.sent)}
+                              r="4"
+                              fill="var(--chart-1)"
+                            />
+                            <circle
+                              cx={xFor(idx)}
+                              cy={yFor(point.failed)}
+                              r="4"
+                              fill="var(--destructive)"
+                            />
+                            <circle
+                              cx={xFor(idx)}
+                              cy={yFor(point.scheduled)}
+                              r="4"
+                              fill="var(--chart-2)"
+                            />
+                            <text
+                              x={xFor(idx)}
+                              y={chartHeight - 12}
+                              textAnchor="middle"
+                              className="fill-slate-500 text-[11px] font-bold"
+                            >
+                              {point.label}
+                            </text>
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge
+                        variant="outline"
+                        className="h-auto gap-1.5 border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                      >
+                        <CheckCircle2
+                          className="h-3.5 w-3.5 text-emerald-600"
+                          aria-hidden
+                        />
+                        Envoyés
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="h-auto gap-1.5 border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                      >
+                        <TriangleAlert
+                          className="h-3.5 w-3.5 text-rose-600"
+                          aria-hidden
+                        />
+                        Échecs
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="h-auto gap-1.5 border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                      >
+                        <Clock3
+                          className="h-3.5 w-3.5 text-blue-600"
+                          aria-hidden
+                        />
+                        Programmés
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-600">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
-                      Envoyés
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1">
-                      <TriangleAlert className="h-3.5 w-3.5 text-rose-600" aria-hidden />
-                      Échecs
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1">
-                      <Clock3 className="h-3.5 w-3.5 text-blue-600" aria-hidden />
-                      Programmés
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)] md:p-5">
-            <h2 className="m-0 shrink-0 text-lg font-black text-slate-900">
-              Top groupes
-            </h2>
-            <div className="mt-3 min-h-0 flex-1 overflow-auto">
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+            <CardHeader>
+              <CardTitle className="text-lg font-black text-slate-900">
+                Top groupes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-0 flex-1 overflow-auto">
               <table className="w-full text-[15px]">
                 <thead>
                   <tr>
@@ -479,111 +599,29 @@ export function StatistiquesView(props: StatsProps) {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {error && (
-          <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-            {error}
-          </p>
+          <Alert variant="destructive" className="mt-3">
+            <TriangleAlert aria-hidden />
+            <AlertDescription className="font-bold">{error}</AlertDescription>
+          </Alert>
         )}
 
-        <div className="mt-auto flex shrink-0 items-start gap-2.5 rounded-xl border border-slate-200/80 bg-slate-100/70 px-3.5 py-3">
+        <Alert className="mt-auto shrink-0 border-slate-200/80 bg-slate-100/70">
           <Info
-            className="mt-0.5 h-4 w-4 shrink-0 text-slate-500"
+            className="text-slate-500"
             strokeWidth={2.25}
             aria-hidden
           />
-          <p className="text-xs font-semibold leading-relaxed text-slate-500">
+          <AlertDescription className="text-xs font-semibold leading-relaxed text-slate-500">
             Les statistiques sont mises à jour en temps réel. Les données
             peuvent légèrement varier.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       </div>
-
-      {statsOpen && (
-        <div
-          ref={popRef}
-          role="dialog"
-          aria-label="Choisir une période"
-          className="fixed z-50 w-[min(560px,calc(100vw-20px))] overflow-hidden rounded-[18px] border border-slate-300/40 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.20)]"
-        >
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <div className="text-base font-black text-slate-900">Période</div>
-            <button
-              type="button"
-              className="grid h-9 w-9 cursor-pointer place-items-center rounded-xl border border-slate-300/40 bg-white transition-colors hover:bg-slate-50"
-              aria-label="Fermer"
-              onClick={() => setStatsOpen(false)}
-            >
-              <X className="h-5 w-5" aria-hidden />
-            </button>
-          </div>
-          <div className="flex flex-col sm:flex-row">
-            <div className="min-w-0 flex-1 p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
-                  <span className="text-sm font-black text-slate-600">Du</span>
-                  <input
-                    type="date"
-                    className="h-[46px] rounded-[14px] border border-slate-300/40 bg-white px-3 text-base font-black"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                  />
-                </label>
-                <label className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
-                  <span className="text-sm font-black text-slate-600">Au</span>
-                  <input
-                    type="date"
-                    className="h-[46px] rounded-[14px] border border-slate-300/40 bg-white px-3 text-base font-black"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                  />
-                </label>
-              </div>
-              <div className="mt-3 flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={brandBtnCls}
-                  onClick={() => setStatsOpen(false)}
-                >
-                  Annuler
-                </Button>
-                <Button
-                  variant="default"
-                  size="lg"
-                  className={brandBtnPrimaryCls}
-                  onClick={() => {
-                    applyRange();
-                    setStatsOpen(false);
-                  }}
-                >
-                  Appliquer
-                </Button>
-              </div>
-            </div>
-            <div className="border-t border-slate-200 bg-slate-50/60 p-3 sm:w-[188px] sm:border-t-0 sm:border-l">
-              <p className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
-                Raccourcis
-              </p>
-              <div className="flex flex-col gap-1">
-                {PERIOD_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => onSelectPeriod(preset.id)}
-                    className={quickPresetBtnCls(statsPeriod === preset.id)}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {loading && (
         <div

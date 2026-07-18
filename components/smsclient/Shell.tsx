@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
+import { FloatingHelpBanner } from "@/components/smsclient/FloatingHelpBanner";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
 import { MonProfilModal } from "@/components/smsclient/modals/MonProfilModal";
 import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
@@ -13,6 +14,7 @@ import {
   ROUTE_TITLES,
   isCampaignWizardRoute,
 } from "@/lib/proto/routes";
+import { guideKeyForRoute } from "@/lib/sectionGuides";
 import { useMemo, useState } from "react";
 import {
   Bell,
@@ -39,6 +41,7 @@ import {
   SidebarHoverTooltip,
   SidebarMenuIcon,
   navMainIconStroke,
+  ROUTE_ICONS,
   type ShellProps,
 } from "@/components/smsclient/shell/SidebarNav";
 import {
@@ -48,6 +51,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 export { SearchBar } from "@/components/smsclient/shell/SearchBar";
 
@@ -63,9 +67,11 @@ export function AppShell({
   const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const active = navOverrideForRoute(route);
+  const TitleIcon = ROUTE_ICONS[route];
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const isCampaignWizard = isCampaignWizardRoute(route);
 
   const email = user?.email ?? "";
@@ -315,42 +321,66 @@ export function AppShell({
                   smsclient.fr
                 </span>
               </button>
-              <h1 className="m-0 shrink-0 text-lg font-extrabold text-foreground/80">
+              <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
+                <TitleIcon
+                  className="size-6 shrink-0 text-primary"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
                 {ROUTE_TITLES[route]}
               </h1>
               {isCampaignWizard && campaignWizardStep != null && (
                 <CampaignWizardStepper current={campaignWizardStep} compact />
               )}
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {creditsLabel && (
-                <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 text-sm font-bold text-foreground">
-                  <Coins className="h-4 w-4 text-ring" aria-hidden />
-                  {creditsLabel} · Crédits restants
-                </div>
+                <Badge
+                  variant="outline"
+                  className="h-9 gap-1.5 rounded-lg px-2.5 text-sm font-medium [&>svg]:size-3.5!"
+                  title="Crédits restants"
+                >
+                  <Coins
+                    data-icon="inline-start"
+                    className="text-amber-600 dark:text-amber-400"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  <span className="tabular-nums font-semibold text-foreground">
+                    {creditsLabel}
+                  </span>
+                  <span className="font-normal text-muted-foreground">
+                    crédits
+                  </span>
+                </Badge>
               )}
               <Button
                 type="button"
-                size="sm"
+                size="lg"
                 onClick={onNewCampaign}
-                className="h-auto cursor-pointer gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold shadow-md"
+                className="bg-chart-1 px-3.5 font-semibold text-primary-foreground shadow-xs hover:bg-chart-2"
               >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                <Plus
+                  data-icon="inline-start"
+                  className="size-4"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
                 Nouvelle campagne
               </Button>
-              <HeaderHelpMenu />
+              <HeaderHelpMenu
+                open={helpOpen}
+                onToggle={() => setHelpOpen((v) => !v)}
+              />
               <Button
                 type="button"
                 variant="outline"
                 size="icon-lg"
-                className="cursor-pointer rounded-xl shadow-sm"
                 title="Notifications"
                 aria-label="Notifications"
+                className="border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 hover:text-orange-700 dark:text-amber-400 dark:hover:text-amber-300"
               >
-                <Bell
-                  className="h-[18px] w-[18px] shrink-0 text-foreground"
-                  aria-hidden
-                />
+                <Bell className="size-5" strokeWidth={2.5} aria-hidden />
               </Button>
             </div>
           </header>
@@ -371,6 +401,16 @@ export function AppShell({
           </div>
         </div>
       </div>
+
+      <FloatingHelpBanner
+        section={guideKeyForRoute(route)}
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        onNavigate={(hash) => {
+          setHelpOpen(false);
+          go(hash);
+        }}
+      />
 
       <MonProfilModal
         open={profileModalOpen}

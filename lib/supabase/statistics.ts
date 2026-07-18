@@ -1,4 +1,5 @@
 import { fetchGroupsWithStats } from "@/lib/supabase/groups";
+import { QR_CAPTURE_SOURCE } from "@/lib/supabase/qrStats";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -32,6 +33,7 @@ function emptySnapshot(): StatisticsSnapshot {
     kpis: {
       smsSent: 0,
       deliveryRate: null,
+      inscriptionCount: 0,
       stopCount: 0,
       creditsConsumed: 0,
     },
@@ -69,6 +71,22 @@ export async function fetchStatisticsSnapshot(
 
   if (stopsError) {
     return { data: emptySnapshot(), error: new Error(stopsError.message) };
+  }
+
+  const { count: inscriptionCount, error: inscriptionsError } = await supabase
+    .from("clients")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("source", QR_CAPTURE_SOURCE)
+    .is("deleted_at", null)
+    .gte("created_at", fromIso)
+    .lte("created_at", toIso);
+
+  if (inscriptionsError) {
+    return {
+      data: emptySnapshot(),
+      error: new Error(inscriptionsError.message),
+    };
   }
 
   const groupsResult = await fetchGroupsWithStats(supabase, userId);
@@ -131,6 +149,7 @@ export async function fetchStatisticsSnapshot(
       kpis: {
         smsSent,
         deliveryRate,
+        inscriptionCount: inscriptionCount ?? 0,
         stopCount: stopCount ?? 0,
         creditsConsumed,
       },

@@ -1,8 +1,11 @@
 import { SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 import {
-  BUSINESS_ACTIVITIES,
+  BUSINESS_CATEGORIES,
   type BusinessActivityId,
+  type BusinessCategoryId,
+  businessCategoryOf,
   isValidBusinessActivityId,
+  normalizeBusinessActivityId,
 } from "@/lib/types/businessActivity";
 
 export type CampaignSmsTemplate = {
@@ -18,365 +21,272 @@ type TemplateDraft = {
   body: string;
 };
 
-function tpl(sector: BusinessActivityId, slug: string, draft: TemplateDraft): CampaignSmsTemplate {
+function tpl(
+  sector: BusinessCategoryId,
+  slug: string,
+  draft: TemplateDraft,
+): CampaignSmsTemplate {
   return { id: `${sector}-${slug}`, ...draft };
 }
 
-
-const CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY: Record<
-  BusinessActivityId,
+const CAMPAIGN_SMS_TEMPLATES_BY_CATEGORY: Record<
+  BusinessCategoryId,
   CampaignSmsTemplate[]
 > = {
-  restaurant: [
-    tpl("restaurant", "menu", {
-      title: "Menu du jour",
-      description: "Annonce le plat ou formule du jour.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, menu du jour : entrée + plat + dessert à 22 €. Réservez votre table !`,
-    }),
-    tpl("restaurant", "resa", {
-      title: "Réservation week-end",
-      description: "Incite à réserver pour un service chargé.",
-      body: `${SMS_PRENOM_TAG}, places limitées ce week-end ! Réservez dès maintenant par téléphone ou en ligne.`,
-    }),
-    tpl("restaurant", "dejeuner", {
-      title: "Promo déjeuner",
-      description: "Offre midi en semaine.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, formule déjeuner à 15 € du lundi au vendredi, 12h-14h. On vous attend !`,
-    }),
-    tpl("restaurant", "soiree", {
-      title: "Soirée thématique",
-      description: "Invite à un dîner événement.",
-      body: `${SMS_PRENOM_TAG}, soirée tapas samedi à partir de 19h ! Menu spécial et ambiance live. Réservez vite.`,
-    }),
-    tpl("restaurant", "relance", {
-      title: "On vous manque",
-      description: "Relance les clients absents.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait un moment ! Revenez dîner chez nous et profitez d'un apéritif offert.`,
-    }),
-    tpl("restaurant", "merci", {
-      title: "Remerciement",
-      description: "Remercie après une visite.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! Au plaisir de vous accueillir à nouveau très bientôt.`,
-    }),
-  ],
-  bar: [
-    tpl("bar", "happy-hour", {
-      title: "Happy hour",
-      description: "Promo cocktails en début de soirée.",
-      body: `${SMS_PRENOM_TAG}, happy hour ce soir 18h-20h : -30 % sur tous les cocktails !`,
-    }),
-    tpl("bar", "live", {
-      title: "Soirée live",
-      description: "Annonce un concert ou DJ set.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, concert live samedi dès 21h ! Entrée gratuite avant 22h.`,
-    }),
-    tpl("bar", "cocktail", {
-      title: "Cocktail du mois",
-      description: "Met en avant une création.",
-      body: `${SMS_PRENOM_TAG}, découvrez notre cocktail signature du mois à 9 €. Venez le tester au bar !`,
-    }),
-    tpl("bar", "brunch", {
-      title: "Brunch dominical",
-      description: "Invite au brunch du week-end.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, brunch tous les dimanches 10h-15h. Formule à 24 €, réservation conseillée.`,
-    }),
-    tpl("bar", "relance", {
-      title: "On vous attend",
-      description: "Relance les habitués du bar.",
-      body: `${SMS_PRENOM_TAG}, on ne vous a pas vu depuis un moment ! Passez prendre un verre, la première bière est à -50 %.`,
-    }),
-    tpl("bar", "merci", {
-      title: "Remerciement",
-      description: "Remercie après une visite.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! À très vite au bar.`,
-    }),
-  ],
-  coiffure: [
-    tpl("coiffure", "coloration", {
-      title: "Promo coloration",
-      description: "Offre sur une prestation couleur.",
-      body: `${SMS_PRENOM_TAG}, -20 % sur votre coloration en salon jusqu'à vendredi ! Prenez RDV par téléphone.`,
-    }),
-    tpl("coiffure", "creneaux", {
-      title: "Créneaux disponibles",
-      description: "Propose des rendez-vous libres.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, des créneaux sont disponibles cette semaine au salon. Réservez votre coupe !`,
-    }),
-    tpl("coiffure", "brushing", {
-      title: "Offre brushing",
-      description: "Promo sur le brushing ou le lissage.",
-      body: `${SMS_PRENOM_TAG}, brushing à 25 € au lieu de 35 € en ce moment ! Offre limitée.`,
-    }),
-    tpl("coiffure", "fidelite", {
-      title: "Carte fidélité",
-      description: "Rappelle les avantages fidélité.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, votre carte fidélité vous offre -15 % sur votre prochaine visite au salon !`,
-    }),
-    tpl("coiffure", "relance", {
-      title: "Rappel entretien",
-      description: "Relance pour un nouveau rendez-vous.",
-      body: `${SMS_PRENOM_TAG}, il est temps de prendre soin de votre chevelure ! Réservez votre prochain RDV au salon.`,
-    }),
-    tpl("coiffure", "merci", {
-      title: "Remerciement",
-      description: "Remercie après une prestation.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! Vous êtes superbe, à très bientôt au salon.`,
-    }),
-  ],
-  fleuriste: [
-    tpl("fleuriste", "bouquet", {
-      title: "Promo bouquets",
-      description: "Réduction sur les compositions florales.",
-      body: `${SMS_PRENOM_TAG}, -15 % sur tous nos bouquets cette semaine ! Commandez en boutique ou par téléphone.`,
-    }),
-    tpl("fleuriste", "fete-meres", {
-      title: "Fête des mères",
-      description: "Rappel commande pour une fête.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, la fête des mères approche ! Réservez votre bouquet dès maintenant.`,
-    }),
-    tpl("fleuriste", "livraison", {
-      title: "Livraison locale",
-      description: "Annonce un service de livraison.",
-      body: `${SMS_PRENOM_TAG}, livraison de fleurs à domicile disponible aujourd'hui ! Commandez avant 14h.`,
-    }),
-    tpl("fleuriste", "saison", {
-      title: "Fleurs de saison",
-      description: "Met en avant une nouveauté florale.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, découvrez nos nouvelles compositions de saison en boutique !`,
-    }),
-    tpl("fleuriste", "relance", {
-      title: "Une touche de couleur",
-      description: "Relance avec une incitation douce.",
-      body: `${SMS_PRENOM_TAG}, offrez-vous un bouquet cette semaine : -10 % pour votre retour en boutique.`,
-    }),
-    tpl("fleuriste", "merci", {
-      title: "Remerciement",
-      description: "Remercie après un achat floral.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! Vos fleurs vous attendent en boutique.`,
-    }),
-  ],
-  boulangerie: [
-    tpl("boulangerie", "matin", {
-      title: "Spécial matin",
-      description: "Annonce les produits frais du matin.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, nos croissants au beurre sortent du four à 7h ! Passez ce matin.`,
-    }),
-    tpl("boulangerie", "patisserie", {
-      title: "Promo pâtisserie",
-      description: "Offre sur les gâteaux et entremets.",
-      body: `${SMS_PRENOM_TAG}, -10 % sur toute la pâtisserie aujourd'hui ! Présentez ce SMS en caisse.`,
-    }),
-    tpl("boulangerie", "saison", {
-      title: "Produit de saison",
-      description: "Met en avant une spécialité du moment.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, galette des rois disponible dès aujourd'hui ! Pensez à commander à l'avance.`,
-    }),
-    tpl("boulangerie", "fetes", {
-      title: "Commandes fêtes",
-      description: "Ouverture des commandes pour les fêtes.",
-      body: `${SMS_PRENOM_TAG}, commandes de bûches et gâteaux de fête ouvertes ! Réservez en boutique ou par téléphone.`,
-    }),
-    tpl("boulangerie", "relance", {
-      title: "On vous manque",
-      description: "Relance les clients du quartier.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait longtemps ! Un pain offert pour toute commande supérieure à 10 € cette semaine.`,
-    }),
-    tpl("boulangerie", "merci", {
-      title: "Remerciement",
-      description: "Remercie après une visite.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! Bonne journée et à demain matin.`,
-    }),
-  ],
-  retail: [
-    tpl("retail", "soldes", {
+  commerce: [
+    tpl("commerce", "soldes", {
       title: "Soldes privées",
       description: "Accès anticipé à une remise.",
       body: `${SMS_PRENOM_TAG}, soldes privées dès demain : -30 % sur une sélection ! Réservé à nos clients fidèles.`,
     }),
-    tpl("retail", "collection", {
+    tpl("commerce", "collection", {
       title: "Nouvelle collection",
       description: "Annonce l'arrivée de nouveautés.",
       body: `Bonjour ${SMS_PRENOM_TAG}, la nouvelle collection est en boutique ! Venez découvrir nos dernières arrivées.`,
     }),
-    tpl("retail", "flash", {
+    tpl("commerce", "flash", {
       title: "Promo flash",
       description: "Offre limitée dans le temps.",
       body: `${SMS_PRENOM_TAG}, promo flash 48h : -20 % sur tout le magasin ! Ne tardez pas.`,
     }),
-    tpl("retail", "fidelite", {
+    tpl("commerce", "fidelite", {
       title: "Points fidélité",
       description: "Rappelle un avantage fidélité.",
       body: `Bonjour ${SMS_PRENOM_TAG}, vous avez des points fidélité à utiliser ! Valables jusqu'à la fin du mois en boutique.`,
     }),
-    tpl("retail", "relance", {
+    tpl("commerce", "relance", {
       title: "On vous attend",
       description: "Relance les clients inactifs.",
       body: `${SMS_PRENOM_TAG}, ça fait un moment ! Revenez en boutique et profitez de -15 % sur votre prochain achat.`,
     }),
-    tpl("retail", "merci", {
+    tpl("commerce", "merci", {
       title: "Remerciement",
       description: "Remercie après un achat.",
       body: `Merci ${SMS_PRENOM_TAG} pour votre achat ! À très bientôt en boutique.`,
     }),
   ],
-  tabac: [
-    tpl("tabac", "presse", {
-      title: "Arrivage presse",
-      description: "Annonce les nouveautés presse.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, les magazines de la semaine sont arrivés ! Passez au tabac-presse.`,
+  restauration: [
+    tpl("restauration", "menu", {
+      title: "Menu du jour",
+      description: "Annonce le plat ou formule du jour.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, menu du jour : entrée + plat + dessert à 22 €. Réservez votre table !`,
     }),
-    tpl("tabac", "loto", {
-      title: "Jackpot loto",
-      description: "Rappelle un tirage ou une grosse cagnotte.",
-      body: `${SMS_PRENOM_TAG}, le jackpot FDJ est à son maximum ! Pensez à jouer avant samedi 20h.`,
+    tpl("restauration", "resa", {
+      title: "Réservation week-end",
+      description: "Incite à réserver pour un service chargé.",
+      body: `${SMS_PRENOM_TAG}, places limitées ce week-end ! Réservez dès maintenant par téléphone ou en ligne.`,
     }),
-    tpl("tabac", "promo", {
-      title: "Promo boutique",
-      description: "Offre sur une sélection produits.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, -10 % sur les e-liquides et accessoires cette semaine au tabac !`,
+    tpl("restauration", "happy-hour", {
+      title: "Happy hour",
+      description: "Promo boissons en début de soirée.",
+      body: `${SMS_PRENOM_TAG}, happy hour ce soir 18h-20h : -30 % sur tous les cocktails !`,
     }),
-    tpl("tabac", "horaires", {
-      title: "Horaires étendus",
-      description: "Informe sur des horaires exceptionnels.",
-      body: `${SMS_PRENOM_TAG}, ouvert ce dimanche de 8h à 13h ! Passez nous voir au tabac-presse.`,
+    tpl("restauration", "matin", {
+      title: "Spécial matin",
+      description: "Annonce les produits frais du matin.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, nos croissants au beurre sortent du four à 7h ! Passez ce matin.`,
     }),
-    tpl("tabac", "relance", {
+    tpl("restauration", "relance", {
       title: "On vous manque",
-      description: "Relance les clients du quartier.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait un moment ! Un café offert pour toute visite cette semaine.`,
+      description: "Relance les clients absents.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait un moment ! Revenez dîner chez nous et profitez d'un apéritif offert.`,
     }),
-    tpl("tabac", "merci", {
+    tpl("restauration", "merci", {
       title: "Remerciement",
       description: "Remercie après une visite.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! À bientôt au tabac.`,
+      body: `Merci ${SMS_PRENOM_TAG} pour votre visite ! Au plaisir de vous accueillir à nouveau très bientôt.`,
     }),
   ],
-  sport: [
-    tpl("sport", "decouverte", {
-      title: "Séance découverte",
-      description: "Invite à essayer la salle ou un cours.",
-      body: `${SMS_PRENOM_TAG}, séance découverte gratuite à la salle ! Réservez votre créneau cette semaine.`,
+  services: [
+    tpl("services", "creneaux", {
+      title: "Créneaux disponibles",
+      description: "Propose des rendez-vous libres.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, des créneaux sont disponibles cette semaine. Réservez votre RDV !`,
     }),
-    tpl("sport", "abonnement", {
-      title: "Promo abonnement",
-      description: "Offre sur un abonnement mensuel.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, -30 % sur l'abonnement 3 mois jusqu'à dimanche ! Rejoignez-nous.`,
+    tpl("services", "promo", {
+      title: "Promo prestation",
+      description: "Offre sur une prestation.",
+      body: `${SMS_PRENOM_TAG}, -20 % sur votre prochaine prestation jusqu'à vendredi ! Prenez RDV.`,
     }),
-    tpl("sport", "cours", {
-      title: "Cours collectif",
-      description: "Annonce un cours ou un planning.",
-      body: `${SMS_PRENOM_TAG}, nouveau cours collectif yoga mardi et jeudi 18h30 ! Places limitées, inscrivez-vous.`,
+    tpl("services", "devis", {
+      title: "Devis prêt",
+      description: "Annonce un devis disponible.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, votre devis est prêt. On en discute par téléphone ?`,
     }),
-    tpl("sport", "challenge", {
-      title: "Challenge fitness",
-      description: "Lance un défi ou un programme.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, challenge 30 jours : relevez-vous avec nous ! Infos à l'accueil de la salle.`,
+    tpl("services", "pret", {
+      title: "Prestation prête",
+      description: "Réparation / pressing prêt à retirer.",
+      body: `${SMS_PRENOM_TAG}, c'est prêt ! Vous pouvez passer retirer dès maintenant.`,
     }),
-    tpl("sport", "relance", {
-      title: "Reprise sportive",
-      description: "Relance les membres inactifs.",
-      body: `${SMS_PRENOM_TAG}, on ne vous a pas vu depuis un moment ! Reprenez le sport avec 1 semaine offerte.`,
+    tpl("services", "relance", {
+      title: "Rappel entretien",
+      description: "Relance pour un nouveau rendez-vous.",
+      body: `${SMS_PRENOM_TAG}, il est temps de reprendre RDV ! Des créneaux se libèrent cette semaine.`,
     }),
-    tpl("sport", "merci", {
+    tpl("services", "merci", {
       title: "Remerciement",
-      description: "Remercie un membre actif.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre motivation ! Continuez comme ça, on est fiers de vous.`,
+      description: "Remercie après une prestation.",
+      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! À très bientôt.`,
     }),
   ],
   sante: [
+    tpl("sante", "rdv", {
+      title: "Rappel de rendez-vous",
+      description: "Rappel RDV santé / bien-être J-1.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, rappel : votre rendez-vous est demain. Prévenez-nous en cas d'empêchement.`,
+    }),
+    tpl("sante", "creneau", {
+      title: "Créneau disponible",
+      description: "Propose un créneau libéré.",
+      body: `${SMS_PRENOM_TAG}, un créneau s'est libéré cette semaine. Souhaitez-vous le réserver ?`,
+    }),
     tpl("sante", "ordonnance", {
-      title: "Rappel ordonnance",
-      description: "Rappelle un renouvellement ou retrait.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, votre ordonnance est prête à retirer à la pharmacie. Passez quand vous le souhaitez.`,
+      title: "Préparation prête",
+      description: "Retrait ordonnance ou commande.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, votre préparation est prête à retirer. Passez quand vous le souhaitez.`,
     }),
-    tpl("sante", "para", {
-      title: "Promo parapharmacie",
-      description: "Offre sur des produits para.",
-      body: `${SMS_PRENOM_TAG}, -15 % sur la gamme solaire en pharmacie cette semaine !`,
+    tpl("sante", "promo", {
+      title: "Offre bien-être",
+      description: "Promo soin / prestation.",
+      body: `${SMS_PRENOM_TAG}, -20 % sur votre prochaine prestation jusqu'à vendredi ! Prenez RDV.`,
     }),
-    tpl("sante", "conseil", {
-      title: "Conseil saison",
-      description: "Conseil santé de saison.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, pensez à votre vaccin grippe ! Prenez RDV en pharmacie, sans attente.`,
-    }),
-    tpl("sante", "horaires", {
-      title: "Pharmacie de garde",
-      description: "Informe sur les horaires ou la garde.",
-      body: `${SMS_PRENOM_TAG}, nous sommes ouverts ce dimanche de 9h à 13h. Votre pharmacie vous accueille.`,
-    }),
-    tpl("sante", "relance", {
-      title: "Suivi bien-être",
-      description: "Relance pour un suivi ou produit.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, votre complément alimentaire est de nouveau disponible en pharmacie !`,
+    tpl("sante", "suivi", {
+      title: "Rappel de suivi",
+      description: "Incitation à un contrôle ou rebooking.",
+      body: `${SMS_PRENOM_TAG}, il est temps de planifier votre prochain RDV. Réservez dès maintenant.`,
     }),
     tpl("sante", "merci", {
       title: "Remerciement",
       description: "Remercie après une visite.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! Votre équipe de pharmacie.`,
+      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! Prenez soin de vous.`,
     }),
   ],
-  automobile: [
-    tpl("automobile", "revision", {
-      title: "Promo révision",
-      description: "Offre sur une révision ou vidange.",
-      body: `${SMS_PRENOM_TAG}, forfait révision à 99 € au garage ! Prenez RDV avant la fin du mois.`,
+  hotellerie_tourisme: [
+    tpl("hotellerie_tourisme", "pre_arrival", {
+      title: "Pré-arrivée",
+      description: "Infos avant séjour / visite.",
+      body: `À bientôt ${SMS_PRENOM_TAG} ! Check-in à partir de 15h. Infos pratiques : répondez à ce SMS.`,
     }),
-    tpl("automobile", "pneus", {
-      title: "Changement pneus",
-      description: "Rappel changement de saison.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, pensez à vos pneus hiver ! Montage à partir de 15 €/pneu au garage.`,
+    tpl("hotellerie_tourisme", "offre", {
+      title: "Offre séjour",
+      description: "Promo chambre ou forfait.",
+      body: `${SMS_PRENOM_TAG}, offre spéciale : -15 % sur votre prochain séjour ! Réservez vite.`,
     }),
-    tpl("automobile", "controle", {
-      title: "Contrôle technique",
-      description: "Rappel échéance contrôle technique.",
-      body: `${SMS_PRENOM_TAG}, votre contrôle technique arrive à échéance. Réservez un créneau au garage !`,
+    tpl("hotellerie_tourisme", "activite", {
+      title: "Activité / visite",
+      description: "Suggestion tourisme locale.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, découvrez nos activités du week-end ! Infos et réservation par SMS.`,
     }),
-    tpl("automobile", "lavage", {
-      title: "Offre lavage",
-      description: "Promo lavage ou detailing.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, lavage intérieur + extérieur à 29 € cette semaine au garage !`,
+    tpl("hotellerie_tourisme", "rappel", {
+      title: "Rappel réservation",
+      description: "Rappel J-1.",
+      body: `${SMS_PRENOM_TAG}, rappel : nous vous attendons demain. Besoin de modifier ? Répondez à ce SMS.`,
     }),
-    tpl("automobile", "relance", {
-      title: "Entretien véhicule",
-      description: "Relance pour un entretien.",
-      body: `${SMS_PRENOM_TAG}, ça fait 6 mois depuis votre dernière visite ! -10 % sur votre prochain entretien.`,
+    tpl("hotellerie_tourisme", "avis", {
+      title: "Post-séjour + avis",
+      description: "Remerciement et avis.",
+      body: `Merci ${SMS_PRENOM_TAG} pour votre séjour ! Un avis nous aide beaucoup.`,
     }),
-    tpl("automobile", "merci", {
+    tpl("hotellerie_tourisme", "merci", {
       title: "Remerciement",
-      description: "Remercie après une intervention.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! Bonne route et à bientôt au garage.`,
+      description: "Message de bienvenue / remerciement.",
+      body: `Merci ${SMS_PRENOM_TAG} ! Au plaisir de vous accueillir à nouveau.`,
     }),
   ],
-  services: [
-    tpl("services", "promo", {
-      title: "Promo intervention",
-      description: "Offre sur une prestation.",
-      body: `${SMS_PRENOM_TAG}, -15 % sur votre prochaine intervention cette semaine ! Contactez-nous pour un RDV.`,
+  btp_immobilier: [
+    tpl("btp_immobilier", "devis", {
+      title: "Devis prêt",
+      description: "Annonce un devis disponible.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, votre devis est prêt. On en discute par téléphone ou sur place ?`,
     }),
-    tpl("services", "creneau", {
+    tpl("btp_immobilier", "visite", {
+      title: "Proposition de visite",
+      description: "Invite à visiter un bien ou un chantier.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, un créneau visite est disponible cette semaine. Répondez pour le bloquer.`,
+    }),
+    tpl("btp_immobilier", "rappel", {
+      title: "Rappel RDV",
+      description: "Rappel visite ou intervention.",
+      body: `${SMS_PRENOM_TAG}, rappel : RDV demain à l'heure convenue. À demain !`,
+    }),
+    tpl("btp_immobilier", "chantier", {
+      title: "Suivi chantier",
+      description: "Info démarrage ou avancement.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, les travaux avancent comme prévu. On vous tient informé.`,
+    }),
+    tpl("btp_immobilier", "nouveau_bien", {
+      title: "Nouveau bien / offre",
+      description: "Alerte nouveau bien ou offre.",
+      body: `${SMS_PRENOM_TAG}, nouveauté qui peut vous intéresser ! Contactez-nous pour les détails.`,
+    }),
+    tpl("btp_immobilier", "merci", {
+      title: "Remerciement",
+      description: "Après signature ou travaux.",
+      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! Belle continuation dans votre projet.`,
+    }),
+  ],
+  education_public: [
+    tpl("education_public", "rdv", {
+      title: "Rappel de rendez-vous",
+      description: "Confirme un créneau à venir.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, rappel : votre rendez-vous est prévu demain. Merci de prévenir en cas d'empêchement.`,
+    }),
+    tpl("education_public", "info", {
+      title: "Information",
+      description: "Diffuse une info pratique.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, information importante : consultez nos horaires mis à jour ou contactez-nous.`,
+    }),
+    tpl("education_public", "evenement", {
+      title: "Événement / réunion",
+      description: "Invite à une réunion ou un événement.",
+      body: `${SMS_PRENOM_TAG}, vous êtes invité(e) à notre réunion / événement le {date}. Infos par SMS.`,
+    }),
+    tpl("education_public", "rappel_dossier", {
+      title: "Suivi dossier",
+      description: "Relance pour un dossier.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, nous vous rappelons pour le suivi de votre dossier. Répondez à ce SMS.`,
+    }),
+    tpl("education_public", "creneau", {
       title: "Créneau disponible",
-      description: "Propose un créneau d'intervention.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, un créneau s'est libéré demain matin. Souhaitez-vous qu'on intervienne chez vous ?`,
+      description: "Propose un créneau libéré.",
+      body: `${SMS_PRENOM_TAG}, un créneau s'est libéré cette semaine. Souhaitez-vous le réserver ?`,
     }),
-    tpl("services", "devis", {
-      title: "Devis gratuit",
-      description: "Propose un devis sans engagement.",
-      body: `${SMS_PRENOM_TAG}, devis gratuit pour vos travaux ! Appelez-nous ou répondez à ce SMS.`,
-    }),
-    tpl("services", "saison", {
-      title: "Offre saisonnière",
-      description: "Promo liée à la saison (chauffage, clim…).",
-      body: `Bonjour ${SMS_PRENOM_TAG}, contrôle chaudière à 79 € avant l'hiver ! Réservez votre intervention.`,
-    }),
-    tpl("services", "relance", {
-      title: "On repasse ?",
-      description: "Relance pour une nouvelle prestation.",
-      body: `${SMS_PRENOM_TAG}, besoin d'un entretien ? Nous repassons dans votre quartier la semaine prochaine.`,
-    }),
-    tpl("services", "merci", {
+    tpl("education_public", "merci", {
       title: "Remerciement",
-      description: "Remercie après une intervention.",
-      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! N'hésitez pas à nous recommander.`,
+      description: "Remercie après une visite.",
+      body: `Merci ${SMS_PRENOM_TAG} pour votre confiance ! À bientôt.`,
+    }),
+  ],
+  loisirs_evenementiel: [
+    tpl("loisirs_evenementiel", "creneau", {
+      title: "Créneau / billet",
+      description: "Propose un créneau ou une activité.",
+      body: `${SMS_PRENOM_TAG}, places disponibles cette semaine ! Réservez votre créneau dès maintenant.`,
+    }),
+    tpl("loisirs_evenementiel", "confirmation", {
+      title: "Confirmation",
+      description: "Valide réservation ou événement.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, c'est confirmé pour le {date} à {heure}. À très bientôt !`,
+    }),
+    tpl("loisirs_evenementiel", "rappel", {
+      title: "Rappel J-1",
+      description: "Rappel avant activité / événement.",
+      body: `${SMS_PRENOM_TAG}, rappel : demain à {heure}. Prévenez-nous si empêchement.`,
+    }),
+    tpl("loisirs_evenementiel", "promo", {
+      title: "Offre / pack",
+      description: "Promo groupe ou hors saison.",
+      body: `${SMS_PRENOM_TAG}, offre spéciale : -10 % cette semaine ! Réservez vite.`,
+    }),
+    tpl("loisirs_evenementiel", "devis", {
+      title: "Devis événement",
+      description: "Suite demande devis.",
+      body: `Bonjour ${SMS_PRENOM_TAG}, suite à votre demande : un créneau devis est disponible. Répondez pour le bloquer.`,
+    }),
+    tpl("loisirs_evenementiel", "merci", {
+      title: "Remerciement",
+      description: "Post-activité / événement.",
+      body: `Merci ${SMS_PRENOM_TAG} ! On espère vous revoir très bientôt.`,
     }),
   ],
   autre: [
@@ -393,7 +303,7 @@ const CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY: Record<
     tpl("autre", "nouveaute", {
       title: "Nouveauté",
       description: "Annonce une nouveauté produit ou service.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, découvrez nos nouveautés en boutique dès aujourd'hui !`,
+      body: `Bonjour ${SMS_PRENOM_TAG}, découvrez nos nouveautés dès aujourd'hui !`,
     }),
     tpl("autre", "flash", {
       title: "Offre flash",
@@ -403,7 +313,7 @@ const CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY: Record<
     tpl("autre", "relance", {
       title: "Relance clients",
       description: "Fait revenir des clients inactifs.",
-      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait longtemps ! Revenez nous voir et profitez d'une surprise en boutique.`,
+      body: `Bonjour ${SMS_PRENOM_TAG}, ça fait longtemps ! Revenez nous voir et profitez d'une surprise.`,
     }),
     tpl("autre", "merci", {
       title: "Remerciement",
@@ -413,24 +323,30 @@ const CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY: Record<
   ],
 };
 
-/** Vérifie que chaque secteur a exactement 6 modèles. */
-for (const activity of BUSINESS_ACTIVITIES) {
-  const templates = CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY[activity.id];
-  if (templates.length !== 6) {
+/** Vérifie que chaque catégorie a exactement 6 modèles. */
+for (const category of BUSINESS_CATEGORIES) {
+  const templates = CAMPAIGN_SMS_TEMPLATES_BY_CATEGORY[category.id];
+  if (!templates || templates.length !== 6) {
     throw new Error(
-      `campaignSmsTemplates: ${activity.id} must have 6 templates (got ${templates.length})`,
+      `campaignSmsTemplates: ${category.id} must have 6 templates (got ${templates?.length ?? 0})`,
     );
   }
 }
 
 export const CAMPAIGN_SMS_TEMPLATES: CampaignSmsTemplate[] =
-  BUSINESS_ACTIVITIES.flatMap((a) => CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY[a.id]);
+  BUSINESS_CATEGORIES.flatMap(
+    (c) => CAMPAIGN_SMS_TEMPLATES_BY_CATEGORY[c.id],
+  );
 
 export function getCampaignSmsTemplatesForActivity(
   activity: BusinessActivityId | "" | undefined,
 ): CampaignSmsTemplate[] {
   if (activity && isValidBusinessActivityId(activity)) {
-    return CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY[activity];
+    const canonical = normalizeBusinessActivityId(activity);
+    const category = canonical ? businessCategoryOf(canonical) : null;
+    if (category) {
+      return CAMPAIGN_SMS_TEMPLATES_BY_CATEGORY[category];
+    }
   }
-  return CAMPAIGN_SMS_TEMPLATES_BY_ACTIVITY.autre;
+  return CAMPAIGN_SMS_TEMPLATES_BY_CATEGORY.autre;
 }

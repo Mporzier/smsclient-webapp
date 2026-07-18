@@ -1,5 +1,8 @@
 import { sanitizeSender } from "@/lib/proto/smsUtils";
-import { isValidBusinessActivityId } from "@/lib/types/businessActivity";
+import {
+  isValidBusinessActivityId,
+  normalizeBusinessActivityId,
+} from "@/lib/types/businessActivity";
 import {
   EMPTY_PROFILE_FORM,
   type UserProfile,
@@ -38,8 +41,9 @@ function recordToProfile(
     email,
     phone: row.phone?.trim() ?? "",
     companyName: row.company_name?.trim() ?? "",
-    businessActivity: (row.business_activity?.trim() ??
-      "") as UserProfile["businessActivity"],
+    businessActivity: (normalizeBusinessActivityId(
+      row.business_activity?.trim() ?? "",
+    ) ?? "") as UserProfile["businessActivity"],
     siret: row.siret?.trim() ?? "",
     tva: row.tva?.trim() ?? "",
     address: row.address?.trim() ?? "",
@@ -62,7 +66,13 @@ export function profileToForm(profile: UserProfile): UserProfileForm {
 }
 
 function formToRow(form: UserProfileForm) {
-  const activity = form.businessActivity.trim();
+  const rawActivity = form.businessActivity.trim();
+  const activity = rawActivity
+    ? normalizeBusinessActivityId(rawActivity)
+    : "";
+  if (rawActivity && !activity) {
+    throw new Error("Activité invalide.");
+  }
   if (activity && !isValidBusinessActivityId(activity)) {
     throw new Error("Activité invalide.");
   }
@@ -71,7 +81,7 @@ function formToRow(form: UserProfileForm) {
     last_name: form.lastName.trim(),
     phone: form.phone.trim(),
     company_name: form.companyName.trim(),
-    business_activity: activity,
+    business_activity: activity || "",
     siret: form.siret.trim(),
     tva: form.tva.trim(),
     address: form.address.trim(),

@@ -213,14 +213,16 @@ export function CampaignWizardStep1Main() {
                     >
                       {contactDisplayName(c)}
                     </span>
-                    <span
-                      className={cn(
-                        "block truncate text-xs font-semibold",
-                        isUnsubscribed ? "text-muted-foreground" : "text-muted-foreground"
-                      )}
-                    >
+                    <span className="block truncate text-xs font-semibold text-muted-foreground">
                       {c.phone}
-                      {isUnsubscribed ? " · Désabonné" : ""}
+                      {isUnsubscribed ? (
+                        <>
+                          {" · "}
+                          <span className="font-bold text-rose-600">
+                            désabonné
+                          </span>
+                        </>
+                      ) : null}
                     </span>
                   </span>
                   <div className="hidden min-w-0 max-w-[48%] shrink-0 flex-wrap justify-end gap-1 sm:flex">

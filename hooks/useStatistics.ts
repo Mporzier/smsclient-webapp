@@ -11,6 +11,7 @@ function emptyData(): StatisticsSnapshot {
     kpis: {
       smsSent: 0,
       deliveryRate: null,
+      inscriptionCount: 0,
       stopCount: 0,
       creditsConsumed: 0,
     },

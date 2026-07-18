@@ -331,11 +331,23 @@ export function DataTable<T>({
                         ? "px-2 text-center"
                         : "px-3 text-left",
                       isSelectCol &&
-                        "sticky left-0 z-20 shadow-[1px_0_0_0_var(--border)]",
+                        "sticky left-0 z-20 cursor-pointer shadow-[1px_0_0_0_var(--border)]",
                       isActionsCol &&
                         "sticky right-0 z-20 shadow-[-1px_0_0_0_var(--border)]",
                       canSort && "cursor-pointer"
                     )}
+                    onClick={
+                      isSelectCol
+                        ? (e) => {
+                            const box = e.currentTarget.querySelector(
+                              "[data-slot=checkbox]",
+                            ) as HTMLElement | null;
+                            if (box && e.target !== box && !box.contains(e.target as Node)) {
+                              box.click();
+                            }
+                          }
+                        : undefined
+                    }
                   >
                     {header.isPlaceholder ? null : canSort ? (
                       <button
@@ -483,7 +495,7 @@ export function DataTable<T>({
                             ? "px-2 text-center"
                             : "px-3",
                           isSelectCol &&
-                            "sticky left-0 z-[1] shadow-[1px_0_0_0_var(--border)]",
+                            "sticky left-0 z-[1] cursor-pointer shadow-[1px_0_0_0_var(--border)]",
                           isActionsCol &&
                             "sticky right-0 z-[1] shadow-[-1px_0_0_0_var(--border)]"
                         )}
@@ -491,10 +503,16 @@ export function DataTable<T>({
                           isSelectCol
                             ? (e) => {
                                 e.stopPropagation();
-                                const input = e.currentTarget.querySelector(
-                                  "input[type=checkbox]"
-                                ) as HTMLInputElement | null;
-                                if (input) input.click();
+                                const box = e.currentTarget.querySelector(
+                                  "[data-slot=checkbox]",
+                                ) as HTMLElement | null;
+                                if (
+                                  box &&
+                                  e.target !== box &&
+                                  !box.contains(e.target as Node)
+                                ) {
+                                  box.click();
+                                }
                               }
                             : isActionsCol
                               ? (e) => e.stopPropagation()

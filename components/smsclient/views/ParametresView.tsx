@@ -20,7 +20,7 @@ import {
   parametresFieldLbl,
   type SettingId,
 } from "@/components/smsclient/views/parametres/parametresSettings";
-import { BusinessActivityPicker } from "@/components/onboarding/BusinessActivityPicker";
+import { BusinessActivitySelect } from "@/components/smsclient/views/parametres/BusinessActivitySelect";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
@@ -226,18 +226,14 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={parametresFieldLbl}>Secteur d&apos;activité</label>
-                  <div
-                    className={cn(
-                      "rounded-xl p-1",
-                      changed("businessActivity") && "ring-2 ring-blue-100"
-                    )}
-                  >
-                    <BusinessActivityPicker
-                      value={draftForm.businessActivity}
-                      onChange={(id) => setField("businessActivity", id)}
-                    />
-                  </div>
+                  <label className={parametresFieldLbl}>
+                    Secteur d&apos;activité
+                  </label>
+                  <BusinessActivitySelect
+                    value={draftForm.businessActivity}
+                    onChange={(id) => setField("businessActivity", id)}
+                    highlighted={changed("businessActivity")}
+                  />
                 </div>
               </div>
             </ModalPanel>
