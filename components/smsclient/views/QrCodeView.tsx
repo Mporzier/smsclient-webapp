@@ -6,11 +6,12 @@ import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSetti
 import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { downloadShopQrPdf } from "@/lib/qr/downloadShopQrPdf";
 import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
 import QRCode from "qrcode";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { QrCaptureComplianceCard } from "@/components/smsclient/views/QrCaptureComplianceCard";
 import { QrCapturePhonePreview } from "@/components/smsclient/views/QrCapturePhonePreview";
 import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
@@ -33,28 +34,6 @@ type QrCodeViewProps = {
   onWheelSave: (config: QrWheelConfig) => Promise<void>;
   onWheelEnableDefaults: () => Promise<void>;
 };
-
-const CAPTURE_MODE_OPTIONS: {
-  mode: Exclude<QrCaptureMode, "none">;
-  title: string;
-  description: string;
-  icon: typeof MessageCircle;
-}[] = [
-  {
-    mode: "welcome",
-    title: "SMS de bienvenue",
-    description:
-      "Envoyez un SMS personnalisé juste après l'inscription du client.",
-    icon: MessageCircle,
-  },
-  {
-    mode: "wheel",
-    title: "Roue des récompenses",
-    description:
-      "Faites tourner la roue après l'inscription pour distribuer des récompenses par SMS.",
-    icon: Gift,
-  },
-];
 
 function downloadQrPng(dataUrl: string) {
   const anchor = document.createElement("a");
@@ -115,6 +94,7 @@ export function QrCodeView({
   onWheelSave,
   onWheelEnableDefaults,
 }: QrCodeViewProps) {
+  const { t } = useI18n();
   const { stats: qrStats, loading: qrStatsLoading } = useQrStats();
   const [qrImage, setQrImage] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -124,6 +104,25 @@ export function QrCodeView({
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const [wheelModalOpen, setWheelModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+  const captureModeOptions = useMemo(
+    () =>
+      [
+        {
+          mode: "welcome" as const,
+          title: t("qr.mode.welcome.title"),
+          description: t("qr.mode.welcome.desc"),
+          icon: MessageCircle,
+        },
+        {
+          mode: "wheel" as const,
+          title: t("qr.mode.wheel.title"),
+          description: t("qr.mode.wheel.desc"),
+          icon: Gift,
+        },
+      ] as const,
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -162,11 +161,10 @@ export function QrCodeView({
         </span>
         <div className="min-w-0">
           <h1 className="m-0 text-sm font-black leading-snug tracking-tight text-slate-900">
-            QR code commerçant
+            {t("qr.pageTitle")}
           </h1>
           <p className="m-0 mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-500">
-            Affichez ce QR code en boutique pour permettre à vos clients de
-            s&apos;enregistrer dans votre base de données en quelques secondes.
+            {t("qr.pageSubtitle")}
           </p>
         </div>
       </div>
@@ -183,17 +181,17 @@ export function QrCodeView({
               <div className="mx-auto flex aspect-square w-full max-w-[180px] flex-col rounded-xl border border-slate-200 bg-slate-50 p-1.5">
                 <div className="mb-1 flex shrink-0 items-center justify-between gap-1.5">
                   <h3 className="m-0 text-[11px] font-black leading-tight text-slate-900">
-                    QR code d&apos;inscription
+                    {t("qr.signupTitle")}
                   </h3>
                   <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
-                    Actif
+                    {t("qr.active")}
                   </span>
                 </div>
                 <div className="flex min-h-0 flex-1 items-center justify-center">
                   {qrImage ? (
                     <Image
                       src={qrImage}
-                      alt="QR code commerçant"
+                      alt={t("qr.alt")}
                       width={110}
                       height={110}
                       unoptimized
@@ -204,13 +202,13 @@ export function QrCodeView({
                   )}
                 </div>
                 <p className="m-0 shrink-0 text-center text-[9px] font-semibold text-slate-400">
-                  Scannez pour tester le parcours
+                  {t("qr.scanHint")}
                 </p>
               </div>
 
               <div className="min-w-0">
                 <p className="m-0 mb-1 text-[11px] font-black text-slate-600">
-                  Lien d&apos;inscription
+                  {t("qr.signupLink")}
                 </p>
                 <div className="min-w-0 truncate rounded-lg border border-[#dfe6f2] bg-slate-50/80 px-2 py-1 text-[11px] font-semibold text-slate-700">
                   {publicUrl || "—"}
@@ -226,7 +224,7 @@ export function QrCodeView({
               <div className="grid grid-cols-3 gap-1.5">
                 <QrActionButton
                   icon={Download}
-                  title="Télécharger"
+                  title={t("qr.download")}
                   subtitle="PNG"
                   disabled={!qrImage}
                   onClick={() => {
@@ -237,7 +235,7 @@ export function QrCodeView({
                 />
                 <QrActionButton
                   icon={Download}
-                  title="Télécharger"
+                  title={t("qr.download")}
                   subtitle={pdfLoading ? "…" : "PDF"}
                   disabled={!qrImage || pdfLoading}
                   onClick={() => {
@@ -253,7 +251,7 @@ export function QrCodeView({
                         setDownloadError(
                           e instanceof Error
                             ? e.message
-                            : "Impossible de générer le PDF.",
+                            : t("qr.pdfFailed"),
                         );
                       })
                       .finally(() => {
@@ -263,8 +261,8 @@ export function QrCodeView({
                 />
                 <QrActionButton
                   icon={Copy}
-                  title="Copier le lien"
-                  subtitle={linkCopied ? "Copié !" : "URL"}
+                  title={t("qr.copyLink")}
+                  subtitle={linkCopied ? t("qr.copied") : "URL"}
                   disabled={!publicUrl}
                   onClick={() => {
                     if (!publicUrl) return;
@@ -279,21 +277,19 @@ export function QrCodeView({
               <div className="border-t border-slate-100 pt-2">
                 <div className="mb-2">
                   <h3 className="m-0 text-xs font-black text-slate-900">
-                    Après l&apos;inscription
+                    {t("qr.afterTitle")}
                   </h3>
                   <p className="m-0 mt-0.5 text-[10px] font-semibold leading-snug text-slate-500">
-                    Choisissez une seule option : SMS de bienvenue ou roue des
-                    récompenses. Cliquez à nouveau sur une option active pour ne
-                    rien sélectionner.
+                    {t("qr.afterDesc")}
                   </p>
                 </div>
 
                 <div
                   className="grid grid-cols-1 gap-2 sm:grid-cols-2"
                   role="radiogroup"
-                  aria-label="Option après inscription"
+                  aria-label={t("qr.afterAria")}
                 >
-                  {CAPTURE_MODE_OPTIONS.map((option) => {
+                  {captureModeOptions.map((option) => {
                     const Icon = option.icon;
                     const selected = captureMode === option.mode;
                     return (
@@ -363,7 +359,7 @@ export function QrCodeView({
                         disabled={templateSaving}
                         onClick={() => setWelcomeModalOpen(true)}
                       >
-                        Configurer
+                        {t("qr.configure")}
                       </Button>
                     </div>
                   </div>
@@ -386,7 +382,7 @@ export function QrCodeView({
                         disabled={wheelSaving}
                         onClick={() => setPreviewModalOpen(true)}
                       >
-                        Prévisualiser
+                        {t("qr.preview")}
                       </Button>
                       <Button
                         type="button"
@@ -396,7 +392,7 @@ export function QrCodeView({
                         disabled={wheelSaving}
                         onClick={() => setWheelModalOpen(true)}
                       >
-                        Configurer
+                        {t("qr.configure")}
                       </Button>
                     </div>
                   </div>
@@ -410,8 +406,7 @@ export function QrCodeView({
                     )}
                     aria-hidden={captureMode !== "none"}
                   >
-                    Aucune option active : seule l&apos;inscription du contact
-                    est enregistrée.
+                    {t("qr.noneActive")}
                   </p>
                 </div>
               </div>
@@ -447,7 +442,7 @@ export function QrCodeView({
                 role="status"
                 aria-live="polite"
                 aria-busy="true"
-                aria-label="Chargement"
+                aria-label={t("common.loading")}
               >
                 <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
                   <Loader2
@@ -455,7 +450,7 @@ export function QrCodeView({
                     aria-hidden
                   />
                   <span className="text-sm font-bold text-slate-700">
-                    Chargement…
+                    {t("common.loading")}
                   </span>
                 </div>
               </div>

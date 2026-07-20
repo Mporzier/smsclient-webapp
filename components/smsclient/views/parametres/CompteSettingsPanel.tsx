@@ -6,6 +6,7 @@ import { parametresFieldInp } from "@/components/smsclient/views/parametres/para
 import { cn } from "@/lib/cn";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import type { ProfileLanguage, UserProfileForm } from "@/lib/types/profile";
+import { useI18n } from "@/lib/i18n";
 import {
   Mail,
   Phone,
@@ -39,33 +40,41 @@ type CompteSettingsPanelProps = {
 
 const FIELD_META: Record<
   EditableKey,
-  { title: string; description: string; icon: LucideIcon | null }
+  {
+    titleKey:
+      | "compte.firstNameEditTitle"
+      | "compte.lastNameEditTitle"
+      | "compte.phoneEditTitle"
+      | "compte.languageEditTitle";
+    descKey:
+      | "compte.firstNameEditDesc"
+      | "compte.lastNameEditDesc"
+      | "compte.phoneEditDesc"
+      | "compte.languageEditDesc";
+    icon: LucideIcon | null;
+  }
 > = {
   firstName: {
-    title: "Prénom",
-    description: "Modifiez votre prénom.",
+    titleKey: "compte.firstNameEditTitle",
+    descKey: "compte.firstNameEditDesc",
     icon: User,
   },
   lastName: {
-    title: "Nom",
-    description: "Modifiez votre nom.",
+    titleKey: "compte.lastNameEditTitle",
+    descKey: "compte.lastNameEditDesc",
     icon: UserRound,
   },
   phone: {
-    title: "Téléphone",
-    description: "Modifiez votre numéro de téléphone.",
+    titleKey: "compte.phoneEditTitle",
+    descKey: "compte.phoneEditDesc",
     icon: Phone,
   },
   language: {
-    title: "Langue",
-    description: "Langue de l'interface.",
+    titleKey: "compte.languageEditTitle",
+    descKey: "compte.languageEditDesc",
     icon: null,
   },
 };
-
-function languageLabel(lang: ProfileLanguage) {
-  return lang === "en" ? "English" : "Français";
-}
 
 /** Drapeaux SVG — pas d’emoji (Windows / certains navigateurs). */
 function LanguageFlag({
@@ -110,6 +119,7 @@ export function CompteSettingsPanel({
   saveError = null,
   onSaveField,
 }: CompteSettingsPanelProps) {
+  const { t } = useI18n();
   const [editKey, setEditKey] = useState<EditableKey | null>(null);
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -118,6 +128,9 @@ export function CompteSettingsPanel({
     firstName: form.firstName,
     lastName: form.lastName,
   });
+
+  const languageLabel = (lang: ProfileLanguage) =>
+    lang === "en" ? t("compte.lang.en") : t("compte.lang.fr");
 
   const openEdit = (key: EditableKey) => {
     if (saving || loading) return;
@@ -136,7 +149,7 @@ export function CompteSettingsPanel({
   const handleSaveEdit = async () => {
     if (!editKey) return;
     if (editKey === "firstName" && !draft.trim()) {
-      setFieldError("Le prénom est requis.");
+      setFieldError(t("parametres.firstNameRequired"));
       return;
     }
     setFieldError(null);
@@ -153,7 +166,7 @@ export function CompteSettingsPanel({
       setDraft("");
     } catch (e) {
       setFieldError(
-        e instanceof Error ? e.message : "Sauvegarde impossible.",
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
       );
     }
   };
@@ -174,7 +187,7 @@ export function CompteSettingsPanel({
       <div className="w-full rounded-xl border border-border bg-card px-4">
         {loading ? (
           <p className="py-4 text-sm font-semibold text-muted-foreground">
-            Chargement…
+            {t("parametres.loading")}
           </p>
         ) : null}
         {saveError ? (
@@ -184,7 +197,8 @@ export function CompteSettingsPanel({
         ) : null}
 
         <CompteDisplayRow
-          label="Icône"
+          label={t("compte.icon")}
+          editLabel={t("compte.edit")}
           leading={
             <span
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ring text-sm font-black text-white"
@@ -197,7 +211,8 @@ export function CompteSettingsPanel({
           hideDisplay
         />
         <CompteDisplayRow
-          label="Prénom"
+          label={t("compte.firstName")}
+          editLabel={t("compte.edit")}
           leading={
             <User
               className={cn(valueIconCls, "text-sky-600")}
@@ -210,7 +225,8 @@ export function CompteSettingsPanel({
           onEdit={() => openEdit("firstName")}
         />
         <CompteDisplayRow
-          label="Nom"
+          label={t("compte.lastName")}
+          editLabel={t("compte.edit")}
           leading={
             <UserRound
               className={cn(valueIconCls, "text-violet-600")}
@@ -223,7 +239,8 @@ export function CompteSettingsPanel({
           onEdit={() => openEdit("lastName")}
         />
         <CompteDisplayRow
-          label="Email"
+          label={t("compte.email")}
+          editLabel={t("compte.edit")}
           leading={
             <Mail
               className={cn(valueIconCls, "text-amber-600")}
@@ -234,7 +251,8 @@ export function CompteSettingsPanel({
           display={form.email.trim() || "—"}
         />
         <CompteDisplayRow
-          label="Téléphone"
+          label={t("compte.phone")}
+          editLabel={t("compte.edit")}
           leading={
             <Phone
               className={cn(valueIconCls, "text-emerald-600")}
@@ -247,7 +265,8 @@ export function CompteSettingsPanel({
           onEdit={() => openEdit("phone")}
         />
         <CompteDisplayRow
-          label="Langue"
+          label={t("compte.language")}
+          editLabel={t("compte.edit")}
           leading={<LanguageFlag lang={form.language} />}
           display={languageLabel(form.language)}
           disabled={saving || loading}
@@ -258,8 +277,8 @@ export function CompteSettingsPanel({
       {editKey && meta && modalIcon ? (
         <ParametresSettingModal
           open
-          title={meta.title}
-          description={meta.description}
+          title={t(meta.titleKey)}
+          description={t(meta.descKey)}
           icon={modalIcon}
           bareIcon={editKey === "language"}
           onClose={closeEdit}
@@ -276,9 +295,9 @@ export function CompteSettingsPanel({
             <div className="grid gap-2">
               {(
                 [
-                  { id: "fr", label: "Français" },
-                  { id: "en", label: "English" },
-                ] as const
+                  { id: "fr" as const, label: t("compte.lang.fr") },
+                  { id: "en" as const, label: t("compte.lang.en") },
+                ]
               ).map((opt) => {
                 const selected = draft === opt.id;
                 return (
@@ -325,6 +344,7 @@ export function CompteSettingsPanel({
 
 function CompteDisplayRow({
   label,
+  editLabel,
   leading,
   display,
   hideDisplay = false,
@@ -332,6 +352,7 @@ function CompteDisplayRow({
   onEdit,
 }: {
   label: string;
+  editLabel: string;
   leading: ReactNode;
   display: string;
   hideDisplay?: boolean;
@@ -346,12 +367,12 @@ function CompteDisplayRow({
       disabled={disabled}
       onClick={onEdit}
     >
-      Éditer
+      {editLabel}
     </Button>
   ) : (
     <span className="invisible pointer-events-none select-none" aria-hidden>
       <Button type="button" variant="outline" size="sm" tabIndex={-1}>
-        Éditer
+        {editLabel}
       </Button>
     </span>
   );

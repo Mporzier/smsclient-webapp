@@ -21,6 +21,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { cn } from "@/lib/cn";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import {
   avatarColor,
   contactInitials,
@@ -240,6 +241,7 @@ type ContactsProps = {
 
 function buildContactColumns(
   customFieldDefs: CustomFieldDef[],
+  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
 ): ColumnDef<ContactRowData, unknown>[] {
   const customCols: ColumnDef<ContactRowData, unknown>[] = customFieldDefs.map(
     (def) => ({
@@ -290,7 +292,7 @@ function buildContactColumns(
   },
   {
     accessorKey: "firstName",
-    header: "Prénom",
+    header: t("contacts.col.firstName"),
     size: CONTACT_COL.firstName,
     cell: ({ getValue }) => (
       <CellTruncate as="div" className="">
@@ -300,7 +302,7 @@ function buildContactColumns(
   },
   {
     accessorKey: "lastName",
-    header: "Nom",
+    header: t("contacts.col.lastName"),
     size: CONTACT_COL.lastName,
     cell: ({ getValue }) => (
       <CellTruncate as="div" className="">
@@ -310,7 +312,7 @@ function buildContactColumns(
   },
   {
     accessorKey: "phone",
-    header: "Téléphone",
+    header: t("contacts.col.phone"),
     size: CONTACT_COL.phone,
     cell: ({ getValue }) => (
       <div className="flex items-center gap-1.5">
@@ -321,7 +323,7 @@ function buildContactColumns(
   },
   {
     accessorKey: "groups",
-    header: "Groupes",
+    header: t("contacts.col.groups"),
     size: CONTACT_COL.groups,
     enableSorting: false,
     cell: ({ getValue }) => (
@@ -336,7 +338,7 @@ function buildContactColumns(
   },
   {
     id: "notes",
-    header: "Notes",
+    header: t("contacts.col.notes"),
     size: CONTACT_COL.notes,
     accessorFn: (row) => {
       const n = row.notes.trim();
@@ -352,7 +354,7 @@ function buildContactColumns(
   },
   {
     id: "lastSms",
-    header: "Dernier SMS",
+    header: t("contacts.col.lastSms"),
     size: CONTACT_COL.lastSms,
     accessorFn: (row) => row.lastSmsAt ?? undefined,
     sortingFn: (a, b) =>
@@ -386,7 +388,7 @@ function buildContactColumns(
   },
   {
     accessorKey: "source",
-    header: "Source",
+    header: t("contacts.col.source"),
     size: CONTACT_COL.source,
     cell: ({ getValue }) => (
       <CellTruncate as="div">{getValue<string>()}</CellTruncate>
@@ -394,7 +396,7 @@ function buildContactColumns(
   },
   {
     id: "created",
-    header: "Date d'ajout",
+    header: t("contacts.col.created"),
     size: CONTACT_COL.created,
     accessorFn: (row) => row.createdAt,
     sortingFn: (a, b) =>
@@ -445,6 +447,7 @@ export function ContactsView({
   onCreateCampaignFromContacts,
   onResubscribeContacts,
 }: ContactsProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -477,7 +480,10 @@ export function ContactsView({
   const footer = useMemo(() => {
     if (loading) return "…";
     const total = eligibleRows.length;
-    const contactsLabel = `${total} contact${total > 1 ? "s" : ""}`;
+    const contactsLabel = t(
+      total === 1 ? "contacts.footerOne" : "contacts.footerMany",
+      { n: total },
+    );
     if (unsubCount === 0) return contactsLabel;
     return (
       <div className="flex flex-wrap items-center gap-2">
@@ -485,7 +491,11 @@ export function ContactsView({
           {contactsLabel}
           <span className="text-muted-foreground/80">
             {" "}
-            · {unsubCount} désabonné{unsubCount > 1 ? "s" : ""}
+            ·{" "}
+            {t(
+              unsubCount > 1 ? "contacts.unsubMany" : "contacts.unsubOne",
+              { n: unsubCount },
+            )}
           </span>
         </span>
         <Button
@@ -495,11 +505,11 @@ export function ContactsView({
           className="h-7 cursor-pointer px-2.5 text-xs font-semibold"
           onClick={() => setUnsubModalOpen(true)}
         >
-          Voir la liste
+          {t("contacts.viewUnsubList")}
         </Button>
       </div>
     );
-  }, [loading, eligibleRows.length, unsubCount]);
+  }, [loading, eligibleRows.length, unsubCount, t]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -519,8 +529,8 @@ export function ContactsView({
   }, []);
 
   const columns = useMemo(
-    () => buildContactColumns(customFieldDefs),
-    [customFieldDefs],
+    () => buildContactColumns(customFieldDefs, t),
+    [customFieldDefs, t],
   );
 
   const minContentWidth = useMemo(
@@ -550,7 +560,7 @@ export function ContactsView({
                     : false
               }
               onCheckedChange={() => toggleAll()}
-              aria-label="Tout sélectionner les contacts"
+              aria-label={t("contacts.selectAllAria")}
             />
           </div>
         );
@@ -561,7 +571,9 @@ export function ContactsView({
             checked={selectedIdsRef.current.has(row.original.id)}
             onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
-            aria-label={`Sélectionner ${row.original.name}`}
+            aria-label={t("contacts.selectOneAria", {
+              name: row.original.name,
+            })}
           />
         </div>
       ),
@@ -583,7 +595,9 @@ export function ContactsView({
                 variant="ghost"
                 size="icon-sm"
                 className="size-7 rounded-full text-muted-foreground"
-                aria-label={`Actions pour ${row.original.name}`}
+                aria-label={t("contacts.actionsAria", {
+                  name: row.original.name,
+                })}
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="size-4" aria-hidden />
@@ -593,7 +607,7 @@ export function ContactsView({
               <DropdownMenuItem
                 onSelect={() => onRowClickRef.current(row.original)}
               >
-                Éditer
+                {t("common.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -601,7 +615,7 @@ export function ContactsView({
                   onDeleteContactsRef.current([row.original.id])
                 }
               >
-                Supprimer
+                {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -609,7 +623,7 @@ export function ContactsView({
       ),
     },
   ],
-    [columns],
+    [columns, t, toggleAll, toggleSelect],
   );
 
   return (
@@ -623,10 +637,10 @@ export function ContactsView({
             <Search aria-hidden />
           </InputGroupAddon>
           <InputGroupInput
-            placeholder="Rechercher un contact…"
+            placeholder={t("contacts.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Rechercher un contact"
+            aria-label={t("contacts.searchAria")}
           />
         </InputGroup>
         <div className="flex flex-wrap items-center gap-2">
@@ -642,7 +656,7 @@ export function ContactsView({
                 }}
               >
                 <Trash2 aria-hidden />
-                Supprimer ({selectedIds.size})
+                {t("contacts.deleteSelected", { n: selectedIds.size })}
               </Button>
               <Button
                 variant="default"
@@ -654,7 +668,7 @@ export function ContactsView({
                 }}
               >
                 <Send aria-hidden />
-                Créer une campagne
+                {t("contacts.createCampaign")}
               </Button>
             </>
           ) : (
@@ -666,7 +680,7 @@ export function ContactsView({
                 onClick={onImport}
               >
                 <Download aria-hidden />
-                Importer
+                {t("contacts.import")}
               </Button>
               <Button
                 variant="default"
@@ -675,7 +689,7 @@ export function ContactsView({
                 onClick={onAddContact}
               >
                 <Plus aria-hidden />
-                Ajouter un contact
+                {t("contacts.add")}
               </Button>
             </>
           )}
@@ -697,11 +711,10 @@ export function ContactsView({
               aria-hidden
             />
             <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              Aucun contact pour l&apos;instant
+              {t("contacts.emptyTitle")}
             </p>
             <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              Cliquez sur « Ajouter un contact » pour enregistrer votre premier
-              numéro.
+              {t("contacts.emptyBody")}
             </p>
           </div>
         </section>
@@ -712,8 +725,8 @@ export function ContactsView({
           loading={loading}
           pageSize={25}
           globalFilter={searchQuery}
-          emptyMessage="Aucune cible disponible."
-          searchNoResultsMessage="Aucun contact ne correspond à votre recherche."
+          emptyMessage={t("contacts.emptyTable")}
+          searchNoResultsMessage={t("contacts.noSearchResults")}
           onRowClick={onRowClick}
           footer={footer}
           minContentWidth={minContentWidth}

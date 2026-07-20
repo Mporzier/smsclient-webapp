@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { openOpenWidget } from "@/lib/openwidget";
 import {
   BarChart3,
@@ -60,7 +61,7 @@ function HelpCard({
     <article
       className={cn(
         "grid min-h-[190px] grid-cols-[58px_1fr] gap-4 rounded-[18px] border border-border bg-card p-6 shadow-[0_12px_35px_rgba(15,31,56,0.05)] min-[1100px]:grid-cols-[72px_1fr] min-[1100px]:gap-[18px]",
-        className
+        className,
       )}
     >
       <div
@@ -97,7 +98,7 @@ function WideBtn({
       onClick={onClick}
       className={cn(
         "mt-5 h-[42px] w-full cursor-pointer rounded-[13px] border-0 bg-primary text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(52,120,246,0.22)] transition-[filter] hover:brightness-105",
-        className
+        className,
       )}
     >
       {children}
@@ -128,6 +129,7 @@ function HelpHeroIllustration() {
 }
 
 export function AideView({ onGo }: AideViewProps) {
+  const { t } = useI18n();
   const go = (hash: string) => onGo?.(hash);
 
   return (
@@ -139,11 +141,10 @@ export function AideView({ onGo }: AideViewProps) {
         />
         <div className="relative z-[1] min-w-0">
           <h2 className="m-0 mb-3.5 text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em]">
-            Centre d&apos;aide SMSClient 👋
+            {t("help.heroTitle")}
           </h2>
           <p className="m-0 max-w-[560px] text-[15px] font-semibold leading-relaxed text-white/90">
-            Tout ce qu&apos;il vous faut pour envoyer vos premiers SMS, gérer
-            vos contacts et suivre vos résultats simplement.
+            {t("help.heroBody")}
           </p>
         </div>
         <HelpHeroIllustration />
@@ -154,14 +155,14 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="#eaf8d8"
           color="#6fbd27"
           icon={Megaphone}
-          title="Envoyer votre premier SMS"
-          description="Apprenez à créer et envoyer une campagne SMS en quelques minutes."
+          title={t("help.firstSms.title")}
+          description={t("help.firstSms.desc")}
         >
           <ul className="m-0 mt-[22px] grid list-none gap-[11px] p-0">
             {[
-              "Sélectionner vos destinataires",
-              "Rédiger votre message",
-              "Programmer et envoyer votre campagne",
+              t("help.firstSms.step1"),
+              t("help.firstSms.step2"),
+              t("help.firstSms.step3"),
             ].map((item) => (
               <li
                 key={item}
@@ -177,7 +178,7 @@ export function AideView({ onGo }: AideViewProps) {
             ))}
           </ul>
           <WideBtn onClick={() => go("nouvelle-campagne")}>
-            Voir le guide pas à pas
+            {t("help.firstSms.cta")}
           </WideBtn>
         </HelpCard>
 
@@ -185,19 +186,19 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="var(--accent)"
           color="var(--ring)"
           icon={Users}
-          title="Gérer vos contacts"
-          description="Importez, organisez et segmentez vos contacts pour des campagnes ciblées et efficaces."
+          title={t("help.contacts.title")}
+          description={t("help.contacts.desc")}
         >
           <div className="mt-5 grid gap-2.5">
             {[
               {
                 step: 1,
-                label: "Importez vos contacts CSV, Excel ou manuel",
+                label: t("help.contacts.step1"),
                 hash: "contacts",
               },
               {
                 step: 2,
-                label: "Créez des groupes et segments",
+                label: t("help.contacts.step2"),
                 hash: "groupes",
               },
             ].map((row) => (
@@ -214,7 +215,7 @@ export function AideView({ onGo }: AideViewProps) {
                   onClick={() => go(row.hash)}
                   className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-ring hover:underline"
                 >
-                  Voir comment
+                  {t("help.contacts.how")}
                 </button>
               </div>
             ))}
@@ -225,20 +226,20 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="#f0e4ff"
           color="#7a35ee"
           icon={Zap}
-          title="Utiliser l'IA pour vos messages"
-          description="Gagnez du temps avec notre assistant IA pour rédiger des SMS percutants et personnalisés."
+          title={t("help.ai.title")}
+          description={t("help.ai.desc")}
         >
           <div className="mt-[22px] overflow-hidden rounded-[14px] border border-border">
             {[
-              { emoji: "✨", label: "Générer un message avec l'IA" },
-              { emoji: "✎", label: "Corriger et reformuler votre texte" },
-              { emoji: "✦", label: "Adapter le ton et ajouter des emojis" },
+              { emoji: "✨", label: t("help.ai.gen") },
+              { emoji: "✎", label: t("help.ai.fix") },
+              { emoji: "✦", label: t("help.ai.tone") },
             ].map((row, index, arr) => (
               <div
                 key={row.label}
                 className={cn(
                   "grid h-[42px] grid-cols-[26px_1fr_auto] items-center gap-2.5 bg-card px-3.5 text-[13px] font-bold text-muted-foreground",
-                  index < arr.length - 1 && "border-b border-border"
+                  index < arr.length - 1 && "border-b border-border",
                 )}
               >
                 <span aria-hidden>{row.emoji}</span>
@@ -248,7 +249,7 @@ export function AideView({ onGo }: AideViewProps) {
                   onClick={() => go("nouvelle-campagne")}
                   className="cursor-pointer border-0 bg-transparent p-0 text-[13px] font-extrabold text-ring hover:underline"
                 >
-                  Découvrir
+                  {t("help.ai.discover")}
                 </button>
               </div>
             ))}
@@ -259,29 +260,29 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="#fff1cf"
           color="#c97900"
           icon={BarChart3}
-          title="Suivre vos performances"
-          description="Analysez vos campagnes et comprenez les résultats pour toujours mieux communiquer."
+          title={t("help.perf.title")}
+          description={t("help.perf.desc")}
         >
           <div className="mt-6 grid gap-2.5 min-[1100px]:grid-cols-3">
             {[
               {
                 glyph: "↗",
-                label: "Taux de livraison",
-                hint: "SMS délivrés",
+                label: t("help.perf.delivery"),
+                hint: t("help.perf.deliveryHint"),
                 soft: "#eaf8d8",
                 color: "#5aae24",
               },
               {
                 glyph: "◉",
-                label: "Taux de lecture",
-                hint: "SMS lus",
+                label: t("help.perf.read"),
+                hint: t("help.perf.readHint"),
                 soft: "var(--accent)",
                 color: "var(--ring)",
               },
               {
                 glyph: "⌁",
-                label: "Taux de clic",
-                hint: "Liens cliqués",
+                label: t("help.perf.click"),
+                hint: t("help.perf.clickHint"),
                 soft: "#f0e4ff",
                 color: "#7a35ee",
               },
@@ -312,7 +313,7 @@ export function AideView({ onGo }: AideViewProps) {
             onClick={() => go("statistiques")}
             className="mt-5 h-[42px] w-full cursor-pointer rounded-[13px] border-0 bg-[#fff1c8] text-sm font-extrabold text-[#a96b00] transition-[filter] hover:brightness-95"
           >
-            Voir mes statistiques
+            {t("help.perf.cta")}
           </button>
         </HelpCard>
 
@@ -320,15 +321,15 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="color-mix(in srgb, var(--destructive) 12%, white)"
           color="var(--destructive)"
           icon={MessageSquare}
-          title="Besoin d'un accompagnement ?"
-          description="Notre équipe est là pour répondre à toutes vos questions et vous aider à réussir."
+          title={t("help.support.title")}
+          description={t("help.support.desc")}
         >
           <button
             type="button"
             onClick={openSupportContact}
             className="mt-[18px] h-[38px] cursor-pointer rounded-xl border-0 bg-destructive/15 px-[18px] text-[13px] font-extrabold text-destructive transition-[filter] hover:brightness-95"
           >
-            Contacter le support
+            {t("help.support.cta")}
           </button>
         </HelpCard>
 
@@ -336,12 +337,12 @@ export function AideView({ onGo }: AideViewProps) {
           softBg="var(--accent)"
           color="var(--ring)"
           icon={LayoutTemplate}
-          title="Découvrir SMSClient"
-          description="Accédez à nos tutoriels, exemples de SMS et ressources pour devenir autonome."
+          title={t("help.discover.title")}
+          description={t("help.discover.desc")}
           className="bg-gradient-to-br from-accent to-accent/60"
         >
           <WideBtn onClick={openHelpFaq} className="mt-5 w-auto px-[34px]">
-            Voir les ressources
+            {t("help.discover.cta")}
           </WideBtn>
         </HelpCard>
       </div>

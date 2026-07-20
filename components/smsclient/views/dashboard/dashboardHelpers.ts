@@ -1,6 +1,7 @@
 import type { CampaignRowData } from "@/lib/types/campaign";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
+import type { MessageKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import {
   Clock3,
@@ -17,6 +18,11 @@ export type DashboardActivityItem = {
   tagClassName: string;
   sortAt: number;
 };
+
+type TFn = (
+  key: MessageKey,
+  vars?: Record<string, string | number>,
+) => string;
 
 function isCurrentMonth(iso: string): boolean {
   const d = new Date(iso);
@@ -53,6 +59,7 @@ export function estimateSmsFromCredits(credits: number): number {
 export function buildRecentActivities(
   campaigns: CampaignRowData[],
   contacts: ContactRowData[],
+  t: TFn,
 ): DashboardActivityItem[] {
   const items: DashboardActivityItem[] = [];
 
@@ -67,9 +74,14 @@ export function buildRecentActivities(
   if (latestSent) {
     items.push({
       icon: Megaphone,
-      title: "Campagne envoyée",
+      title: t("dashboard.activity.campaignSent"),
       description: `« ${latestSent.name} »\n${latestSent.sendLabel}`,
-      tag: `${latestSent.recipients} destinataire${latestSent.recipients > 1 ? "s" : ""}`,
+      tag: t(
+        latestSent.recipients > 1
+          ? "dashboard.activity.recipientsMany"
+          : "dashboard.activity.recipientsOne",
+        { n: latestSent.recipients },
+      ),
       tagClassName: "bg-[#eaf3ff] text-[#1648e8]",
       sortAt: new Date(latestSent.sentAt ?? latestSent.createdAt ?? 0).getTime(),
     });
@@ -93,9 +105,14 @@ export function buildRecentActivities(
     const [day, count] = latestContactDay;
     items.push({
       icon: UserPlus,
-      title: "Contacts ajoutés",
-      description: `Le ${day}`,
-      tag: `+${count} nouveau${count > 1 ? "x" : ""}`,
+      title: t("dashboard.activity.contactsAdded"),
+      description: t("dashboard.activity.onDay", { day }),
+      tag: t(
+        count > 1
+          ? "dashboard.activity.newMany"
+          : "dashboard.activity.newOne",
+        { n: count },
+      ),
       tagClassName: "bg-[#e8fff4] text-[#099a5c]",
       sortAt: Date.now(),
     });
@@ -113,9 +130,14 @@ export function buildRecentActivities(
     const groupName = latestWithGroup.targetGroups[0];
     items.push({
       icon: Users,
-      title: "Groupe utilisé",
+      title: t("dashboard.activity.groupUsed"),
       description: `${groupName}\n${latestWithGroup.sendLabel}`,
-      tag: `${latestWithGroup.recipients} contact${latestWithGroup.recipients > 1 ? "s" : ""}`,
+      tag: t(
+        latestWithGroup.recipients > 1
+          ? "dashboard.activity.contactsMany"
+          : "dashboard.activity.contactsOne",
+        { n: latestWithGroup.recipients },
+      ),
       tagClassName: "bg-[#eaf3ff] text-[#1648e8]",
       sortAt: new Date(latestWithGroup.createdAt ?? 0).getTime(),
     });
@@ -132,9 +154,9 @@ export function buildRecentActivities(
   if (latestScheduled) {
     items.push({
       icon: Clock3,
-      title: "SMS planifié",
+      title: t("dashboard.activity.smsScheduled"),
       description: `« ${latestScheduled.name} »\n${latestScheduled.sendLabel}`,
-      tag: "Programmé",
+      tag: t("dashboard.activity.scheduled"),
       tagClassName: "bg-[#fff2dd] text-[#d36b00]",
       sortAt: new Date(
         latestScheduled.scheduledAt ?? latestScheduled.createdAt ?? 0,
@@ -142,7 +164,5 @@ export function buildRecentActivities(
     });
   }
 
-  return items
-    .sort((a, b) => b.sortAt - a.sortAt)
-    .slice(0, 4);
+  return items.sort((a, b) => b.sortAt - a.sortAt).slice(0, 4);
 }

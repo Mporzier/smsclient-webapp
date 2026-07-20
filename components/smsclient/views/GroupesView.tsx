@@ -16,55 +16,66 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { GroupRowData } from "@/lib/types/group";
 import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const dataColumns: ColumnDef<GroupRowData, unknown>[] = [
-  {
-    accessorKey: "name",
-    header: "Nom du groupe",
-    size: GROUP_COL.name,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-    ),
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-    size: GROUP_COL.description,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
-    ),
-  },
-  {
-    accessorKey: "contactCount",
-    header: "Contacts",
-    size: GROUP_COL.contactCount,
-  },
-  {
-    accessorKey: "lastCampaignLabel",
-    header: "Dernière campagne",
-    size: GROUP_COL.lastCampaign,
-    sortingFn: (a, b) =>
-      compareIsoTimestamps(a.original.lastCampaignAt, b.original.lastCampaignAt),
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-    ),
-  },
-  {
-    accessorKey: "createdLabel",
-    header: "Création",
-    size: GROUP_COL.created,
-    sortingFn: (a, b) =>
-      compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-    ),
-  },
-];
+type TFn = (
+  key: MessageKey,
+  vars?: Record<string, string | number>,
+) => string;
+
+function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: t("groups.col.name"),
+      size: GROUP_COL.name,
+      cell: ({ getValue }) => (
+        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: t("groups.col.description"),
+      size: GROUP_COL.description,
+      cell: ({ getValue }) => (
+        <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
+      ),
+    },
+    {
+      accessorKey: "contactCount",
+      header: t("groups.col.contacts"),
+      size: GROUP_COL.contactCount,
+    },
+    {
+      accessorKey: "lastCampaignLabel",
+      header: t("groups.col.lastCampaign"),
+      size: GROUP_COL.lastCampaign,
+      sortingFn: (a, b) =>
+        compareIsoTimestamps(
+          a.original.lastCampaignAt,
+          b.original.lastCampaignAt,
+        ),
+      cell: ({ getValue }) => (
+        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+      ),
+    },
+    {
+      accessorKey: "createdLabel",
+      header: t("groups.col.created"),
+      size: GROUP_COL.created,
+      sortingFn: (a, b) =>
+        compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
+      cell: ({ getValue }) => (
+        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+      ),
+    },
+  ];
+}
 
 type GroupesProps = {
   rows: GroupRowData[];
@@ -85,15 +96,22 @@ export function GroupesView({
   onDeleteGroups,
   onCreateCampaignFromGroups,
 }: GroupesProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const hasSelection = selectedIds.size > 0;
   const showBigEmpty = !loading && !error && rows.length === 0;
 
-  const footerLabel = useMemo(() => {
-    return `${rows.length} groupe${rows.length > 1 ? "s" : ""}`;
-  }, [rows]);
+  const footerLabel = useMemo(
+    () =>
+      t(rows.length === 1 ? "groups.footerOne" : "groups.footerMany", {
+        n: rows.length,
+      }),
+    [rows.length, t],
+  );
+
+  const dataColumns = useMemo(() => buildGroupColumns(t), [t]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -130,7 +148,7 @@ export function GroupesView({
                     : false
               }
               onCheckedChange={() => toggleAll()}
-              aria-label="Tout sélectionner les groupes"
+              aria-label={t("groups.selectAllAria")}
             />
           </div>
         ),
@@ -140,7 +158,9 @@ export function GroupesView({
               checked={selectedIds.has(row.original.id)}
               onCheckedChange={() => toggleSelect(row.original.id)}
               onClick={(e) => e.stopPropagation()}
-              aria-label={`Sélectionner ${row.original.name}`}
+              aria-label={t("groups.selectOneAria", {
+                name: row.original.name,
+              })}
             />
           </div>
         ),
@@ -162,7 +182,9 @@ export function GroupesView({
                   variant="ghost"
                   size="icon-sm"
                   className="size-7 rounded-full text-muted-foreground"
-                  aria-label={`Actions pour ${row.original.name}`}
+                  aria-label={t("groups.actionsAria", {
+                    name: row.original.name,
+                  })}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-4" aria-hidden />
@@ -170,13 +192,13 @@ export function GroupesView({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onSelect={() => onEditGroup(row.original)}>
-                  Éditer
+                  {t("common.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => onDeleteGroups([row.original.id])}
                 >
-                  Supprimer
+                  {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -191,6 +213,8 @@ export function GroupesView({
       toggleSelect,
       onEditGroup,
       onDeleteGroups,
+      dataColumns,
+      t,
     ],
   );
 
@@ -205,10 +229,10 @@ export function GroupesView({
             <Search aria-hidden />
           </InputGroupAddon>
           <InputGroupInput
-            placeholder="Rechercher un groupe…"
+            placeholder={t("groups.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Rechercher un groupe"
+            aria-label={t("groups.searchAria")}
           />
         </InputGroup>
         <div className="flex flex-wrap items-center gap-2">
@@ -224,7 +248,7 @@ export function GroupesView({
                 }}
               >
                 <Trash2 aria-hidden />
-                Supprimer ({selectedIds.size})
+                {t("groups.deleteSelected", { n: selectedIds.size })}
               </Button>
               <Button
                 variant="default"
@@ -236,7 +260,7 @@ export function GroupesView({
                 }}
               >
                 <Send aria-hidden />
-                Créer une campagne
+                {t("groups.createCampaign")}
               </Button>
             </>
           ) : (
@@ -247,7 +271,7 @@ export function GroupesView({
               onClick={onCreateGroup}
             >
               <Plus aria-hidden />
-              Créer un groupe
+              {t("groups.create")}
             </Button>
           )}
         </div>
@@ -268,10 +292,10 @@ export function GroupesView({
               aria-hidden
             />
             <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              Aucun groupe
+              {t("groups.emptyTitle")}
             </p>
             <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              Créez votre premier segment avec « Créer un groupe ».
+              {t("groups.emptyBody")}
             </p>
           </div>
         </section>
@@ -282,8 +306,8 @@ export function GroupesView({
           loading={loading}
           pageSize={25}
           globalFilter={searchQuery}
-          emptyMessage="Aucun groupe."
-          searchNoResultsMessage="Aucun groupe ne correspond à votre recherche."
+          emptyMessage={t("groups.emptyTable")}
+          searchNoResultsMessage={t("groups.noSearchResults")}
           onRowClick={onEditGroup}
           footer={footerLabel}
         />

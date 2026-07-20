@@ -24,9 +24,9 @@ import type { AppRoute } from "@/lib/proto/routes";
 /** Fond applicatif (canvas entre sidebar et contenu) */
 export const APP_CANVAS_CLASS = "bg-canvas";
 
-/** Panneau principal (carte blanche comme la sidebar) */
+/** Panneau principal (carte contenu) */
 export const MAIN_PANEL_CLASS =
-  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card";
+  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card";
 
 /** Largeur du menu latéral */
 export const SIDEBAR_W_EXPANDED = "w-[260px]";
@@ -102,71 +102,32 @@ export type ShellProps = {
   children: ReactNode;
 };
 
-type NavItem = {
+export type NavItem = {
   id: NavKey;
-  label: string;
   hash: string;
   icon: LucideIcon;
 };
 
+export type LabeledNavItem = NavItem & { label: string };
+
 export const generalNav: NavItem[] = [
-  {
-    id: "dashboard",
-    label: "Accueil",
-    hash: "dashboard",
-    icon: LayoutTemplate,
-  },
-  {
-    id: "contacts",
-    label: "Contacts",
-    hash: "contacts",
-    icon: CircleUserRound,
-  },
-  { id: "groupes", label: "Groupes", hash: "groupes", icon: Users },
-  { id: "campagnes", label: "Campagnes", hash: "campagnes", icon: Megaphone },
-  {
-    id: "statistiques",
-    label: "Statistiques",
-    hash: "statistiques",
-    icon: BarChart3,
-  },
+  { id: "dashboard", hash: "dashboard", icon: LayoutTemplate },
+  { id: "contacts", hash: "contacts", icon: CircleUserRound },
+  { id: "groupes", hash: "groupes", icon: Users },
+  { id: "campagnes", hash: "campagnes", icon: Megaphone },
+  { id: "statistiques", hash: "statistiques", icon: BarChart3 },
 ];
 
 export const toolsNav: NavItem[] = [
-  {
-    id: "automatisations",
-    label: "Automatisations",
-    hash: "automatisations",
-    icon: CalendarSync,
-  },
-  { id: "liens", label: "Liens", hash: "liens", icon: Link },
-  {
-    id: "modeles-sms",
-    label: "Modèles SMS",
-    hash: "modeles-sms",
-    icon: MessageSquareText,
-  },
-  {
-    id: "qr-boutique",
-    label: "QR code boutique",
-    hash: "qr-boutique",
-    icon: QrCode,
-  },
+  { id: "automatisations", hash: "automatisations", icon: CalendarSync },
+  { id: "liens", hash: "liens", icon: Link },
+  { id: "modeles-sms", hash: "modeles-sms", icon: MessageSquareText },
+  { id: "qr-boutique", hash: "qr-boutique", icon: QrCode },
 ];
 
 export const assistanceNav: NavItem[] = [
-  {
-    id: "aide",
-    label: "Centre d'aide",
-    hash: "aide",
-    icon: CircleHelp,
-  },
-  {
-    id: "reglementations-sms",
-    label: "Réglementations SMS",
-    hash: "reglementations-sms",
-    icon: Scale,
-  },
+  { id: "aide", hash: "aide", icon: CircleHelp },
+  { id: "reglementations-sms", hash: "reglementations-sms", icon: Scale },
 ];
 
 /** Icône titre topbar — alignée sidebar / menu compte */
@@ -263,7 +224,7 @@ function SidebarNavItem({
   collapsed,
   onGo,
 }: {
-  item: NavItem;
+  item: LabeledNavItem;
   isActive: boolean;
   collapsed: boolean;
   onGo: (hash: string) => void;
@@ -296,7 +257,7 @@ export function SidebarNavSection({
   collapsed,
 }: {
   label: string;
-  items: NavItem[];
+  items: LabeledNavItem[];
   active: string;
   onGo: (hash: string) => void;
   bordered?: boolean;

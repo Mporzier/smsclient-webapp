@@ -7,14 +7,20 @@ import {
   parametresFieldInp,
   parametresFieldLbl,
 } from "@/components/smsclient/views/parametres/parametresSettings";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import {
   CUSTOM_FIELD_MAX_PER_ACCOUNT,
-  CUSTOM_FIELD_TYPE_LABELS,
   type CustomFieldDef,
   type CustomFieldType,
 } from "@/lib/types/customFields";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+
+const TYPE_KEYS: Record<CustomFieldType, MessageKey> = {
+  text: "customFields.type.text",
+  number: "customFields.type.number",
+  date: "customFields.type.date",
+};
 
 export type CustomFieldsSettingsPanelProps = {
   defs: CustomFieldDef[];
@@ -39,6 +45,7 @@ export function CustomFieldsSettingsPanel({
   onRename,
   onRemove,
 }: CustomFieldsSettingsPanelProps) {
+  const { t } = useI18n();
   const [label, setLabel] = useState("");
   const [fieldType, setFieldType] = useState<CustomFieldType>("text");
   const [busy, setBusy] = useState(false);
@@ -66,18 +73,18 @@ export function CustomFieldsSettingsPanel({
   };
 
   const handleCreate = async () => {
-    const t = label.trim();
-    if (!t) {
-      setLabelError("Libellé requis.");
+    const next = label.trim();
+    if (!next) {
+      setLabelError(t("customFields.labelRequired"));
       return;
     }
     setLabelError(null);
     setBusy(true);
     setLocalError(null);
     try {
-      const { error: err } = await onCreate({ label: t, fieldType });
+      const { error: err } = await onCreate({ label: next, fieldType });
       if (err) {
-        if (err.message.includes("existe déjà")) {
+        if (err.message.includes("existe déjà") || err.message.includes("already")) {
           setLabelError(err.message);
         } else {
           setLocalError(err.message);
@@ -92,15 +99,15 @@ export function CustomFieldsSettingsPanel({
   };
 
   const handleRename = async (fieldId: string) => {
-    const t = editLabel.trim();
-    if (!t) {
-      setLocalError("Libellé requis.");
+    const next = editLabel.trim();
+    if (!next) {
+      setLocalError(t("customFields.labelRequired"));
       return;
     }
     setBusy(true);
     setLocalError(null);
     try {
-      const { error: err } = await onRename(fieldId, t);
+      const { error: err } = await onRename(fieldId, next);
       if (err) {
         setLocalError(err.message);
         return;
@@ -122,8 +129,7 @@ export function CustomFieldsSettingsPanel({
     <>
       <ModalPanel>
         <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-          Champs date, texte ou nombre visibles sur la liste et les fiches
-          contacts (max {CUSTOM_FIELD_MAX_PER_ACCOUNT}).
+          {t("customFields.intro", { n: CUSTOM_FIELD_MAX_PER_ACCOUNT })}
         </p>
 
         {(error || localError) && (
@@ -134,13 +140,13 @@ export function CustomFieldsSettingsPanel({
 
         {loading ? (
           <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-            Chargement…
+            {t("common.loading")}
           </p>
         ) : (
           <ul className="m-0 mb-4 list-none space-y-2 p-0">
             {defs.length === 0 && (
               <li className="text-sm font-semibold text-slate-500">
-                Aucun champ personnalisé pour l&apos;instant.
+                {t("customFields.empty")}
               </li>
             )}
             {defs.map((def) => (
@@ -155,7 +161,7 @@ export function CustomFieldsSettingsPanel({
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
                       disabled={busy}
-                      aria-label="Nouveau libellé"
+                      aria-label={t("customFields.newLabelAria")}
                     />
                     <Button
                       type="button"
@@ -163,7 +169,7 @@ export function CustomFieldsSettingsPanel({
                       disabled={busy}
                       onClick={() => void handleRename(def.id)}
                     >
-                      OK
+                      {t("common.ok")}
                     </Button>
                     <Button
                       type="button"
@@ -172,7 +178,7 @@ export function CustomFieldsSettingsPanel({
                       disabled={busy}
                       onClick={() => setEditingId(null)}
                     >
-                      Annuler
+                      {t("common.cancel")}
                     </Button>
                   </>
                 ) : (
@@ -182,7 +188,7 @@ export function CustomFieldsSettingsPanel({
                         {def.label}
                       </div>
                       <div className="text-xs font-semibold text-muted-foreground">
-                        {CUSTOM_FIELD_TYPE_LABELS[def.fieldType]}
+                        {t(TYPE_KEYS[def.fieldType])}
                       </div>
                     </div>
                     <Button
@@ -190,7 +196,7 @@ export function CustomFieldsSettingsPanel({
                       size="icon-sm"
                       variant="ghost"
                       disabled={busy}
-                      aria-label="Renommer"
+                      aria-label={t("customFields.renameAria")}
                       onClick={() => {
                         setEditingId(def.id);
                         setEditLabel(def.label);
@@ -203,7 +209,7 @@ export function CustomFieldsSettingsPanel({
                       size="icon-sm"
                       variant="ghost"
                       disabled={busy}
-                      aria-label="Supprimer"
+                      aria-label={t("customFields.deleteAria")}
                       onClick={() =>
                         setPendingDelete({ id: def.id, label: def.label })
                       }
@@ -220,7 +226,7 @@ export function CustomFieldsSettingsPanel({
         <div className="grid gap-3 border-t border-border pt-3">
           <div>
             <label className={parametresFieldLbl} htmlFor="custom-field-new-label">
-              Nouveau champ
+              {t("customFields.newField")}
             </label>
             <input
               id="custom-field-new-label"
@@ -231,7 +237,7 @@ export function CustomFieldsSettingsPanel({
                 if (labelError) setLabelError(null);
                 if (localError) setLocalError(null);
               }}
-              placeholder="Ex. Date d'inscription"
+              placeholder={t("customFields.placeholder")}
               disabled={busy || atCap}
               aria-invalid={Boolean(labelError)}
             />
@@ -242,20 +248,18 @@ export function CustomFieldsSettingsPanel({
             ) : null}
           </div>
           <div>
-            <label className={parametresFieldLbl}>Type</label>
+            <label className={parametresFieldLbl}>{t("customFields.type")}</label>
             <select
               className={parametresFieldInp}
               value={fieldType}
               onChange={(e) => setFieldType(e.target.value as CustomFieldType)}
               disabled={busy || atCap}
             >
-              {(Object.keys(CUSTOM_FIELD_TYPE_LABELS) as CustomFieldType[]).map(
-                (t) => (
-                  <option key={t} value={t}>
-                    {CUSTOM_FIELD_TYPE_LABELS[t]}
-                  </option>
-                ),
-              )}
+              {(Object.keys(TYPE_KEYS) as CustomFieldType[]).map((type) => (
+                <option key={type} value={type}>
+                  {t(TYPE_KEYS[type])}
+                </option>
+              ))}
             </select>
           </div>
           <Button
@@ -264,11 +268,11 @@ export function CustomFieldsSettingsPanel({
             onClick={() => void handleCreate()}
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Ajouter
+            {t("customFields.add")}
           </Button>
           {atCap && (
             <p className="m-0 text-xs font-bold text-slate-500">
-              Limite de {CUSTOM_FIELD_MAX_PER_ACCOUNT} champs atteinte.
+              {t("customFields.atCap", { n: CUSTOM_FIELD_MAX_PER_ACCOUNT })}
             </p>
           )}
         </div>
@@ -279,10 +283,10 @@ export function CustomFieldsSettingsPanel({
         stacked
         title={
           pendingDelete
-            ? `Supprimer « ${pendingDelete.label} » ?`
-            : "Supprimer ce champ ?"
+            ? t("customFields.deleteTitle", { label: pendingDelete.label })
+            : t("customFields.deleteTitleFallback")
         }
-        description="Les valeurs de ce champ sur les contacts seront perdues."
+        description={t("customFields.deleteDesc")}
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />

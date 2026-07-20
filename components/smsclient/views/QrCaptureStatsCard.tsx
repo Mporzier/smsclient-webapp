@@ -1,9 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import type { QrCaptureStats } from "@/lib/supabase/qrStats";
 import { CheckCircle2, Gift, UserPlus } from "lucide-react";
+import { useMemo } from "react";
 
 type QrCaptureStatsCardProps = {
   stats: QrCaptureStats;
@@ -12,36 +14,41 @@ type QrCaptureStatsCardProps = {
   className?: string;
 };
 
-const METRICS = [
-  {
-    key: "totalRegistrations" as const,
-    label: "Inscriptions totales",
-    icon: UserPlus,
-    iconBg: "bg-[#eef4ff]",
-    iconColor: "text-[#2f6fed]",
-  },
-  {
-    key: "optInRegistrations" as const,
-    label: "Opt-in à l'inscription",
-    icon: CheckCircle2,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-  },
-  {
-    key: "wheelSpins" as const,
-    label: "Tours de roue",
-    icon: Gift,
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-  },
-];
-
 export function QrCaptureStatsCard({
   stats,
   loading,
   embedded = false,
   className,
 }: QrCaptureStatsCardProps) {
+  const { t } = useI18n();
+
+  const metrics = useMemo(
+    () => [
+      {
+        key: "totalRegistrations" as const,
+        label: t("qr.stats.total"),
+        icon: UserPlus,
+        iconBg: "bg-[#eef4ff]",
+        iconColor: "text-[#2f6fed]",
+      },
+      {
+        key: "optInRegistrations" as const,
+        label: t("qr.stats.optIn"),
+        icon: CheckCircle2,
+        iconBg: "bg-emerald-50",
+        iconColor: "text-emerald-600",
+      },
+      {
+        key: "wheelSpins" as const,
+        label: t("qr.stats.spins"),
+        icon: Gift,
+        iconBg: "bg-amber-50",
+        iconColor: "text-amber-600",
+      },
+    ],
+    [t],
+  );
+
   return (
     <div
       className={cn(
@@ -64,14 +71,14 @@ export function QrCaptureStatsCard({
             embedded ? "text-[10px]" : "text-[11px]",
           )}
         >
-          Statistiques
+          {t("qr.statsTitle")}
         </p>
         <p className="m-0 shrink-0 text-[9px] font-semibold text-slate-400">
-          depuis la création
+          {t("qr.statsSince")}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-        {METRICS.map((metric) => {
+        {metrics.map((metric) => {
           const Icon = metric.icon;
           const value = stats[metric.key];
           return (

@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { AlertTriangle } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
@@ -36,11 +37,13 @@ export function ConfirmDeleteModal({
   open,
   title,
   description,
-  confirmLabel = "Supprimer",
+  confirmLabel,
   stacked = false,
   onConfirm,
   onCancel,
 }: ConfirmDeleteModalProps) {
+  const { t } = useI18n();
+  const resolvedConfirm = confirmLabel ?? t("common.delete");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
@@ -59,10 +62,12 @@ export function ConfirmDeleteModal({
     try {
       await onConfirm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Une erreur est survenue.");
+      setError(
+        e instanceof Error ? e.message : t("common.errorOccurred"),
+      );
       setLoading(false);
     }
-  }, [onConfirm]);
+  }, [onConfirm, t]);
 
   return (
     <AlertDialog
@@ -99,7 +104,7 @@ export function ConfirmDeleteModal({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading} className="cursor-pointer">
-            Annuler
+            {t("common.cancel")}
           </AlertDialogCancel>
           <Button
             type="button"
@@ -108,7 +113,7 @@ export function ConfirmDeleteModal({
             onClick={() => void handleConfirm()}
             className="cursor-pointer"
           >
-            {loading ? "Suppression…" : confirmLabel}
+            {loading ? t("common.deleting") : resolvedConfirm}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

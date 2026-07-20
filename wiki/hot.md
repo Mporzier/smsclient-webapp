@@ -8,7 +8,20 @@ tags:
 
 # hot — contexte récent
 
-Updated: 2026-07-20
+Updated: 2026-07-21
+
+## Session 2026-07-21 (i18n suite)
+
+- Stats `StatistiquesView` EN (déjà branché)
+- Aide `AideView` EN (`help.*`)
+- QR chrome : `QrCodeView` + stats card + compliance EN (`qr.*`)
+- Hors scope encore : wizard campagne, modales QR (welcome/wheel/preview), contact/import, FloatingHelpBanner, réglementations
+
+## Session 2026-07-20 (i18n sidebar + paramètres)
+
+- Infra `lib/i18n` (`useI18n` ← `profile.language`)
+- Shell sidebar + header + menu compte EN
+- Paramètres / Dashboard / Contacts / Groupes / Campagnes / Liens / Modèles EN
 
 ## Session 2026-07-20 (Paramètres sections)
 

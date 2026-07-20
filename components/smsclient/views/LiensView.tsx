@@ -17,6 +17,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useI18n } from "@/lib/i18n";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -43,6 +44,7 @@ export function LiensView({
   onRefresh,
   onToast,
 }: LiensViewProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LinkRowData | null>(null);
@@ -50,26 +52,29 @@ export function LiensView({
   const showBigEmpty = !loading && !error && rows.length === 0;
 
   const footerLabel = useMemo(
-    () => `${rows.length} lien${rows.length !== 1 ? "s" : ""}`,
-    [rows.length]
+    () =>
+      t(rows.length === 1 ? "links.footerOne" : "links.footerMany", {
+        n: rows.length,
+      }),
+    [rows.length, t],
   );
 
   const copyToClipboard = useCallback(
     async (text: string) => {
       try {
         await navigator.clipboard.writeText(text);
-        onToast?.("Lien copié");
+        onToast?.(t("links.copied"));
       } catch {
-        onToast?.("Copie impossible");
+        onToast?.(t("links.copyFailed"));
       }
     },
-    [onToast]
+    [onToast, t],
   );
 
   const handleCreate = useCallback(
     async (args: { originalUrl: string; label: string }) => {
       if (!userId) {
-        return { data: null, error: "Connectez-vous pour créer un lien." };
+        return { data: null, error: t("links.loginRequired") };
       }
       const { data, error: createError } = await createSmsShortLink(supabase, {
         originalUrl: args.originalUrl,
@@ -78,42 +83,42 @@ export function LiensView({
       if (createError || !data) {
         return {
           data: null,
-          error: createError?.message ?? "Création impossible.",
+          error: createError?.message ?? t("links.createFailed"),
         };
       }
       return { data, error: null };
     },
-    [userId, supabase]
+    [userId, supabase, t],
   );
 
   const handleCreated = useCallback(async () => {
     await onRefresh();
-    onToast?.("Lien court créé");
-  }, [onRefresh, onToast]);
+    onToast?.(t("links.createdToast"));
+  }, [onRefresh, onToast, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
     const { error: delError } = await deleteSmsLink(
       supabase,
       userId,
-      deleteTarget.id
+      deleteTarget.id,
     );
     if (delError) throw delError;
     setDeleteTarget(null);
     await onRefresh();
-    onToast?.("Lien supprimé");
-  }, [deleteTarget, userId, supabase, onRefresh, onToast]);
+    onToast?.(t("links.deletedToast"));
+  }, [deleteTarget, userId, supabase, onRefresh, onToast, t]);
 
   const columns: ColumnDef<LinkRowData, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
-        header: "Créé le",
+        header: t("links.col.created"),
         size: LINK_COL.created,
       },
       {
         accessorKey: "label",
-        header: "Libellé",
+        header: t("links.col.label"),
         size: LINK_COL.label,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>() || "—"}</CellTruncate>
@@ -121,7 +126,7 @@ export function LiensView({
       },
       {
         accessorKey: "originalUrl",
-        header: "URL d'origine",
+        header: t("links.col.originalUrl"),
         size: LINK_COL.originalUrl,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
@@ -131,7 +136,7 @@ export function LiensView({
       },
       {
         accessorKey: "shortUrl",
-        header: "Lien court",
+        header: t("links.col.shortUrl"),
         size: LINK_COL.shortUrl,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-primary">
@@ -141,7 +146,7 @@ export function LiensView({
       },
       {
         accessorKey: "clickCount",
-        header: "Clics",
+        header: t("links.col.clicks"),
         size: LINK_COL.clickCount,
         cell: ({ getValue }) => (
           <span className="tabular-nums">{getValue<number>()}</span>
@@ -163,7 +168,9 @@ export function LiensView({
                   variant="ghost"
                   size="icon-sm"
                   className="size-7 rounded-full text-muted-foreground"
-                  aria-label={`Actions pour ${row.original.label || row.original.shortUrl}`}
+                  aria-label={t("links.actionsAria", {
+                    name: row.original.label || row.original.shortUrl,
+                  })}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-4" aria-hidden />
@@ -173,13 +180,13 @@ export function LiensView({
                 <DropdownMenuItem
                   onSelect={() => void copyToClipboard(row.original.shortUrl)}
                 >
-                  Copier le lien court
+                  {t("links.copyShort")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => setDeleteTarget(row.original)}
                 >
-                  Supprimer
+                  {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -187,11 +194,14 @@ export function LiensView({
         ),
       },
     ],
-    [copyToClipboard]
+    [copyToClipboard, t],
   );
 
   const deleteDescription = deleteTarget
-    ? `Le lien court ${deleteTarget.shortUrl} ne redirigera plus vers ${deleteTarget.originalUrl}. Cette action est définitive.`
+    ? t("links.deleteDesc", {
+        shortUrl: deleteTarget.shortUrl,
+        originalUrl: deleteTarget.originalUrl,
+      })
     : "";
 
   return (
@@ -205,10 +215,10 @@ export function LiensView({
             <Search aria-hidden />
           </InputGroupAddon>
           <InputGroupInput
-            placeholder="Rechercher un lien…"
+            placeholder={t("links.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Rechercher un lien"
+            aria-label={t("links.searchAria")}
           />
         </InputGroup>
         <div className="flex flex-wrap items-center gap-2">
@@ -219,7 +229,7 @@ export function LiensView({
             onClick={() => setCreateOpen(true)}
           >
             <Plus aria-hidden />
-            Créer un lien
+            {t("links.create")}
           </Button>
         </div>
       </div>
@@ -239,11 +249,10 @@ export function LiensView({
               aria-hidden
             />
             <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              Aucun lien court pour le moment
+              {t("links.emptyTitle")}
             </p>
             <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              Créez votre premier lien ou activez le suivi des liens dans une
-              campagne SMS.
+              {t("links.emptyBody")}
             </p>
           </div>
         </section>
@@ -254,8 +263,8 @@ export function LiensView({
           loading={loading}
           pageSize={25}
           globalFilter={searchQuery}
-          emptyMessage="Aucun lien."
-          searchNoResultsMessage="Aucun résultat pour cette recherche."
+          emptyMessage={t("links.emptyTable")}
+          searchNoResultsMessage={t("links.noSearchResults")}
           footer={footerLabel}
           clipHorizontalOverflow
           onRowClick={(row) => void copyToClipboard(row.shortUrl)}
@@ -271,7 +280,7 @@ export function LiensView({
 
       <ConfirmDeleteModal
         open={deleteTarget !== null}
-        title="Supprimer ce lien court ?"
+        title={t("links.deleteTitle")}
         description={deleteDescription}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}

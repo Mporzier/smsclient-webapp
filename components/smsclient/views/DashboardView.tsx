@@ -10,6 +10,7 @@ import {
   hasUserSentSms,
 } from "@/components/smsclient/views/dashboard/dashboardHelpers";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import { SMS_STOP_SUFFIX } from "@/lib/proto/smsStopMention";
 import type { CampaignRowData } from "@/lib/types/campaign";
@@ -201,6 +202,7 @@ function NoticeBar({
   onAction?: () => void;
   onDismiss?: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-accent px-3 py-2 text-[11px] text-muted-foreground">
       <span className="font-semibold leading-snug">{children}</span>
@@ -213,7 +215,7 @@ function NoticeBar({
             type="button"
             onClick={onDismiss}
             className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground hover:bg-card/70"
-            aria-label="Fermer"
+            aria-label={t("dashboard.closeNotice")}
           >
             <X className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -232,31 +234,32 @@ function DashboardSideColumn({
   creditsHint: string;
   onGo: (hash: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <aside className="grid gap-2.5">
       <SideInfoCard
         icon={Coins}
-        title="Crédits restants"
+        title={t("dashboard.creditsRemaining")}
         value={creditsLabel}
         description={creditsHint}
-        action="Recharger"
+        action={t("dashboard.recharge")}
         onAction={() => onGo("acheter-credits")}
         gradient="bg-gradient-to-br from-[#fff6d9] to-card"
       />
       <SideInfoCard
         icon={Shield}
-        title="Le saviez-vous ?"
-        description="Vos SMS marketing doivent inclure la mention STOP."
-        action="En savoir plus"
+        title={t("dashboard.didYouKnow")}
+        description={t("dashboard.stopHint")}
+        action={t("dashboard.learnMore")}
         onAction={() => onGo("reglementations-sms")}
         gradient="bg-gradient-to-br from-accent to-card"
         actionAsLink
       />
       <SideInfoCard
         icon={Headphones}
-        title="Besoin d'aide ?"
-        description="Notre centre d'aide vous accompagne à chaque étape."
-        action="Centre d'aide"
+        title={t("dashboard.needHelp")}
+        description={t("dashboard.helpDesc")}
+        action={t("dashboard.helpCenter")}
         onAction={() => onGo("aide")}
         gradient="bg-gradient-to-br from-[#f5f0ff] to-card"
       />
@@ -293,31 +296,32 @@ function DashboardFirstVisit({
   onNewCampaign: () => void;
   onGo: (hash: string) => void;
 }) {
+  const { t } = useI18n();
   const [noticeDismissed, setNoticeDismissed] = useState(false);
 
   const steps = [
     {
       icon: UserPlus,
       step: 1,
-      title: "Ajouter des contacts",
+      title: t("dashboard.step.contacts"),
       onClick: () => onGo("contacts"),
     },
     {
       icon: Users,
       step: 2,
-      title: "Créer un groupe",
+      title: t("dashboard.step.group"),
       onClick: () => onGo("groupes"),
     },
     {
       icon: Megaphone,
       step: 3,
-      title: "Envoyer un SMS",
+      title: t("dashboard.step.sms"),
       onClick: onNewCampaign,
     },
     {
       icon: Check,
       step: 4,
-      title: "C'est parti !",
+      title: t("dashboard.step.go"),
       done: true,
       onClick: onNewCampaign,
     },
@@ -327,10 +331,10 @@ function DashboardFirstVisit({
     <div className="flex flex-col gap-3">
       <div>
         <h2 className="m-0 text-2xl font-extrabold leading-tight text-foreground">
-          Bienvenue {greetingName} ! 👋
+          {t("dashboard.welcome", { name: greetingName })}
         </h2>
         <p className="m-0 mt-1 text-sm text-muted-foreground">
-          Suivez ces étapes pour envoyer votre premier SMS.
+          {t("dashboard.welcomeSubtitle")}
         </p>
       </div>
 
@@ -360,41 +364,41 @@ function DashboardFirstVisit({
           </div>
 
           <section>
-            <SectionTitle>Vue d&apos;ensemble</SectionTitle>
+            <SectionTitle>{t("dashboard.overview")}</SectionTitle>
             <div className="grid grid-cols-2 gap-2 min-[900px]:grid-cols-4">
               <OverviewMetric
                 icon={Coins}
                 value={creditsLabel}
-                label="Crédits restants"
-                hint="Rechargez pour envoyer."
-                action="Recharger"
+                label={t("dashboard.creditsRemaining")}
+                hint={t("dashboard.creditsHintSend")}
+                action={t("dashboard.recharge")}
                 onAction={() => onGo("acheter-credits")}
                 gradient="bg-gradient-to-br from-[#fff7dc] to-card"
               />
               <OverviewMetric
                 icon={UserPlus}
                 value={contactsLoading ? "…" : String(contactsCount)}
-                label="Contacts"
-                hint="Ajoutez vos contacts."
-                action="Ajouter"
+                label={t("dashboard.contacts")}
+                hint={t("dashboard.contactsHintAdd")}
+                action={t("dashboard.add")}
                 onAction={() => onGo("contacts")}
                 gradient="bg-gradient-to-br from-[#eafff4] to-card"
               />
               <OverviewMetric
                 icon={Users}
                 value={String(groupsCount)}
-                label="Groupes"
-                hint="Créez un groupe."
-                action="Créer"
+                label={t("dashboard.groups")}
+                hint={t("dashboard.groupsHintCreate")}
+                action={t("dashboard.create")}
                 onAction={() => onGo("groupes")}
                 gradient="bg-gradient-to-br from-[#f5efff] to-card"
               />
               <OverviewMetric
                 icon={Megaphone}
                 value="0"
-                label="SMS envoyés"
-                hint="Aucun SMS pour le moment."
-                action="Envoyer"
+                label={t("dashboard.smsSent")}
+                hint={t("dashboard.smsHintNone")}
+                action={t("dashboard.send")}
                 onAction={onNewCampaign}
                 gradient="bg-gradient-to-br from-accent to-card"
               />
@@ -403,7 +407,7 @@ function DashboardFirstVisit({
 
           {!noticeDismissed && (
             <NoticeBar onDismiss={() => setNoticeDismissed(true)}>
-              SMS marketing : mention STOP obligatoire
+              {t("dashboard.noticeStop")}
               {SMS_STOP_SUFFIX.trim()}
             </NoticeBar>
           )}
@@ -411,7 +415,7 @@ function DashboardFirstVisit({
 
         <DashboardSideColumn
           creditsLabel={creditsLabel}
-          creditsHint="Rechargez pour envoyer des SMS."
+          creditsHint={t("dashboard.creditsHintSms")}
           onGo={onGo}
         />
       </div>
@@ -448,41 +452,48 @@ function DashboardReturning({
   campaignsLoading?: boolean;
   onGo: (hash: string) => void;
 }) {
+  const { t } = useI18n();
   const activities = useMemo(
-    () => buildRecentActivities(campaignRows, contacts),
-    [campaignRows, contacts],
+    () => buildRecentActivities(campaignRows, contacts, t),
+    [campaignRows, contacts, t],
   );
 
   const creditsHint =
     creditsBalance > 0
-      ? `≈ ${formatStatsNumber(estimateSmsFromCredits(creditsBalance))} SMS`
-      : "Rechargez pour envoyer.";
+      ? t("dashboard.creditsApproxSms", {
+          n: formatStatsNumber(estimateSmsFromCredits(creditsBalance)),
+        })
+      : t("dashboard.creditsHintSend");
 
   const smsHint =
     smsSentThisMonth > 0
-      ? `+${formatStatsNumber(smsSentThisMonth)} ce mois-ci`
-      : "Voir les statistiques.";
+      ? t("dashboard.smsHintMonth", {
+          n: formatStatsNumber(smsSentThisMonth),
+        })
+      : t("dashboard.smsHintStats");
 
   return (
     <div className="flex flex-col gap-3">
       <div>
         <h2 className="m-0 text-2xl font-extrabold leading-tight text-foreground">
-          Bonjour {greetingName} ! 👋
+          {t("dashboard.hello", { name: greetingName })}
         </h2>
         <p className="m-0 mt-1 text-sm text-muted-foreground">
-          Voici un aperçu de votre activité.
+          {t("dashboard.helloSubtitle")}
         </p>
       </div>
 
       <div className="grid gap-3 min-[1100px]:grid-cols-[1fr_240px]">
         <div className="flex flex-col gap-3">
           <section>
-            <SectionTitle>Activités récentes</SectionTitle>
+            <SectionTitle>{t("dashboard.recentActivity")}</SectionTitle>
             {campaignsLoading ? (
-              <p className="m-0 text-xs font-semibold text-muted-foreground">Chargement…</p>
+              <p className="m-0 text-xs font-semibold text-muted-foreground">
+                {t("common.loading")}
+              </p>
             ) : activities.length === 0 ? (
               <p className="m-0 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                Aucune activité récente.
+                {t("dashboard.noActivity")}
               </p>
             ) : (
               <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card min-[900px]:grid-cols-4">
@@ -513,45 +524,50 @@ function DashboardReturning({
           </section>
 
           <section>
-            <SectionTitle>Vue d&apos;ensemble</SectionTitle>
+            <SectionTitle>{t("dashboard.overview")}</SectionTitle>
             <div className="grid grid-cols-2 gap-2 min-[900px]:grid-cols-4">
               <OverviewMetric
                 icon={Coins}
                 value={creditsLabel}
-                label="Crédits restants"
+                label={t("dashboard.creditsRemaining")}
                 hint={creditsHint}
-                action="Recharger"
+                action={t("dashboard.recharge")}
                 onAction={() => onGo("acheter-credits")}
                 gradient="bg-gradient-to-br from-[#fff7dc] to-card"
               />
               <OverviewMetric
                 icon={UserPlus}
                 value={contactsLoading ? "…" : formatStatsNumber(contactsCount)}
-                label="Contacts"
-                hint="Gérez votre base."
-                action="Voir contacts"
+                label={t("dashboard.contacts")}
+                hint={t("dashboard.contactsHintManage")}
+                action={t("dashboard.viewContacts")}
                 onAction={() => onGo("contacts")}
                 gradient="bg-gradient-to-br from-[#eafff4] to-card"
               />
               <OverviewMetric
                 icon={Users}
                 value={formatStatsNumber(groupsCount)}
-                label="Groupes"
+                label={t("dashboard.groups")}
                 hint={
                   activeGroupsCount > 0
-                    ? `${formatStatsNumber(activeGroupsCount)} actif${activeGroupsCount > 1 ? "s" : ""}`
-                    : "Organisez vos contacts."
+                    ? t(
+                        activeGroupsCount > 1
+                          ? "dashboard.groupsActiveMany"
+                          : "dashboard.groupsActiveOne",
+                        { n: formatStatsNumber(activeGroupsCount) },
+                      )
+                    : t("dashboard.groupsHintOrganize")
                 }
-                action="Voir groupes"
+                action={t("dashboard.viewGroups")}
                 onAction={() => onGo("groupes")}
                 gradient="bg-gradient-to-br from-[#f5efff] to-card"
               />
               <OverviewMetric
                 icon={Megaphone}
                 value={formatStatsNumber(smsSentCount)}
-                label="SMS envoyés"
+                label={t("dashboard.smsSent")}
                 hint={smsHint}
-                action="Voir stats"
+                action={t("dashboard.viewStats")}
                 onAction={() => onGo("statistiques")}
                 gradient="bg-gradient-to-br from-accent to-card"
               />
@@ -559,10 +575,10 @@ function DashboardReturning({
           </section>
 
           <NoticeBar
-            action="Réglementation"
+            action={t("dashboard.regulation")}
             onAction={() => onGo("reglementations-sms")}
           >
-            Consentement des contacts et mention STOP obligatoires.
+            {t("dashboard.noticeConsent")}
           </NoticeBar>
         </div>
 
@@ -590,11 +606,12 @@ export function DashboardView({
   onGo,
 }: DashboardViewProps) {
   const { profile, loading: profileLoading } = useUserProfile();
+  const { t } = useI18n();
 
   const greetingName =
     profile?.firstName?.trim() ||
     profile?.companyName?.trim() ||
-    "bienvenue";
+    t("dashboard.greetingFallback");
 
   const displayCredits = creditsLabel ?? "0";
   const sentSms = hasUserSentSms(campaignRows);
@@ -604,7 +621,9 @@ export function DashboardView({
 
   if (profileLoading) {
     return (
-      <p className="m-0 text-sm font-semibold text-muted-foreground">Chargement…</p>
+      <p className="m-0 text-sm font-semibold text-muted-foreground">
+        {t("common.loading")}
+      </p>
     );
   }
 

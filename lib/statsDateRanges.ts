@@ -21,9 +21,13 @@ export function formatStatsPeriodLabel(
   period: StatsPeriodPreset,
   from: string,
   to: string,
+  labels: Record<
+    Exclude<StatsPeriodPreset, "custom">,
+    string
+  > = STATS_PERIOD_PRESET_LABELS,
 ): string {
-  if (period !== "custom") return STATS_PERIOD_PRESET_LABELS[period];
-  return `${fmtFr(from)} → ${fmtFr(to)}`;
+  if (period !== "custom") return labels[period];
+  return `${fmtFr(from)} – ${fmtFr(to)}`;
 }
 
 function pad(n: number) {

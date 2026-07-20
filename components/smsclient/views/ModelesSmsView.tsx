@@ -9,6 +9,7 @@ import { DataTable } from "@/components/smsclient/DataTable";
 import { MODELE_SMS_COL } from "@/components/smsclient/listColumnSizes";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import {
   createUserSmsTemplate,
   deleteUserSmsTemplate,
@@ -44,6 +45,7 @@ export function ModelesSmsView({
   onRefresh,
   onToast,
 }: ModelesSmsViewProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -53,7 +55,7 @@ export function ModelesSmsView({
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserSmsTemplateRow | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -66,22 +68,25 @@ export function ModelesSmsView({
   const showBigEmpty = !loading && !error && rows.length === 0;
 
   const footerLabel = useMemo(
-    () => `${rows.length} modèle${rows.length !== 1 ? "s" : ""}`,
-    [rows.length]
+    () =>
+      t(rows.length === 1 ? "templates.footerOne" : "templates.footerMany", {
+        n: rows.length,
+      }),
+    [rows.length, t],
   );
 
   const handleCreate = useCallback(async () => {
     let hasFieldError = false;
     if (!isValidSmsTemplateTitle(title)) {
       setTitleError(
-        `Le titre est obligatoire (${SMS_TEMPLATE_TITLE_MIN_LENGTH} caractères minimum).`
+        t("templates.titleRequired", { min: SMS_TEMPLATE_TITLE_MIN_LENGTH }),
       );
       hasFieldError = true;
     } else {
       setTitleError(null);
     }
     if (!isValidSmsTemplateBody(body)) {
-      setBodyError("Le message SMS ne peut pas être vide.");
+      setBodyError(t("templates.bodyRequired"));
       hasFieldError = true;
     } else {
       setBodyError(null);
@@ -89,7 +94,7 @@ export function ModelesSmsView({
     if (hasFieldError) return;
 
     if (!userId) {
-      setSaveError("Connectez-vous pour créer un modèle.");
+      setSaveError(t("templates.loginRequired"));
       return;
     }
     setCreating(true);
@@ -97,11 +102,11 @@ export function ModelesSmsView({
     const { data, error: createError } = await createUserSmsTemplate(
       supabase,
       userId,
-      { title, description, body }
+      { title, description, body },
     );
     setCreating(false);
     if (createError || !data) {
-      setSaveError(createError?.message ?? "Création impossible.");
+      setSaveError(createError?.message ?? t("templates.createFailed"));
       return;
     }
     setTitle("");
@@ -110,32 +115,32 @@ export function ModelesSmsView({
     setTitleError(null);
     setBodyError(null);
     await onRefresh();
-    onToast?.("Modèle SMS créé");
-  }, [title, description, body, userId, supabase, onRefresh, onToast]);
+    onToast?.(t("templates.createdToast"));
+  }, [title, description, body, userId, supabase, onRefresh, onToast, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
     const { error: delError } = await deleteUserSmsTemplate(
       supabase,
       userId,
-      deleteTarget.id
+      deleteTarget.id,
     );
     if (delError) throw delError;
     setDeleteTarget(null);
     await onRefresh();
-    onToast?.("Modèle supprimé");
-  }, [deleteTarget, userId, supabase, onRefresh, onToast]);
+    onToast?.(t("templates.deletedToast"));
+  }, [deleteTarget, userId, supabase, onRefresh, onToast, t]);
 
   const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
-        header: "Créé le",
+        header: t("templates.col.created"),
         size: MODELE_SMS_COL.created,
       },
       {
         accessorKey: "title",
-        header: "Titre",
+        header: t("templates.col.title"),
         size: MODELE_SMS_COL.title,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-foreground">
@@ -145,7 +150,7 @@ export function ModelesSmsView({
       },
       {
         accessorKey: "description",
-        header: "Description",
+        header: t("templates.col.description"),
         size: MODELE_SMS_COL.description,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
@@ -155,7 +160,7 @@ export function ModelesSmsView({
       },
       {
         accessorKey: "body",
-        header: "Message",
+        header: t("templates.col.message"),
         size: MODELE_SMS_COL.body,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
@@ -172,7 +177,7 @@ export function ModelesSmsView({
         cell: ({ row }) => (
           <button
             type="button"
-            aria-label="Supprimer"
+            aria-label={t("common.delete")}
             onClick={(e) => {
               e.stopPropagation();
               setDeleteTarget(row.original);
@@ -184,11 +189,11 @@ export function ModelesSmsView({
         ),
       },
     ],
-    []
+    [t],
   );
 
   const deleteDescription = deleteTarget
-    ? `Le modèle « ${deleteTarget.title} » sera supprimé définitivement.`
+    ? t("templates.deleteDesc", { title: deleteTarget.title })
     : "";
 
   return (
@@ -200,10 +205,10 @@ export function ModelesSmsView({
           </span>
           <div>
             <h2 className="m-0 text-sm font-black text-foreground">
-              Créer un modèle
+              {t("templates.createTitle")}
             </h2>
             <p className="m-0 text-xs font-semibold text-muted-foreground">
-              Réutilisez-le lors de la rédaction d&apos;une campagne SMS.
+              {t("templates.createSubtitle")}
             </p>
           </div>
         </div>
@@ -215,10 +220,13 @@ export function ModelesSmsView({
                 htmlFor="modeles-create-title"
                 className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-foreground"
               >
-                <span>Titre *</span>
+                <span>{t("templates.field.title")}</span>
                 <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-                  {title.trim().length}/{SMS_TEMPLATE_TITLE_MAX_LENGTH} (min.{" "}
-                  {SMS_TEMPLATE_TITLE_MIN_LENGTH})
+                  {t("templates.field.titleCount", {
+                    current: title.trim().length,
+                    max: SMS_TEMPLATE_TITLE_MAX_LENGTH,
+                    min: SMS_TEMPLATE_TITLE_MIN_LENGTH,
+                  })}
                 </span>
               </label>
               <input
@@ -226,7 +234,7 @@ export function ModelesSmsView({
                 type="text"
                 maxLength={SMS_TEMPLATE_TITLE_MAX_LENGTH}
                 className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
-                placeholder="Promo été"
+                placeholder={t("templates.field.titlePlaceholder")}
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -246,13 +254,13 @@ export function ModelesSmsView({
                 htmlFor="modeles-create-description"
                 className="mb-1.5 block text-xs font-bold text-foreground"
               >
-                Description
+                {t("templates.field.description")}
               </label>
               <input
                 id="modeles-create-description"
                 type="text"
                 className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
-                placeholder="Offre de rentrée"
+                placeholder={t("templates.field.descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => {
                   setDescription(e.target.value);
@@ -266,13 +274,13 @@ export function ModelesSmsView({
               htmlFor="modeles-create-body"
               className="mb-1.5 block text-xs font-bold text-foreground"
             >
-              Message SMS *
+              {t("templates.field.body")}
             </label>
             <textarea
               id="modeles-create-body"
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
-              placeholder="Bonjour ⟦prénom⟧, profitez de -20 % cette semaine en boutique !"
+              placeholder={t("templates.field.bodyPlaceholder")}
               value={body}
               onChange={(e) => {
                 setBody(e.target.value);
@@ -299,7 +307,7 @@ export function ModelesSmsView({
               disabled={creating}
             >
               {!creating ? <PlusIcon /> : null}
-              {creating ? "Création…" : "Créer le modèle"}
+              {creating ? t("templates.creating") : t("templates.createAction")}
             </Button>
           </div>
         </div>
@@ -307,7 +315,7 @@ export function ModelesSmsView({
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <SearchBar
-          placeholder="Rechercher un modèle…"
+          placeholder={t("templates.searchPlaceholder")}
           value={searchQuery}
           onChange={setSearchQuery}
         />
@@ -323,11 +331,10 @@ export function ModelesSmsView({
               aria-hidden
             />
             <p className="m-0 text-sm font-extrabold text-foreground">
-              Aucun modèle personnalisé
+              {t("templates.emptyTitle")}
             </p>
             <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-muted-foreground">
-              Créez votre premier modèle ci-dessus pour le retrouver dans le
-              wizard campagne.
+              {t("templates.emptyBody")}
             </p>
           </div>
         ) : (
@@ -337,8 +344,8 @@ export function ModelesSmsView({
             loading={loading}
             pageSize={20}
             globalFilter={searchQuery}
-            emptyMessage="Aucun modèle."
-            searchNoResultsMessage="Aucun résultat pour cette recherche."
+            emptyMessage={t("templates.emptyTable")}
+            searchNoResultsMessage={t("templates.noSearchResults")}
             footer={footerLabel}
             clipHorizontalOverflow
           />
@@ -347,7 +354,7 @@ export function ModelesSmsView({
 
       <ConfirmDeleteModal
         open={deleteTarget !== null}
-        title="Supprimer ce modèle ?"
+        title={t("templates.deleteTitle")}
         description={deleteDescription}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}

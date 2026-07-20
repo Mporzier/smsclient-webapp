@@ -4,6 +4,7 @@ import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import { Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -27,11 +28,12 @@ export function ParametresTrashSection({
   onRestoreGroups,
   onRefresh,
 }: ParametresTrashSectionProps) {
+  const { t } = useI18n();
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [restoring, setRestoring] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export function ParametresTrashSection({
       await onRefresh();
     } catch (e) {
       setActionError(
-        e instanceof Error ? e.message : "Restauration impossible."
+        e instanceof Error ? e.message : t("trash.restoreFailed"),
       );
     } finally {
       setRestoring(false);
@@ -76,6 +78,7 @@ export function ParametresTrashSection({
   };
 
   const empty = !loading && contacts.length === 0 && groups.length === 0;
+  const selectedCount = selectedContactIds.size + selectedGroupIds.size;
 
   return (
     <div className="flex flex-col gap-4">
@@ -84,15 +87,13 @@ export function ParametresTrashSection({
           <div>
             <h2 className="m-0 flex items-center gap-2 text-base font-black text-slate-900">
               <Trash2 className="h-5 w-5 text-slate-500" aria-hidden />
-              Éléments supprimés
+              {t("trash.title")}
             </h2>
             <p className="mt-1.5 max-w-[640px] text-sm font-semibold text-slate-600">
-              Les contacts et groupes que vous supprimez sont retirés de vos
-              listes mais conservés ici. Sélectionnez-les puis cliquez sur
-              Restaurer pour les récupérer.
+              {t("trash.description")}
             </p>
           </div>
-          {(selectedContactIds.size > 0 || selectedGroupIds.size > 0) && (
+          {selectedCount > 0 && (
             <Button
               variant="default"
               size="lg"
@@ -102,10 +103,8 @@ export function ParametresTrashSection({
             >
               <RotateCcw className="mr-1.5 inline h-4 w-4" aria-hidden />
               {restoring
-                ? "Restauration…"
-                : `Restaurer la sélection (${
-                    selectedContactIds.size + selectedGroupIds.size
-                  })`}
+                ? t("trash.restoring")
+                : t("trash.restoreSelected", { n: selectedCount })}
             </Button>
           )}
         </div>
@@ -130,17 +129,22 @@ export function ParametresTrashSection({
 
       {empty && (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center">
-          <p className="text-sm font-bold text-slate-600">
-            Aucun contact ni groupe supprimé pour le moment.
-          </p>
+          <p className="text-sm font-bold text-slate-600">{t("trash.empty")}</p>
         </div>
       )}
 
       {!loading && contacts.length > 0 && (
         <TrashTable
-          title="Contacts supprimés"
-          emptyHint="Aucun contact dans la corbeille."
-          headers={["", "Nom", "Téléphone", "Groupes", "Supprimé le"]}
+          title={t("trash.contactsTitle")}
+          emptyHint={t("trash.contactsEmpty")}
+          selectAria={t("common.select")}
+          headers={[
+            "",
+            t("trash.col.name"),
+            t("trash.col.phone"),
+            t("trash.col.groups"),
+            t("trash.col.deletedAt"),
+          ]}
           rows={contacts.map((c) => ({
             id: c.id,
             selected: selectedContactIds.has(c.id),
@@ -152,14 +156,15 @@ export function ParametresTrashSection({
 
       {!loading && groups.length > 0 && (
         <TrashTable
-          title="Groupes supprimés"
-          emptyHint="Aucun groupe dans la corbeille."
+          title={t("trash.groupsTitle")}
+          emptyHint={t("trash.groupsEmpty")}
+          selectAria={t("common.select")}
           headers={[
             "",
-            "Groupe",
-            "Description",
-            "Contacts actifs",
-            "Supprimé le",
+            t("trash.col.group"),
+            t("trash.col.description"),
+            t("trash.col.activeContacts"),
+            t("trash.col.deletedAt"),
           ]}
           rows={groups.map((g) => ({
             id: g.id,
@@ -183,10 +188,12 @@ function TrashTable({
   emptyHint,
   headers,
   rows,
+  selectAria,
 }: {
   title: string;
   emptyHint: string;
   headers: string[];
+  selectAria: string;
   rows: {
     id: string;
     selected: boolean;
@@ -209,9 +216,9 @@ function TrashTable({
         <table className="w-full min-w-[640px] text-left text-[13px]">
           <thead>
             <tr className="bg-slate-50">
-              {headers.map((h) => (
+              {headers.map((h, i) => (
                 <th
-                  key={h}
+                  key={`${h}-${i}`}
                   className="border-b border-slate-200 px-3 py-2.5 font-extrabold text-slate-700"
                 >
                   {h}
@@ -227,7 +234,7 @@ function TrashTable({
                     checked={row.selected}
                     onCheckedChange={row.onToggle}
                     className="cursor-pointer"
-                    aria-label="Sélectionner"
+                    aria-label={selectAria}
                   />
                 </td>
                 {row.cells.map((cell, i) => (

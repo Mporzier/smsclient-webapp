@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { FormDialogHeader } from "./FormDialogHeader";
 import {
@@ -42,11 +43,14 @@ export function FormDialogShell({
   onSave,
   saving = false,
   dirty = false,
-  saveLabel = "Enregistrer",
+  saveLabel,
   wide = false,
   contentClassName,
   children,
 }: FormDialogShellProps) {
+  const { t } = useI18n();
+  const resolvedSaveLabel = saveLabel ?? t("dialog.save");
+
   return (
     <Dialog
       open={open}
@@ -88,7 +92,7 @@ export function FormDialogShell({
               disabled={saving}
               className="cursor-pointer"
             >
-              Fermer
+              {t("dialog.close")}
             </Button>
             <Button
               type="button"
@@ -97,7 +101,7 @@ export function FormDialogShell({
               disabled={saving}
               className="cursor-pointer"
             >
-              {saving ? "Enregistrement…" : saveLabel}
+              {saving ? t("dialog.saving") : resolvedSaveLabel}
             </Button>
           </div>
         ) : null}

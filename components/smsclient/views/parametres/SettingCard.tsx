@@ -1,5 +1,8 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingCard({
   title,
@@ -14,6 +17,7 @@ export function SettingCard({
   onClick: () => void;
   upcoming?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
@@ -28,7 +32,7 @@ export function SettingCard({
         />
         {upcoming ? (
           <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-            Bientôt
+            {t("parametres.upcoming")}
           </span>
         ) : null}
       </div>

@@ -11,9 +11,9 @@ import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
 import {
   navOverrideForRoute,
-  ROUTE_TITLES,
   isCampaignWizardRoute,
 } from "@/lib/proto/routes";
+import { navItemKey, routeTitleKey, useI18n } from "@/lib/i18n";
 import { guideKeyForRoute } from "@/lib/sectionGuides";
 import { useMemo, useState } from "react";
 import {
@@ -65,6 +65,7 @@ export function AppShell({
 }: ShellProps) {
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const { t } = useI18n();
   const router = useRouter();
   const active = navOverrideForRoute(route);
   const TitleIcon = ROUTE_ICONS[route];
@@ -74,6 +75,23 @@ export function AppShell({
   const isCampaignWizard = isCampaignWizardRoute(route);
 
   const email = user?.email ?? "";
+
+  const labeledGeneral = useMemo(
+    () => generalNav.map((item) => ({ ...item, label: t(navItemKey(item.id)) })),
+    [t],
+  );
+  const labeledTools = useMemo(
+    () => toolsNav.map((item) => ({ ...item, label: t(navItemKey(item.id)) })),
+    [t],
+  );
+  const labeledAssistance = useMemo(
+    () =>
+      assistanceNav.map((item) => ({
+        ...item,
+        label: t(navItemKey(item.id)),
+      })),
+    [t],
+  );
 
   const displayName = useMemo(() => {
     if (profileLoading) return null;
@@ -85,8 +103,8 @@ export function AppShell({
     const company = profile?.companyName?.trim();
     if (company) return company;
     const local = email.split("@")[0]?.trim();
-    return local || "Mon compte";
-  }, [profile, profileLoading, email]);
+    return local || t("shell.myAccount");
+  }, [profile, profileLoading, email, t]);
 
   const initials = useMemo(() => {
     if (profileLoading) return null;
@@ -117,23 +135,23 @@ export function AppShell({
       <div
         className={cn("flex h-full w-full min-w-0 overflow-hidden", APP_CANVAS_CLASS)}
         role="application"
-        aria-label="smsclient.fr - Application SMS"
+        aria-label={t("shell.appAria")}
       >
         <div
           className={cn(
-            "relative z-30 flex h-full min-h-0 shrink-0 p-3 transition-[width] duration-200 ease-out max-[860px]:hidden",
+            "relative z-30 flex h-full min-h-0 shrink-0 transition-[width] duration-200 ease-out max-[860px]:hidden",
             sidebarCollapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W_EXPANDED
           )}
         >
-          <div className="relative flex h-full min-h-0 w-full flex-col overflow-visible rounded-3xl border border-border bg-card px-3 py-3.5">
+          <div className="relative flex h-full min-h-0 w-full flex-col overflow-visible px-3 py-3.5">
             <button
               type="button"
               onClick={toggleSidebar}
               aria-expanded={!sidebarCollapsed}
               aria-label={
                 sidebarCollapsed
-                  ? "Ouvrir le menu latéral"
-                  : "Fermer le menu latéral"
+                  ? t("shell.expandSidebar")
+                  : t("shell.collapseSidebar")
               }
               className="absolute right-0 top-8 z-40 grid h-7 w-7 translate-x-1/2 cursor-pointer place-items-center rounded-full border border-border bg-card text-primary transition-colors hover:bg-muted"
             >
@@ -155,7 +173,7 @@ export function AppShell({
             <button
               type="button"
               onClick={() => go("dashboard")}
-              aria-label="Retour à l'accueil"
+              aria-label={t("shell.homeAria")}
               className={cn(
                 "mb-7 flex shrink-0 cursor-pointer items-center rounded-lg border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring",
                 sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
@@ -181,23 +199,23 @@ export function AppShell({
               )}
             >
               <SidebarNavSection
-                label="Général"
-                items={generalNav}
+                label={t("nav.section.general")}
+                items={labeledGeneral}
                 active={active}
                 onGo={go}
                 collapsed={sidebarCollapsed}
               />
               <SidebarNavSection
-                label="Outils"
-                items={toolsNav}
+                label={t("nav.section.tools")}
+                items={labeledTools}
                 active={active}
                 onGo={go}
                 bordered
                 collapsed={sidebarCollapsed}
               />
               <SidebarNavSection
-                label="Assistance"
-                items={assistanceNav}
+                label={t("nav.section.assistance")}
+                items={labeledAssistance}
                 active={active}
                 onGo={go}
                 bordered
@@ -215,7 +233,7 @@ export function AppShell({
                 )}
               >
                 <SidebarHoverTooltip
-                  label={displayName ?? "Mon compte"}
+                  label={displayName ?? t("shell.myAccount")}
                   enabled={sidebarCollapsed}
                 >
                   <div
@@ -238,7 +256,7 @@ export function AppShell({
                 )}
                 <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
                   <DropdownMenuTrigger
-                    aria-label="Menu du compte"
+                    aria-label={t("shell.accountMenu")}
                     className={cn(
                       "grid h-[34px] w-[34px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
                       profileOpen && "bg-accent text-primary",
@@ -256,7 +274,7 @@ export function AppShell({
                     align={sidebarCollapsed ? "end" : "start"}
                     sideOffset={10}
                     className="w-56"
-                    aria-label="Menu du compte"
+                    aria-label={t("shell.accountMenu")}
                   >
                     <DropdownMenuItem
                       onSelect={() => {
@@ -265,15 +283,15 @@ export function AppShell({
                       }}
                     >
                       <SidebarMenuIcon icon={UserRound} />
-                      Mon profil
+                      {t("shell.myProfile")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => go("parametres")}>
                       <SidebarMenuIcon icon={Settings} />
-                      Paramètres
+                      {t("shell.settings")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => go("acheter-credits")}>
                       <SidebarMenuIcon icon={Coins} />
-                      Crédits
+                      {t("shell.credits")}
                       {creditsLabel ? (
                         <span className="ml-auto rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
                           {creditsLabel}
@@ -282,7 +300,7 @@ export function AppShell({
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => go("soumettre-avis")}>
                       <SidebarMenuIcon icon={MessageSquareText} />
-                      Soumettre un avis
+                      {t("shell.submitReview")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -294,7 +312,7 @@ export function AppShell({
                         strokeWidth={navMainIconStroke}
                         aria-hidden
                       />
-                      Se déconnecter
+                      {t("shell.logout")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -303,14 +321,14 @@ export function AppShell({
           </div>
         </div>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 pl-0 max-[860px]:pl-3">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col p-1.5 pl-0 max-[860px]:pl-1.5">
           <div className={MAIN_PANEL_CLASS}>
           <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border px-4 pr-[22px] md:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <button
                 type="button"
                 onClick={() => go("dashboard")}
-                aria-label="Retour à l'accueil"
+                aria-label={t("shell.homeAria")}
                 className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring max-[860px]:flex"
               >
                 <div
@@ -329,7 +347,7 @@ export function AppShell({
                   strokeWidth={2.25}
                   aria-hidden
                 />
-                {ROUTE_TITLES[route]}
+                {t(routeTitleKey(route))}
               </h1>
               {isCampaignWizard && campaignWizardStep != null && (
                 <CampaignWizardStepper current={campaignWizardStep} compact />
@@ -340,7 +358,7 @@ export function AppShell({
                 <Badge
                   variant="outline"
                   className="h-9 gap-1.5 rounded-lg px-2.5 text-sm font-medium [&>svg]:size-3.5!"
-                  title="Crédits restants"
+                  title={t("shell.creditsRemaining")}
                 >
                   <Coins
                     data-icon="inline-start"
@@ -352,7 +370,7 @@ export function AppShell({
                     {creditsLabel}
                   </span>
                   <span className="font-normal text-muted-foreground">
-                    crédits
+                    {t("shell.creditsUnit")}
                   </span>
                 </Badge>
               )}
@@ -368,7 +386,7 @@ export function AppShell({
                   strokeWidth={2.5}
                   aria-hidden
                 />
-                Nouvelle campagne
+                {t("shell.newCampaign")}
               </Button>
               <HeaderHelpMenu
                 open={helpOpen}
@@ -378,8 +396,8 @@ export function AppShell({
                 type="button"
                 variant="outline"
                 size="icon-lg"
-                title="Notifications"
-                aria-label="Notifications"
+                title={t("shell.notifications")}
+                aria-label={t("shell.notifications")}
                 className="border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 hover:text-orange-700 dark:text-amber-400 dark:hover:text-amber-300"
               >
                 <Bell className="size-5" strokeWidth={2.5} aria-hidden />

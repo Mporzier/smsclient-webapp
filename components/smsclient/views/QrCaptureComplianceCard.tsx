@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { ShieldCheck, SquareArrowOutUpRight } from "lucide-react";
 
 type QrCaptureComplianceCardProps = {
@@ -10,6 +11,8 @@ type QrCaptureComplianceCardProps = {
 export function QrCaptureComplianceCard({
   className,
 }: QrCaptureComplianceCardProps) {
+  const { t } = useI18n();
+
   return (
     <section
       className={cn(
@@ -28,13 +31,12 @@ export function QrCaptureComplianceCard({
               id="qr-compliance-title"
               className="m-0 text-xs font-black leading-tight text-slate-900"
             >
-              Confidentialité et conformité
+              {t("qr.complianceTitle")}
             </h3>
             <p className="m-0 mt-0.5 text-[11px] font-semibold leading-snug text-slate-600">
-              Les données collectées via ce formulaire sont sécurisées et
-              utilisées uniquement pour votre relation client.
+              {t("qr.complianceBody")}
               <br />
-              Vos clients peuvent se désinscrire à tout moment.
+              {t("qr.complianceUnsub")}
             </p>
           </div>
         </div>
@@ -42,7 +44,7 @@ export function QrCaptureComplianceCard({
           href="#reglementations-sms"
           className="inline-flex shrink-0 items-center gap-0.5 text-xs font-bold leading-tight text-[#2f6fed] no-underline hover:underline"
         >
-          En savoir plus
+          {t("qr.complianceMore")}
           <SquareArrowOutUpRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
         </a>
       </div>

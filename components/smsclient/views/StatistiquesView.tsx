@@ -27,14 +27,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { formatStatsNumber } from "@/lib/supabase/statistics";
 import {
   formatStatsPeriodLabel,
-  STATS_PERIOD_PRESET_LABELS,
   type StatsPeriodPreset,
 } from "@/lib/statsDateRanges";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarRange,
   CheckCircle2,
@@ -53,6 +53,7 @@ import {
 } from "lucide-react";
 
 type KpiConfig = {
+  id: "smsSent" | "delivery" | "signups" | "unsub" | "credits";
   label: string;
   value: string;
   hint: string;
@@ -61,12 +62,7 @@ type KpiConfig = {
   iconColor: string;
 };
 
-const PERIOD_PRESETS = (
-  Object.entries(STATS_PERIOD_PRESET_LABELS) as [
-    Exclude<StatsPeriodPreset, "custom">,
-    string
-  ][]
-).map(([id, label]) => ({ id, label }));
+const PERIOD_PRESET_IDS = ["today", "week", "month", "year"] as const;
 
 const quickPresetBtnCls = (active: boolean) =>
   cn(
@@ -114,58 +110,77 @@ export function StatistiquesView(props: StatsProps) {
     onExport,
     unsubscribedContacts = [],
   } = props;
+  const { t, locale } = useI18n();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
   const [chartWidth, setChartWidth] = useState(1000);
 
+  const periodLabels = useMemo(
+    () => ({
+      today: t("stats.period.today"),
+      week: t("stats.period.week"),
+      month: t("stats.period.month"),
+      year: t("stats.period.year"),
+    }),
+    [t],
+  );
+
   const periodLabel = formatStatsPeriodLabel(
     statsPeriod,
     appliedDateFrom,
-    appliedDateTo
+    appliedDateTo,
+    periodLabels,
   );
+
+  const numberLocale = locale === "en" ? "en-US" : "fr-FR";
 
   const kpis: KpiConfig[] = [
     {
-      label: "SMS envoyés",
+      id: "smsSent",
+      label: t("stats.kpi.smsSent"),
       value: formatStatsNumber(data.kpis.smsSent),
-      hint: "campagnes envoyées sur la période",
+      hint: t("stats.kpi.smsSentHint"),
       icon: Send,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
     },
     {
-      label: "Taux délivré",
+      id: "delivery",
+      label: t("stats.kpi.delivery"),
       value:
         data.kpis.deliveryRate === null
           ? "—"
-          : `${new Intl.NumberFormat("fr-FR", {
+          : `${new Intl.NumberFormat(numberLocale, {
               maximumFractionDigits: 1,
             }).format(data.kpis.deliveryRate)}%`,
-      hint: "ratio envoyé / (envoyé + échec)",
+      hint: t("stats.kpi.deliveryHint"),
       icon: CircleCheck,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
     },
     {
-      label: "Inscriptions",
+      id: "signups",
+      label: t("stats.kpi.signups"),
       value: formatStatsNumber(data.kpis.inscriptionCount),
-      hint: "via QR boutique sur la période",
+      hint: t("stats.kpi.signupsHint"),
       icon: UserPlus,
       iconBg: "bg-indigo-50",
       iconColor: "text-indigo-600",
     },
     {
-      label: "Désinscriptions",
+      id: "unsub",
+      label: t("stats.kpi.unsub"),
       value: formatStatsNumber(data.kpis.stopCount),
-      hint: "contacts en statut STOP",
+      hint: t("stats.kpi.unsubHint"),
       icon: UserMinus,
       iconBg: "bg-rose-50",
       iconColor: "text-rose-600",
     },
     {
-      label: "Crédits consommés",
+      id: "credits",
+      label: t("stats.kpi.credits"),
       value: formatStatsNumber(data.kpis.creditsConsumed),
-      hint: "sur la période sélectionnée",
+      hint: t("stats.kpi.creditsHint"),
       icon: Coins,
       iconBg: "bg-amber-50",
       iconColor: "text-amber-600",
@@ -255,18 +270,18 @@ export function StatistiquesView(props: StatsProps) {
               align="end"
               sideOffset={12}
               className="w-[min(560px,calc(100vw-20px))] gap-0 overflow-hidden rounded-[18px] p-0"
-              aria-label="Choisir une période"
+              aria-label={t("stats.periodAria")}
             >
               <PopoverHeader className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3">
                 <PopoverTitle className="text-base font-black text-slate-900">
-                  Période
+                  {t("stats.periodTitle")}
                 </PopoverTitle>
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   className="size-9 rounded-xl"
-                  aria-label="Fermer"
+                  aria-label={t("common.cancel")}
                   onClick={() => setStatsOpen(false)}
                 >
                   <X className="h-5 w-5" aria-hidden />
@@ -280,7 +295,7 @@ export function StatistiquesView(props: StatsProps) {
                         htmlFor="stats-date-from"
                         className="text-sm font-black text-slate-600"
                       >
-                        Du
+                        {t("stats.from")}
                       </Label>
                       <DatePicker
                         id="stats-date-from"
@@ -295,7 +310,7 @@ export function StatistiquesView(props: StatsProps) {
                         htmlFor="stats-date-to"
                         className="text-sm font-black text-slate-600"
                       >
-                        Au
+                        {t("stats.to")}
                       </Label>
                       <DatePicker
                         id="stats-date-to"
@@ -313,7 +328,7 @@ export function StatistiquesView(props: StatsProps) {
                       className={brandBtnCls}
                       onClick={() => setStatsOpen(false)}
                     >
-                      Annuler
+                      {t("common.cancel")}
                     </Button>
                     <Button
                       variant="default"
@@ -324,23 +339,23 @@ export function StatistiquesView(props: StatsProps) {
                         setStatsOpen(false);
                       }}
                     >
-                      Appliquer
+                      {t("stats.apply")}
                     </Button>
                   </div>
                 </div>
                 <div className="border-t border-slate-200 bg-slate-50/60 p-3 sm:w-[188px] sm:border-t-0 sm:border-l">
                   <p className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
-                    Raccourcis
+                    {t("stats.shortcuts")}
                   </p>
                   <div className="flex flex-col gap-1">
-                    {PERIOD_PRESETS.map((preset) => (
+                    {PERIOD_PRESET_IDS.map((id) => (
                       <button
-                        key={preset.id}
+                        key={id}
                         type="button"
-                        onClick={() => onSelectPeriod(preset.id)}
-                        className={quickPresetBtnCls(statsPeriod === preset.id)}
+                        onClick={() => onSelectPeriod(id)}
+                        className={quickPresetBtnCls(statsPeriod === id)}
                       >
-                        {preset.label}
+                        {periodLabels[id]}
                       </button>
                     ))}
                   </div>
@@ -354,17 +369,17 @@ export function StatistiquesView(props: StatsProps) {
             className={brandBtnPrimaryCls}
             onClick={onExport}
           >
-            Exporter
+            {t("stats.export")}
           </Button>
         </div>
 
         <div className="grid shrink-0 grid-cols-5 gap-3 max-[1400px]:grid-cols-3 max-[900px]:grid-cols-2">
           {kpis.map((kpi) => {
-            const isUnsub = kpi.label === "Désinscriptions";
+            const isUnsub = kpi.id === "unsub";
             const Icon = kpi.icon;
             return (
               <Card
-                key={kpi.label}
+                key={kpi.id}
                 className="min-h-[108px] py-0 shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
               >
                 <CardContent className="flex min-h-[108px] items-center gap-3.5 py-4">
@@ -396,7 +411,7 @@ export function StatistiquesView(props: StatsProps) {
                       className="h-auto shrink-0 rounded-[18px] border border-blue-400/30 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-center text-[11px] font-black leading-tight text-white shadow-[0_10px_24px_rgba(37,99,235,0.38)] hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.48)] active:scale-[0.97]"
                       onClick={() => setUnsubModalOpen(true)}
                     >
-                      Voir la liste
+                      {t("stats.viewList")}
                     </Button>
                   )}
                 </CardContent>
@@ -409,7 +424,7 @@ export function StatistiquesView(props: StatsProps) {
           <Card className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <CardHeader>
               <CardTitle className="text-lg font-black text-slate-900">
-                Évolution des campagnes
+                {t("stats.chartTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col">
@@ -423,7 +438,7 @@ export function StatistiquesView(props: StatsProps) {
                     />
                     <div className="max-w-[300px]">
                       <p className="text-m font-bold text-slate-500">
-                        Aucune campagne sur cette période
+                        {t("stats.chartEmpty")}
                       </p>
                     </div>
                   </div>
@@ -437,7 +452,7 @@ export function StatistiquesView(props: StatsProps) {
                       <svg
                         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                         className="h-full min-h-[320px] w-full"
-                        aria-label="Graphique de l'évolution des campagnes"
+                        aria-label={t("stats.chartAria")}
                         role="img"
                       >
                         {ticks.map((tick, i) => (
@@ -529,7 +544,7 @@ export function StatistiquesView(props: StatsProps) {
                           className="h-3.5 w-3.5 text-emerald-600"
                           aria-hidden
                         />
-                        Envoyés
+                        {t("stats.legend.sent")}
                       </Badge>
                       <Badge
                         variant="outline"
@@ -539,7 +554,7 @@ export function StatistiquesView(props: StatsProps) {
                           className="h-3.5 w-3.5 text-rose-600"
                           aria-hidden
                         />
-                        Échecs
+                        {t("stats.legend.failed")}
                       </Badge>
                       <Badge
                         variant="outline"
@@ -549,7 +564,7 @@ export function StatistiquesView(props: StatsProps) {
                           className="h-3.5 w-3.5 text-blue-600"
                           aria-hidden
                         />
-                        Programmés
+                        {t("stats.legend.scheduled")}
                       </Badge>
                     </div>
                   </div>
@@ -561,7 +576,7 @@ export function StatistiquesView(props: StatsProps) {
           <Card className="flex min-h-[min(520px,calc(100dvh-300px))] min-w-0 flex-col shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
             <CardHeader>
               <CardTitle className="text-lg font-black text-slate-900">
-                Top groupes
+                {t("stats.topGroups")}
               </CardTitle>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-auto">
@@ -569,10 +584,10 @@ export function StatistiquesView(props: StatsProps) {
                 <thead>
                   <tr>
                     <th className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-extrabold">
-                      Groupe
+                      {t("stats.col.group")}
                     </th>
                     <th className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-extrabold">
-                      Contacts
+                      {t("stats.col.contacts")}
                     </th>
                   </tr>
                 </thead>
@@ -583,7 +598,7 @@ export function StatistiquesView(props: StatsProps) {
                         className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-500"
                         colSpan={2}
                       >
-                        Aucun groupe disponible.
+                        {t("stats.topGroupsEmpty")}
                       </td>
                     </tr>
                   )}
@@ -617,8 +632,7 @@ export function StatistiquesView(props: StatsProps) {
             aria-hidden
           />
           <AlertDescription className="text-xs font-semibold leading-relaxed text-slate-500">
-            Les statistiques sont mises à jour en temps réel. Les données
-            peuvent légèrement varier.
+            {t("stats.disclaimer")}
           </AlertDescription>
         </Alert>
       </div>
@@ -629,7 +643,7 @@ export function StatistiquesView(props: StatsProps) {
           role="status"
           aria-live="polite"
           aria-busy="true"
-          aria-label="Chargement des statistiques"
+          aria-label={t("stats.loadingAria")}
         >
           <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
             <Loader2
@@ -637,7 +651,7 @@ export function StatistiquesView(props: StatsProps) {
               aria-hidden
             />
             <span className="text-sm font-bold text-slate-700">
-              Chargement des statistiques…
+              {t("stats.loading")}
             </span>
           </div>
         </div>

@@ -5,9 +5,9 @@ import {
   type AppRoute,
   parseHash,
   parseLegacyCampaignWizardStep,
-  ROUTE_TITLES,
 } from "@/lib/proto/routes";
 import { setStoredCampaignWizardStep } from "@/lib/proto/campaignWizardSession";
+import { routeTitleKey, useI18n } from "@/lib/i18n";
 
 function readHashPath(): string {
   return window.location.hash.replace(/^#/, "");
@@ -15,6 +15,7 @@ function readHashPath(): string {
 
 export function useProtoNavigation() {
   const [hashPath, setHashPath] = useState(readHashPath);
+  const { t } = useI18n();
 
   useEffect(() => {
     const sync = () => setHashPath(readHashPath());
@@ -45,8 +46,8 @@ export function useProtoNavigation() {
   );
 
   useEffect(() => {
-    document.title = `SMSClient.fr — ${ROUTE_TITLES[route]}`;
-  }, [route]);
+    document.title = `SMSClient.fr — ${t(routeTitleKey(route))}`;
+  }, [route, t]);
 
-  return { route, go };
+  return { route, go, hashPath };
 }

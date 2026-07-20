@@ -31,7 +31,20 @@ import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import { useEffect, useState } from "react";
+
+function sectionTitleKey(id: SettingSectionId): MessageKey {
+  return `parametres.section.${id}` as MessageKey;
+}
+
+function cardTitleKey(id: SettingId): MessageKey {
+  return `parametres.card.${id}.title` as MessageKey;
+}
+
+function cardDescKey(id: SettingId): MessageKey {
+  return `parametres.card.${id}.description` as MessageKey;
+}
 
 export type ParametresViewProps = {
   profileForm: UserProfileForm | null;
@@ -82,6 +95,7 @@ export function ParametresView({
   onRenameCustomField,
   onRemoveCustomField,
 }: ParametresViewProps) {
+  const { t } = useI18n();
   const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyProfileForm);
   const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyProfileForm);
   const [saving, setSaving] = useState(false);
@@ -140,15 +154,15 @@ export function ParametresView({
     switch (openSetting) {
       case "entreprise":
         if (!draftForm.companyName.trim()) {
-          return "Le nom de l'entreprise est requis.";
+          return t("parametres.companyNameRequired");
         }
         if (!draftForm.businessActivity) {
-          return "L'activité de l'entreprise est requise.";
+          return t("parametres.activityRequired");
         }
         return null;
       case "expediteur-sms":
         if (!draftForm.sender.trim()) {
-          return "Le nom d'expéditeur SMS est requis.";
+          return t("parametres.senderRequired");
         }
         return null;
       default:
@@ -171,7 +185,7 @@ export function ParametresView({
       closeModal();
     } catch (e) {
       setSaveError(
-        e instanceof Error ? e.message : "Sauvegarde impossible."
+        e instanceof Error ? e.message : t("parametres.saveFailed")
       );
     } finally {
       setSaving(false);
@@ -184,7 +198,7 @@ export function ParametresView({
   ) => {
     const next = { ...draftForm, [key]: value };
     if (!next.firstName.trim()) {
-      const msg = "Le prénom est requis.";
+      const msg = t("parametres.firstNameRequired");
       setCompteSaveError(msg);
       throw new Error(msg);
     }
@@ -196,7 +210,7 @@ export function ParametresView({
       setSavedForm(next);
     } catch (e) {
       const msg =
-        e instanceof Error ? e.message : "Sauvegarde impossible.";
+        e instanceof Error ? e.message : t("parametres.saveFailed");
       setCompteSaveError(msg);
       throw e instanceof Error ? e : new Error(msg);
     } finally {
@@ -236,7 +250,7 @@ export function ParametresView({
         <div
           className="flex flex-wrap gap-2"
           role="tablist"
-          aria-label="Sections paramètres"
+          aria-label={t("parametres.sectionsAria")}
         >
           {availableSections.map((section) => (
             <Button
@@ -248,7 +262,7 @@ export function ParametresView({
               aria-selected={sectionId === section.id}
               onClick={() => setActiveSection(section.id)}
             >
-              {section.title}
+              {t(sectionTitleKey(section.id))}
             </Button>
           ))}
         </div>
@@ -256,8 +270,9 @@ export function ParametresView({
         <div
           role="tabpanel"
           aria-label={
-            availableSections.find((s) => s.id === sectionId)?.title ??
-            "Paramètres"
+            availableSections.find((s) => s.id === sectionId)
+              ? t(sectionTitleKey(sectionId))
+              : t("shell.settings")
           }
         >
           {isCompteSection ? (
@@ -273,8 +288,8 @@ export function ParametresView({
               {sectionCards.map((card) => (
                 <SettingCard
                   key={card.id}
-                  title={card.title}
-                  description={card.description}
+                  title={t(cardTitleKey(card.id))}
+                  description={t(cardDescKey(card.id))}
                   icon={card.icon}
                   upcoming={card.upcoming}
                   onClick={() => setOpenSetting(card.id)}
@@ -288,8 +303,8 @@ export function ParametresView({
       {openCard && (
         <ParametresSettingModal
           open={openSetting !== null}
-          title={openCard.title}
-          description={openCard.description}
+          title={t(cardTitleKey(openCard.id))}
+          description={t(cardDescKey(openCard.id))}
           icon={modalIcon}
           onClose={handleCloseModal}
           onSave={openCard.savable ? onSaveChanges : undefined}
@@ -304,7 +319,7 @@ export function ParametresView({
         >
           {profileLoading && openCard.savable && (
             <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-              Chargement…
+              {t("parametres.loading")}
             </p>
           )}
           {saveError && (
@@ -317,7 +332,9 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid gap-3">
                 <div>
-                  <label className={parametresFieldLbl}>Nom de l&apos;entreprise</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.companyName")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -330,7 +347,7 @@ export function ParametresView({
                 </div>
                 <div>
                   <label className={parametresFieldLbl}>
-                    Secteur d&apos;activité
+                    {t("parametres.field.businessActivity")}
                   </label>
                   <BusinessActivitySelect
                     value={draftForm.businessActivity}
@@ -346,7 +363,9 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div>
-                  <label className={parametresFieldLbl}>SIRET</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.siret")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -357,7 +376,9 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={parametresFieldLbl}>TVA</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.tva")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -375,7 +396,9 @@ export function ParametresView({
             <ModalPanel>
               <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
                 <div className="col-span-2">
-                  <label className={parametresFieldLbl}>Adresse</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.address")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -386,7 +409,9 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={parametresFieldLbl}>Code postal</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.zip")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -397,7 +422,9 @@ export function ParametresView({
                   />
                 </div>
                 <div>
-                  <label className={parametresFieldLbl}>Ville</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.city")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -408,7 +435,9 @@ export function ParametresView({
                   />
                 </div>
                 <div className="col-span-2 max-[480px]:col-span-1">
-                  <label className={parametresFieldLbl}>Pays</label>
+                  <label className={parametresFieldLbl}>
+                    {t("parametres.field.country")}
+                  </label>
                   <input
                     className={cn(
                       parametresFieldInp,
@@ -425,7 +454,9 @@ export function ParametresView({
           {openSetting === "contact-facturation" && (
             <ModalPanel>
               <div>
-                <label className={parametresFieldLbl}>Contact facturation</label>
+                <label className={parametresFieldLbl}>
+                  {t("parametres.field.billingContact")}
+                </label>
                 <input
                   className={cn(
                     parametresFieldInp,
@@ -434,7 +465,7 @@ export function ParametresView({
                   )}
                   value={draftForm.billingContact}
                   onChange={(e) => setField("billingContact", e.target.value)}
-                  placeholder="Nom ou email du contact"
+                  placeholder={t("parametres.field.billingContactPlaceholder")}
                 />
               </div>
             </ModalPanel>
@@ -443,12 +474,10 @@ export function ParametresView({
           {openSetting === "abonnement" && (
             <ModalPanel>
               <p className="m-0 text-sm font-extrabold text-foreground">
-                Bientôt disponible
+                {t("parametres.upcomingTitle")}
               </p>
               <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                Formule pay-as-you-go : vous payez uniquement les crédits SMS
-                consommés. La gestion d&apos;abonnement sera branchée plus
-                tard.
+                {t("parametres.abonnementBody")}
               </p>
             </ModalPanel>
           )}
@@ -456,11 +485,10 @@ export function ParametresView({
           {openSetting === "paiement" && (
             <ModalPanel>
               <p className="m-0 text-sm font-extrabold text-foreground">
-                Bientôt disponible
+                {t("parametres.upcomingTitle")}
               </p>
               <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                Enregistrement et modification de carte bancaire pas encore
-                branchés.
+                {t("parametres.paiementBody")}
               </p>
             </ModalPanel>
           )}
@@ -477,7 +505,7 @@ export function ParametresView({
             <ModalPanel>
               <div>
                 <label className={parametresFieldLbl}>
-                  Nom d&apos;expéditeur SMS (11 car. max)
+                  {t("parametres.field.sender")}
                 </label>
                 <input
                   className={cn(
@@ -491,7 +519,7 @@ export function ParametresView({
                   autoComplete="off"
                 />
                 <p className="mt-1.5 text-xs font-bold text-slate-500">
-                  Affiché comme expéditeur de vos campagnes SMS.
+                  {t("parametres.field.senderHint")}
                 </p>
               </div>
             </ModalPanel>
@@ -507,10 +535,10 @@ export function ParametresView({
                   }
                   className="mt-0.5"
                 />
-                Recevoir des alertes et conseils par email
+                {t("parametres.field.notifyInvoices")}
               </label>
               <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                Les factures sont toujours envoyées par email.
+                {t("parametres.field.notifyInvoicesHint")}
               </p>
             </ModalPanel>
           )}
@@ -525,7 +553,7 @@ export function ParametresView({
                   }
                   className="mt-0.5"
                 />
-                Recevoir un résumé mensuel de vos campagnes par email
+                {t("parametres.field.notifySummary")}
               </label>
             </ModalPanel>
           )}

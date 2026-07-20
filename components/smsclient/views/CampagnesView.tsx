@@ -21,31 +21,34 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useMemo, useState } from "react";
 import { Megaphone, MoreHorizontal, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const statusLabel: Record<SmsCampaignStatus, string> = {
-  sent: "Envoyée",
-  scheduled: "Programmée",
-  draft: "Brouillon",
-  failed: "Échec",
-  cancelled: "Annulée",
+const STATUS_KEYS: Record<SmsCampaignStatus, MessageKey> = {
+  sent: "campaigns.status.sent",
+  scheduled: "campaigns.status.scheduled",
+  draft: "campaigns.status.draft",
+  failed: "campaigns.status.failed",
+  cancelled: "campaigns.status.cancelled",
 };
 
 function StatusBadge({ status }: { status: SmsCampaignStatus }) {
+  const { t } = useI18n();
+  const label = t(STATUS_KEYS[status]);
   switch (status) {
     case "sent":
-      return <BadgeSent>{statusLabel.sent}</BadgeSent>;
+      return <BadgeSent>{label}</BadgeSent>;
     case "scheduled":
-      return <BadgeScheduled>{statusLabel.scheduled}</BadgeScheduled>;
+      return <BadgeScheduled>{label}</BadgeScheduled>;
     case "draft":
-      return <BadgeDraft>{statusLabel.draft}</BadgeDraft>;
+      return <BadgeDraft>{label}</BadgeDraft>;
     case "failed":
     case "cancelled":
-      return <BadgeFailed>{statusLabel[status]}</BadgeFailed>;
+      return <BadgeFailed>{label}</BadgeFailed>;
     default:
       return <BadgeDraft>—</BadgeDraft>;
   }
@@ -63,22 +66,26 @@ export function CampagnesView({
   rows,
   loading,
   error,
-  onNewCampaign,
   onOpenDetails,
 }: CampagnesProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
 
   const showBigEmpty = !loading && !error && rows.length === 0;
 
-  const footerLabel = useMemo(() => {
-    return `${rows.length} campagne${rows.length > 1 ? "s" : ""}`;
-  }, [rows]);
+  const footerLabel = useMemo(
+    () =>
+      t(rows.length === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
+        n: rows.length,
+      }),
+    [rows.length, t],
+  );
 
   const columns: ColumnDef<CampaignRowData, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
-        header: "Date",
+        header: t("campaigns.col.date"),
         size: CAMPAIGN_COL.created,
         sortingFn: (a, b) =>
           compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
@@ -88,7 +95,7 @@ export function CampagnesView({
       },
       {
         accessorKey: "name",
-        header: "Campagne",
+        header: t("campaigns.col.name"),
         size: CAMPAIGN_COL.name,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
@@ -96,7 +103,7 @@ export function CampagnesView({
       },
       {
         accessorKey: "recipients",
-        header: "Destinataires",
+        header: t("campaigns.col.recipients"),
         size: CAMPAIGN_COL.recipients,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{String(getValue())}</CellTruncate>
@@ -104,7 +111,7 @@ export function CampagnesView({
       },
       {
         accessorKey: "status",
-        header: "Statut",
+        header: t("campaigns.col.status"),
         size: CAMPAIGN_COL.status,
         cell: ({ getValue }) => (
           <StatusBadge status={getValue<SmsCampaignStatus>()} />
@@ -112,7 +119,7 @@ export function CampagnesView({
       },
       {
         accessorKey: "sendLabel",
-        header: "Envoi",
+        header: t("campaigns.col.send"),
         size: CAMPAIGN_COL.send,
         sortingFn: (a, b) =>
           compareIsoTimestamps(
@@ -125,7 +132,7 @@ export function CampagnesView({
       },
       {
         accessorKey: "creditsLabel",
-        header: "Crédit SMS",
+        header: t("campaigns.col.credits"),
         size: CAMPAIGN_COL.credits,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
@@ -147,7 +154,9 @@ export function CampagnesView({
                   variant="ghost"
                   size="icon-sm"
                   className="size-7 rounded-full text-muted-foreground"
-                  aria-label={`Actions pour ${row.original.name}`}
+                  aria-label={t("campaigns.actionsAria", {
+                    name: row.original.name,
+                  })}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="size-4" aria-hidden />
@@ -155,7 +164,7 @@ export function CampagnesView({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onSelect={() => onOpenDetails(row.original)}>
-                  Voir détails
+                  {t("campaigns.viewDetails")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -163,7 +172,7 @@ export function CampagnesView({
         ),
       },
     ],
-    [onOpenDetails],
+    [onOpenDetails, t],
   );
 
   return (
@@ -177,10 +186,10 @@ export function CampagnesView({
             <Search aria-hidden />
           </InputGroupAddon>
           <InputGroupInput
-            placeholder="Rechercher une campagne…"
+            placeholder={t("campaigns.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Rechercher une campagne"
+            aria-label={t("campaigns.searchAria")}
           />
         </InputGroup>
       </div>
@@ -200,10 +209,10 @@ export function CampagnesView({
               aria-hidden
             />
             <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              Aucune campagne
+              {t("campaigns.emptyTitle")}
             </p>
             <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              Créez une campagne avec « Nouvelle campagne ».
+              {t("campaigns.emptyBody")}
             </p>
           </div>
         </section>
@@ -214,8 +223,8 @@ export function CampagnesView({
           loading={loading}
           pageSize={25}
           globalFilter={searchQuery}
-          emptyMessage="Aucune campagne."
-          searchNoResultsMessage="Aucun résultat pour cette recherche."
+          emptyMessage={t("campaigns.emptyTable")}
+          searchNoResultsMessage={t("campaigns.noSearchResults")}
           onRowClick={onOpenDetails}
           footer={footerLabel}
         />
