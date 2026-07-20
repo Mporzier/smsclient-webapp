@@ -35,6 +35,7 @@ import {
   dialogOverlayCls,
   formDialogContentCls,
   modalIconCls,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import {
   contactFormSnapshotsEqual,
@@ -218,7 +219,14 @@ export function ContactCreateModal({
       });
       handleClose();
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Une erreur est survenue.");
+      const msg =
+        e instanceof Error ? e.message : "Une erreur est survenue.";
+      if (msg.includes("déjà enregistré")) {
+        setPhoneSubmitError(msg);
+        setPhoneBlurred(true);
+      } else {
+        setSaveError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -293,9 +301,7 @@ export function ContactCreateModal({
             "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] rounded-xl shadow-lg sm:max-w-[640px]",
             dialogContentZCls
           )}
-          onOpenAutoFocus={(e) => {
-            if (mode === "edit") e.preventDefault();
-          }}
+          onOpenAutoFocus={preventDialogOpenAutoFocus}
           onPointerDownOutside={(e) => {
             // Confirm empilée : ne pas preventDefault (sinon elle ne se ferme pas).
             if (hasStackedOpenDialog()) return;

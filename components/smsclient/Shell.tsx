@@ -4,8 +4,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { FloatingHelpBanner } from "@/components/smsclient/FloatingHelpBanner";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
-import { MonProfilModal } from "@/components/smsclient/modals/MonProfilModal";
 import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
+import { requestParametresSection } from "@/components/smsclient/views/parametres/parametresNav";
 import { cn } from "@/lib/utils";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
@@ -69,7 +69,6 @@ export function AppShell({
   const active = navOverrideForRoute(route);
   const TitleIcon = ROUTE_ICONS[route];
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const isCampaignWizard = isCampaignWizardRoute(route);
@@ -260,7 +259,10 @@ export function AppShell({
                     aria-label="Menu du compte"
                   >
                     <DropdownMenuItem
-                      onSelect={() => setProfileModalOpen(true)}
+                      onSelect={() => {
+                        requestParametresSection("compte");
+                        go("parametres");
+                      }}
                     >
                       <SidebarMenuIcon icon={UserRound} />
                       Mon profil
@@ -321,7 +323,7 @@ export function AppShell({
                   smsclient.fr
                 </span>
               </button>
-              <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="m-0 flex shrink-0 items-center gap-2.5 rounded-full bg-muted px-3 py-1.5 text-xl font-semibold tracking-tight text-foreground">
                 <TitleIcon
                   className="size-6 shrink-0 text-primary"
                   strokeWidth={2.25}
@@ -410,11 +412,6 @@ export function AppShell({
           setHelpOpen(false);
           go(hash);
         }}
-      />
-
-      <MonProfilModal
-        open={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
       />
     </div>
   );

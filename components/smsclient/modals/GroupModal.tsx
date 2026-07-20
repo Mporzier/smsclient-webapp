@@ -16,7 +16,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import {
@@ -39,7 +38,6 @@ import {
   Trash2,
   UserRound,
   Users,
-  X,
 } from "lucide-react";
 import {
   brandBtnPrimaryCls,
@@ -48,8 +46,9 @@ import {
   dialogOverlayCls,
   dialogOverlayStackedCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 import {
   groupFormSnapshotsEqual,
   hasStackedOpenDialog,
@@ -112,7 +111,6 @@ const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
 const sectionTitleCls = "text-s font-extrabold text-foreground";
 const hintTextCls =
   "text-[11px] font-normal leading-snug text-muted-foreground";
-const errorTextCls = "text-xs font-medium text-destructive";
 const labelIconBadgeCls =
   "grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring";
 const contactsPanelShell =
@@ -501,6 +499,7 @@ export function GroupModal(props: GroupModalProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const [formBaseline, setFormBaseline] = useState<GroupFormSnapshot | null>(
     null
@@ -585,6 +584,7 @@ export function GroupModal(props: GroupModalProps) {
       setSelectedIds([]);
       setSaving(false);
       setError(null);
+      setNameError(null);
       setSaveConfirmOpen(false);
       setFormBaseline(null);
       setSyncedEditGroupId(null);
@@ -597,6 +597,7 @@ export function GroupModal(props: GroupModalProps) {
     setName(group.name);
     setDescription(group.description ?? "");
     setError(null);
+    setNameError(null);
   }
 
   if (isCreate || !props.open || !group) {
@@ -647,16 +648,23 @@ export function GroupModal(props: GroupModalProps) {
     if (!isCreate) return;
     const trimmed = name.trim();
     if (!trimmed) {
-      setError("Indiquez un nom de groupe.");
+      setNameError("Indiquez un nom de groupe.");
       return;
     }
+    setNameError(null);
     setError(null);
     setSaving(true);
     try {
       await onCreated?.(trimmed, description.trim(), selectedIds);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Enregistrement impossible.");
+      const msg =
+        e instanceof Error ? e.message : "Enregistrement impossible.";
+      if (msg.includes("existe déjà")) {
+        setNameError(msg);
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -665,9 +673,10 @@ export function GroupModal(props: GroupModalProps) {
   const handleSave = useCallback(async () => {
     if (isCreate || !group?.id || !onSave) return;
     if (!name.trim()) {
-      setError("Le nom du groupe est obligatoire.");
+      setNameError("Le nom du groupe est obligatoire.");
       return;
     }
+    setNameError(null);
     setSaving(true);
     setError(null);
     try {
@@ -679,7 +688,13 @@ export function GroupModal(props: GroupModalProps) {
       });
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Enregistrement impossible.");
+      const msg =
+        e instanceof Error ? e.message : "Enregistrement impossible.";
+      if (msg.includes("existe déjà")) {
+        setNameError(msg);
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -688,9 +703,10 @@ export function GroupModal(props: GroupModalProps) {
   const requestSave = useCallback(() => {
     if (isCreate || !group?.id || !onSave) return;
     if (!name.trim()) {
-      setError("Le nom du groupe est obligatoire.");
+      setNameError("Le nom du groupe est obligatoire.");
       return;
     }
+    setNameError(null);
     setError(null);
     if (contactsSelectionChanged) {
       setSaveConfirmOpen(true);
@@ -752,13 +768,14 @@ export function GroupModal(props: GroupModalProps) {
         }}
       >
         <DialogContent
-          showCloseButton={false}
+          showCloseButton={!saving}
           overlayClassName={dialogOverlayCls}
           className={cn(
             formDialogContentCls,
             "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] sm:max-w-[720px]",
             dialogContentZCls
           )}
+          onOpenAutoFocus={preventDialogOpenAutoFocus}
           onPointerDownOutside={(e) => {
             // Confirm / delete empilés : laisser l’event pour les fermer.
             if (
@@ -781,50 +798,31 @@ export function GroupModal(props: GroupModalProps) {
             if (saving || isDirty) e.preventDefault();
           }}
         >
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
-                aria-hidden
-              >
+          <FormDialogHeader
+            className="bg-card px-4 py-3"
+            bareIcon
+            icon={
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]">
                 <Users className="h-5 w-5" strokeWidth={2} />
               </div>
-              <div className="min-w-0">
-                <DialogTitle className={cn("m-0", modalTitleCls)}>
-                  {dialogLabel}
-                </DialogTitle>
-                {!isCreate && (
-                  <p className={cn("m-0 mt-0.5", hintTextCls)}>
-                    Créez un groupe et ajoutez les contacts à associer.
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              className={modalCloseBtnCompact}
-              aria-label="Fermer"
-              onClick={onClose}
-            >
-              <X className="h-5 w-5" aria-hidden />
-            </button>
-          </div>
+            }
+            title={dialogLabel}
+            titleClassName={modalTitleCls}
+            description={
+              !isCreate
+                ? "Créez un groupe et ajoutez les contacts à associer."
+                : undefined
+            }
+            descriptionClassName={hintTextCls}
+          />
 
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden bg-muted/50 px-4 py-3">
-            {error && (
-              <p
-                className={cn(
-                  "rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5",
-                  errorTextCls
-                )}
-              >
-                {error}
-              </p>
-            )}
-
             <div className="grid min-w-0 shrink-0 grid-cols-1 gap-2 sm:grid-cols-2">
               <div className={fieldShell}>
-                <label className="flex justify-between gap-2">
+                <label
+                  className="flex justify-between gap-2"
+                  htmlFor="group-modal-name"
+                >
                   <span className={fieldLabelCls}>
                     Nom du groupe <span className="text-destructive">*</span>
                   </span>
@@ -832,16 +830,30 @@ export function GroupModal(props: GroupModalProps) {
                 </label>
                 <div className={cn(innerInputSm, "mt-1.5 h-9")}>
                   <input
+                    id="group-modal-name"
                     className={inpText}
                     maxLength={40}
                     value={name}
+                    aria-invalid={Boolean(nameError)}
+                    aria-describedby={
+                      nameError ? "group-modal-name-err" : undefined
+                    }
                     onChange={(e) => {
                       setName(e.target.value);
+                      setNameError(null);
                       setError(null);
                     }}
                     placeholder="Ex : Clients VIP"
                   />
                 </div>
+                {nameError ? (
+                  <p
+                    id="group-modal-name-err"
+                    className={cn("m-0 mt-1.5", hintTextCls, "text-destructive")}
+                  >
+                    {nameError}
+                  </p>
+                ) : null}
               </div>
               <div className={fieldShell}>
                 <label className="flex justify-between gap-2">
@@ -878,6 +890,12 @@ export function GroupModal(props: GroupModalProps) {
               listAriaLabel={listAriaLabel}
             />
           </div>
+
+          {error ? (
+            <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
 
           <div
             className={cn(

@@ -5,15 +5,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   normalizePrenomTokens,
   SMS_PRENOM_PREVIEW_SAMPLE,
 } from "@/lib/proto/smsPersonalization";
 import { cn } from "@/lib/utils";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   brandBtnCls,
@@ -21,8 +19,9 @@ import {
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 import { useModalFormDirty } from "./modalFormGuard";
 
 type QrWelcomeSmsSettingsModalProps = {
@@ -64,10 +63,10 @@ export function QrWelcomeSmsSettingsModal({
   }, [onClose, saving]);
 
   const handleSave = useCallback(async () => {
-    if (!dirty || saving) return;
+    if (saving) return;
     await onSave(normalizedLocal);
     onClose();
-  }, [dirty, normalizedLocal, onClose, onSave, saving]);
+  }, [normalizedLocal, onClose, onSave, saving]);
 
   return (
     <Dialog
@@ -77,13 +76,14 @@ export function QrWelcomeSmsSettingsModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
           "max-h-[min(88dvh,640px)] sm:max-w-[560px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving || dirty) e.preventDefault();
         }}
@@ -91,33 +91,19 @@ export function QrWelcomeSmsSettingsModal({
           if (saving || dirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3.5">
-          <div className="flex min-w-0 items-start gap-2.5">
+        <FormDialogHeader
+          className="items-start px-4 py-3.5"
+          bareIcon
+          icon={
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-ring/20 bg-muted/50 text-ring">
               <MessageCircle className="h-4 w-4" aria-hidden />
             </span>
-            <div className="min-w-0">
-              <DialogTitle
-                id="qr-welcome-sms-modal-title"
-                className="m-0 text-base font-black text-foreground"
-              >
-                SMS de bienvenue
-              </DialogTitle>
-              <DialogDescription className="m-0 mt-0.5 text-xs font-semibold">
-                Personnalisez le message envoyé après l&apos;inscription.
-              </DialogDescription>
-            </div>
-          </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            disabled={saving}
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
+          }
+          title="SMS de bienvenue"
+          titleClassName="font-black"
+          description="Personnalisez le message envoyé après l'inscription."
+          descriptionClassName="font-semibold"
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <SmsMessageComposer
@@ -144,7 +130,7 @@ export function QrWelcomeSmsSettingsModal({
             variant="default"
             size="lg"
             className={cn(brandBtnPrimaryCls, "h-9 px-3 text-xs")}
-            disabled={!dirty || saving}
+            disabled={saving}
             onClick={() => void handleSave()}
           >
             {saving ? "Enregistrement…" : "Enregistrer"}

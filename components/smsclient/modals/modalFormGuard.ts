@@ -72,6 +72,18 @@ export function groupQuickFormSnapshotsEqual(
   return a.name === b.name && a.description === b.description;
 }
 
+export type SmsLinkFormSnapshot = {
+  originalUrl: string;
+  label: string;
+};
+
+export function smsLinkFormSnapshotsEqual(
+  a: SmsLinkFormSnapshot,
+  b: SmsLinkFormSnapshot,
+): boolean {
+  return a.originalUrl === b.originalUrl && a.label === b.label;
+}
+
 /**
  * Ferme la modale au clic sur l’overlay uniquement si le formulaire n’a pas changé.
  */

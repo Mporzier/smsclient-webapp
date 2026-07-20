@@ -9,10 +9,9 @@ import {
   CreditCard,
   FileText,
   Hash,
-  Mail,
   MapPin,
   MessageSquare,
-  Shield,
+  Mail,
   Sparkles,
   Trash2,
   UserCircle,
@@ -27,7 +26,6 @@ export type SettingId =
   | "contact-facturation"
   | "abonnement"
   | "paiement"
-  | "securite"
   | "factures"
   | "expediteur-sms"
   | "notifications-email"
@@ -35,19 +33,43 @@ export type SettingId =
   | "champs-perso"
   | "corbeille";
 
+export type SettingSectionId =
+  | "compte"
+  | "entreprise"
+  | "facturation"
+  | "sms-alertes"
+  | "donnees";
+
 export type SettingCardDef = {
   id: SettingId;
+  section: SettingSectionId;
   title: string;
   description: string;
   icon: LucideIcon;
   savable?: boolean;
+  /** Proto placeholder — UI « Bientôt », pas de faux état réel */
+  upcoming?: boolean;
 };
+
+export type SettingSectionDef = {
+  id: SettingSectionId;
+  title: string;
+};
+
+export const settingSections: SettingSectionDef[] = [
+  { id: "compte", title: "Compte" },
+  { id: "entreprise", title: "Entreprise" },
+  { id: "facturation", title: "Facturation" },
+  { id: "sms-alertes", title: "SMS & alertes" },
+  { id: "donnees", title: "Données" },
+];
 
 export const emptyProfileForm: UserProfileForm = {
   firstName: "",
   lastName: "",
   email: "",
   phone: "",
+  language: "fr",
   companyName: "",
   businessActivity: "",
   siret: "",
@@ -99,6 +121,7 @@ export const invoiceColumns: ColumnDef<CreditPurchaseRowData, unknown>[] = [
 export const allSettingCards: SettingCardDef[] = [
   {
     id: "entreprise",
+    section: "entreprise",
     title: "Entreprise",
     description: "Nom et secteur d'activité.",
     icon: Building2,
@@ -106,6 +129,7 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "identifiants-legaux",
+    section: "entreprise",
     title: "SIRET & TVA",
     description: "Identifiants légaux de l'entreprise.",
     icon: Hash,
@@ -113,6 +137,7 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "adresse-facturation",
+    section: "entreprise",
     title: "Adresse",
     description: "Adresse postale de facturation.",
     icon: MapPin,
@@ -120,6 +145,7 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "contact-facturation",
+    section: "entreprise",
     title: "Contact facturation",
     description: "Personne à contacter pour la facturation.",
     icon: UserCircle,
@@ -127,30 +153,30 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "abonnement",
+    section: "facturation",
     title: "Abonnement",
     description: "Formule et mode de facturation.",
     icon: Sparkles,
+    upcoming: true,
   },
   {
     id: "paiement",
+    section: "facturation",
     title: "Paiement",
     description: "Carte bancaire enregistrée.",
     icon: CreditCard,
-  },
-  {
-    id: "securite",
-    title: "Sécurité",
-    description: "Authentification à deux facteurs.",
-    icon: Shield,
+    upcoming: true,
   },
   {
     id: "factures",
+    section: "facturation",
     title: "Factures",
     description: "Historique des achats de crédits.",
     icon: FileText,
   },
   {
     id: "expediteur-sms",
+    section: "sms-alertes",
     title: "Expéditeur SMS",
     description: "Nom affiché aux destinataires.",
     icon: MessageSquare,
@@ -158,13 +184,15 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "notifications-email",
-    title: "Alertes email",
-    description: "Factures et notifications importantes.",
+    section: "sms-alertes",
+    title: "Alertes et conseils",
+    description: "Infos importantes et conseils par email.",
     icon: Mail,
     savable: true,
   },
   {
     id: "resume-mensuel",
+    section: "sms-alertes",
     title: "Résumé mensuel",
     description: "Synthèse de vos campagnes par email.",
     icon: BarChart3,
@@ -172,12 +200,14 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "champs-perso",
+    section: "donnees",
     title: "Champs personnalisés",
     description: "Champs date, texte ou nombre sur les contacts.",
     icon: ListPlus,
   },
   {
     id: "corbeille",
+    section: "donnees",
     title: "Corbeille",
     description: "Contacts et groupes supprimés.",
     icon: Trash2,

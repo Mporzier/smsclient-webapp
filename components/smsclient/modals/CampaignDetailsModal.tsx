@@ -4,19 +4,18 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
-import { Users, X } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   brandBtnCls,
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtn,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 
 const GROUP_COLORS: { bg: string; border: string; text: string }[] = [
   { bg: "bg-indigo-50", border: "border-indigo-100", text: "text-indigo-700" },
@@ -80,34 +79,24 @@ export function CampaignDetailsModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
           "h-[min(88dvh,820px)] max-h-[min(88dvh,820px)] sm:max-w-[860px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
       >
         {campaign && (
           <>
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-[18px] py-4">
-              <div>
-                <DialogTitle className="text-lg font-black text-foreground">
-                  Détails de campagne
-                </DialogTitle>
-                <DialogDescription className="text-xs font-bold">
-                  Consultation uniquement (lecture seule)
-                </DialogDescription>
-              </div>
-              <button
-                type="button"
-                className={modalCloseBtn}
-                aria-label="Fermer"
-                onClick={onClose}
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
+            <FormDialogHeader
+              className="bg-card px-[18px] py-4"
+              title="Détails de campagne"
+              titleClassName="text-lg font-black"
+              description="Consultation uniquement (lecture seule)"
+              descriptionClassName="font-bold"
+            />
 
             <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-muted/50 p-[18px]">
               <div className="shrink-0 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">

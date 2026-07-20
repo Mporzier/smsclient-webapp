@@ -1,18 +1,27 @@
 "use client";
 
-import { SearchBar } from "@/components/smsclient/Shell";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
-import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
-import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { LINK_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Copy, Link2, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type LiensViewProps = {
@@ -37,13 +46,6 @@ export function LiensView({
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LinkRowData | null>(null);
-
-  useEffect(() => {
-    document.body.style.overflow = deleteTarget ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [deleteTarget]);
 
   const showBigEmpty = !loading && !error && rows.length === 0;
 
@@ -131,23 +133,10 @@ export function LiensView({
         accessorKey: "shortUrl",
         header: "Lien court",
         size: LINK_COL.shortUrl,
-        cell: ({ row }) => (
-          <div className="flex min-w-0 items-center gap-1.5">
-            <CellTruncate as="span" className="text-primary">
-              {row.original.shortUrl}
-            </CellTruncate>
-            <button
-              type="button"
-              aria-label="Copier le lien court"
-              onClick={(e) => {
-                e.stopPropagation();
-                void copyToClipboard(row.original.shortUrl);
-              }}
-              className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-ring/30 hover:text-ring"
-            >
-              <Copy className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          </div>
+        cell: ({ getValue }) => (
+          <CellTruncate as="div" className="text-primary">
+            {getValue<string>()}
+          </CellTruncate>
         ),
       },
       {
@@ -164,18 +153,37 @@ export function LiensView({
         minSize: LINK_COL.actions,
         maxSize: LINK_COL.actions,
         enableResizing: false,
+        header: () => null,
         cell: ({ row }) => (
-          <button
-            type="button"
-            aria-label="Supprimer"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteTarget(row.original);
-            }}
-            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
+          <div className="flex items-center justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-7 rounded-full text-muted-foreground"
+                  aria-label={`Actions pour ${row.original.label || row.original.shortUrl}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="size-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  onSelect={() => void copyToClipboard(row.original.shortUrl)}
+                >
+                  Copier le lien court
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => setDeleteTarget(row.original)}
+                >
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ),
       },
     ],
@@ -187,49 +195,64 @@ export function LiensView({
     : "";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <SearchBar
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <InputGroup
+          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          role="search"
+        >
+          <InputGroupAddon align="inline-start">
+            <Search aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
             placeholder="Rechercher un lien…"
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Rechercher un lien"
           />
-        </div>
-        <div className="mt-0.5">
+        </InputGroup>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="default"
             size="lg"
-            className={brandBtnPrimaryCls}
+            className="rounded-full"
             onClick={() => setCreateOpen(true)}
           >
-            <PlusIcon />
+            <Plus aria-hidden />
             Créer un lien
           </Button>
         </div>
       </div>
 
       {error ? (
-        <p className="m-0 text-sm font-bold text-rose-700">{error}</p>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+          {error}
+        </div>
       ) : null}
 
       {showBigEmpty ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
-          <Link2 className="mb-3 h-10 w-10 text-muted-foreground/50" aria-hidden />
-          <p className="m-0 text-sm font-extrabold text-foreground">
-            Aucun lien court pour le moment
-          </p>
-          <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-muted-foreground">
-            Créez votre premier lien ou activez le suivi des liens dans une
-            campagne SMS.
-          </p>
-        </div>
+        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
+          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <Link2
+              className="h-14 w-14 text-slate-400"
+              strokeWidth={1.25}
+              aria-hidden
+            />
+            <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
+              Aucun lien court pour le moment
+            </p>
+            <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
+              Créez votre premier lien ou activez le suivi des liens dans une
+              campagne SMS.
+            </p>
+          </div>
+        </section>
       ) : (
         <DataTable
           columns={columns}
           data={rows}
           loading={loading}
-          pageSize={20}
+          pageSize={25}
           globalFilter={searchQuery}
           emptyMessage="Aucun lien."
           searchNoResultsMessage="Aucun résultat pour cette recherche."

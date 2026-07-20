@@ -43,6 +43,7 @@ export function CustomFieldsSettingsPanel({
   const [fieldType, setFieldType] = useState<CustomFieldType>("text");
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [labelError, setLabelError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
@@ -67,12 +68,27 @@ export function CustomFieldsSettingsPanel({
   const handleCreate = async () => {
     const t = label.trim();
     if (!t) {
-      setLocalError("Libellé requis.");
+      setLabelError("Libellé requis.");
       return;
     }
-    await run(() => onCreate({ label: t, fieldType }));
-    setLabel("");
-    setFieldType("text");
+    setLabelError(null);
+    setBusy(true);
+    setLocalError(null);
+    try {
+      const { error: err } = await onCreate({ label: t, fieldType });
+      if (err) {
+        if (err.message.includes("existe déjà")) {
+          setLabelError(err.message);
+        } else {
+          setLocalError(err.message);
+        }
+        return;
+      }
+      setLabel("");
+      setFieldType("text");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleRename = async (fieldId: string) => {
@@ -81,8 +97,18 @@ export function CustomFieldsSettingsPanel({
       setLocalError("Libellé requis.");
       return;
     }
-    await run(() => onRename(fieldId, t));
-    setEditingId(null);
+    setBusy(true);
+    setLocalError(null);
+    try {
+      const { error: err } = await onRename(fieldId, t);
+      if (err) {
+        setLocalError(err.message);
+        return;
+      }
+      setEditingId(null);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const confirmDelete = useCallback(async () => {
@@ -193,14 +219,27 @@ export function CustomFieldsSettingsPanel({
 
         <div className="grid gap-3 border-t border-border pt-3">
           <div>
-            <label className={parametresFieldLbl}>Nouveau champ</label>
+            <label className={parametresFieldLbl} htmlFor="custom-field-new-label">
+              Nouveau champ
+            </label>
             <input
+              id="custom-field-new-label"
               className={parametresFieldInp}
               value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={(e) => {
+                setLabel(e.target.value);
+                if (labelError) setLabelError(null);
+                if (localError) setLocalError(null);
+              }}
               placeholder="Ex. Date d'inscription"
               disabled={busy || atCap}
+              aria-invalid={Boolean(labelError)}
             />
+            {labelError ? (
+              <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
+                {labelError}
+              </p>
+            ) : null}
           </div>
           <div>
             <label className={parametresFieldLbl}>Type</label>
@@ -221,7 +260,7 @@ export function CustomFieldsSettingsPanel({
           </div>
           <Button
             type="button"
-            disabled={busy || atCap || !label.trim()}
+            disabled={busy || atCap}
             onClick={() => void handleCreate()}
           >
             <Plus className="mr-1.5 h-4 w-4" />

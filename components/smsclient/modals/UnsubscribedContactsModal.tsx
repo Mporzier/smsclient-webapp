@@ -18,6 +18,7 @@ import {
   dialogOverlayCls,
   formDialogContentCls,
   modalIconCls,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
 
 export type UnsubscribedContactRow = {
@@ -137,6 +138,7 @@ export function UnsubscribedContactsModal({
           "h-[min(86dvh,640px)] max-h-[min(86dvh,640px)] rounded-xl shadow-lg sm:max-w-[560px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving) e.preventDefault();
         }}

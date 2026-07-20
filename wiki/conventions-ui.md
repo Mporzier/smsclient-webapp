@@ -37,8 +37,11 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 
 | Comportement | Règle |
 | ------------ | ----- |
+| Croix fermeture | **Toujours** `DialogContent showCloseButton` (ghost absolu). **Jamais** `modalCloseBtn*` custom |
+| Header | `FormDialogHeader` (+ `FormDialogShell` si shell complet) — `pr-8` réservé pour la croix |
 | Erreurs validation | **Sous le champ**, pas banner en haut du body |
-| Autofocus edit contact | `onOpenAutoFocus` prevent en mode `edit` |
+| Submit | **Jamais** disabled pour form invalide — clic déclenche erreurs. `disabled` seulement `saving` / busy / plafond / env (`!configured`) |
+| Autofocus ouverture | **Aucun** — `onOpenAutoFocus={preventDialogOpenAutoFocus}` (`modalChrome`) |
 | Clic dehors / Escape | Ferme si **pas dirty** et pas en save |
 | Form create vide | Pas dirty → ferme |
 | Form update inchangé | Pas dirty → ferme |
@@ -47,13 +50,19 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 
 Fichiers clés :
 
+- `modals/FormDialogHeader.tsx` / `FormDialogShell.tsx` — header + shell standard
 - `modals/modalFormGuard.ts` — `useModalFormDirty` (baseline **après** reset seeds), `hasStackedOpenDialog`
 - `modals/ContactCreateModal.tsx` — contact create/edit
 - `modals/ConfirmDeleteModal.tsx` — dismiss si `!loading`
 - `modals/GroupModal.tsx` — même pattern dismiss / stack
+- `modalChrome.ts` — `modalCloseBtn*` **deprecated**
 
 > [!tip] Dirty baseline
 > Ne pas capturer le snapshot dirty au même render que le reset des seeds (`setFirst(seed)` etc.) — sinon faux dirty et dismiss bloqué.
+
+## Paramètres vs Compte
+
+Identité = form onglet Compte Paramètres (`CompteSettingsPanel`). Menu Shell **Mon profil** → `requestParametresSection("compte")` + `go("parametres")`. Org / billing / SMS / données = autres onglets. Détail : [[parametres-compte]].
 
 ## Contacts — champs perso
 

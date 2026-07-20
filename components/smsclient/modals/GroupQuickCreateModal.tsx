@@ -4,14 +4,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import { useCallback, useState } from "react";
-import { Users, X } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   brandBtnCls,
   brandBtnPrimaryCls,
@@ -19,8 +18,9 @@ import {
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 import {
   groupQuickFormSnapshotsEqual,
   useModalFormDirty,
@@ -39,7 +39,7 @@ const fieldShell =
 const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
 const fieldLabelCls = "text-xs font-medium text-foreground/80";
 const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
-const errorTextCls = "text-xs font-medium text-rose-800";
+const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 
 export function GroupQuickCreateModal({
   open,
@@ -49,6 +49,7 @@ export function GroupQuickCreateModal({
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [prevOpen, setPrevOpen] = useState(open);
@@ -57,6 +58,7 @@ export function GroupQuickCreateModal({
     if (open) {
       setName("");
       setDesc("");
+      setNameError(null);
       setSaveError(null);
       setSaving(false);
     }
@@ -64,6 +66,7 @@ export function GroupQuickCreateModal({
 
   const handleClose = useCallback(() => {
     if (saving) return;
+    setNameError(null);
     setSaveError(null);
     onClose();
   }, [onClose, saving]);
@@ -71,18 +74,23 @@ export function GroupQuickCreateModal({
   const handleCreate = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setSaveError("Indiquez un nom de groupe.");
+      setNameError("Indiquez un nom de groupe.");
       return;
     }
+    setNameError(null);
     setSaveError(null);
     setSaving(true);
     try {
       await onCreated?.(trimmed, desc.trim());
       handleClose();
     } catch (e) {
-      setSaveError(
-        e instanceof Error ? e.message : "Enregistrement impossible."
-      );
+      const msg =
+        e instanceof Error ? e.message : "Enregistrement impossible.";
+      if (msg.includes("existe déjà")) {
+        setNameError(msg);
+      } else {
+        setSaveError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -106,13 +114,14 @@ export function GroupQuickCreateModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayStackedCls}
         className={cn(
           formDialogContentCls,
           "sm:max-w-[480px]",
           dialogContentStackedZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving || isDirty) e.preventDefault();
         }}
@@ -120,45 +129,23 @@ export function GroupQuickCreateModal({
           if (saving || isDirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]"
-              aria-hidden
-            >
+        <FormDialogHeader
+          className="bg-card px-4 py-3"
+          bareIcon
+          icon={
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]">
               <Users className="h-5 w-5" strokeWidth={2} />
             </div>
-            <DialogTitle className={cn("m-0 min-w-0", modalTitleCls)}>
-              Nouveau groupe
-            </DialogTitle>
-          </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            onClick={handleClose}
-            disabled={saving}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+          }
+          title="Nouveau groupe"
+          titleClassName={modalTitleCls}
+        />
 
         <div className="space-y-2 bg-muted/50 px-4 py-3">
-          {saveError && (
-            <p
-              className={cn(
-                "rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5",
-                errorTextCls
-              )}
-            >
-              {saveError}
-            </p>
-          )}
-
           <div className={fieldShell}>
             <div className="flex justify-between gap-2">
               <Label className={fieldLabelCls} htmlFor="group-quick-name">
-                Nom du groupe <span className="text-red-500">*</span>
+                Nom du groupe <span className="text-destructive">*</span>
               </Label>
               <span className={fieldMetaCls}>{name.length}/40</span>
             </div>
@@ -167,13 +154,25 @@ export function GroupQuickCreateModal({
               className={cn(brandInputCls, "mt-1.5 h-9 text-[13px] font-normal")}
               maxLength={40}
               value={name}
+              aria-invalid={Boolean(nameError)}
+              aria-describedby={
+                nameError ? "group-quick-name-err" : undefined
+              }
               onChange={(e) => {
                 setName(e.target.value);
+                setNameError(null);
                 setSaveError(null);
               }}
               placeholder="Ex : Clients VIP"
-              autoFocus
             />
+            {nameError ? (
+              <p
+                id="group-quick-name-err"
+                className={cn("m-0 mt-1.5", hintTextCls, "text-destructive")}
+              >
+                {nameError}
+              </p>
+            ) : null}
           </div>
 
           <div className={fieldShell}>
@@ -194,6 +193,12 @@ export function GroupQuickCreateModal({
             />
           </div>
         </div>
+
+        {saveError ? (
+          <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            {saveError}
+          </div>
+        ) : null}
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border bg-card px-4 py-3">
           <Button

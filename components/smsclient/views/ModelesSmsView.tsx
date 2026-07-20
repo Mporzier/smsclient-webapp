@@ -49,7 +49,9 @@ export function ModelesSmsView({
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
   const [creating, setCreating] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [bodyError, setBodyError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserSmsTemplateRow | null>(
     null
   );
@@ -69,22 +71,29 @@ export function ModelesSmsView({
   );
 
   const handleCreate = useCallback(async () => {
+    let hasFieldError = false;
     if (!isValidSmsTemplateTitle(title)) {
-      setFormError(
+      setTitleError(
         `Le titre est obligatoire (${SMS_TEMPLATE_TITLE_MIN_LENGTH} caractères minimum).`
       );
-      return;
+      hasFieldError = true;
+    } else {
+      setTitleError(null);
     }
     if (!isValidSmsTemplateBody(body)) {
-      setFormError("Le message SMS ne peut pas être vide.");
-      return;
+      setBodyError("Le message SMS ne peut pas être vide.");
+      hasFieldError = true;
+    } else {
+      setBodyError(null);
     }
+    if (hasFieldError) return;
+
     if (!userId) {
-      setFormError("Connectez-vous pour créer un modèle.");
+      setSaveError("Connectez-vous pour créer un modèle.");
       return;
     }
     setCreating(true);
-    setFormError(null);
+    setSaveError(null);
     const { data, error: createError } = await createUserSmsTemplate(
       supabase,
       userId,
@@ -92,12 +101,14 @@ export function ModelesSmsView({
     );
     setCreating(false);
     if (createError || !data) {
-      setFormError(createError?.message ?? "Création impossible.");
+      setSaveError(createError?.message ?? "Création impossible.");
       return;
     }
     setTitle("");
     setDescription("");
     setBody("");
+    setTitleError(null);
+    setBodyError(null);
     await onRefresh();
     onToast?.("Modèle SMS créé");
   }, [title, description, body, userId, supabase, onRefresh, onToast]);
@@ -114,9 +125,6 @@ export function ModelesSmsView({
     await onRefresh();
     onToast?.("Modèle supprimé");
   }, [deleteTarget, userId, supabase, onRefresh, onToast]);
-
-  const canCreate =
-    isValidSmsTemplateTitle(title) && isValidSmsTemplateBody(body) && !creating;
 
   const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
@@ -222,9 +230,16 @@ export function ModelesSmsView({
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
-                  if (formError) setFormError(null);
+                  if (titleError) setTitleError(null);
+                  if (saveError) setSaveError(null);
                 }}
+                aria-invalid={Boolean(titleError)}
               />
+              {titleError ? (
+                <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
+                  {titleError}
+                </p>
+              ) : null}
             </div>
             <div className="min-w-0">
               <label
@@ -241,7 +256,7 @@ export function ModelesSmsView({
                 value={description}
                 onChange={(e) => {
                   setDescription(e.target.value);
-                  if (formError) setFormError(null);
+                  if (saveError) setSaveError(null);
                 }}
               />
             </div>
@@ -261,29 +276,33 @@ export function ModelesSmsView({
               value={body}
               onChange={(e) => {
                 setBody(e.target.value);
-                if (formError) setFormError(null);
+                if (bodyError) setBodyError(null);
+                if (saveError) setSaveError(null);
               }}
+              aria-invalid={Boolean(bodyError)}
             />
+            {bodyError ? (
+              <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
+                {bodyError}
+              </p>
+            ) : null}
           </div>
+          {saveError ? (
+            <p className="m-0 text-xs font-medium text-destructive">{saveError}</p>
+          ) : null}
           <div className="flex justify-end">
             <Button
               variant="default"
               size="lg"
               className={cn(brandBtnPrimaryCls, "h-10 px-4")}
               onClick={() => void handleCreate()}
-              disabled={!canCreate}
+              disabled={creating}
             >
               {!creating ? <PlusIcon /> : null}
               {creating ? "Création…" : "Créer le modèle"}
             </Button>
           </div>
         </div>
-
-        {formError ? (
-          <p className="m-0 mt-2 text-xs font-bold text-rose-700">
-            {formError}
-          </p>
-        ) : null}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3">

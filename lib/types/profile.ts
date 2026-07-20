@@ -1,10 +1,13 @@
 import type { BusinessActivityId } from "@/lib/types/businessActivity";
 
+export type ProfileLanguage = "fr" | "en";
+
 export type UserProfileForm = {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  language: ProfileLanguage;
   companyName: string;
   businessActivity: BusinessActivityId | "";
   siret: string;
@@ -29,6 +32,7 @@ export const EMPTY_PROFILE_FORM: UserProfileForm = {
   lastName: "",
   email: "",
   phone: "",
+  language: "fr",
   companyName: "",
   businessActivity: "",
   siret: "",

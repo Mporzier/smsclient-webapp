@@ -53,7 +53,8 @@ export const LINK_COL = {
   originalUrl: 220,
   shortUrl: 140,
   clickCount: 56,
-  actions: 48,
+  /** Menu … sticky droite — même largeur que select contacts */
+  actions: 40,
 } as const;
 
 export const MODELE_SMS_COL = {

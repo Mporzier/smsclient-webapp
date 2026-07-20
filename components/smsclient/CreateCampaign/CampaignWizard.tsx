@@ -419,7 +419,12 @@ export function CampaignWizard({
 
   const handleGenerateAiMessage = useCallback(async () => {
     const prompt = aiPrompt.trim();
-    if (!prompt || aiGenerating) return;
+    if (aiGenerating) return;
+    if (!prompt) {
+      setStepErrors(["Décrivez le message à générer."]);
+      return;
+    }
+    setStepErrors([]);
 
     setAiGenerating(true);
     try {
@@ -593,32 +598,17 @@ export function CampaignWizard({
     sms,
   ]);
 
-  const canContinueStep1 = recipients > 0;
-  const canContinueStep2 =
-    composeApproach != null &&
-    !showAiPromptComposer &&
-    smsBody.trim().length > 0;
-  const canContinue =
-    step === 1 ? canContinueStep1 : step === 2 ? canContinueStep2 : true;
-
   const handleNext = useCallback(() => {
     if (step === 1) {
-      if (!canContinueStep1 || !validateStep1()) return;
+      if (!validateStep1()) return;
       onWizardStepChange(2);
       return;
     }
     if (step === 2) {
-      if (!canContinueStep2 || !validateStep2()) return;
+      if (!validateStep2()) return;
       onWizardStepChange(3);
     }
-  }, [
-    step,
-    canContinueStep1,
-    canContinueStep2,
-    validateStep1,
-    validateStep2,
-    onWizardStepChange,
-  ]);
+  }, [step, validateStep1, validateStep2, onWizardStepChange]);
 
   const handleConfirmWithValidation = useCallback(async () => {
     if (!validateStep3()) return;
@@ -671,7 +661,6 @@ export function CampaignWizard({
           variant="default"
           size="lg"
           className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
-          disabled={!canContinue}
           onClick={handleNext}
         >
           Continuer
@@ -871,9 +860,8 @@ export function CampaignWizard({
                             selectedLinkId={selectedLinkId}
                             onSelectLink={handleAiLinkSelect}
                             onCreateLink={handleCreateSmsLink}
-                            canGenerate={aiPrompt.trim().length > 0}
                             generating={aiGenerating}
-                            onGenerate={handleGenerateAiMessage}
+                            onGenerate={() => void handleGenerateAiMessage()}
                             optionsOpen={aiOptionsOpen}
                             onOptionsOpenChange={setAiOptionsOpen}
                             variants={aiVariants}

@@ -5,18 +5,17 @@ import type { QrWheelConfig } from "@/lib/types/qrWheel";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Gift, X } from "lucide-react";
+import { Gift } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 
 type QrWheelSettingsModalProps = {
   open: boolean;
@@ -58,13 +57,14 @@ export function QrWheelSettingsModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
           "max-h-[min(88dvh,760px)] sm:max-w-[680px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving || dirty) e.preventDefault();
         }}
@@ -72,34 +72,19 @@ export function QrWheelSettingsModal({
           if (saving || dirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3.5">
-          <div className="flex min-w-0 items-start gap-2.5">
+        <FormDialogHeader
+          className="items-start px-4 py-3.5"
+          bareIcon
+          icon={
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-amber-200/80 bg-amber-50 text-amber-600">
               <Gift className="h-4 w-4" aria-hidden />
             </span>
-            <div className="min-w-0">
-              <DialogTitle
-                id="qr-wheel-modal-title"
-                className="m-0 text-base font-black text-foreground"
-              >
-                Configurer la roue
-              </DialogTitle>
-              <DialogDescription className="m-0 mt-0.5 text-xs font-semibold">
-                Définissez les cases, leurs chances (100 % au total) et les
-                messages envoyés aux clients.
-              </DialogDescription>
-            </div>
-          </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            disabled={saving}
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
+          }
+          title="Configurer la roue"
+          titleClassName="font-black"
+          description="Définissez les cases, leurs chances (100 % au total) et les messages envoyés aux clients."
+          descriptionClassName="font-semibold"
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <QrWheelSettings

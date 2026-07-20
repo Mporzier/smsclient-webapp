@@ -7,29 +7,33 @@ import {
   SMS_LINK_LABEL_MAX_LENGTH,
   SMS_LINK_LABEL_MIN_LENGTH,
 } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
-import { PlusIcon } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { LinkRowData } from "@/lib/types/link";
-import { cn } from "@/lib/utils";
-import { Link2, X } from "lucide-react";
+import { cn } from "@/lib/cn";
+import { Link2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
-  brandInputCls,
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  modalIconCls,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import {
+  hasStackedOpenDialog,
+  smsLinkFormSnapshotsEqual,
+  useModalFormDirty,
+  type SmsLinkFormSnapshot,
+} from "./modalFormGuard";
 
 type CreateSmsLinkModalProps = {
   open: boolean;
@@ -41,6 +45,13 @@ type CreateSmsLinkModalProps = {
   onCreated?: (link: LinkRowData) => void;
 };
 
+const fieldLabelCls = "text-xs font-semibold text-foreground";
+const fieldMetaCls = "text-xs font-normal text-muted-foreground";
+const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
+/** Ring Input UI trop épais en Dialog — border + ring-0 comme Contact. */
+const modalFieldCls =
+  "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
+
 export function CreateSmsLinkModal({
   open,
   onClose,
@@ -50,7 +61,9 @@ export function CreateSmsLinkModal({
   const [originalUrl, setOriginalUrl] = useState("");
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -58,42 +71,57 @@ export function CreateSmsLinkModal({
     if (open) {
       setOriginalUrl("");
       setLabel("");
-      setError(null);
+      setUrlError(null);
+      setLabelError(null);
+      setSaveError(null);
       setSaving(false);
     }
   }
 
   const handleClose = useCallback(() => {
     if (saving) return;
+    setUrlError(null);
+    setLabelError(null);
+    setSaveError(null);
     onClose();
   }, [onClose, saving]);
 
-  const urlValid = isValidLinkUrl(originalUrl);
-  const labelValid = isValidLinkLabel(label);
-  const canSubmit = urlValid && labelValid && !saving;
+  const formSnapshot: SmsLinkFormSnapshot = { originalUrl, label };
+  const isDirty = useModalFormDirty(
+    open,
+    formSnapshot,
+    smsLinkFormSnapshotsEqual
+  );
 
   const handleSubmit = useCallback(async () => {
-    const normalized = normalizeUrl(originalUrl);
+    let hasFieldError = false;
     if (!isValidLinkUrl(originalUrl)) {
-      setError("Saisissez une URL valide (ex. https://votre-site.fr/promo).");
-      return;
+      setUrlError("Saisissez une URL valide (ex. https://votre-site.fr/promo).");
+      hasFieldError = true;
+    } else {
+      setUrlError(null);
     }
     const trimmedLabel = label.trim().slice(0, SMS_LINK_LABEL_MAX_LENGTH);
     if (!isValidLinkLabel(trimmedLabel)) {
-      setError(
+      setLabelError(
         `Le libellé est obligatoire (${SMS_LINK_LABEL_MIN_LENGTH} caractères minimum).`
       );
-      return;
+      hasFieldError = true;
+    } else {
+      setLabelError(null);
     }
+    if (hasFieldError) return;
+
+    const normalized = normalizeUrl(originalUrl);
     setSaving(true);
-    setError(null);
+    setSaveError(null);
     const { data, error: createError } = await onCreate({
       originalUrl: normalized,
       label: trimmedLabel,
     });
     setSaving(false);
     if (createError || !data) {
-      setError(createError ?? "Création impossible.");
+      setSaveError(createError ?? "Création impossible.");
       return;
     }
     onCreated?.(data);
@@ -104,79 +132,80 @@ export function CreateSmsLinkModal({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next && !saving) handleClose();
+        if (!next) {
+          if (saving || isDirty || hasStackedOpenDialog()) return;
+          handleClose();
+        }
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayStackedCls}
         className={cn(
           formDialogContentCls,
-          "sm:max-w-[480px]",
+          "max-h-[min(86dvh,560px)] sm:max-w-[480px]",
           dialogContentStackedZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (saving || isDirty) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (saving || isDirty) e.preventDefault();
         }}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3.5">
-          <div className="flex min-w-0 items-start gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-ring/20 bg-muted/50 text-ring">
-              <Link2 className="h-4 w-4" aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <DialogTitle
-                id="create-sms-link-title"
-                className="m-0 text-base font-black text-foreground"
-              >
-                Nouveau lien
-              </DialogTitle>
-              <DialogDescription className="m-0 mt-0.5 text-xs font-semibold">
-                Le lien sera enregistré dans la section Liens.
-              </DialogDescription>
-            </div>
+        <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
+          <div className={modalIconCls("sm")} aria-hidden>
+            <Link2 />
           </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            disabled={saving}
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
+          <DialogTitle className="min-w-0 flex-1 pr-8 text-base font-semibold leading-none tracking-tight">
+            Nouveau lien
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="space-y-3 px-4 py-4">
-          <div>
-            <Label
-              htmlFor="create-sms-link-url"
-              className="mb-1.5 block text-xs font-bold text-foreground/80"
-            >
-              URL
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          <div className="space-y-1.5">
+            <Label className={fieldLabelCls} htmlFor="create-sms-link-url">
+              URL <span className="text-destructive">*</span>
             </Label>
             <Input
               id="create-sms-link-url"
               type="url"
-              className={cn(brandInputCls, "h-10 text-sm font-semibold")}
+              className={modalFieldCls}
               placeholder="www.votre-site.fr/promo"
               value={originalUrl}
+              aria-invalid={Boolean(urlError)}
+              aria-describedby={urlError ? "create-sms-link-url-err" : undefined}
               onChange={(e) => {
                 setOriginalUrl(e.target.value);
-                if (error) setError(null);
+                setUrlError(null);
+                setSaveError(null);
               }}
               disabled={saving}
             />
+            {urlError ? (
+              <p
+                id="create-sms-link-url-err"
+                className={cn(hintTextCls, "text-destructive")}
+              >
+                {urlError}
+              </p>
+            ) : null}
           </div>
-          <div>
+
+          <div className="space-y-1.5">
             <Label
+              className="flex justify-between gap-2"
               htmlFor="create-sms-link-label"
-              className="mb-1.5 block text-xs font-bold text-foreground/80"
             >
-              Libellé
+              <span className={fieldLabelCls}>
+                Libellé <span className="text-destructive">*</span>
+              </span>
+              <span className={fieldMetaCls}>
+                {label.length}/{SMS_LINK_LABEL_MAX_LENGTH}
+              </span>
             </Label>
             <Input
               id="create-sms-link-label"
@@ -184,44 +213,57 @@ export function CreateSmsLinkModal({
               required
               minLength={SMS_LINK_LABEL_MIN_LENGTH}
               maxLength={SMS_LINK_LABEL_MAX_LENGTH}
-              className={cn(brandInputCls, "h-10 text-sm font-semibold")}
+              className={modalFieldCls}
               placeholder="Promo été"
               value={label}
+              aria-invalid={Boolean(labelError)}
+              aria-describedby={
+                labelError ? "create-sms-link-label-err" : undefined
+              }
               onChange={(e) => {
                 setLabel(e.target.value);
-                if (error) setError(null);
+                setLabelError(null);
+                setSaveError(null);
               }}
               disabled={saving}
             />
+            {labelError ? (
+              <p
+                id="create-sms-link-label-err"
+                className={cn(hintTextCls, "text-destructive")}
+              >
+                {labelError}
+              </p>
+            ) : null}
           </div>
-          {error ? (
-            <p className="m-0 text-xs font-bold text-destructive">{error}</p>
-          ) : null}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-4 py-3.5">
+        {saveError ? (
+          <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-6 py-2 text-sm text-destructive">
+            {saveError}
+          </div>
+        ) : null}
+
+        <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-end gap-2 rounded-b-xl p-2.5 px-4 sm:justify-end">
           <Button
             type="button"
             variant="outline"
-            size="lg"
-            className={brandBtnCls}
             disabled={saving}
             onClick={handleClose}
+            className="cursor-pointer"
           >
             Annuler
           </Button>
           <Button
             type="button"
             variant="default"
-            size="lg"
-            className={brandBtnPrimaryCls}
-            disabled={!canSubmit}
+            disabled={saving}
             onClick={() => void handleSubmit()}
+            className="cursor-pointer"
           >
-            {!saving ? <PlusIcon /> : null}
             {saving ? "Enregistrement…" : "Enregistrer"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

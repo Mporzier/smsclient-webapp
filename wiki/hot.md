@@ -8,7 +8,14 @@ tags:
 
 # hot — contexte récent
 
-Updated: 2026-07-16
+Updated: 2026-07-20
+
+## Session 2026-07-20 (Paramètres sections)
+
+- Croix modales : `FormDialogHeader` / `FormDialogShell` + `showCloseButton` — `modalCloseBtn*` deprecated
+- Compte : lignes email/icône alignées (spacer bouton Éditer invisible)
+- Champ `language` profil (`fr`|`en`) — migration `20260720170000_user_profiles_language.sql`
+- Menu Shell garde `MonProfilModal`
 
 ## Session 2026-07-16 (UI contacts / modales)
 

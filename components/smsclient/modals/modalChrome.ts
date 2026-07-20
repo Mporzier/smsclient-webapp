@@ -1,7 +1,13 @@
 export const modalCard =
   "max-h-[min(82vh,760px)] w-full max-w-[980px] overflow-auto rounded-[22px] border border-border bg-card shadow-2xl";
+
+/**
+ * @deprecated Croix custom — utiliser `DialogContent showCloseButton` + `FormDialogHeader`.
+ * Gardé temporairement pour migrations ; ne plus importer dans les nouvelles modales.
+ */
 export const modalCloseBtn =
   "grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-2xl border border-border bg-card text-lg font-black shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50";
+/** @deprecated Voir `modalCloseBtn`. */
 export const modalCloseBtnCompact =
   "grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-xl border border-border bg-card shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -15,6 +21,11 @@ export const dialogContentStackedZCls = "z-[10001]";
 /** Shell Dialog formulaire (header / body scroll / footer). */
 export const formDialogContentCls =
   "flex w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-[22px] border border-border bg-card p-0 text-left shadow-2xl ring-0";
+
+/** Bloque le focus auto Radix sur le 1er champ à l’ouverture. */
+export function preventDialogOpenAutoFocus(e: Event): void {
+  e.preventDefault();
+}
 
 /** Classes Button brand (ex-ProtoBtn). */
 export const brandBtnCls =

@@ -6,14 +6,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import type { AutomationRowData, AutomationSavePayload } from "@/lib/types/automation";
-import { Clock, X, Zap } from "lucide-react";
+import { Clock, Zap } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   brandBtnCls,
@@ -21,8 +19,9 @@ import {
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 
 const fieldLabelCls = "text-xs font-semibold text-foreground/80";
 const hintTextCls = "text-[11px] font-normal leading-snug text-muted-foreground";
@@ -99,13 +98,14 @@ export function AutomationEditModal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
           "max-h-[min(86dvh,720px)] sm:max-w-[560px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving) e.preventDefault();
         }}
@@ -115,33 +115,17 @@ export function AutomationEditModal({
       >
         {row && (
           <>
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring"
-                  aria-hidden
-                >
+            <FormDialogHeader
+              className="px-4 py-3"
+              bareIcon
+              icon={
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring">
                   <Zap className="h-5 w-5" strokeWidth={2.25} />
                 </div>
-                <div className="min-w-0">
-                  <DialogTitle className="m-0 truncate text-base font-semibold text-foreground">
-                    {row.name}
-                  </DialogTitle>
-                  <DialogDescription className="m-0 mt-0.5 text-xs">
-                    {row.scheduleLabel}
-                  </DialogDescription>
-                </div>
-              </div>
-              <button
-                type="button"
-                className={modalCloseBtnCompact}
-                aria-label="Fermer"
-                onClick={handleClose}
-                disabled={saving}
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
+              }
+              title={row.name}
+              description={row.scheduleLabel}
+            />
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/50 px-4 py-3">
               <p className={cn("m-0", hintTextCls)}>{row.description}</p>
@@ -189,24 +173,24 @@ export function AutomationEditModal({
                   className="mt-1.5 min-h-[100px] resize-y text-[13px] leading-snug"
                   maxLength={480}
                   value={body}
+                  aria-invalid={Boolean(error)}
                   onChange={(e) => {
                     setBody(e.target.value);
                     setError(null);
                   }}
                   rows={4}
                 />
+                {error ? (
+                  <p className="mt-1.5 text-xs font-medium text-destructive">
+                    {error}
+                  </p>
+                ) : null}
                 <p className={cn("mt-1.5", hintTextCls)}>
                   Variables :{" "}
                   <code className="rounded bg-muted px-1">{"{prenom}"}</code>,{" "}
                   <code className="rounded bg-muted px-1">{"{nom}"}</code>
                 </p>
               </div>
-
-              {error && (
-                <p className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-800">
-                  {error}
-                </p>
-              )}
             </div>
 
             <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-card px-4 py-3">

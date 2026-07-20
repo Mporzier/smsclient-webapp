@@ -19,7 +19,7 @@ export function HeaderHelpMenu({ open, onToggle }: HeaderHelpMenuProps) {
       aria-label="Aide"
       aria-expanded={open}
       aria-controls="floating-help-banner"
-      className="border-emerald-500/35 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+      className="border-violet-500/35 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
       onClick={onToggle}
     >
       <CircleHelp className="size-5" strokeWidth={2.5} aria-hidden />

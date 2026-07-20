@@ -24,7 +24,6 @@ type SmsAiComposePanelProps = {
     originalUrl: string;
     label: string;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
-  canGenerate: boolean;
   generating: boolean;
   onGenerate: () => void;
   optionsOpen: boolean;
@@ -42,7 +41,6 @@ export function SmsAiComposePanel({
   selectedLinkId,
   onSelectLink,
   onCreateLink,
-  canGenerate,
   generating,
   onGenerate,
   optionsOpen,
@@ -85,7 +83,7 @@ export function SmsAiComposePanel({
               brandBtnPrimaryCls,
               "h-10 min-w-0 flex-1 gap-2 px-4 text-sm sm:flex-none",
             )}
-            disabled={!canGenerate || generating}
+            disabled={generating}
             onClick={onGenerate}
           >
             {generating ? (

@@ -13,7 +13,7 @@ Lire [[hot]] d'abord si session récente documentée. Conventions UI durables : 
 | nouvelle-campagne | `CreateCampaign/CampaignWizard.tsx` | `prototypeApp/useCampaignWizard.ts` | `campaigns.ts`                        |
 | automatisations   | `views/AutomatisationsView.tsx`     | `hooks/useAutomations.ts`           | `lib/supabase/automations.ts`         |
 | statistiques      | `views/StatistiquesView.tsx`        | `hooks/useStatistics.ts`            | `lib/supabase/statistics.ts`          |
-| parametres        | `views/ParametresView.tsx`          | `hooks/useTrashItems.ts`            | `lib/supabase/profile.ts`, `trash.ts` |
+| parametres        | `views/ParametresView.tsx`          | `hooks/useTrashItems.ts`            | `lib/supabase/profile.ts`, `trash.ts` — [[parametres-compte]] |
 | qr-boutique       | `views/QrCodeView.tsx`              | `useQrWheel`, `useUserQrCode`       | `qrWheel.ts`, `qrCodes.ts`            |
 | liens             | `views/LiensView.tsx`               | `hooks/useLinks.ts`                 | `lib/supabase/links.ts`               |
 | modeles-sms       | `views/ModelesSmsView.tsx`          | `hooks/useSmsTemplates.ts`          | `lib/supabase/smsTemplates.ts`        |

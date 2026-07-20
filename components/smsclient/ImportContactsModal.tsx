@@ -49,6 +49,7 @@ import {
   dialogOverlayCls,
   formDialogContentCls,
   modalIconCls,
+  preventDialogOpenAutoFocus,
 } from "./modals/modalChrome";
 
 const FIXED_ROLE_OPTIONS: FixedImportColumnRole[] = [
@@ -620,6 +621,7 @@ export function ImportContactsModal({
           "max-h-[min(90vh,820px)] rounded-xl shadow-lg sm:max-w-[960px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (importing || isDirty) e.preventDefault();
         }}

@@ -1,12 +1,11 @@
 "use client";
 
-import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
-import { BadgeSent } from "@/components/smsclient/ui";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { CompteSettingsPanel } from "@/components/smsclient/views/parametres/CompteSettingsPanel";
 import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
 import {
@@ -18,14 +17,21 @@ import {
   emptyProfileForm,
   parametresFieldInp,
   parametresFieldLbl,
+  settingSections,
   type SettingId,
+  type SettingSectionId,
 } from "@/components/smsclient/views/parametres/parametresSettings";
+import {
+  consumeRequestedParametresSection,
+  isSettingSectionId,
+  PARAMETRES_SECTION_EVENT,
+} from "@/components/smsclient/views/parametres/parametresNav";
 import { BusinessActivitySelect } from "@/components/smsclient/views/parametres/BusinessActivitySelect";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type ParametresViewProps = {
   profileForm: UserProfileForm | null;
@@ -81,6 +87,23 @@ export function ParametresView({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [openSetting, setOpenSetting] = useState<SettingId | null>(null);
+  const [activeSection, setActiveSection] =
+    useState<SettingSectionId>("compte");
+  const [compteSaveError, setCompteSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const pending = consumeRequestedParametresSection();
+    if (pending) setActiveSection(pending);
+    const onSection = (e: Event) => {
+      const detail = (e as CustomEvent<unknown>).detail;
+      if (typeof detail === "string" && isSettingSectionId(detail)) {
+        setActiveSection(detail);
+      }
+    };
+    window.addEventListener(PARAMETRES_SECTION_EVENT, onSection);
+    return () =>
+      window.removeEventListener(PARAMETRES_SECTION_EVENT, onSection);
+  }, []);
 
   const dirty = JSON.stringify(draftForm) !== JSON.stringify(savedForm);
   const changed = <K extends keyof UserProfileForm>(key: K) =>
@@ -155,6 +178,32 @@ export function ParametresView({
     }
   };
 
+  const onSaveCompteField = async <K extends keyof UserProfileForm>(
+    key: K,
+    value: UserProfileForm[K],
+  ) => {
+    const next = { ...draftForm, [key]: value };
+    if (!next.firstName.trim()) {
+      const msg = "Le prénom est requis.";
+      setCompteSaveError(msg);
+      throw new Error(msg);
+    }
+    setCompteSaveError(null);
+    setDraftForm(next);
+    setSaving(true);
+    try {
+      await onSaveProfile(next);
+      setSavedForm(next);
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Sauvegarde impossible.";
+      setCompteSaveError(msg);
+      throw e instanceof Error ? e : new Error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const trashAvailable =
     Boolean(onRestoreTrashContacts) &&
     Boolean(onRestoreTrashGroups) &&
@@ -164,22 +213,76 @@ export function ParametresView({
     ? allSettingCards
     : allSettingCards.filter((c) => c.id !== "corbeille");
 
+  const availableSections = settingSections.filter((section) => {
+    if (section.id === "compte") return true;
+    return visibleCards.some((c) => c.section === section.id);
+  });
+
+  const sectionId =
+    availableSections.find((s) => s.id === activeSection)?.id ??
+    availableSections[0]?.id ??
+    "compte";
+
+  const sectionCards = visibleCards.filter((c) => c.section === sectionId);
+  const isCompteSection = sectionId === "compte";
+
   const modalIcon = openCard ? (
     <openCard.icon className="h-5 w-5" strokeWidth={2.25} />
   ) : null;
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1">
-        {visibleCards.map((card) => (
-          <SettingCard
-            key={card.id}
-            title={card.title}
-            description={card.description}
-            icon={card.icon}
-            onClick={() => setOpenSetting(card.id)}
-          />
-        ))}
+      <div className="flex flex-col gap-4">
+        <div
+          className="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Sections paramètres"
+        >
+          {availableSections.map((section) => (
+            <Button
+              key={section.id}
+              type="button"
+              size="sm"
+              variant={sectionId === section.id ? "default" : "outline"}
+              role="tab"
+              aria-selected={sectionId === section.id}
+              onClick={() => setActiveSection(section.id)}
+            >
+              {section.title}
+            </Button>
+          ))}
+        </div>
+
+        <div
+          role="tabpanel"
+          aria-label={
+            availableSections.find((s) => s.id === sectionId)?.title ??
+            "Paramètres"
+          }
+        >
+          {isCompteSection ? (
+            <CompteSettingsPanel
+              form={draftForm}
+              loading={profileLoading}
+              saving={saving}
+              saveError={compteSaveError}
+              onSaveField={onSaveCompteField}
+            />
+          ) : (
+            <div className="grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1">
+              {sectionCards.map((card) => (
+                <SettingCard
+                  key={card.id}
+                  title={card.title}
+                  description={card.description}
+                  icon={card.icon}
+                  upcoming={card.upcoming}
+                  onClick={() => setOpenSetting(card.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {openCard && (
@@ -339,43 +442,26 @@ export function ParametresView({
 
           {openSetting === "abonnement" && (
             <ModalPanel>
-              <div className="flex justify-between gap-3 text-sm font-extrabold">
-                <span className="text-slate-600">Formule</span>
-                <strong>Pay-as-you-go</strong>
-              </div>
-              <p className="m-0 mt-2 text-xs font-semibold text-slate-500">
-                Vous payez uniquement les crédits SMS consommés.
+              <p className="m-0 text-sm font-extrabold text-foreground">
+                Bientôt disponible
+              </p>
+              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
+                Formule pay-as-you-go : vous payez uniquement les crédits SMS
+                consommés. La gestion d&apos;abonnement sera branchée plus
+                tard.
               </p>
             </ModalPanel>
           )}
 
           {openSetting === "paiement" && (
             <ModalPanel>
-              <div className="flex justify-between gap-3 text-sm font-extrabold">
-                <span className="text-slate-600">Carte enregistrée</span>
-                <strong>VISA •••• 8003</strong>
-              </div>
-              <div className="mt-3">
-                <Button variant="outline" size="lg" className={brandBtnCls}>
-                  Modifier la carte
-                </Button>
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "securite" && (
-            <ModalPanel>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-extrabold text-slate-600">
-                  Authentification 2FA
-                </span>
-                <BadgeSent>Activé</BadgeSent>
-              </div>
-              <div className="mt-3">
-                <Button variant="outline" size="lg" className={brandBtnCls}>
-                  Gérer la sécurité
-                </Button>
-              </div>
+              <p className="m-0 text-sm font-extrabold text-foreground">
+                Bientôt disponible
+              </p>
+              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
+                Enregistrement et modification de carte bancaire pas encore
+                branchés.
+              </p>
             </ModalPanel>
           )}
 
@@ -421,8 +507,11 @@ export function ParametresView({
                   }
                   className="mt-0.5"
                 />
-                Recevoir les notifications email (factures, alertes)
+                Recevoir des alertes et conseils par email
               </label>
+              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
+                Les factures sont toujours envoyées par email.
+              </p>
             </ModalPanel>
           )}
 

@@ -6,15 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
 import { cn } from "@/lib/utils";
-import { UserRound, X } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
   brandBtnCls,
@@ -23,8 +21,9 @@ import {
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
-  modalCloseBtnCompact,
+  preventDialogOpenAutoFocus,
 } from "./modalChrome";
+import { FormDialogHeader } from "./FormDialogHeader";
 
 const lbl = "mb-1.5 block text-xs font-black text-muted-foreground";
 
@@ -43,6 +42,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
   const [draft, setDraft] = useState(saved);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const email = user?.email ?? "";
@@ -61,6 +61,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
     setSaved(slice);
     setDraft(slice);
     setError(null);
+    setFirstNameError(null);
     setFeedback(null);
   }
   if (!open && prevSyncKey !== "") {
@@ -82,9 +83,10 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
 
   const handleSave = useCallback(async () => {
     if (!draft.firstName.trim()) {
-      setError("Le prénom est requis.");
+      setFirstNameError("Le prénom est requis.");
       return;
     }
+    setFirstNameError(null);
     setError(null);
     setSaving(true);
     try {
@@ -110,13 +112,14 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={!saving}
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
           "max-h-[min(86dvh,640px)] sm:max-w-[560px]",
           dialogContentZCls
         )}
+        onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (saving || dirty) e.preventDefault();
         }}
@@ -124,33 +127,19 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
           if (saving || dirty) e.preventDefault();
         }}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring"
-              aria-hidden
-            >
+        <FormDialogHeader
+          className="px-4 py-3"
+          bareIcon
+          icon={
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring">
               <UserRound className="h-5 w-5" strokeWidth={2.25} />
             </div>
-            <div className="min-w-0">
-              <DialogTitle className="m-0 truncate text-base font-black text-foreground">
-                Mon profil
-              </DialogTitle>
-              <DialogDescription className="m-0 mt-0.5 text-xs font-semibold">
-                Vos informations personnelles
-              </DialogDescription>
-            </div>
-          </div>
-          <button
-            type="button"
-            className={modalCloseBtnCompact}
-            aria-label="Fermer"
-            onClick={handleClose}
-            disabled={saving}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+          }
+          title="Mon profil"
+          titleClassName="font-black"
+          description="Vos informations personnelles"
+          descriptionClassName="font-semibold"
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-4 py-4">
           {loading && (
@@ -177,11 +166,18 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 id="profil-first-name"
                 className={brandInputCls}
                 value={draft.firstName}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, firstName: e.target.value }))
-                }
+                aria-invalid={Boolean(firstNameError)}
+                onChange={(e) => {
+                  setDraft((prev) => ({ ...prev, firstName: e.target.value }));
+                  if (firstNameError) setFirstNameError(null);
+                }}
                 placeholder="Ex : Patrick"
               />
+              {firstNameError ? (
+                <p className="mt-1.5 text-xs font-medium text-destructive">
+                  {firstNameError}
+                </p>
+              ) : null}
             </div>
             <div>
               <Label className={lbl} htmlFor="profil-last-name">
@@ -245,7 +241,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
             size="lg"
             className={brandBtnPrimaryCls}
             onClick={() => void handleSave()}
-            disabled={saving || !dirty}
+            disabled={saving}
           >
             {saving ? "Enregistrement…" : "Enregistrer"}
           </Button>

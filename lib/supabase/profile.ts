@@ -15,6 +15,7 @@ export type UserProfileRecord = {
   first_name: string;
   last_name: string;
   phone: string;
+  language: string | null;
   company_name: string;
   business_activity: string;
   siret: string;
@@ -30,6 +31,10 @@ export type UserProfileRecord = {
   onboarding_completed_at: string | null;
 };
 
+function normalizeLanguage(raw: string | null | undefined): UserProfileForm["language"] {
+  return raw === "en" ? "en" : "fr";
+}
+
 function recordToProfile(
   row: UserProfileRecord,
   email: string,
@@ -40,6 +45,7 @@ function recordToProfile(
     lastName: row.last_name?.trim() ?? "",
     email,
     phone: row.phone?.trim() ?? "",
+    language: normalizeLanguage(row.language),
     companyName: row.company_name?.trim() ?? "",
     businessActivity: (normalizeBusinessActivityId(
       row.business_activity?.trim() ?? "",
@@ -80,6 +86,7 @@ function formToRow(form: UserProfileForm) {
     first_name: form.firstName.trim(),
     last_name: form.lastName.trim(),
     phone: form.phone.trim(),
+    language: form.language === "en" ? "en" : "fr",
     company_name: form.companyName.trim(),
     business_activity: activity || "",
     siret: form.siret.trim(),

@@ -112,6 +112,12 @@ export function FloatingHelpBanner({
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.closest("button, a, input, textarea, select, [role='button']")
+      ) {
+        return;
+      }
       const el = panelRef.current;
       if (!el) return;
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -171,35 +177,33 @@ export function FloatingHelpBanner({
       aria-modal="false"
       aria-labelledby={titleId}
       className={cn(
-        "fixed z-50 w-[min(400px,calc(100vw-32px))]",
-        dragging && "select-none"
+        "fixed z-50 w-[min(400px,calc(100vw-32px))] cursor-grab touch-none active:cursor-grabbing",
+        dragging && "cursor-grabbing select-none"
       )}
       style={{ left: pos.x, top: pos.y }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
     >
-      <Card size="sm" className="shadow-lg">
-        <CardHeader
-          className={cn(
-            "cursor-grab touch-none border-b active:cursor-grabbing",
-            dragging && "cursor-grabbing"
-          )}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-        >
+      <Card
+        size="sm"
+        className="border-2 border-violet-400 bg-gradient-to-br from-violet-100 via-violet-50 to-white shadow-lg ring-0 dark:border-violet-500 dark:from-violet-900 dark:via-violet-950 dark:to-card"
+      >
+        <CardHeader className="border-b border-violet-200 dark:border-violet-700">
           <div className="flex min-w-0 items-start gap-2.5 pr-8">
             <GripVertical
-              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              className="mt-0.5 size-4 shrink-0 text-violet-500"
               aria-hidden
             />
             <div
-              className="grid size-9 shrink-0 place-items-center rounded-md border border-border bg-muted text-foreground"
+              className="grid size-9 shrink-0 place-items-center rounded-md border border-violet-300 bg-gradient-to-br from-violet-100 to-indigo-100 text-violet-700 dark:border-violet-600 dark:from-violet-800 dark:to-indigo-900 dark:text-violet-200"
               aria-hidden
             >
               <Icon className="size-4" strokeWidth={2} />
             </div>
             <div className="min-w-0 space-y-1">
-              <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-700 dark:bg-violet-800 dark:text-violet-200">
                 <Sparkles className="size-3" aria-hidden />
                 {guide.eyebrow}
               </span>
@@ -216,7 +220,6 @@ export function FloatingHelpBanner({
               className="text-muted-foreground hover:text-foreground"
               aria-label="Fermer l'aide"
               onClick={onClose}
-              onPointerDown={(e) => e.stopPropagation()}
             >
               <X aria-hidden />
             </Button>
@@ -231,7 +234,7 @@ export function FloatingHelpBanner({
                 className="flex gap-2 text-sm leading-snug text-muted-foreground"
               >
                 <span
-                  className="mt-2 size-1 shrink-0 rounded-full bg-foreground/40"
+                  className="mt-2 size-1 shrink-0 rounded-full bg-violet-400"
                   aria-hidden
                 />
                 <span>{bullet}</span>
