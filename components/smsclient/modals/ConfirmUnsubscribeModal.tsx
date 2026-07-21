@@ -11,6 +11,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useI18n } from "@/lib/i18n";
 import { BellOff } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
@@ -31,6 +32,7 @@ export function ConfirmUnsubscribeModal({
   onConfirm,
   onCancel,
 }: ConfirmUnsubscribeModalProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
@@ -49,10 +51,10 @@ export function ConfirmUnsubscribeModal({
     try {
       await onConfirm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Une erreur est survenue.");
+      setError(e instanceof Error ? e.message : t("common.errorOccurred"));
       setLoading(false);
     }
-  }, [onConfirm]);
+  }, [onConfirm, t]);
 
   return (
     <AlertDialog
@@ -76,20 +78,17 @@ export function ConfirmUnsubscribeModal({
           <AlertDialogMedia className="bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
             <BellOff aria-hidden />
           </AlertDialogMedia>
-          <AlertDialogTitle>Désabonner ce contact ?</AlertDialogTitle>
+          <AlertDialogTitle>{t("contact.unsub.title")}</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-2">
               <p>
                 <strong className="font-semibold text-foreground">
                   {contactLabel}
                 </strong>{" "}
-                ne recevra plus vos SMS marketing. Le contact reste dans votre
-                liste, mais il sera exclu des prochaines campagnes et des envois
-                groupés.
+                {t("contact.unsub.body")}
               </p>
               <p className="text-muted-foreground/90">
-                Cette action enregistre son droit de retrait (STOP SMS)
-                conformément aux règles d&apos;envoi.
+                {t("contact.unsub.legal")}
               </p>
             </div>
           </AlertDialogDescription>
@@ -103,7 +102,7 @@ export function ConfirmUnsubscribeModal({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading} className="cursor-pointer">
-            Annuler
+            {t("common.cancel")}
           </AlertDialogCancel>
           <Button
             type="button"
@@ -111,7 +110,7 @@ export function ConfirmUnsubscribeModal({
             onClick={() => void handleConfirm()}
             className="cursor-pointer bg-amber-600 text-white hover:bg-amber-700 hover:text-white"
           >
-            {loading ? "Désabonnement…" : "Désabonner"}
+            {loading ? t("contact.unsub.busy") : t("contact.modal.unsubscribe")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

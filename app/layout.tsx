@@ -35,8 +35,14 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       className={cn("h-full", "antialiased", inter.variable, geistMono.variable, "font-sans", geist.variable)}
     >
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var t=localStorage.getItem("smsclient.theme");if(t==="dark")document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`,
+        }}
+      />
       <body className="relative h-full w-full overflow-hidden">
         <AuthProvider>
           <AuthGate>

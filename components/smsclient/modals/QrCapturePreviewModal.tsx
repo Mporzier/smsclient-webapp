@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Gift } from "lucide-react";
 import { useCallback } from "react";
@@ -30,6 +31,7 @@ export function QrCapturePreviewModal({
   wheelConfig,
   wheelLoading,
 }: QrCapturePreviewModalProps) {
+  const { t } = useI18n();
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
@@ -59,9 +61,9 @@ export function QrCapturePreviewModal({
               <Gift className="h-4 w-4" aria-hidden />
             </span>
           }
-          title="Prévisualiser la roue"
+          title={t("qr.modal.preview.title")}
           titleClassName="font-black"
-          description="Aperçu tel que vos clients le verront après l'inscription."
+          description={t("qr.modal.preview.desc")}
           descriptionClassName="font-semibold"
         />
 

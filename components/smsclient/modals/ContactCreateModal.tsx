@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import { normalizeCustomFieldValue } from "@/lib/customFields/validate";
@@ -110,6 +111,7 @@ export function ContactCreateModal({
   onDeleteContact,
   onUnsubscribeContact,
 }: ContactCreateModalProps) {
+  const { t } = useI18n();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [firstError, setFirstError] = useState<string | null>(null);
@@ -169,9 +171,9 @@ export function ContactCreateModal({
   );
 
   const handleFinalSave = useCallback(async () => {
-    const nextFirstError = !first.trim() ? "Le prénom est obligatoire." : null;
+    const nextFirstError = !first.trim() ? t("contact.modal.errFirst") : null;
     const nextPhoneError = !isValidFrMobile(phone)
-      ? "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78)."
+      ? t("contact.modal.phoneHint")
       : null;
     const nextCustom: Record<string, string> = {};
     const normalizedCustom: CustomFieldValues = {};
@@ -183,10 +185,10 @@ export function ContactCreateModal({
       if (normalized === null) {
         nextCustom[def.id] =
           def.fieldType === "date"
-            ? "Date invalide."
+            ? t("contact.modal.errDate")
             : def.fieldType === "number"
-              ? "Nombre invalide."
-              : "Valeur invalide.";
+              ? t("contact.modal.errNumber")
+              : t("contact.modal.errValue");
         continue;
       }
       if (normalized) normalizedCustom[def.id] = normalized;
@@ -220,8 +222,8 @@ export function ContactCreateModal({
       handleClose();
     } catch (e) {
       const msg =
-        e instanceof Error ? e.message : "Une erreur est survenue.";
-      if (msg.includes("déjà enregistré")) {
+        e instanceof Error ? e.message : t("common.errorOccurred");
+      if (msg.includes("déjà enregistré") || msg.toLowerCase().includes("already")) {
         setPhoneSubmitError(msg);
         setPhoneBlurred(true);
       } else {
@@ -242,6 +244,7 @@ export function ContactCreateModal({
     draftCustomFields,
     groups,
     consentSnapshot,
+    t,
   ]);
 
   const formSnapshot: ContactFormSnapshot = {
@@ -265,9 +268,7 @@ export function ContactCreateModal({
     Boolean(phoneSubmitError);
   const phoneErrorMsg =
     phoneSubmitError ??
-    (phoneInvalid
-      ? "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78)."
-      : null);
+    (phoneInvalid ? t("contact.modal.phoneHint") : null);
 
   const isUnsubscribed =
     mode === "edit" &&
@@ -275,10 +276,12 @@ export function ContactCreateModal({
     (consentDefaults.stop || !consentDefaults.optIn);
 
   const contactLabel =
-    [first.trim(), last.trim()].filter(Boolean).join(" ") || phone || "Contact";
+    [first.trim(), last.trim()].filter(Boolean).join(" ") ||
+    phone ||
+    t("contact.modal.fallbackName");
 
   const dialogLabel =
-    mode === "edit" ? "Modifier le contact" : "Ajouter un contact";
+    mode === "edit" ? t("contact.modal.edit") : t("contacts.add");
 
   const HeaderIcon = mode === "edit" ? Pencil : UserPlus;
 
@@ -329,8 +332,7 @@ export function ContactCreateModal({
                   aria-hidden
                 />
                 <p className={cn("m-0", hintTextCls, "text-amber-900")}>
-                  Ce contact est désabonné : il ne recevra plus vos campagnes
-                  SMS.
+                  {t("contact.modal.unsubBanner")}
                 </p>
               </div>
             )}
@@ -339,7 +341,8 @@ export function ContactCreateModal({
               <div className="space-y-1.5">
                 <Label className="flex justify-between gap-2" htmlFor="contact-create-first">
                   <span className={fieldLabelCls}>
-                    Prénom <span className="text-destructive">*</span>
+                    {t("contacts.col.firstName")}{" "}
+                    <span className="text-destructive">*</span>
                   </span>
                   <span className={fieldMetaCls}>{first.length}/30</span>
                 </Label>
@@ -368,7 +371,7 @@ export function ContactCreateModal({
               </div>
               <div className="space-y-1.5">
                 <Label className="flex justify-between gap-2" htmlFor="contact-create-last">
-                  <span className={fieldLabelCls}>Nom</span>
+                  <span className={fieldLabelCls}>{t("contacts.col.lastName")}</span>
                   <span className={fieldMetaCls}>{last.length}/30</span>
                 </Label>
                 <Input
@@ -384,14 +387,15 @@ export function ContactCreateModal({
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className={fieldLabelCls} htmlFor="contact-create-phone">
-                  Téléphone <span className="text-destructive">*</span>
+                  {t("contacts.col.phone")}{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <span
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                  title="Numéro mobile français : 06 ou 07, 10 chiffres (ex. 06 12 34 56 78)."
+                  title={t("contact.modal.phoneTitle")}
                 >
                   <FrFlagIcon />
-                  France
+                  {t("regs.country.fr")}
                 </span>
               </div>
               <div className="relative">
@@ -437,7 +441,7 @@ export function ContactCreateModal({
 
             <div className="space-y-1.5">
               <Label className={fieldLabelCls} htmlFor="contact-create-birthday">
-                Anniversaire
+                {t("contact.modal.birthday")}
               </Label>
               <Input
                 id="contact-create-birthday"
@@ -447,12 +451,12 @@ export function ContactCreateModal({
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
               />
-              <p className={hintTextCls}>Optionnel</p>
+              <p className={hintTextCls}>{t("contact.modal.optional")}</p>
             </div>
 
             <div className="space-y-1.5">
               <Label className="flex justify-between gap-2" htmlFor="contact-create-notes">
-                <span className={fieldLabelCls}>Notes</span>
+                <span className={fieldLabelCls}>{t("contacts.col.notes")}</span>
                 <span className={fieldMetaCls}>{notes.length}/280</span>
               </Label>
               <textarea
@@ -465,7 +469,7 @@ export function ContactCreateModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                placeholder="Optionnel — contexte, préférences, informations utiles…"
+                placeholder={t("contact.modal.notesPh")}
               />
             </div>
 
@@ -490,24 +494,28 @@ export function ContactCreateModal({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                  <span className={fieldLabelCls}>Groupes</span>
+                  <span className={fieldLabelCls}>{t("contacts.col.groups")}</span>
                 </Label>
                 {groups.length > 0 && (
                   <span className={fieldMetaCls}>
-                    {groups.length} sélectionné{groups.length > 1 ? "s" : ""}
+                    {groups.length === 1
+                      ? t("contact.modal.groupsSelectedOne", { n: groups.length })
+                      : t("contact.modal.groupsSelectedMany", {
+                          n: groups.length,
+                        })}
                   </span>
                 )}
               </div>
               <div className="max-h-[min(36vh,280px)] overflow-y-auto rounded-lg border border-border p-2.5">
                 {groupOptions.length === 0 ? (
                   <p className={cn("m-0 px-1 py-2 text-center", hintTextCls)}>
-                    Aucun groupe — crée-en un ci-dessous.
+                    {t("contact.modal.noGroups")}
                   </p>
                 ) : (
                   <div
                     className="grid grid-cols-2 gap-2 sm:grid-cols-3"
                     role="group"
-                    aria-label="Groupes du contact"
+                    aria-label={t("contact.modal.groupsAria")}
                   >
                     {groupOptions.map((g) => {
                       const selected = groups.includes(g);
@@ -554,7 +562,7 @@ export function ContactCreateModal({
                 }}
               >
                 <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                Nouveau groupe…
+                {t("contact.modal.newGroup")}
               </Button>
             </div>
           </div>
@@ -576,7 +584,7 @@ export function ContactCreateModal({
                   className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
-                  Supprimer
+                  {t("common.delete")}
                 </Button>
               )}
               {mode === "edit" && onUnsubscribeContact && !isUnsubscribed && (
@@ -588,7 +596,7 @@ export function ContactCreateModal({
                   className="cursor-pointer text-amber-800 hover:bg-amber-50 hover:text-amber-900"
                 >
                   <BellOff className="h-4 w-4" aria-hidden />
-                  Désabonner
+                  {t("contact.modal.unsubscribe")}
                 </Button>
               )}
             </div>
@@ -600,7 +608,7 @@ export function ContactCreateModal({
                 onClick={handleClose}
                 className="cursor-pointer"
               >
-                Annuler
+                {t("common.cancel")}
               </Button>
               <Button
                 type="button"
@@ -610,10 +618,10 @@ export function ContactCreateModal({
                 className="cursor-pointer"
               >
                 {saving
-                  ? "Enregistrement…"
+                  ? t("dialog.saving")
                   : mode === "edit"
-                    ? "Enregistrer"
-                    : "Enregistrer le contact"}
+                    ? t("dialog.save")
+                    : t("contact.modal.saveContact")}
               </Button>
             </div>
           </DialogFooter>

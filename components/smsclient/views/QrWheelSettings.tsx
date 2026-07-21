@@ -8,6 +8,8 @@ import {
   brandBtnPrimaryCls,
 } from "@/components/smsclient/modals/modalChrome";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
 import {
   defaultPercentForNewSegment,
   distributeEqualWheelPercents,
@@ -30,6 +32,8 @@ import { useEffect, useState } from "react";
 
 const inputCls =
   "h-9 rounded-xl border-border bg-card px-3 text-sm font-semibold text-foreground";
+
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 type QrWheelSettingsProps = {
   config: QrWheelConfig | null;
@@ -86,15 +90,19 @@ function OptionCard({
   );
 }
 
-function emptySegment(order: number, usedColors: string[]): QrWheelSegment {
+function emptySegment(
+  order: number,
+  usedColors: string[],
+  t: Translate,
+): QrWheelSegment {
   return {
     id: `new-${order}-${Date.now()}`,
     sortOrder: order,
-    label: "Nouvelle récompense",
+    label: t("qr.wheel.defaultLabel"),
     probabilityWeight: 10,
     isLosing: false,
-    screenMessage: "Bravo ! Vous avez gagné une récompense.",
-    smsMessage: "Félicitations {prenom} ! Présentez ce SMS en boutique.",
+    screenMessage: t("qr.wheel.defaultScreen"),
+    smsMessage: t("qr.wheel.defaultSms"),
     color: randomWheelColor(usedColors),
   };
 }
@@ -103,16 +111,18 @@ function SegmentOutcomeToggle({
   isLosing,
   disabled,
   onChange,
+  t,
 }: {
   isLosing: boolean;
   disabled?: boolean;
   onChange: (isLosing: boolean) => void;
+  t: Translate;
 }) {
   return (
     <div
       className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
       role="group"
-      aria-label="Type de case"
+      aria-label={t("qr.wheel.outcomeAria")}
     >
       <button
         type="button"
@@ -126,7 +136,7 @@ function SegmentOutcomeToggle({
         )}
       >
         <Gift className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        Récompense
+        {t("qr.wheel.reward")}
       </button>
       <button
         type="button"
@@ -140,7 +150,7 @@ function SegmentOutcomeToggle({
         )}
       >
         <CircleX className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        Perdu
+        {t("qr.wheel.lose")}
       </button>
     </div>
   );
@@ -150,10 +160,12 @@ function ChanceDistributionBar({
   total,
   onDistribute,
   distributing,
+  t,
 }: {
   total: number;
   onDistribute: () => void;
   distributing?: boolean;
+  t: Translate;
 }) {
   const complete = total === 100;
 
@@ -162,10 +174,10 @@ function ChanceDistributionBar({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="m-0 text-[11px] font-black text-slate-800">
-            Répartition des chances
+            {t("qr.wheel.chanceTitle")}
           </p>
           <p className="m-0 mt-0.5 text-[10px] font-semibold text-slate-500">
-            La somme de toutes les cases doit faire 100 %.
+            {t("qr.wheel.chanceHint")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -183,7 +195,7 @@ function ChanceDistributionBar({
             onClick={onDistribute}
             className="inline-flex h-8 cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-bold text-slate-600 transition-colors hover:border-[#2f6fed]/30 hover:text-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Répartir équitablement
+            {t("qr.wheel.distribute")}
           </button>
         </div>
       </div>
@@ -199,8 +211,8 @@ function ChanceDistributionBar({
       {!complete ? (
         <p className="m-0 mt-2 text-[10px] font-semibold text-amber-700">
           {total < 100
-            ? `Il reste ${100 - total} % à attribuer entre les cases.`
-            : `Retirez ${total - 100} % : la somme dépasse 100 %.`}
+            ? t("qr.wheel.remain", { n: 100 - total })
+            : t("qr.wheel.over", { n: total - 100 })}
         </p>
       ) : null}
     </div>
@@ -215,6 +227,7 @@ export function QrWheelSettings({
   embedded = false,
   onDirtyChange,
 }: QrWheelSettingsProps) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<QrWheelConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prevConfig, setPrevConfig] = useState(config);
@@ -237,7 +250,7 @@ export function QrWheelSettings({
   if (loading || !draft) {
     return (
       <div className="grid min-h-[200px] place-items-center text-sm font-bold text-slate-500">
-        Chargement de la roue…
+        {t("qr.wheel.loading")}
       </div>
     );
   }
@@ -263,26 +276,24 @@ export function QrWheelSettings({
       : draft;
 
     if (payload.segments.length === 0) {
-      setError("Ajoutez au moins une case sur la roue.");
+      setError(t("qr.wheel.errEmpty"));
       return;
     }
     if (payload.enabled && weightTotal !== 100) {
-      setError(
-        `La somme des chances doit être égale à 100 %. Actuellement : ${weightTotal} %.`,
-      );
+      setError(t("qr.wheel.errWeight", { n: weightTotal }));
       return;
     }
 
     const invalidLabel = payload.segments.find((s) => !s.label.trim());
     if (invalidLabel) {
-      setError("Chaque case doit avoir un libellé.");
+      setError(t("qr.wheel.errLabel"));
       return;
     }
 
     try {
       await onSave(payload);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur à l'enregistrement.");
+      setError(e instanceof Error ? e.message : t("qr.wheel.errSave"));
     }
   }
 
@@ -290,23 +301,23 @@ export function QrWheelSettings({
     <div className="space-y-4">
       <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
         <h4 className="m-0 mb-2 text-[11px] font-black uppercase tracking-wide text-slate-500">
-          Affichage client
+          {t("qr.wheel.display")}
         </h4>
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
             <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
-              Titre
+              {t("qr.wheel.title")}
             </Label>
             <Input
               className={inputCls}
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              placeholder="Tournez la roue !"
+              placeholder={t("qr.wheel.titlePh")}
             />
           </div>
           <div>
             <Label className="mb-1 block text-[11px] font-bold text-muted-foreground">
-              Sous-titre
+              {t("qr.wheel.subtitle")}
             </Label>
             <Input
               className={inputCls}
@@ -314,7 +325,7 @@ export function QrWheelSettings({
               onChange={(e) =>
                 setDraft({ ...draft, subtitle: e.target.value })
               }
-              placeholder="Tentez votre chance après inscription"
+              placeholder={t("qr.wheel.subtitlePh")}
             />
           </div>
         </div>
@@ -322,15 +333,15 @@ export function QrWheelSettings({
 
       <section>
         <h4 className="m-0 mb-2 text-[11px] font-black uppercase tracking-wide text-slate-500">
-          Options
+          {t("qr.wheel.options")}
         </h4>
         <div className="grid gap-2 sm:grid-cols-2">
           <OptionCard
             active={draft.sendPrizeSms}
             disabled={saving}
             icon={MessageSquare}
-            label="SMS de gain"
-            description="Envoie automatiquement le gain par SMS au client."
+            label={t("qr.wheel.smsPrize")}
+            description={t("qr.wheel.smsPrizeDesc")}
             onClick={() =>
               setDraft({ ...draft, sendPrizeSms: !draft.sendPrizeSms })
             }
@@ -339,8 +350,8 @@ export function QrWheelSettings({
             active={draft.allowRepeat}
             disabled={saving}
             icon={Users}
-            label="Participations multiples"
-            description="Autorise le même numéro à rejouer."
+            label={t("qr.wheel.allowRepeat")}
+            description={t("qr.wheel.allowRepeatDesc")}
             onClick={() =>
               setDraft({ ...draft, allowRepeat: !draft.allowRepeat })
             }
@@ -352,10 +363,10 @@ export function QrWheelSettings({
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h4 className="m-0 text-[11px] font-black uppercase tracking-wide text-slate-500">
-              Cases de la roue
+              {t("qr.wheel.segments")}
             </h4>
             <p className="m-0 mt-0.5 text-[10px] font-semibold text-slate-500">
-              Définissez chaque case, son type et sa chance d&apos;apparition.
+              {t("qr.wheel.segmentsHint")}
             </p>
           </div>
           <button
@@ -370,13 +381,14 @@ export function QrWheelSettings({
             className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-bold text-slate-600 transition-colors hover:border-[#2f6fed]/30 hover:text-[#2f6fed] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw className="h-3 w-3" aria-hidden />
-            Couleurs aléatoires
+            {t("qr.wheel.randomColors")}
           </button>
         </div>
 
         <ChanceDistributionBar
           total={weightTotal}
           distributing={saving}
+          t={t}
           onDistribute={() =>
             setDraft({
               ...draft,
@@ -399,19 +411,19 @@ export function QrWheelSettings({
                 />
                 <div className="min-w-0 flex-1">
                   <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
-                    Libellé affiché sur la roue
+                    {t("qr.wheel.label")}
                   </Label>
                   <Input
                     className={inputCls}
                     value={seg.label}
                     onChange={(e) => updateSegment(i, { label: e.target.value })}
-                    placeholder="Ex : 10 % de réduction"
+                    placeholder={t("qr.wheel.labelPh")}
                   />
                 </div>
                 <button
                   type="button"
                   className="mt-6 grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Supprimer la case"
+                  aria-label={t("qr.wheel.deleteSeg")}
                   disabled={saving}
                   onClick={() =>
                     setDraft({
@@ -427,17 +439,18 @@ export function QrWheelSettings({
               <div className="mb-3 grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-[10px] font-bold text-slate-500">
-                    Type de case
+                    {t("qr.wheel.segType")}
                   </label>
                   <SegmentOutcomeToggle
                     isLosing={seg.isLosing}
                     disabled={saving}
+                    t={t}
                     onChange={(isLosing) => {
                       updateSegment(i, {
                         isLosing,
                         smsMessage: isLosing ? "" : seg.smsMessage,
                         screenMessage: isLosing
-                          ? "Pas de chance cette fois… Retentez votre chance !"
+                          ? t("qr.wheel.loseScreen")
                           : seg.screenMessage,
                       });
                     }}
@@ -448,7 +461,7 @@ export function QrWheelSettings({
                     htmlFor={`wheel-chance-${seg.id}`}
                     className="mb-1 block text-[10px] font-bold text-slate-500"
                   >
-                    Chance d&apos;apparition
+                    {t("qr.wheel.chance")}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -491,7 +504,7 @@ export function QrWheelSettings({
               <div className="space-y-2">
                 <div>
                   <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
-                    Message affiché après le tirage
+                    {t("qr.wheel.screenMsg")}
                   </Label>
                   <Input
                     className={inputCls}
@@ -501,15 +514,15 @@ export function QrWheelSettings({
                     }
                     placeholder={
                       seg.isLosing
-                        ? "Ex : Pas de chance cette fois…"
-                        : "Ex : Bravo ! Vous avez gagné…"
+                        ? t("qr.wheel.screenLosePh")
+                        : t("qr.wheel.screenWinPh")
                     }
                   />
                 </div>
                 {!seg.isLosing ? (
                   <div>
                     <Label className="mb-1 block text-[10px] font-bold text-muted-foreground">
-                      SMS envoyé au client
+                      {t("qr.wheel.smsMsg")}
                     </Label>
                     <Input
                       className={inputCls}
@@ -517,7 +530,7 @@ export function QrWheelSettings({
                       onChange={(e) =>
                         updateSegment(i, { smsMessage: e.target.value })
                       }
-                      placeholder="Ex : Félicitations {prenom} ! Présentez ce SMS en boutique."
+                      placeholder={t("qr.wheel.smsPh")}
                     />
                   </div>
                 ) : null}
@@ -532,7 +545,7 @@ export function QrWheelSettings({
           className={cn(brandBtnCls, "mt-3 h-9 w-full text-xs")}
           disabled={saving}
           onClick={() => {
-            const next = emptySegment(draft.segments.length, usedColors);
+            const next = emptySegment(draft.segments.length, usedColors, t);
             next.probabilityWeight = defaultPercentForNewSegment(draft.segments);
             setDraft({
               ...draft,
@@ -541,7 +554,7 @@ export function QrWheelSettings({
           }}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-          Ajouter une case
+          {t("qr.wheel.addSeg")}
         </Button>
       </section>
 
@@ -565,7 +578,7 @@ export function QrWheelSettings({
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("dialog.saving") : t("dialog.save")}
           </Button>
         </div>
       </div>
@@ -582,7 +595,7 @@ export function QrWheelSettings({
         disabled={saving}
         onClick={() => void handleSave()}
       >
-        {saving ? "Enregistrement…" : "Enregistrer la roue"}
+        {saving ? t("dialog.saving") : t("qr.wheel.saveWheel")}
       </Button>
     </div>
   );

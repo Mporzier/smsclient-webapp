@@ -10,12 +10,26 @@ tags:
 
 Updated: 2026-07-21
 
+## Session 2026-07-21 (dark mode v1)
+
+- Spec + plan : `docs/superpowers/specs/2026-07-21-apparence-dark-mode-design.md`, `docs/superpowers/plans/2026-07-21-apparence-dark-mode.md`
+- `lib/theme/theme.ts` + `hooks/useTheme.ts` + script anti-FOUC `app/layout.tsx`
+- Paramètres section `apparence` + `ApparenceSettingsPanel` (Clair/Sombre, localStorage)
+- Shell déjà tokens — pas de patch chrome (LogoMark `#ffffff` marque OK)
+
 ## Session 2026-07-21 (i18n suite)
 
 - Stats `StatistiquesView` EN (déjà branché)
 - Aide `AideView` EN (`help.*`)
 - QR chrome : `QrCodeView` + stats card + compliance EN (`qr.*`)
-- Hors scope encore : wizard campagne, modales QR (welcome/wheel/preview), contact/import, FloatingHelpBanner, réglementations
+- Modales QR chrome : welcome / preview / wheel header EN (`qr.modal.*`)
+- Formulaire roue + preview EN (`QrWheelSettings`, `QrWheelPreview`, `qr.wheel.*`)
+- FloatingHelpBanner EN : `guide.*` + `helpAction.*` + `float.*` ; `SECTION_GUIDES` = meta seule
+- Réglementations chrome EN (`regs.*`) — corps légal pays reste FR dans `smsRegulations`
+- `ContactCreateModal` chrome + erreurs EN (`contact.modal.*`)
+- Import CSV + confirm désabo EN (`ImportContactsModal`, `ConfirmUnsubscribeModal`, `import.*`)
+- Hors scope encore : wizard campagne, corps légal multi-langue, autres modales (groupes/liens/…)
+- Note : libellés/messages déjà sauvés en DB restent dans la langue d'origine ; UI chrome + defaults nouvelles cases suivent `profile.language`
 
 ## Session 2026-07-20 (i18n sidebar + paramètres)
 

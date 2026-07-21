@@ -57,10 +57,16 @@ const fr = {
 
   "parametres.sectionsAria": "Sections paramètres",
   "parametres.section.compte": "Compte",
+  "parametres.section.apparence": "Apparence",
   "parametres.section.entreprise": "Entreprise",
   "parametres.section.facturation": "Facturation",
   "parametres.section.sms-alertes": "SMS & alertes",
   "parametres.section.donnees": "Données",
+
+  "parametres.appearance.themeTitle": "Thème",
+  "parametres.appearance.themeDescription": "Choisir le mode clair ou sombre.",
+  "parametres.appearance.light": "Clair",
+  "parametres.appearance.dark": "Sombre",
 
   "parametres.card.entreprise.title": "Entreprise",
   "parametres.card.entreprise.description": "Nom et secteur d'activité.",
@@ -522,6 +528,369 @@ const fr = {
     "Les données collectées via ce formulaire sont sécurisées et utilisées uniquement pour votre relation client.",
   "qr.complianceUnsub": "Vos clients peuvent se désinscrire à tout moment.",
   "qr.complianceMore": "En savoir plus",
+  "qr.modal.welcome.desc":
+    "Personnalisez le message envoyé après l'inscription.",
+  "qr.modal.welcome.placeholder":
+    "Bonjour prénom, merci pour votre inscription…",
+  "qr.modal.preview.title": "Prévisualiser la roue",
+  "qr.modal.preview.desc":
+    "Aperçu tel que vos clients le verront après l'inscription.",
+  "qr.modal.wheel.title": "Configurer la roue",
+  "qr.modal.wheel.desc":
+    "Définissez les cases, leurs chances (100 % au total) et les messages envoyés aux clients.",
+  "qr.wheel.loading": "Chargement de la roue…",
+  "qr.wheel.display": "Affichage client",
+  "qr.wheel.title": "Titre",
+  "qr.wheel.subtitle": "Sous-titre",
+  "qr.wheel.titlePh": "Tournez la roue !",
+  "qr.wheel.subtitlePh": "Tentez votre chance après inscription",
+  "qr.wheel.options": "Options",
+  "qr.wheel.smsPrize": "SMS de gain",
+  "qr.wheel.smsPrizeDesc":
+    "Envoie automatiquement le gain par SMS au client.",
+  "qr.wheel.allowRepeat": "Participations multiples",
+  "qr.wheel.allowRepeatDesc": "Autorise le même numéro à rejouer.",
+  "qr.wheel.segments": "Cases de la roue",
+  "qr.wheel.segmentsHint":
+    "Définissez chaque case, son type et sa chance d'apparition.",
+  "qr.wheel.randomColors": "Couleurs aléatoires",
+  "qr.wheel.chanceTitle": "Répartition des chances",
+  "qr.wheel.chanceHint": "La somme de toutes les cases doit faire 100 %.",
+  "qr.wheel.distribute": "Répartir équitablement",
+  "qr.wheel.remain": "Il reste {n} % à attribuer entre les cases.",
+  "qr.wheel.over": "Retirez {n} % : la somme dépasse 100 %.",
+  "qr.wheel.outcomeAria": "Type de case",
+  "qr.wheel.reward": "Récompense",
+  "qr.wheel.lose": "Perdu",
+  "qr.wheel.label": "Libellé affiché sur la roue",
+  "qr.wheel.labelPh": "Ex : 10 % de réduction",
+  "qr.wheel.deleteSeg": "Supprimer la case",
+  "qr.wheel.segType": "Type de case",
+  "qr.wheel.chance": "Chance d'apparition",
+  "qr.wheel.screenMsg": "Message affiché après le tirage",
+  "qr.wheel.screenLosePh": "Ex : Pas de chance cette fois…",
+  "qr.wheel.screenWinPh": "Ex : Bravo ! Vous avez gagné…",
+  "qr.wheel.smsMsg": "SMS envoyé au client",
+  "qr.wheel.smsPh":
+    "Ex : Félicitations {prenom} ! Présentez ce SMS en boutique.",
+  "qr.wheel.addSeg": "Ajouter une case",
+  "qr.wheel.errEmpty": "Ajoutez au moins une case sur la roue.",
+  "qr.wheel.errWeight":
+    "La somme des chances doit être égale à 100 %. Actuellement : {n} %.",
+  "qr.wheel.errLabel": "Chaque case doit avoir un libellé.",
+  "qr.wheel.errSave": "Erreur à l'enregistrement.",
+  "qr.wheel.saveWheel": "Enregistrer la roue",
+  "qr.wheel.defaultLabel": "Nouvelle récompense",
+  "qr.wheel.defaultScreen": "Bravo ! Vous avez gagné une récompense.",
+  "qr.wheel.defaultSms":
+    "Félicitations {prenom} ! Présentez ce SMS en boutique.",
+  "qr.wheel.loseScreen":
+    "Pas de chance cette fois… Retentez votre chance !",
+  "qr.wheel.previewEmpty":
+    "Ajoutez au moins une récompense pour prévisualiser la roue.",
+  "qr.wheel.spin": "Tourner la roue !",
+  "qr.wheel.replay": "Rejouer",
+
+  "float.close": "Fermer l'aide",
+  "float.kb": "Base de connaissance",
+  "helpAction.center": "Centre d'aide",
+  "helpAction.faq": "Foire aux questions",
+  "helpAction.support": "Contacter le support",
+  "helpAction.feedback": "Donner un retour",
+
+  "guide.dashboard.eyebrow": "Accueil",
+  "guide.dashboard.title": "Votre tableau de bord SMS",
+  "guide.dashboard.desc":
+    "Retrouvez ici vos indicateurs clés et les prochaines actions pour faire grandir votre activité SMS.",
+  "guide.dashboard.b1":
+    "Suivez crédits, contacts, groupes et envois en un coup d'œil.",
+  "guide.dashboard.b2":
+    "Les activités récentes reprennent vos dernières campagnes et imports.",
+  "guide.dashboard.b3":
+    "Chaque section du menu dispose de son propre guide et de ressources d'aide.",
+  "guide.dashboard.primary": "Envoyer un SMS",
+
+  "guide.contacts.eyebrow": "Contacts",
+  "guide.contacts.title": "Comprendre la liste des contacts",
+  "guide.contacts.desc":
+    "Cette liste centralise tous vos destinataires SMS : recherche, import, groupes et historique d'envoi.",
+  "guide.contacts.b1":
+    "Chaque ligne = un contact avec téléphone, groupes et dernier SMS reçu.",
+  "guide.contacts.b2":
+    "Seuls les contacts abonnés (sans STOP) sont éligibles aux campagnes.",
+  "guide.contacts.b3":
+    "Importez en masse ou ajoutez manuellement, puis classez par groupes.",
+  "guide.contacts.primary": "Ajouter un contact",
+
+  "guide.groupes.eyebrow": "Groupes",
+  "guide.groupes.title": "Organiser vos contacts en groupes",
+  "guide.groupes.desc":
+    "Les groupes segmentent votre base pour cibler précisément vos campagnes et automatisations.",
+  "guide.groupes.b1":
+    "Un groupe regroupe des contacts partageant un même profil ou besoin.",
+  "guide.groupes.b2":
+    "La colonne « Dernière campagne » indique le dernier envoi ciblant ce groupe.",
+  "guide.groupes.b3":
+    "Sélectionnez plusieurs groupes pour créer une campagne ciblée.",
+  "guide.groupes.primary": "Créer un groupe",
+
+  "guide.campagnes.eyebrow": "Campagnes",
+  "guide.campagnes.title": "Suivre vos campagnes SMS",
+  "guide.campagnes.desc":
+    "Cette liste retrace chaque envoi : brouillons, programmations, messages envoyés ou en échec.",
+  "guide.campagnes.b1":
+    "Statut : brouillon, programmée, envoyée, échec ou annulée.",
+  "guide.campagnes.b2":
+    "Destinataires et crédits estimés sont visibles avant et après l'envoi.",
+  "guide.campagnes.b3":
+    "Cliquez sur une ligne pour consulter le détail d'une campagne.",
+  "guide.campagnes.primary": "Nouvelle campagne",
+
+  "guide.statistiques.eyebrow": "Statistiques",
+  "guide.statistiques.title": "Lire vos performances SMS",
+  "guide.statistiques.desc":
+    "Analysez l'impact de vos envois sur la période choisie : volume, délivrabilité, inscriptions QR et désinscriptions.",
+  "guide.statistiques.b1":
+    "Les KPIs résument SMS envoyés, taux délivré, inscriptions QR, STOP et crédits consommés.",
+  "guide.statistiques.b2":
+    "Le graphique détaille envois, échecs et programmations par jour.",
+  "guide.statistiques.b3":
+    "Filtrez la période pour comparer vos campagnes dans le temps.",
+
+  "guide.automatisations.eyebrow": "Automatisations",
+  "guide.automatisations.title": "Automatiser vos envois récurrents",
+  "guide.automatisations.desc":
+    "Programmez des SMS pour les anniversaires et événements : ils partent seuls aux contacts éligibles.",
+  "guide.automatisations.b1":
+    "Activez ou désactivez chaque scénario (anniversaire, fêtes, etc.).",
+  "guide.automatisations.b2":
+    "Seuls les contacts abonnés sans STOP sont ciblés.",
+  "guide.automatisations.b3":
+    "Personnalisez le message et l'expéditeur avant activation.",
+
+  "guide.liens.eyebrow": "Liens",
+  "guide.liens.title": "Liens courts traçables pour vos SMS",
+  "guide.liens.desc":
+    "Créez des URLs courtes pour vos campagnes et mesurez les clics depuis cette liste.",
+  "guide.liens.b1":
+    "Chaque lien associe une URL d'origine à une adresse courte smsclient.fr.",
+  "guide.liens.b2":
+    "La colonne « Clics » compte les ouvertures après envoi du SMS.",
+  "guide.liens.b3":
+    "Copiez le lien court pour l'insérer dans vos messages marketing.",
+  "guide.liens.primary": "Créer un lien",
+
+  "guide.modeles-sms.eyebrow": "Modèles SMS",
+  "guide.modeles-sms.title": "Modèles de SMS les plus populaires",
+  "guide.modeles-sms.desc":
+    "Gagnez du temps avec des textes prêts à l'emploi : promos, rappels, remerciements et relances.",
+  "guide.modeles-sms.b1":
+    "Enregistrez vos modèles personnalisés pour les réutiliser en campagne.",
+  "guide.modeles-sms.b2":
+    "Titre, description et corps du message sont modifiables à tout moment.",
+  "guide.modeles-sms.b3":
+    "Inspirez-vous des exemples les plus utilisés par nos clients.",
+  "guide.modeles-sms.primary": "Découvrir les modèles",
+
+  "guide.parametres.eyebrow": "Paramètres",
+  "guide.parametres.title": "Configurer votre compte",
+  "guide.parametres.desc":
+    "Gérez le profil, les champs personnalisés, la corbeille et les options du compte.",
+  "guide.parametres.b1":
+    "Mettez à jour les infos profil et préférences d'envoi.",
+  "guide.parametres.b2":
+    "Définissez des champs perso pour enrichir vos contacts.",
+  "guide.parametres.b3":
+    "Restaurez ou purgez les éléments en corbeille.",
+
+  "guide.qr-boutique.eyebrow": "QR code boutique",
+  "guide.qr-boutique.title": "Collecter des contacts via QR",
+  "guide.qr-boutique.desc":
+    "Créez une roue ou une page QR pour faire s'inscrire vos clients en magasin.",
+  "guide.qr-boutique.b1":
+    "Personnalisez l'apparence et le message de bienvenue.",
+  "guide.qr-boutique.b2":
+    "Les inscriptions alimentent votre liste contacts.",
+  "guide.qr-boutique.b3":
+    "Suivez les performances côté statistiques.",
+  "guide.qr-boutique.primary": "Voir les stats QR",
+
+  "guide.reglementations-sms.eyebrow": "Réglementations",
+  "guide.reglementations-sms.title": "Respecter les règles SMS",
+  "guide.reglementations-sms.desc":
+    "Rappel des obligations légales : STOP, consentement et bonnes pratiques d'envoi.",
+  "guide.reglementations-sms.b1":
+    "Chaque SMS marketing doit permettre de se désabonner (STOP).",
+  "guide.reglementations-sms.b2":
+    "N'envoyez qu'aux contacts abonnés et consentants.",
+  "guide.reglementations-sms.b3":
+    "Consultez le centre d'aide pour le détail réglementaire.",
+  "guide.reglementations-sms.primary": "Centre d'aide",
+
+  "guide.nouvelle-campagne.eyebrow": "Nouvelle campagne",
+  "guide.nouvelle-campagne.title": "Créer et envoyer une campagne",
+  "guide.nouvelle-campagne.desc":
+    "Assistant en 3 étapes : destinataires, message, puis confirmation et envoi.",
+  "guide.nouvelle-campagne.b1": "Choisissez contacts ou groupes abonnés.",
+  "guide.nouvelle-campagne.b2":
+    "Rédigez le SMS et vérifiez le coût en crédits.",
+  "guide.nouvelle-campagne.b3":
+    "Envoyez tout de suite ou programmez l'envoi.",
+  "guide.nouvelle-campagne.primary": "Voir les campagnes",
+
+  "guide.acheter-credits.eyebrow": "Crédits",
+  "guide.acheter-credits.title": "Recharger votre solde SMS",
+  "guide.acheter-credits.desc":
+    "Achetez des crédits pour continuer à envoyer des campagnes et automatisations.",
+  "guide.acheter-credits.b1":
+    "1 crédit ≈ 1 SMS standard (selon encodage).",
+  "guide.acheter-credits.b2":
+    "Le solde apparaît dans la barre du haut.",
+  "guide.acheter-credits.b3":
+    "Contactez le support pour une facturation entreprise.",
+
+  "guide.aide.eyebrow": "Centre d'aide",
+  "guide.aide.title": "Trouver de l'aide rapidement",
+  "guide.aide.desc":
+    "Guides, FAQ et contact support pour résoudre vos questions sur smsclient.",
+  "guide.aide.b1":
+    "Parcourez les articles de la base de connaissance.",
+  "guide.aide.b2": "Ouvrez le widget FAQ si disponible.",
+  "guide.aide.b3":
+    "Écrivez à support@smsclient.fr en cas de blocage.",
+
+  "guide.soumettre-avis.eyebrow": "Avis",
+  "guide.soumettre-avis.title": "Donner votre retour",
+  "guide.soumettre-avis.desc":
+    "Suggérez une amélioration ou signalez un point de friction — on lit chaque message.",
+  "guide.soumettre-avis.b1":
+    "Décrivez le contexte et le résultat attendu.",
+  "guide.soumettre-avis.b2": "Joignez une capture si utile.",
+  "guide.soumettre-avis.b3":
+    "Le support peut aussi répondre via le formulaire contact.",
+
+  "regs.title": "Réglementation SMS",
+  "regs.subtitle":
+    "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre campagne.",
+  "regs.step1": "1. Sélectionnez le pays",
+  "regs.searchPh": "Rechercher un pays…",
+  "regs.orList": "Ou sélectionnez dans la liste",
+  "regs.countriesAria": "Pays",
+  "regs.empty": "Aucun pays trouvé.",
+  "regs.important": "Important",
+  "regs.importantBody":
+    "Les réglementations peuvent évoluer. Vérifiez les règles en vigueur dans le pays de vos destinataires avant l'envoi.",
+  "regs.previewTitle": "Ce que vous allez trouver",
+  "regs.disclaimer":
+    "Les informations fournies sont à titre informatif et ne constituent pas un avis juridique.",
+  "regs.compliant": "Conforme sous conditions",
+  "regs.riskLevel": "Niveau de risque : {level}",
+  "regs.country.fr": "France",
+  "regs.country.be": "Belgique",
+  "regs.country.ch": "Suisse",
+  "regs.risk.faible": "faible",
+  "regs.section.whoToContact": "Qui puis-je contacter ?",
+  "regs.section.consent": "Consentement requis ?",
+  "regs.section.marketingSms": "SMS marketing autorisés ?",
+  "regs.section.transactionalSms": "SMS transactionnels autorisés ?",
+  "regs.section.allowedHours": "Horaires autorisés",
+  "regs.section.legalMentions": "Mentions légales obligatoires",
+  "regs.section.stopManagement": "Gestion du STOP",
+  "regs.section.officialLinks": "Liens vers les textes officiels",
+
+  "contact.modal.edit": "Modifier le contact",
+  "contact.modal.fallbackName": "Contact",
+  "contact.modal.unsubBanner":
+    "Ce contact est désabonné : il ne recevra plus vos campagnes SMS.",
+  "contact.modal.phoneHint":
+    "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78).",
+  "contact.modal.phoneTitle":
+    "Numéro mobile français : 06 ou 07, 10 chiffres (ex. 06 12 34 56 78).",
+  "contact.modal.mobileBadge": "Mobile FR",
+  "contact.modal.birthday": "Anniversaire",
+  "contact.modal.optional": "Optionnel",
+  "contact.modal.notesPh":
+    "Optionnel — contexte, préférences, informations utiles…",
+  "contact.modal.groupsSelectedOne": "{n} sélectionné",
+  "contact.modal.groupsSelectedMany": "{n} sélectionnés",
+  "contact.modal.noGroups": "Aucun groupe — crée-en un ci-dessous.",
+  "contact.modal.groupsAria": "Groupes du contact",
+  "contact.modal.newGroup": "Nouveau groupe…",
+  "contact.modal.unsubscribe": "Désabonner",
+  "contact.modal.saveContact": "Enregistrer le contact",
+  "contact.modal.errFirst": "Le prénom est obligatoire.",
+  "contact.modal.errDate": "Date invalide.",
+  "contact.modal.errNumber": "Nombre invalide.",
+  "contact.modal.errValue": "Valeur invalide.",
+
+  "contact.unsub.title": "Désabonner ce contact ?",
+  "contact.unsub.body":
+    "ne recevra plus vos SMS marketing. Le contact reste dans votre liste, mais il sera exclu des prochaines campagnes et des envois groupés.",
+  "contact.unsub.legal":
+    "Cette action enregistre son droit de retrait (STOP SMS) conformément aux règles d'envoi.",
+  "contact.unsub.busy": "Désabonnement…",
+
+  "import.title": "Importer des contacts",
+  "import.dropZoneAria": "Zone de dépôt pour fichier CSV",
+  "import.analyzing": "Analyse du fichier en cours…",
+  "import.dropHere": "Déposez le fichier ici…",
+  "import.dropOr": "Glisser-déposer un fichier CSV, ou",
+  "import.browse": "Parcourir…",
+  "import.change": "Changer",
+  "import.rowsOne": "· {n} ligne",
+  "import.rowsMany": "· {n} lignes",
+  "import.addToGroup": "Ajouter au groupe",
+  "import.noGroups": "Aucun groupe disponible",
+  "import.noGroupImportOnly": "Aucun (import seul)",
+  "import.preview": "Aperçu",
+  "import.needPhone": "Choisissez la colonne téléphone.",
+  "import.columnN": "Colonne {n}",
+  "import.busy": "Import…",
+  "import.submitOne": "Importer {n} ligne",
+  "import.submitMany": "Importer {n} lignes",
+  "import.issue.invalid": "Format invalide",
+  "import.issue.existing": "Contact déjà enregistré",
+  "import.issue.fileDupe": "Doublon dans le fichier",
+  "import.stats.invalidOne": "{n} contact invalide",
+  "import.stats.invalidMany": "{n} contacts invalides",
+  "import.stats.existingOne": "{n} contact déjà enregistré",
+  "import.stats.existingMany": "{n} contacts déjà enregistrés",
+  "import.stats.fileDupeOne": "{n} contact en doublon dans le fichier",
+  "import.stats.fileDupeMany": "{n} contacts en doublon dans le fichier",
+  "import.err.noHeaders":
+    "Le fichier ne contient pas d'en-têtes de colonnes.",
+  "import.err.parse":
+    "Impossible d'analyser ce fichier. Vérifiez l'encodage (UTF-8 recommandé).",
+  "import.err.csvOnly":
+    "Choisissez un fichier .csv (export Excel « CSV séparé par des virgules » ou point-virgule).",
+  "import.err.read": "Lecture du fichier impossible.",
+  "import.err.noFile":
+    "Aucun fichier détecté. Essayez de déposer le fichier depuis l'explorateur, ou utilisez « parcourir ».",
+  "import.err.invalidPhones":
+    "numéros non reconnus — utilisez 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78",
+  "import.err.server": "erreur d'enregistrement côté serveur",
+  "import.err.noneImported":
+    "Aucun contact n'a été importé. {reasons}. Corrigez le CSV puis réessayez — la modale reste ouverte.",
+  "import.err.noneSaved":
+    "Aucun contact n'a été enregistré. Réessayez (la modale reste ouverte).",
+  "import.err.generic": "Import impossible pour le moment.",
+  "import.result.importedOne": "{n} contact importé",
+  "import.result.importedMany": "{n} contacts importés",
+  "import.result.addedGroupOne": "{n} ajouté au groupe « {name} »",
+  "import.result.addedGroupMany": "{n} ajoutés au groupe « {name} »",
+  "import.result.linkedOne": "{n} déjà en base rattaché au groupe",
+  "import.result.linkedMany": "{n} déjà en base rattachés au groupe",
+  "import.result.fileDupeOne": "{n} doublon dans le fichier",
+  "import.result.fileDupeMany": "{n} doublons dans le fichier",
+  "import.result.alreadyDb": "{n} déjà en base",
+  "import.result.skippedOne": "{n} ligne ignorée (numéro non valide)",
+  "import.result.skippedMany": "{n} lignes ignorées (numéro non valide)",
+  "import.result.errorsOne": "{n} erreur",
+  "import.result.errorsMany": "{n} erreurs",
+  "import.role.skip": "Sélectionner…",
+  "import.role.phone": "Téléphone (obligatoire)",
+  "import.role.first": "Prénom",
+  "import.role.last": "Nom",
 } as const;
 
 export type MessageKey = keyof typeof fr;
@@ -580,10 +949,16 @@ const en: Record<MessageKey, string> = {
 
   "parametres.sectionsAria": "Settings sections",
   "parametres.section.compte": "Account",
+  "parametres.section.apparence": "Appearance",
   "parametres.section.entreprise": "Company",
   "parametres.section.facturation": "Billing",
   "parametres.section.sms-alertes": "SMS & alerts",
   "parametres.section.donnees": "Data",
+
+  "parametres.appearance.themeTitle": "Theme",
+  "parametres.appearance.themeDescription": "Choose light or dark mode.",
+  "parametres.appearance.light": "Light",
+  "parametres.appearance.dark": "Dark",
 
   "parametres.card.entreprise.title": "Company",
   "parametres.card.entreprise.description": "Name and industry.",
@@ -1037,6 +1412,369 @@ const en: Record<MessageKey, string> = {
     "Data collected via this form is secured and used only for your customer relationship.",
   "qr.complianceUnsub": "Customers can unsubscribe at any time.",
   "qr.complianceMore": "Learn more",
+  "qr.modal.welcome.desc":
+    "Customize the message sent after sign-up.",
+  "qr.modal.welcome.placeholder":
+    "Hello first name, thanks for signing up…",
+  "qr.modal.preview.title": "Preview the wheel",
+  "qr.modal.preview.desc":
+    "Preview as customers will see it after sign-up.",
+  "qr.modal.wheel.title": "Configure the wheel",
+  "qr.modal.wheel.desc":
+    "Set the slices, their odds (100% total), and the messages sent to customers.",
+  "qr.wheel.loading": "Loading the wheel…",
+  "qr.wheel.display": "Customer display",
+  "qr.wheel.title": "Title",
+  "qr.wheel.subtitle": "Subtitle",
+  "qr.wheel.titlePh": "Spin the wheel!",
+  "qr.wheel.subtitlePh": "Try your luck after signing up",
+  "qr.wheel.options": "Options",
+  "qr.wheel.smsPrize": "Prize SMS",
+  "qr.wheel.smsPrizeDesc":
+    "Automatically send the prize to the customer by SMS.",
+  "qr.wheel.allowRepeat": "Multiple plays",
+  "qr.wheel.allowRepeatDesc": "Allow the same number to play again.",
+  "qr.wheel.segments": "Wheel slices",
+  "qr.wheel.segmentsHint":
+    "Define each slice, its type, and its odds.",
+  "qr.wheel.randomColors": "Random colors",
+  "qr.wheel.chanceTitle": "Odds distribution",
+  "qr.wheel.chanceHint": "All slices must add up to 100%.",
+  "qr.wheel.distribute": "Distribute evenly",
+  "qr.wheel.remain": "{n}% left to assign across slices.",
+  "qr.wheel.over": "Remove {n}%: the total exceeds 100%.",
+  "qr.wheel.outcomeAria": "Slice type",
+  "qr.wheel.reward": "Reward",
+  "qr.wheel.lose": "Lose",
+  "qr.wheel.label": "Label shown on the wheel",
+  "qr.wheel.labelPh": "E.g. 10% off",
+  "qr.wheel.deleteSeg": "Delete slice",
+  "qr.wheel.segType": "Slice type",
+  "qr.wheel.chance": "Appearance chance",
+  "qr.wheel.screenMsg": "Message shown after the spin",
+  "qr.wheel.screenLosePh": "E.g. No luck this time…",
+  "qr.wheel.screenWinPh": "E.g. Congrats! You won…",
+  "qr.wheel.smsMsg": "SMS sent to the customer",
+  "qr.wheel.smsPh":
+    "E.g. Congrats {prenom}! Show this SMS in store.",
+  "qr.wheel.addSeg": "Add a slice",
+  "qr.wheel.errEmpty": "Add at least one slice on the wheel.",
+  "qr.wheel.errWeight":
+    "Odds must add up to 100%. Currently: {n}%.",
+  "qr.wheel.errLabel": "Every slice needs a label.",
+  "qr.wheel.errSave": "Could not save.",
+  "qr.wheel.saveWheel": "Save the wheel",
+  "qr.wheel.defaultLabel": "New reward",
+  "qr.wheel.defaultScreen": "Congrats! You won a reward.",
+  "qr.wheel.defaultSms":
+    "Congrats {prenom}! Show this SMS in store.",
+  "qr.wheel.loseScreen":
+    "No luck this time… Try again!",
+  "qr.wheel.previewEmpty":
+    "Add at least one reward to preview the wheel.",
+  "qr.wheel.spin": "Spin the wheel!",
+  "qr.wheel.replay": "Play again",
+
+  "float.close": "Close help",
+  "float.kb": "Knowledge base",
+  "helpAction.center": "Help center",
+  "helpAction.faq": "FAQ",
+  "helpAction.support": "Contact support",
+  "helpAction.feedback": "Give feedback",
+
+  "guide.dashboard.eyebrow": "Home",
+  "guide.dashboard.title": "Your SMS dashboard",
+  "guide.dashboard.desc":
+    "Find your key metrics and next actions to grow your SMS activity here.",
+  "guide.dashboard.b1":
+    "Track credits, contacts, groups, and sends at a glance.",
+  "guide.dashboard.b2":
+    "Recent activity shows your latest campaigns and imports.",
+  "guide.dashboard.b3":
+    "Each menu section has its own guide and help resources.",
+  "guide.dashboard.primary": "Send an SMS",
+
+  "guide.contacts.eyebrow": "Contacts",
+  "guide.contacts.title": "Understand the contact list",
+  "guide.contacts.desc":
+    "This list centralizes all SMS recipients: search, import, groups, and send history.",
+  "guide.contacts.b1":
+    "Each row = a contact with phone, groups, and last SMS received.",
+  "guide.contacts.b2":
+    "Only subscribed contacts (no STOP) are eligible for campaigns.",
+  "guide.contacts.b3":
+    "Import in bulk or add manually, then organize by groups.",
+  "guide.contacts.primary": "Add a contact",
+
+  "guide.groupes.eyebrow": "Groups",
+  "guide.groupes.title": "Organize contacts into groups",
+  "guide.groupes.desc":
+    "Groups segment your base so you can target campaigns and automations precisely.",
+  "guide.groupes.b1":
+    "A group gathers contacts that share a profile or need.",
+  "guide.groupes.b2":
+    "The “Last campaign” column shows the last send targeting that group.",
+  "guide.groupes.b3":
+    "Select several groups to create a targeted campaign.",
+  "guide.groupes.primary": "Create a group",
+
+  "guide.campagnes.eyebrow": "Campaigns",
+  "guide.campagnes.title": "Track your SMS campaigns",
+  "guide.campagnes.desc":
+    "This list tracks every send: drafts, scheduled, sent, or failed.",
+  "guide.campagnes.b1":
+    "Status: draft, scheduled, sent, failed, or cancelled.",
+  "guide.campagnes.b2":
+    "Recipients and estimated credits are visible before and after sending.",
+  "guide.campagnes.b3":
+    "Click a row to open campaign details.",
+  "guide.campagnes.primary": "New campaign",
+
+  "guide.statistiques.eyebrow": "Statistics",
+  "guide.statistiques.title": "Read your SMS performance",
+  "guide.statistiques.desc":
+    "Analyze send impact over the selected period: volume, delivery, QR sign-ups, and unsubscribes.",
+  "guide.statistiques.b1":
+    "KPIs summarize SMS sent, delivery rate, QR sign-ups, STOP, and credits used.",
+  "guide.statistiques.b2":
+    "The chart breaks down sends, failures, and scheduled items by day.",
+  "guide.statistiques.b3":
+    "Filter the period to compare campaigns over time.",
+
+  "guide.automatisations.eyebrow": "Automations",
+  "guide.automatisations.title": "Automate recurring sends",
+  "guide.automatisations.desc":
+    "Schedule SMS for birthdays and events — they send on their own to eligible contacts.",
+  "guide.automatisations.b1":
+    "Enable or disable each scenario (birthday, holidays, etc.).",
+  "guide.automatisations.b2":
+    "Only subscribed contacts without STOP are targeted.",
+  "guide.automatisations.b3":
+    "Customize the message and sender before enabling.",
+
+  "guide.liens.eyebrow": "Links",
+  "guide.liens.title": "Trackable short links for SMS",
+  "guide.liens.desc":
+    "Create short URLs for campaigns and measure clicks from this list.",
+  "guide.liens.b1":
+    "Each link maps an original URL to a short smsclient.fr address.",
+  "guide.liens.b2":
+    "The “Clicks” column counts opens after the SMS is sent.",
+  "guide.liens.b3":
+    "Copy the short link to insert into marketing messages.",
+  "guide.liens.primary": "Create a link",
+
+  "guide.modeles-sms.eyebrow": "SMS templates",
+  "guide.modeles-sms.title": "Most popular SMS templates",
+  "guide.modeles-sms.desc":
+    "Save time with ready-made copy: promos, reminders, thanks, and follow-ups.",
+  "guide.modeles-sms.b1":
+    "Save custom templates to reuse in campaigns.",
+  "guide.modeles-sms.b2":
+    "Title, description, and body can be edited anytime.",
+  "guide.modeles-sms.b3":
+    "Get inspiration from the most used examples.",
+  "guide.modeles-sms.primary": "Browse templates",
+
+  "guide.parametres.eyebrow": "Settings",
+  "guide.parametres.title": "Configure your account",
+  "guide.parametres.desc":
+    "Manage profile, custom fields, trash, and account options.",
+  "guide.parametres.b1":
+    "Update profile info and sending preferences.",
+  "guide.parametres.b2":
+    "Define custom fields to enrich contacts.",
+  "guide.parametres.b3":
+    "Restore or purge items in the trash.",
+
+  "guide.qr-boutique.eyebrow": "Store QR code",
+  "guide.qr-boutique.title": "Collect contacts via QR",
+  "guide.qr-boutique.desc":
+    "Create a wheel or QR page so customers can sign up in store.",
+  "guide.qr-boutique.b1":
+    "Customize appearance and the welcome message.",
+  "guide.qr-boutique.b2":
+    "Sign-ups feed your contact list.",
+  "guide.qr-boutique.b3":
+    "Track performance in statistics.",
+  "guide.qr-boutique.primary": "View QR stats",
+
+  "guide.reglementations-sms.eyebrow": "Regulations",
+  "guide.reglementations-sms.title": "Follow SMS rules",
+  "guide.reglementations-sms.desc":
+    "Legal reminders: STOP, consent, and good sending practices.",
+  "guide.reglementations-sms.b1":
+    "Every marketing SMS must allow unsubscribe (STOP).",
+  "guide.reglementations-sms.b2":
+    "Only send to subscribed, consenting contacts.",
+  "guide.reglementations-sms.b3":
+    "See the help center for regulatory detail.",
+  "guide.reglementations-sms.primary": "Help center",
+
+  "guide.nouvelle-campagne.eyebrow": "New campaign",
+  "guide.nouvelle-campagne.title": "Create and send a campaign",
+  "guide.nouvelle-campagne.desc":
+    "3-step wizard: recipients, message, then confirm and send.",
+  "guide.nouvelle-campagne.b1":
+    "Choose subscribed contacts or groups.",
+  "guide.nouvelle-campagne.b2":
+    "Write the SMS and check the credit cost.",
+  "guide.nouvelle-campagne.b3":
+    "Send now or schedule the send.",
+  "guide.nouvelle-campagne.primary": "View campaigns",
+
+  "guide.acheter-credits.eyebrow": "Credits",
+  "guide.acheter-credits.title": "Top up your SMS balance",
+  "guide.acheter-credits.desc":
+    "Buy credits to keep sending campaigns and automations.",
+  "guide.acheter-credits.b1":
+    "1 credit ≈ 1 standard SMS (depends on encoding).",
+  "guide.acheter-credits.b2":
+    "Balance appears in the top bar.",
+  "guide.acheter-credits.b3":
+    "Contact support for business billing.",
+
+  "guide.aide.eyebrow": "Help center",
+  "guide.aide.title": "Get help fast",
+  "guide.aide.desc":
+    "Guides, FAQ, and support contact for smsclient questions.",
+  "guide.aide.b1":
+    "Browse knowledge base articles.",
+  "guide.aide.b2": "Open the FAQ widget when available.",
+  "guide.aide.b3":
+    "Email support@smsclient.fr if you are stuck.",
+
+  "guide.soumettre-avis.eyebrow": "Feedback",
+  "guide.soumettre-avis.title": "Share your feedback",
+  "guide.soumettre-avis.desc":
+    "Suggest an improvement or report friction — we read every message.",
+  "guide.soumettre-avis.b1":
+    "Describe the context and expected outcome.",
+  "guide.soumettre-avis.b2": "Attach a screenshot if useful.",
+  "guide.soumettre-avis.b3":
+    "Support can also reply via the contact form.",
+
+  "regs.title": "SMS regulations",
+  "regs.subtitle":
+    "Review SMS sending rules for each country before launching your campaign.",
+  "regs.step1": "1. Select the country",
+  "regs.searchPh": "Search a country…",
+  "regs.orList": "Or pick from the list",
+  "regs.countriesAria": "Countries",
+  "regs.empty": "No country found.",
+  "regs.important": "Important",
+  "regs.importantBody":
+    "Regulations can change. Check the rules in force in your recipients' country before sending.",
+  "regs.previewTitle": "What you will find",
+  "regs.disclaimer":
+    "This information is for guidance only and is not legal advice.",
+  "regs.compliant": "Compliant under conditions",
+  "regs.riskLevel": "Risk level: {level}",
+  "regs.country.fr": "France",
+  "regs.country.be": "Belgium",
+  "regs.country.ch": "Switzerland",
+  "regs.risk.faible": "low",
+  "regs.section.whoToContact": "Who can I contact?",
+  "regs.section.consent": "Is consent required?",
+  "regs.section.marketingSms": "Are marketing SMS allowed?",
+  "regs.section.transactionalSms": "Are transactional SMS allowed?",
+  "regs.section.allowedHours": "Allowed hours",
+  "regs.section.legalMentions": "Required legal mentions",
+  "regs.section.stopManagement": "STOP management",
+  "regs.section.officialLinks": "Links to official texts",
+
+  "contact.modal.edit": "Edit contact",
+  "contact.modal.fallbackName": "Contact",
+  "contact.modal.unsubBanner":
+    "This contact is unsubscribed: they will no longer receive your SMS campaigns.",
+  "contact.modal.phoneHint":
+    "Enter a 06 or 07 mobile number with 10 digits (e.g. 06 12 34 56 78).",
+  "contact.modal.phoneTitle":
+    "French mobile number: 06 or 07, 10 digits (e.g. 06 12 34 56 78).",
+  "contact.modal.mobileBadge": "FR mobile",
+  "contact.modal.birthday": "Birthday",
+  "contact.modal.optional": "Optional",
+  "contact.modal.notesPh":
+    "Optional — context, preferences, useful notes…",
+  "contact.modal.groupsSelectedOne": "{n} selected",
+  "contact.modal.groupsSelectedMany": "{n} selected",
+  "contact.modal.noGroups": "No groups — create one below.",
+  "contact.modal.groupsAria": "Contact groups",
+  "contact.modal.newGroup": "New group…",
+  "contact.modal.unsubscribe": "Unsubscribe",
+  "contact.modal.saveContact": "Save contact",
+  "contact.modal.errFirst": "First name is required.",
+  "contact.modal.errDate": "Invalid date.",
+  "contact.modal.errNumber": "Invalid number.",
+  "contact.modal.errValue": "Invalid value.",
+
+  "contact.unsub.title": "Unsubscribe this contact?",
+  "contact.unsub.body":
+    "will no longer receive your marketing SMS. The contact stays in your list, but will be excluded from future campaigns and bulk sends.",
+  "contact.unsub.legal":
+    "This action records their opt-out (STOP SMS) according to sending rules.",
+  "contact.unsub.busy": "Unsubscribing…",
+
+  "import.title": "Import contacts",
+  "import.dropZoneAria": "Drop zone for CSV file",
+  "import.analyzing": "Analyzing file…",
+  "import.dropHere": "Drop the file here…",
+  "import.dropOr": "Drag and drop a CSV file, or",
+  "import.browse": "Browse…",
+  "import.change": "Change",
+  "import.rowsOne": "· {n} row",
+  "import.rowsMany": "· {n} rows",
+  "import.addToGroup": "Add to group",
+  "import.noGroups": "No groups available",
+  "import.noGroupImportOnly": "None (import only)",
+  "import.preview": "Preview",
+  "import.needPhone": "Choose the phone column.",
+  "import.columnN": "Column {n}",
+  "import.busy": "Importing…",
+  "import.submitOne": "Import {n} row",
+  "import.submitMany": "Import {n} rows",
+  "import.issue.invalid": "Invalid format",
+  "import.issue.existing": "Contact already saved",
+  "import.issue.fileDupe": "Duplicate in file",
+  "import.stats.invalidOne": "{n} invalid contact",
+  "import.stats.invalidMany": "{n} invalid contacts",
+  "import.stats.existingOne": "{n} contact already saved",
+  "import.stats.existingMany": "{n} contacts already saved",
+  "import.stats.fileDupeOne": "{n} duplicate contact in file",
+  "import.stats.fileDupeMany": "{n} duplicate contacts in file",
+  "import.err.noHeaders": "The file has no column headers.",
+  "import.err.parse":
+    "Could not parse this file. Check encoding (UTF-8 recommended).",
+  "import.err.csvOnly":
+    "Choose a .csv file (Excel export as comma- or semicolon-separated CSV).",
+  "import.err.read": "Could not read the file.",
+  "import.err.noFile":
+    "No file detected. Try dropping from the file explorer, or use “browse”.",
+  "import.err.invalidPhones":
+    "unrecognized numbers — use 10 digits 06/07 (e.g. 06 12 34 56 78) or +33 6 12 34 56 78",
+  "import.err.server": "server-side save error",
+  "import.err.noneImported":
+    "No contacts were imported. {reasons}. Fix the CSV and try again — the modal stays open.",
+  "import.err.noneSaved":
+    "No contacts were saved. Try again (the modal stays open).",
+  "import.err.generic": "Import unavailable right now.",
+  "import.result.importedOne": "{n} contact imported",
+  "import.result.importedMany": "{n} contacts imported",
+  "import.result.addedGroupOne": "{n} added to group “{name}”",
+  "import.result.addedGroupMany": "{n} added to group “{name}”",
+  "import.result.linkedOne": "{n} already in DB linked to the group",
+  "import.result.linkedMany": "{n} already in DB linked to the group",
+  "import.result.fileDupeOne": "{n} duplicate in file",
+  "import.result.fileDupeMany": "{n} duplicates in file",
+  "import.result.alreadyDb": "{n} already in DB",
+  "import.result.skippedOne": "{n} row skipped (invalid number)",
+  "import.result.skippedMany": "{n} rows skipped (invalid number)",
+  "import.result.errorsOne": "{n} error",
+  "import.result.errorsMany": "{n} errors",
+  "import.role.skip": "Select…",
+  "import.role.phone": "Phone (required)",
+  "import.role.first": "First name",
+  "import.role.last": "Last name",
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = {

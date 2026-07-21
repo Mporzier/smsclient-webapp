@@ -1,6 +1,7 @@
 "use client";
 
 import { RewardWheel } from "@/components/public/RewardWheel";
+import { useI18n } from "@/lib/i18n";
 import type { QrWheelConfig, QrWheelPublicSegment } from "@/lib/types/qrWheel";
 import { useCallback, useMemo, useState } from "react";
 
@@ -27,6 +28,7 @@ export function QrWheelPreview({
   loading,
   open = true,
 }: QrWheelPreviewProps) {
+  const { t } = useI18n();
   const [spinning, setSpinning] = useState(false);
   const [winIndex, setWinIndex] = useState<number | null>(null);
 
@@ -63,7 +65,7 @@ export function QrWheelPreview({
   if (loading) {
     return (
       <div className="grid min-h-[420px] place-items-center text-sm font-bold text-slate-500">
-        Chargement de la roue…
+        {t("qr.wheel.loading")}
       </div>
     );
   }
@@ -72,7 +74,7 @@ export function QrWheelPreview({
     return (
       <div className="flex min-h-[420px] items-center justify-center">
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-center text-sm font-bold text-amber-900">
-          Ajoutez au moins une récompense pour prévisualiser la roue.
+          {t("qr.wheel.previewEmpty")}
         </div>
       </div>
     );
@@ -81,15 +83,15 @@ export function QrWheelPreview({
   return (
     <RewardWheel
       segments={segments}
-      title={wheelConfig?.title?.trim() || "Tournez la roue !"}
+      title={wheelConfig?.title?.trim() || t("qr.wheel.titlePh")}
       subtitle={wheelConfig?.subtitle?.trim() ?? ""}
       spinning={spinning}
       winIndex={winIndex}
       onSpin={handleSpin}
       onAnimationEnd={handleAnimationEnd}
       onReplay={handleReplay}
-      spinButtonLabel="Tourner la roue !"
-      replayButtonLabel="Rejouer"
+      spinButtonLabel={t("qr.wheel.spin")}
+      replayButtonLabel={t("qr.wheel.replay")}
     />
   );
 }

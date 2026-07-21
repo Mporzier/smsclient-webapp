@@ -11,8 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { knowledgeBaseArticleUrl } from "@/lib/knowledgeBase";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { HELP_ACTIONS } from "@/lib/proto/helpActions";
 import {
+  guideMessageKey,
   SECTION_GUIDES,
   type SectionGuideKey,
 } from "@/lib/sectionGuides";
@@ -22,6 +25,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -62,8 +66,9 @@ export function FloatingHelpBanner({
   onClose,
   onNavigate,
 }: FloatingHelpBannerProps) {
-  const guide = SECTION_GUIDES[section];
-  const Icon = guide.icon;
+  const { t } = useI18n();
+  const meta = SECTION_GUIDES[section];
+  const Icon = meta.icon;
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -74,6 +79,20 @@ export function FloatingHelpBanner({
     origX: number;
     origY: number;
   } | null>(null);
+
+  const copy = useMemo(() => {
+    const key = (part: "eyebrow" | "title" | "desc" | "b1" | "b2" | "b3") =>
+      guideMessageKey(section, part) as MessageKey;
+    return {
+      eyebrow: t(key("eyebrow")),
+      title: t(key("title")),
+      description: t(key("desc")),
+      bullets: [t(key("b1")), t(key("b2")), t(key("b3"))] as const,
+      primaryLabel: meta.primaryRoute
+        ? t(guideMessageKey(section, "primary") as MessageKey)
+        : undefined,
+    };
+  }, [meta.primaryRoute, section, t]);
 
   const [pos, setPos] = useState<Pos>(defaultPos);
   const [dragging, setDragging] = useState(false);
@@ -158,13 +177,13 @@ export function FloatingHelpBanner({
   }, []);
 
   const handlePrimary = () => {
-    if (guide.primaryRoute && onNavigate) {
-      onNavigate(guide.primaryRoute);
+    if (meta.primaryRoute && onNavigate) {
+      onNavigate(meta.primaryRoute);
     }
   };
 
   const showPrimary = Boolean(
-    guide.primaryRoute && onNavigate && guide.primaryLabel
+    meta.primaryRoute && onNavigate && copy.primaryLabel
   );
 
   if (!open) return null;
@@ -205,10 +224,10 @@ export function FloatingHelpBanner({
             <div className="min-w-0 space-y-1">
               <span className="inline-flex items-center gap-1 rounded-md bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-700 dark:bg-violet-800 dark:text-violet-200">
                 <Sparkles className="size-3" aria-hidden />
-                {guide.eyebrow}
+                {copy.eyebrow}
               </span>
-              <CardTitle id={titleId}>{guide.title}</CardTitle>
-              <CardDescription>{guide.description}</CardDescription>
+              <CardTitle id={titleId}>{copy.title}</CardTitle>
+              <CardDescription>{copy.description}</CardDescription>
             </div>
           </div>
           <CardAction>
@@ -218,7 +237,7 @@ export function FloatingHelpBanner({
               variant="ghost"
               size="icon-sm"
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Fermer l'aide"
+              aria-label={t("float.close")}
               onClick={onClose}
             >
               <X aria-hidden />
@@ -228,7 +247,7 @@ export function FloatingHelpBanner({
 
         <CardContent className="space-y-3">
           <ul className="m-0 grid list-none gap-1.5 p-0">
-            {guide.bullets.map((bullet) => (
+            {copy.bullets.map((bullet) => (
               <li
                 key={bullet}
                 className="flex gap-2 text-sm leading-snug text-muted-foreground"
@@ -243,19 +262,19 @@ export function FloatingHelpBanner({
           </ul>
 
           <div className="flex flex-wrap items-center gap-2">
-            {showPrimary && guide.primaryLabel && (
+            {showPrimary && copy.primaryLabel && (
               <Button type="button" size="sm" onClick={handlePrimary}>
-                {guide.primaryLabel}
+                {copy.primaryLabel}
               </Button>
             )}
             <Button variant="link" size="sm" asChild>
               <a
-                href={knowledgeBaseArticleUrl(guide.kbSlug)}
+                href={knowledgeBaseArticleUrl(meta.kbSlug)}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <BookOpen data-icon="inline-start" aria-hidden />
-                Base de connaissance
+                {t("float.kb")}
               </a>
             </Button>
           </div>
@@ -264,16 +283,17 @@ export function FloatingHelpBanner({
         <CardFooter className="flex-wrap gap-1.5">
           {HELP_ACTIONS.slice(0, 3).map((action) => {
             const ActionIcon = action.icon;
+            const label = t(`helpAction.${action.id}` as MessageKey);
             return (
               <Button
-                key={action.label}
+                key={action.id}
                 type="button"
                 variant="outline"
                 size="xs"
                 onClick={action.onClick}
               >
                 <ActionIcon data-icon="inline-start" aria-hidden />
-                {action.label}
+                {label}
               </Button>
             );
           })}

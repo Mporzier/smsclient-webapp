@@ -33,6 +33,7 @@ export type SettingId =
 
 export type SettingSectionId =
   | "compte"
+  | "apparence"
   | "entreprise"
   | "facturation"
   | "sms-alertes"
@@ -53,6 +54,7 @@ export type SettingSectionDef = {
 
 export const settingSections: SettingSectionDef[] = [
   { id: "compte" },
+  { id: "apparence" },
   { id: "entreprise" },
   { id: "facturation" },
   { id: "sms-alertes" },

@@ -10,17 +10,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+export type HelpActionId = "center" | "faq" | "support" | "feedback";
+
 export type HelpAction = {
-  label: string;
-  description: string;
+  id: HelpActionId;
   icon: LucideIcon;
   onClick: () => void;
 };
 
 export const HELP_ACTIONS: HelpAction[] = [
   {
-    label: "Centre d'aide",
-    description: "Guides et tutoriels",
+    id: "center",
     icon: BookOpen,
     onClick: () => {
       if (openOpenWidget("faq")) return;
@@ -28,8 +28,7 @@ export const HELP_ACTIONS: HelpAction[] = [
     },
   },
   {
-    label: "Foire aux questions",
-    description: "Réponses aux questions fréquentes",
+    id: "faq",
     icon: CircleHelp,
     onClick: () => {
       if (openOpenWidget("faq")) return;
@@ -37,8 +36,7 @@ export const HELP_ACTIONS: HelpAction[] = [
     },
   },
   {
-    label: "Contacter le support",
-    description: "support@smsclient.fr",
+    id: "support",
     icon: Mail,
     onClick: () => {
       if (openOpenWidget("form-contact")) return;
@@ -47,8 +45,7 @@ export const HELP_ACTIONS: HelpAction[] = [
     },
   },
   {
-    label: "Donner un retour",
-    description: "Suggérer une amélioration",
+    id: "feedback",
     icon: MessageCircle,
     onClick: () => {
       if (openOpenWidget("form-feedback")) return;

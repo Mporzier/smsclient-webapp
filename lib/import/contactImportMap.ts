@@ -41,8 +41,12 @@ export function customImportRole(fieldId: string): `custom:${string}` {
 
 export function buildImportRoleLabels(
   defs: CustomFieldDef[],
+  fixedLabels?: Partial<Record<FixedImportColumnRole, string>>,
 ): Record<string, string> {
-  const labels: Record<string, string> = { ...FIXED_IMPORT_ROLE_LABELS };
+  const labels: Record<string, string> = {
+    ...FIXED_IMPORT_ROLE_LABELS,
+    ...fixedLabels,
+  };
   for (const def of defs) {
     labels[customImportRole(def.id)] = def.label;
   }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { ApparenceSettingsPanel } from "@/components/smsclient/views/parametres/ApparenceSettingsPanel";
 import { CompteSettingsPanel } from "@/components/smsclient/views/parametres/CompteSettingsPanel";
 import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
@@ -228,7 +229,7 @@ export function ParametresView({
     : allSettingCards.filter((c) => c.id !== "corbeille");
 
   const availableSections = settingSections.filter((section) => {
-    if (section.id === "compte") return true;
+    if (section.id === "compte" || section.id === "apparence") return true;
     return visibleCards.some((c) => c.section === section.id);
   });
 
@@ -238,7 +239,6 @@ export function ParametresView({
     "compte";
 
   const sectionCards = visibleCards.filter((c) => c.section === sectionId);
-  const isCompteSection = sectionId === "compte";
 
   const modalIcon = openCard ? (
     <openCard.icon className="h-5 w-5" strokeWidth={2.25} />
@@ -275,7 +275,7 @@ export function ParametresView({
               : t("shell.settings")
           }
         >
-          {isCompteSection ? (
+          {sectionId === "compte" ? (
             <CompteSettingsPanel
               form={draftForm}
               loading={profileLoading}
@@ -283,6 +283,8 @@ export function ParametresView({
               saveError={compteSaveError}
               onSaveField={onSaveCompteField}
             />
+          ) : sectionId === "apparence" ? (
+            <ApparenceSettingsPanel />
           ) : (
             <div className="grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1">
               {sectionCards.map((card) => (

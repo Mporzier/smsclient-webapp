@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Gift } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -36,6 +37,7 @@ export function QrWheelSettingsModal({
   onSave,
   onEnableWithDefaults,
 }: QrWheelSettingsModalProps) {
+  const { t } = useI18n();
   const [dirty, setDirty] = useState(false);
   const [wasOpen, setWasOpen] = useState(open);
 
@@ -80,9 +82,9 @@ export function QrWheelSettingsModal({
               <Gift className="h-4 w-4" aria-hidden />
             </span>
           }
-          title="Configurer la roue"
+          title={t("qr.modal.wheel.title")}
           titleClassName="font-black"
-          description="Définissez les cases, leurs chances (100 % au total) et les messages envoyés aux clients."
+          description={t("qr.modal.wheel.desc")}
           descriptionClassName="font-semibold"
         />
 

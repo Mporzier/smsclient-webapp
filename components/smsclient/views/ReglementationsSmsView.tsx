@@ -4,8 +4,9 @@ import { CountryFlag } from "@/components/smsclient/CountryFlag";
 import { SearchBar } from "@/components/smsclient/Shell";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
 import {
-  REGULATION_SECTION_LABELS,
   REGULATION_SECTION_ORDER,
   SMS_REGULATIONS,
   type CountryRegulations,
@@ -44,7 +45,21 @@ const SECTION_ICONS: Record<RegulationSectionKey, LucideIcon> = {
 const PREVIEW_LEFT_KEYS = REGULATION_SECTION_ORDER.slice(4);
 const PREVIEW_RIGHT_KEYS = REGULATION_SECTION_ORDER.slice(0, 4);
 
-function RegulationPreviewBullet({ sectionKey }: { sectionKey: RegulationSectionKey }) {
+function sectionLabelKey(key: RegulationSectionKey): MessageKey {
+  return `regs.section.${key}` as MessageKey;
+}
+
+function countryLabelKey(id: SmsRegulationCountry): MessageKey {
+  return `regs.country.${id}` as MessageKey;
+}
+
+function RegulationPreviewBullet({
+  sectionKey,
+  label,
+}: {
+  sectionKey: RegulationSectionKey;
+  label: string;
+}) {
   const Icon = SECTION_ICONS[sectionKey];
   return (
     <li className="flex items-center gap-2">
@@ -55,7 +70,7 @@ function RegulationPreviewBullet({ sectionKey }: { sectionKey: RegulationSection
         <Icon className="h-2.5 w-2.5" />
       </span>
       <span className="min-w-0 text-[11px] font-semibold leading-snug text-slate-700">
-        {REGULATION_SECTION_LABELS[sectionKey]}
+        {label}
       </span>
     </li>
   );
@@ -64,12 +79,13 @@ function RegulationPreviewBullet({ sectionKey }: { sectionKey: RegulationSection
 function RegulationSectionCard({
   sectionKey,
   content,
+  title,
 }: {
   sectionKey: RegulationSectionKey;
   content: RegulationSectionContent;
+  title: string;
 }) {
   const Icon = SECTION_ICONS[sectionKey];
-  const title = REGULATION_SECTION_LABELS[sectionKey];
 
   return (
     <section className="rounded-xl border border-slate-200/90 bg-slate-50/60 px-3 py-2.5">
@@ -103,31 +119,44 @@ function RegulationSectionCard({
   );
 }
 
-function matchesCountrySearch(country: CountryRegulations, query: string): boolean {
+function matchesCountrySearch(
+  country: CountryRegulations,
+  query: string,
+  translatedLabel: string,
+): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   return (
     country.label.toLowerCase().includes(q) ||
+    translatedLabel.toLowerCase().includes(q) ||
     country.id.includes(q) ||
     country.authority.toLowerCase().includes(q)
   );
 }
 
 export function ReglementationsSmsView() {
+  const { t } = useI18n();
   const [country, setCountry] = useState<SmsRegulationCountry>("fr");
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredCountries = useMemo(
-    () => SMS_REGULATIONS.filter((c) => matchesCountrySearch(c, searchQuery)),
-    [searchQuery],
+    () =>
+      SMS_REGULATIONS.filter((c) =>
+        matchesCountrySearch(c, searchQuery, t(countryLabelKey(c.id))),
+      ),
+    [searchQuery, t],
   );
 
   const active =
     SMS_REGULATIONS.find((c) => c.id === country) ?? SMS_REGULATIONS[0];
 
+  const riskLabel =
+    active.riskLevel === "faible"
+      ? t("regs.risk.faible")
+      : active.riskLevel;
+
   return (
     <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)]">
-      {/* Colonne gauche — sélection */}
       <div
         className={cn(
           fieldBox,
@@ -141,11 +170,10 @@ export function ReglementationsSmsView() {
             </span>
             <div className="min-w-0">
               <h1 className="m-0 text-base font-black leading-snug text-slate-900">
-                Réglementation SMS
+                {t("regs.title")}
               </h1>
               <p className="m-0 mt-1 text-xs font-semibold leading-snug text-slate-500">
-                Consultez les règles d&apos;envoi de SMS applicables dans chaque
-                pays avant de lancer votre campagne.
+                {t("regs.subtitle")}
               </p>
             </div>
           </div>
@@ -153,29 +181,29 @@ export function ReglementationsSmsView() {
 
         <div className="flex min-h-0 flex-col gap-2">
           <p className="m-0 shrink-0 text-xs font-black text-slate-800">
-            1. Sélectionnez le pays
+            {t("regs.step1")}
           </p>
 
           <div className="shrink-0 [&>div]:mt-0">
             <SearchBar
-              placeholder="Rechercher un pays…"
+              placeholder={t("regs.searchPh")}
               value={searchQuery}
               onChange={setSearchQuery}
             />
           </div>
 
           <p className="m-0 shrink-0 text-[11px] font-semibold text-slate-500">
-            Ou sélectionnez dans la liste
+            {t("regs.orList")}
           </p>
 
           <ul
             className="m-0 flex shrink-0 list-none flex-col gap-1.5 p-0"
             role="listbox"
-            aria-label="Pays"
+            aria-label={t("regs.countriesAria")}
           >
             {filteredCountries.length === 0 ? (
               <li className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs font-semibold text-slate-500">
-                Aucun pays trouvé.
+                {t("regs.empty")}
               </li>
             ) : (
               filteredCountries.map((c) => {
@@ -202,7 +230,7 @@ export function ReglementationsSmsView() {
                             selected ? "text-[#1f3b77]" : "text-slate-900",
                           )}
                         >
-                          {c.label}
+                          {t(countryLabelKey(c.id))}
                         </span>
                         <span className="block truncate text-[10px] font-semibold text-slate-500">
                           {c.authority}
@@ -221,27 +249,36 @@ export function ReglementationsSmsView() {
             <AlertTriangle className="h-4 w-4" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="m-0 text-xs font-black text-amber-900">Important</p>
+            <p className="m-0 text-xs font-black text-amber-900">
+              {t("regs.important")}
+            </p>
             <p className="m-0 mt-0.5 text-[11px] font-semibold leading-snug text-amber-800/90">
-              Les réglementations peuvent évoluer. Vérifiez les règles en
-              vigueur dans le pays de vos destinataires avant l&apos;envoi.
+              {t("regs.importantBody")}
             </p>
           </div>
         </div>
 
         <div className="shrink-0">
           <h2 className="m-0 text-xs font-black text-slate-900">
-            Ce que vous allez trouver
+            {t("regs.previewTitle")}
           </h2>
           <div className="mt-2 grid grid-cols-2 gap-x-3">
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {PREVIEW_LEFT_KEYS.map((key) => (
-                <RegulationPreviewBullet key={key} sectionKey={key} />
+                <RegulationPreviewBullet
+                  key={key}
+                  sectionKey={key}
+                  label={t(sectionLabelKey(key))}
+                />
               ))}
             </ul>
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {PREVIEW_RIGHT_KEYS.map((key) => (
-                <RegulationPreviewBullet key={key} sectionKey={key} />
+                <RegulationPreviewBullet
+                  key={key}
+                  sectionKey={key}
+                  label={t(sectionLabelKey(key))}
+                />
               ))}
             </ul>
           </div>
@@ -252,13 +289,11 @@ export function ReglementationsSmsView() {
             <Info className="h-3.5 w-3.5" aria-hidden />
           </span>
           <p className="m-0 text-[10px] font-semibold leading-snug text-yellow-900/90">
-            Les informations fournies sont à titre informatif et ne constituent
-            pas un avis juridique.
+            {t("regs.disclaimer")}
           </p>
         </div>
       </div>
 
-      {/* Colonne droite — sections détaillées */}
       <div
         className={cn(
           fieldBox,
@@ -269,7 +304,7 @@ export function ReglementationsSmsView() {
           <div className="flex min-w-0 items-center gap-2.5">
             <CountryFlag country={active.id} className="h-7 w-10" />
             <h2 className="m-0 text-base font-black text-slate-900">
-              {active.label}
+              {t(countryLabelKey(active.id))}
             </h2>
           </div>
           <div className="flex shrink-0 items-start gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50 px-2.5 py-2">
@@ -278,10 +313,10 @@ export function ReglementationsSmsView() {
             </span>
             <div className="min-w-0">
               <p className="m-0 text-[11px] font-black leading-snug text-emerald-900">
-                Conforme sous conditions
+                {t("regs.compliant")}
               </p>
               <p className="m-0 text-[10px] font-semibold capitalize text-emerald-800/85">
-                Niveau de risque : {active.riskLevel}
+                {t("regs.riskLevel", { level: riskLabel })}
               </p>
             </div>
           </div>
@@ -296,6 +331,7 @@ export function ReglementationsSmsView() {
             <RegulationSectionCard
               key={key}
               sectionKey={key}
+              title={t(sectionLabelKey(key))}
               content={active.sections[key]}
             />
           ))}

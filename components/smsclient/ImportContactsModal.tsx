@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
 import {
   buildImportRoleLabels,
   buildPayloadFromMappedRow,
@@ -79,10 +81,10 @@ function rowIssueReason(
   invalid: boolean,
   existing: boolean,
   fileDupe: boolean
-): string | null {
-  if (invalid) return "Format invalide";
-  if (existing) return "Contact déjà enregistré";
-  if (fileDupe) return "Doublon dans le fichier";
+): MessageKey | null {
+  if (invalid) return "import.issue.invalid";
+  if (existing) return "import.issue.existing";
+  if (fileDupe) return "import.issue.fileDupe";
   return null;
 }
 
@@ -180,6 +182,7 @@ export function ImportContactsModal({
   defaultGroupLabel = null,
   customFieldDefs = [],
 }: ImportContactsModalProps) {
+  const { t } = useI18n();
   const [fileName, setFileName] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
@@ -254,7 +257,7 @@ export function ImportContactsModal({
       try {
         const p = parseCsvText(rawText);
         if (p.headers.length === 0) {
-          setParseError("Le fichier ne contient pas d’en-têtes de colonnes.");
+          setParseError(t("import.err.noHeaders"));
           setParsed(null);
           setRoles([]);
         } else {
@@ -263,9 +266,7 @@ export function ImportContactsModal({
           setRoles(suggestColumnRoles(p.headers, p.rows, customFieldDefs));
         }
       } catch {
-        setParseError(
-          "Impossible d’analyser ce fichier. Vérifiez l’encodage (UTF-8 recommandé)."
-        );
+        setParseError(t("import.err.parse"));
         setParsed(null);
         setRoles([]);
       }
@@ -290,9 +291,7 @@ export function ImportContactsModal({
       file.type.startsWith("text/csv") ||
       file.type === "application/csv";
     if (!hasCsvExtension && !mimeOk) {
-      setParseError(
-        "Choisissez un fichier .csv (export Excel « CSV séparé par des virgules » ou point-virgule)."
-      );
+      setParseError(t("import.err.csvOnly"));
       setFileName(null);
       return;
     }
@@ -305,13 +304,13 @@ export function ImportContactsModal({
       setFileLoading(false);
     };
     reader.onerror = () => {
-      setParseError("Lecture du fichier impossible.");
+      setParseError(t("import.err.read"));
       setFileName(null);
       setRawText(null);
       setFileLoading(false);
     };
     reader.readAsText(file, "UTF-8");
-  }, []);
+  }, [t]);
 
   const onDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -340,9 +339,7 @@ export function ImportContactsModal({
       setDragActive(false);
       const f = fileFromDataTransfer(e.dataTransfer);
       if (!f) {
-        setParseError(
-          "Aucun fichier détecté. Essayez de déposer le fichier depuis l’explorateur, ou utilisez « parcourir »."
-        );
+        setParseError(t("import.err.noFile"));
         return;
       }
       suppressPickerClickRef.current = true;
@@ -382,8 +379,14 @@ export function ImportContactsModal({
   }, [customFieldDefs]);
 
   const roleLabels = useMemo(
-    () => buildImportRoleLabels(customFieldDefs),
-    [customFieldDefs],
+    () =>
+      buildImportRoleLabels(customFieldDefs, {
+        skip: t("import.role.skip"),
+        phone: t("import.role.phone"),
+        first_name: t("import.role.first"),
+        last_name: t("import.role.last"),
+      }),
+    [customFieldDefs, t],
   );
 
   const phoneColIdx = useMemo(() => roles.indexOf("phone"), [roles]);
@@ -504,23 +507,17 @@ export function ImportContactsModal({
         const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
         const reasons: string[] = [];
         if (invalidTotal > 0) {
-          reasons.push(
-            "numéros non reconnus — utilisez 10 chiffres 06/07 (ex. 06 12 34 56 78) ou +33 6 12 34 56 78"
-          );
+          reasons.push(t("import.err.invalidPhones"));
         }
         if (batch.otherErrors > 0) {
-          reasons.push("erreur d’enregistrement côté serveur");
+          reasons.push(t("import.err.server"));
         }
         if (reasons.length > 0) {
           setImportError(
-            `Aucun contact n’a été importé. ${reasons.join(
-              " · "
-            )}. Corrigez le CSV puis réessayez — la modale reste ouverte.`
+            t("import.err.noneImported", { reasons: reasons.join(" · ") }),
           );
         } else if (dupes === 0) {
-          setImportError(
-            "Aucun contact n’a été enregistré. Réessayez (la modale reste ouverte)."
-          );
+          setImportError(t("import.err.noneSaved"));
         }
         return;
       }
@@ -528,32 +525,46 @@ export function ImportContactsModal({
       const parts: string[] = [];
       if (batch.inserted > 0) {
         parts.push(
-          `${batch.inserted} contact${batch.inserted > 1 ? "s" : ""} importé${
-            batch.inserted > 1 ? "s" : ""
-          }`
+          batch.inserted === 1
+            ? t("import.result.importedOne", { n: batch.inserted })
+            : t("import.result.importedMany", { n: batch.inserted }),
         );
       }
       if (groupLabel) {
         const linked = batch.inserted + batch.linkedExistingToGroup;
         if (linked > 0) {
           parts.push(
-            `${linked} ajouté${
-              linked > 1 ? "s" : ""
-            } au groupe « ${groupLabel} »`
+            linked === 1
+              ? t("import.result.addedGroupOne", {
+                  n: linked,
+                  name: groupLabel,
+                })
+              : t("import.result.addedGroupMany", {
+                  n: linked,
+                  name: groupLabel,
+                }),
           );
         }
       } else if (batch.linkedExistingToGroup > 0) {
         parts.push(
-          `${batch.linkedExistingToGroup} déjà en base rattaché${
-            batch.linkedExistingToGroup > 1 ? "s" : ""
-          } au groupe`
+          batch.linkedExistingToGroup === 1
+            ? t("import.result.linkedOne", {
+                n: batch.linkedExistingToGroup,
+              })
+            : t("import.result.linkedMany", {
+                n: batch.linkedExistingToGroup,
+              }),
         );
       }
       if (batch.skippedDuplicateInFile > 0) {
         parts.push(
-          `${batch.skippedDuplicateInFile} doublon${
-            batch.skippedDuplicateInFile > 1 ? "s" : ""
-          } dans le fichier`
+          batch.skippedDuplicateInFile === 1
+            ? t("import.result.fileDupeOne", {
+                n: batch.skippedDuplicateInFile,
+              })
+            : t("import.result.fileDupeMany", {
+                n: batch.skippedDuplicateInFile,
+              }),
         );
       }
       if (
@@ -563,20 +574,22 @@ export function ImportContactsModal({
         const leftover =
           batch.skippedDuplicateInDb - batch.linkedExistingToGroup;
         if (leftover > 0) {
-          parts.push(`${leftover} déjà en base`);
+          parts.push(t("import.result.alreadyDb", { n: leftover }));
         }
       }
       const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
       if (invalidTotal > 0) {
         parts.push(
-          `${invalidTotal} ligne${invalidTotal > 1 ? "s" : ""} ignorée${
-            invalidTotal > 1 ? "s" : ""
-          } (numéro non valide)`
+          invalidTotal === 1
+            ? t("import.result.skippedOne", { n: invalidTotal })
+            : t("import.result.skippedMany", { n: invalidTotal }),
         );
       }
       if (batch.otherErrors > 0) {
         parts.push(
-          `${batch.otherErrors} erreur${batch.otherErrors > 1 ? "s" : ""}`
+          batch.otherErrors === 1
+            ? t("import.result.errorsOne", { n: batch.otherErrors })
+            : t("import.result.errorsMany", { n: batch.otherErrors }),
         );
       }
 
@@ -585,7 +598,7 @@ export function ImportContactsModal({
       onClose();
     } catch (e) {
       setImportError(
-        e instanceof Error ? e.message : "Import impossible pour le moment."
+        e instanceof Error ? e.message : t("import.err.generic"),
       );
     } finally {
       setImporting(false);
@@ -602,6 +615,7 @@ export function ImportContactsModal({
     onImported,
     onNotify,
     onClose,
+    t,
   ]);
 
   const isDirty = fileName !== null || parsed !== null;
@@ -634,7 +648,7 @@ export function ImportContactsModal({
             <CloudUpload />
           </div>
           <DialogTitle className="min-w-0 flex-1 pr-8 text-base font-semibold leading-none tracking-tight">
-            Importer des contacts
+            {t("import.title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -655,7 +669,7 @@ export function ImportContactsModal({
 
           {!parsed && (
             <div
-              aria-label="Zone de dépôt pour fichier CSV"
+              aria-label={t("import.dropZoneAria")}
               role="button"
               tabIndex={importing ? -1 : 0}
               onDragEnter={onDragEnter}
@@ -691,7 +705,7 @@ export function ImportContactsModal({
                     aria-hidden
                   />
                   <p className="mt-3 text-sm font-medium text-foreground">
-                    Analyse du fichier en cours…
+                    {t("import.analyzing")}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {fileName}
@@ -705,8 +719,8 @@ export function ImportContactsModal({
                   />
                   <p className="mt-3 text-sm text-muted-foreground">
                     {dragActive
-                      ? "Déposez le fichier ici…"
-                      : "Glisser-déposer un fichier CSV, ou"}
+                      ? t("import.dropHere")
+                      : t("import.dropOr")}
                   </p>
                   <Button
                     type="button"
@@ -721,7 +735,7 @@ export function ImportContactsModal({
                     className="mt-3 cursor-pointer"
                   >
                     <Upload className="h-4 w-4" aria-hidden />
-                    Parcourir…
+                    {t("import.browse")}
                   </Button>
                 </>
               )}
@@ -746,8 +760,9 @@ export function ImportContactsModal({
                     {fileName}
                   </span>
                   <span>
-                    · {parsed.rows.length} ligne
-                    {parsed.rows.length > 1 ? "s" : ""}
+                    {parsed.rows.length === 1
+                      ? t("import.rowsOne", { n: parsed.rows.length })
+                      : t("import.rowsMany", { n: parsed.rows.length })}
                   </span>
                   <Button
                     type="button"
@@ -757,7 +772,7 @@ export function ImportContactsModal({
                     disabled={importing}
                     className="ml-auto cursor-pointer"
                   >
-                    Changer
+                    {t("import.change")}
                   </Button>
                 </div>
               )}
@@ -767,7 +782,7 @@ export function ImportContactsModal({
                   htmlFor="import-contacts-target-group"
                   className="text-sm font-medium text-foreground"
                 >
-                  Ajouter au groupe
+                  {t("import.addToGroup")}
                 </label>
                 <select
                   id="import-contacts-target-group"
@@ -778,8 +793,8 @@ export function ImportContactsModal({
                 >
                   <option value="">
                     {groupOptions.length === 0
-                      ? "Aucun groupe disponible"
-                      : "Aucun (import seul)"}
+                      ? t("import.noGroups")
+                      : t("import.noGroupImportOnly")}
                   </option>
                   {groupOptions.map((name) => (
                     <option key={name} value={name}>
@@ -791,11 +806,11 @@ export function ImportContactsModal({
 
               <div className="space-y-2">
                 <div className="text-sm font-medium text-foreground">
-                  Aperçu
+                  {t("import.preview")}
                 </div>
                 {!hasPhoneColumn && (
                   <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                    Choisissez la colonne téléphone.
+                    {t("import.needPhone")}
                   </p>
                 )}
                 <div className="overflow-x-auto rounded-lg border border-border">
@@ -811,7 +826,7 @@ export function ImportContactsModal({
                             >
                               <div className="min-w-[170px] space-y-1.5">
                                 <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                  {h || `Colonne ${i + 1}`}
+                                  {h || t("import.columnN", { n: i + 1 })}
                                 </div>
                                 <select
                                   className={cn(
@@ -880,7 +895,7 @@ export function ImportContactsModal({
                                       <span className="min-w-0 flex-1 line-clamp-2 break-all">
                                         {display}
                                       </span>
-                                      <RowIssueTip label={issueReason!}>
+                                      <RowIssueTip label={t(issueReason!)}>
                                         <CircleAlert
                                           className="h-3.5 w-3.5 text-destructive"
                                           aria-hidden
@@ -920,19 +935,29 @@ export function ImportContactsModal({
                 <span>
                   {[
                     rowIssueStats.invalid > 0 &&
-                      `${rowIssueStats.invalid} contact${
-                        rowIssueStats.invalid > 1 ? "s" : ""
-                      } invalide${rowIssueStats.invalid > 1 ? "s" : ""}`,
+                      (rowIssueStats.invalid === 1
+                        ? t("import.stats.invalidOne", {
+                            n: rowIssueStats.invalid,
+                          })
+                        : t("import.stats.invalidMany", {
+                            n: rowIssueStats.invalid,
+                          })),
                     rowIssueStats.existing > 0 &&
-                      `${rowIssueStats.existing} contact${
-                        rowIssueStats.existing > 1 ? "s" : ""
-                      } déjà enregistré${
-                        rowIssueStats.existing > 1 ? "s" : ""
-                      }`,
+                      (rowIssueStats.existing === 1
+                        ? t("import.stats.existingOne", {
+                            n: rowIssueStats.existing,
+                          })
+                        : t("import.stats.existingMany", {
+                            n: rowIssueStats.existing,
+                          })),
                     rowIssueStats.fileDupes > 0 &&
-                      `${rowIssueStats.fileDupes} contact${
-                        rowIssueStats.fileDupes > 1 ? "s" : ""
-                      } en doublon dans le fichier`,
+                      (rowIssueStats.fileDupes === 1
+                        ? t("import.stats.fileDupeOne", {
+                            n: rowIssueStats.fileDupes,
+                          })
+                        : t("import.stats.fileDupeMany", {
+                            n: rowIssueStats.fileDupes,
+                          })),
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -948,7 +973,7 @@ export function ImportContactsModal({
               onClick={onClose}
               className="cursor-pointer"
             >
-              Annuler
+              {t("common.cancel")}
             </Button>
             <Button
               type="button"
@@ -960,8 +985,10 @@ export function ImportContactsModal({
               className="cursor-pointer"
             >
               {importing
-                ? "Import…"
-                : `Importer ${rowCount} ligne${rowCount > 1 ? "s" : ""}`}
+                ? t("import.busy")
+                : rowCount === 1
+                  ? t("import.submitOne", { n: rowCount })
+                  : t("import.submitMany", { n: rowCount })}
             </Button>
           </div>
         </DialogFooter>

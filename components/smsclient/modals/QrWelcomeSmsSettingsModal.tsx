@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n";
 import {
   normalizePrenomTokens,
   SMS_PRENOM_PREVIEW_SAMPLE,
@@ -39,6 +40,7 @@ export function QrWelcomeSmsSettingsModal({
   saving,
   onSave,
 }: QrWelcomeSmsSettingsModalProps) {
+  const { t } = useI18n();
   const [localTemplate, setLocalTemplate] = useState(template);
   const [prevSync, setPrevSync] = useState({ open, template });
 
@@ -99,9 +101,9 @@ export function QrWelcomeSmsSettingsModal({
               <MessageCircle className="h-4 w-4" aria-hidden />
             </span>
           }
-          title="SMS de bienvenue"
+          title={t("qr.mode.welcome.title")}
           titleClassName="font-black"
-          description="Personnalisez le message envoyé après l'inscription."
+          description={t("qr.modal.welcome.desc")}
           descriptionClassName="font-semibold"
         />
 
@@ -109,7 +111,7 @@ export function QrWelcomeSmsSettingsModal({
           <SmsMessageComposer
             value={localTemplate}
             onChange={setLocalTemplate}
-            placeholder="Bonjour prénom, merci pour votre inscription…"
+            placeholder={t("qr.modal.welcome.placeholder")}
             estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
           />
         </div>
@@ -123,7 +125,7 @@ export function QrWelcomeSmsSettingsModal({
             disabled={saving}
             onClick={handleClose}
           >
-            Annuler
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
@@ -133,7 +135,7 @@ export function QrWelcomeSmsSettingsModal({
             disabled={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("dialog.saving") : t("dialog.save")}
           </Button>
         </div>
       </DialogContent>
