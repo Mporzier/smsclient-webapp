@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
 import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
+import {
+  templateSortToOrders,
+  type ListSort,
+} from "@/lib/proto/listSort";
 
 export type UserSmsTemplateRecord = {
   id: string;
@@ -60,7 +64,13 @@ function escapeIlike(raw: string): string {
 export async function fetchUserSmsTemplatesPage(
   supabase: SupabaseClient,
   userId: string,
-  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+  args: {
+    offset: number;
+    limit?: number;
+    search?: string;
+    includeTotal?: boolean;
+    sort?: ListSort | null;
+  },
 ): Promise<{
   data: UserSmsTemplateRow[];
   hasMore: boolean;
@@ -75,10 +85,7 @@ export async function fetchUserSmsTemplatesPage(
   let query = supabase
     .from("user_sms_templates")
     .select("*", { count: includeTotal ? "exact" : undefined })
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq("user_id", userId);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -86,7 +93,17 @@ export async function fetchUserSmsTemplatesPage(
     query = query.or(`title.ilike.${p},description.ilike.${p},body.ilike.${p}`);
   }
 
-  const { data, error, count } = await query;
+  for (const o of templateSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data, error, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }

@@ -15,10 +15,13 @@ export type PageResult<T> = {
   error: Error | null;
 };
 
+export type ListSort = { id: string; desc: boolean };
+
 type FetchPageFn<T> = (args: {
   offset: number;
   limit: number;
   search: string;
+  sort: ListSort | null;
 }) => Promise<PageResult<T>>;
 
 type UseInfiniteListOptions<T> = {
@@ -27,6 +30,8 @@ type UseInfiniteListOptions<T> = {
   /** Debounce search ms */
   searchDebounceMs?: number;
   pageSize?: number;
+  /** Active server sort — change resets list like search. */
+  sort?: ListSort | null;
 };
 
 /**
@@ -38,6 +43,7 @@ export function useInfiniteList<T extends { id: string }>({
   fetchPage,
   searchDebounceMs = 300,
   pageSize = LIST_PAGE_SIZE,
+  sort = null,
 }: UseInfiniteListOptions<T>) {
   const [rows, setRows] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +60,10 @@ export function useInfiniteList<T extends { id: string }>({
   const inflightRef = useRef(0);
   const rowsLenRef = useRef(0);
   rowsLenRef.current = rows.length;
+
+  const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -79,7 +89,12 @@ export function useInfiniteList<T extends { id: string }>({
     setError(null);
 
     void fetchPageRef
-      .current({ offset: 0, limit: pageSize, search })
+      .current({
+        offset: 0,
+        limit: pageSize,
+        search,
+        sort: sortRef.current ?? null,
+      })
       .then((res) => {
         if (cancelled || reqId !== inflightRef.current) return;
         if (res.error) {
@@ -100,7 +115,7 @@ export function useInfiniteList<T extends { id: string }>({
     return () => {
       cancelled = true;
     };
-  }, [enabled, search, pageSize, reloadKey]);
+  }, [enabled, search, pageSize, reloadKey, sortKey]);
 
   const loadMore = useCallback(async () => {
     if (!enabled || loading || loadingMore || !hasMore) return;
@@ -111,6 +126,7 @@ export function useInfiniteList<T extends { id: string }>({
       offset,
       limit: pageSize,
       search,
+      sort: sortRef.current ?? null,
     });
     if (reqId !== inflightRef.current) {
       setLoadingMore(false);
@@ -133,7 +149,7 @@ export function useInfiniteList<T extends { id: string }>({
       }
     }
     setLoadingMore(false);
-  }, [enabled, loading, loadingMore, hasMore, pageSize, search]);
+  }, [enabled, loading, loadingMore, hasMore, pageSize, search, sortKey]);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -150,6 +166,7 @@ export function useInfiniteList<T extends { id: string }>({
       offset: 0,
       limit: pageSize,
       search,
+      sort: sortRef.current ?? null,
     });
     if (reqId !== inflightRef.current) return;
     if (res.error) {
@@ -164,7 +181,7 @@ export function useInfiniteList<T extends { id: string }>({
       }
     }
     if (!silent) setLoading(false);
-  }, [enabled, pageSize, search]);
+  }, [enabled, pageSize, search, sortKey]);
 
   const resetAndReload = useCallback(() => {
     setReloadKey((k) => k + 1);

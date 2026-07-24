@@ -141,11 +141,11 @@ export function RecipientListSkeleton({ rows = 6 }: { rows?: number }) {
       {Array.from({ length: rows }, (_, i) => (
         <div
           key={i}
-          className="flex animate-pulse items-center gap-3 px-3 py-2.5"
+          className="flex animate-pulse items-center gap-3 px-3 py-1.5"
         >
           <div className="h-4 w-4 shrink-0 rounded bg-muted" />
-          <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-7 w-7 shrink-0 rounded-full bg-muted" />
+          <div className="min-w-0 flex-1 space-y-1.5">
             <div className="h-3.5 w-2/5 max-w-[140px] rounded bg-muted" />
             <div className="h-3 w-3/5 max-w-[200px] rounded bg-muted/60" />
           </div>

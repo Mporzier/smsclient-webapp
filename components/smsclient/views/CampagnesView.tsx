@@ -23,10 +23,13 @@ import {
 } from "@/components/ui/input-group";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
-import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useMemo } from "react";
 import { Megaphone, MoreHorizontal, Search } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  OnChangeFn,
+  SortingState,
+} from "@tanstack/react-table";
 
 const STATUS_KEYS: Record<SmsCampaignStatus, MessageKey> = {
   sent: "campaigns.status.sent",
@@ -63,6 +66,8 @@ type CampagnesProps = {
   totalCount?: number | null;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
   error: string | null;
   onNewCampaign: () => void;
   onOpenDetails: (row: CampaignRowData) => void;
@@ -77,6 +82,8 @@ export function CampagnesView({
   totalCount = null,
   searchQuery,
   onSearchChange,
+  sorting,
+  onSortingChange,
   error,
   onOpenDetails,
 }: CampagnesProps) {
@@ -100,8 +107,6 @@ export function CampagnesView({
         accessorKey: "createdLabel",
         header: t("campaigns.col.date"),
         size: CAMPAIGN_COL.created,
-        sortingFn: (a, b) =>
-          compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
@@ -134,11 +139,7 @@ export function CampagnesView({
         accessorKey: "sendLabel",
         header: t("campaigns.col.send"),
         size: CAMPAIGN_COL.send,
-        sortingFn: (a, b) =>
-          compareIsoTimestamps(
-            a.original.sentAt ?? a.original.scheduledAt,
-            b.original.sentAt ?? b.original.scheduledAt,
-          ),
+        enableSorting: false,
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
@@ -242,6 +243,9 @@ export function CampagnesView({
           searchNoResultsMessage={t("campaigns.noSearchResults")}
           onRowClick={onOpenDetails}
           footer={footerLabel}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          manualSorting
         />
       )}
     </div>

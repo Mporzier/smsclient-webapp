@@ -41,19 +41,6 @@ export function usePrototypeData(route: AppRoute) {
     return [...new Set(groupsState.rows.map((g) => g.name))];
   }, [groupsState.rows]);
 
-  const groupModalContacts = useMemo(
-    () =>
-      contactsState.rows.map((c) => ({
-        id: c.id,
-        name: c.name,
-        firstName: c.firstName,
-        lastName: c.lastName,
-        phone: c.phone,
-        groups: c.groups,
-      })),
-    [contactsState.rows]
-  );
-
   const unsubscribedContacts = contactsState.unsubscribedContacts;
 
   return {
@@ -72,7 +59,6 @@ export function usePrototypeData(route: AppRoute) {
     qrWheelState,
     trashState,
     groupOptions,
-    groupModalContacts,
     unsubscribedContacts,
     statsDefaultFrom: mFrom,
     statsDefaultTo: mTo,

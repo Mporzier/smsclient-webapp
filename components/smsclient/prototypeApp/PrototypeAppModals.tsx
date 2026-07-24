@@ -11,6 +11,7 @@ import {
   GroupQuickCreateModal,
 } from "@/components/smsclient/PrototypeModals";
 import type { PrototypeAppContext } from "./usePrototypeApp";
+import { useGroupModalContacts } from "@/hooks/useGroupModalContacts";
 
 type Props = {
   ctx: PrototypeAppContext;
@@ -22,7 +23,6 @@ export function PrototypeAppModals({ ctx }: Props) {
     contactsState,
     customFieldsState,
     groupsState,
-    groupModalContacts,
     groupOptions,
     user,
     supabase,
@@ -34,22 +34,44 @@ export function PrototypeAppModals({ ctx }: Props) {
     confirmWizardLeave,
   } = wizard;
 
+  const groupModalOpen = modals.groupModalOpen || modals.groupEditOpen;
+  const editGroupId = modals.groupEditOpen ? modals.groupEditRow?.id : null;
+  const groupModalContacts = useGroupModalContacts(
+    groupModalOpen,
+    editGroupId,
+  );
+
   return (
     <>
       <GroupModal
         mode="create"
         open={modals.groupModalOpen}
         onClose={() => modals.setGroupModalOpen(false)}
-        contacts={groupModalContacts}
-        contactsLoading={contactsState.loading}
+        contacts={groupModalContacts.contacts}
+        contactsLoading={groupModalContacts.loading}
+        contactsLoadingMore={groupModalContacts.loadingMore}
+        contactsHasMore={groupModalContacts.hasMore}
+        onContactsLoadMore={groupModalContacts.loadMore}
+        contactsTotalCount={groupModalContacts.totalCount}
+        searchQuery={groupModalContacts.searchInput}
+        onSearchChange={groupModalContacts.setSearchInput}
         onCreated={actions.onGroupCreatedFromModal}
       />
       <GroupModal
         mode="edit"
         open={modals.groupEditOpen}
         group={modals.groupEditRow}
-        contacts={groupModalContacts}
-        contactsLoading={contactsState.loading}
+        contacts={groupModalContacts.contacts}
+        contactsLoading={groupModalContacts.loading}
+        contactsLoadingMore={groupModalContacts.loadingMore}
+        contactsHasMore={groupModalContacts.hasMore}
+        onContactsLoadMore={groupModalContacts.loadMore}
+        contactsTotalCount={groupModalContacts.totalCount}
+        searchQuery={groupModalContacts.searchInput}
+        onSearchChange={groupModalContacts.setSearchInput}
+        memberIds={groupModalContacts.memberIds}
+        memberCount={groupModalContacts.memberCount}
+        membersReady={groupModalContacts.membersReady}
         stackedDialogOpen={modals.confirmDeleteOpen}
         onClose={() => {
           modals.setGroupEditOpen(false);

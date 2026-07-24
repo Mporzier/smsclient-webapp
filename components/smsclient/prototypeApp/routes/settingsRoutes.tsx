@@ -99,6 +99,8 @@ export function renderSettingsRoute(
           purchasesLoadingMore={creditsState.loadingMorePurchases}
           purchasesHasMore={creditsState.hasMorePurchases}
           onLoadMorePurchases={creditsState.loadMorePurchases}
+          purchasesSorting={creditsState.sorting}
+          onPurchasesSortingChange={creditsState.setSorting}
           onInvoiceClick={(id: string) =>
             modals.showToast(`Téléchargement de la facture ${id} (prototype)`)
           }
@@ -166,6 +168,8 @@ export function renderDefaultRoute(ctx: PrototypeAppContext): ReactNode {
       totalCount={contactsState.totalCount}
       searchQuery={contactsState.searchInput}
       onSearchChange={contactsState.setSearchInput}
+      sorting={contactsState.sorting}
+      onSortingChange={contactsState.setSorting}
       error={contactsState.error}
       customFieldDefs={customFieldsState.defs}
       onImport={() => modals.setImportContactsOpen(true)}

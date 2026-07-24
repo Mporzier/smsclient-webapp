@@ -7,8 +7,13 @@ import { formatParisCalendarDate } from "@/lib/proto/timezone";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
 import {
+  contactSortToOrders,
+  type ContactListSort,
+} from "@/lib/proto/contactSort";
+import {
   POSTGREST_IN_CHUNK,
   POSTGREST_INSERT_CHUNK,
+  POSTGREST_PAGE,
   LIST_PAGE_SIZE,
   chunkList,
 } from "@/lib/supabase/postgrestChunk";
@@ -246,6 +251,7 @@ export type FetchClientsPageArgs = {
   search?: string;
   /** Compte exact (coûteux) — seulement offset 0 en pratique. */
   includeTotal?: boolean;
+  sort?: ContactListSort | null;
 };
 
 export async function fetchClientsPage(
@@ -265,10 +271,7 @@ export async function fetchClientsPage(
   let query = supabase
     .from("clients")
     .select(CLIENT_LIST_COLS, includeTotal ? { count: "exact" } : undefined)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .is("deleted_at", null);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -285,7 +288,17 @@ export async function fetchClientsPage(
     );
   }
 
-  const { data, error, count } = await query;
+  for (const o of contactSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data, error, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }
@@ -325,6 +338,216 @@ export async function fetchClientsPage(
     totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
   };
+}
+
+/** Résumé léger pour pickers (modale groupe) — pages lazy + search serveur. */
+export type ContactPickerSummary = {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  groups: string[];
+};
+
+function rowToPickerSummary(
+  raw: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    phone_e164: string;
+    group_label: string | null;
+  },
+  membershipGroups?: string[],
+): ContactPickerSummary {
+  const firstName = raw.first_name?.trim() ?? "";
+  const lastName = raw.last_name?.trim() ?? "";
+  const name =
+    [firstName, lastName].filter(Boolean).join(" ") || firstName || "—";
+  const label = raw.group_label?.trim() ?? "";
+  const groups =
+    membershipGroups && membershipGroups.length > 0
+      ? normalizeGroupLabels(membershipGroups)
+      : label && label !== "Non classé"
+        ? normalizeGroupLabels(label.split(",").map((x) => x.trim()))
+        : [];
+  return {
+    id: raw.id,
+    name,
+    firstName,
+    lastName,
+    phone: e164ToFrDisplay(raw.phone_e164),
+    groups,
+  };
+}
+
+export async function fetchContactPickerSummariesPage(
+  supabase: SupabaseClient,
+  args: {
+    offset: number;
+    limit?: number;
+    search?: string;
+    includeTotal?: boolean;
+  },
+): Promise<{
+  data: ContactPickerSummary[];
+  hasMore: boolean;
+  totalCount?: number;
+  error: Error | null;
+}> {
+  const limit = args.limit ?? LIST_PAGE_SIZE;
+  const offset = Math.max(0, args.offset);
+  const q = (args.search ?? "").trim();
+  const includeTotal = args.includeTotal ?? offset === 0;
+
+  let query = supabase
+    .from("clients")
+    .select("id,first_name,last_name,phone_e164,group_label", {
+      count: includeTotal ? "exact" : undefined,
+    })
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (q) {
+    const safe = escapeIlike(q);
+    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+    query = query.or(
+      [
+        `first_name.ilike.${p}`,
+        `last_name.ilike.${p}`,
+        `phone_e164.ilike.${p}`,
+        `group_label.ilike.${p}`,
+      ].join(","),
+    );
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    return { data: [], hasMore: false, error: new Error(error.message) };
+  }
+  const page = (data ?? []) as Parameters<typeof rowToPickerSummary>[0][];
+  const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
+    supabase,
+    page.map((r) => r.id),
+  );
+  if (memErr) {
+    return { data: [], hasMore: false, error: memErr };
+  }
+  return {
+    data: page.map((r) => rowToPickerSummary(r, memMap.get(r.id))),
+    hasMore: page.length === limit,
+    totalCount: includeTotal && typeof count === "number" ? count : undefined,
+    error: null,
+  };
+}
+
+/** IDs membres d’un groupe (pour sélection edit, indépendant du lazyload). */
+export async function fetchGroupMemberClientIds(
+  supabase: SupabaseClient,
+  groupId: string,
+): Promise<{ data: string[]; error: Error | null }> {
+  const ids: string[] = [];
+  for (let from = 0; ; from += POSTGREST_PAGE) {
+    const { data, error } = await supabase
+      .from("client_group_members")
+      .select("client_id")
+      .eq("group_id", groupId)
+      .order("client_id", { ascending: true })
+      .range(from, from + POSTGREST_PAGE - 1);
+    if (error) {
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = data ?? [];
+    for (const row of page) {
+      const id = (row as { client_id: string }).client_id;
+      if (id) ids.push(id);
+    }
+    if (page.length < POSTGREST_PAGE) break;
+  }
+  return { data: ids, error: null };
+}
+
+/** Contacts complets par IDs (wizard campagne — indépendant du lazyload liste). */
+export async function fetchClientsByIds(
+  supabase: SupabaseClient,
+  clientIds: string[],
+): Promise<{ data: ContactRowData[]; error: Error | null }> {
+  if (clientIds.length === 0) return { data: [], error: null };
+  const out: ContactRowData[] = [];
+  for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select(CLIENT_LIST_COLS)
+      .in("id", chunk)
+      .is("deleted_at", null);
+    if (error) {
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = (data ?? []) as ClientRecord[];
+    const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
+      supabase,
+      page.map((r) => r.id),
+    );
+    if (memErr) {
+      return { data: [], error: memErr };
+    }
+    for (const raw of page) {
+      out.push(clientRecordToRow(raw, memMap.get(raw.id) ?? []));
+    }
+  }
+  return { data: out, error: null };
+}
+
+export async function fetchContactPickerSummariesByIds(
+  supabase: SupabaseClient,
+  clientIds: string[],
+): Promise<{ data: ContactPickerSummary[]; error: Error | null }> {
+  if (clientIds.length === 0) return { data: [], error: null };
+  const out: ContactPickerSummary[] = [];
+  for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id,first_name,last_name,phone_e164,group_label")
+      .in("id", chunk)
+      .is("deleted_at", null);
+    if (error) {
+      return { data: [], error: new Error(error.message) };
+    }
+    const rows = (data ?? []) as Parameters<typeof rowToPickerSummary>[0][];
+    const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
+      supabase,
+      rows.map((r) => r.id),
+    );
+    if (memErr) {
+      return { data: [], error: memErr };
+    }
+    for (const raw of rows) {
+      out.push(rowToPickerSummary(raw, memMap.get(raw.id)));
+    }
+  }
+  return { data: out, error: null };
+}
+
+/** @deprecated Préférer `fetchContactPickerSummariesPage`. */
+export async function fetchAllContactPickerSummaries(
+  supabase: SupabaseClient,
+): Promise<{ data: ContactPickerSummary[]; error: Error | null }> {
+  const all: ContactPickerSummary[] = [];
+  for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+    const { data, hasMore, error } = await fetchContactPickerSummariesPage(
+      supabase,
+      { offset, limit: LIST_PAGE_SIZE, search: "", includeTotal: false },
+    );
+    if (error) {
+      if (all.length > 0) break;
+      return { data: [], error };
+    }
+    all.push(...data);
+    if (!hasMore) break;
+  }
+  return { data: all, error: null };
 }
 
 /** Contacts non éligibles campagne (STOP / pas opt-in) — query dédiée lazy-safe. */

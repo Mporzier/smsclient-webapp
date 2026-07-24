@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  OnChangeFn,
+  SortingState,
+} from "@tanstack/react-table";
 import { useMemo } from "react";
 
 export function InvoicesTable({
@@ -16,6 +20,8 @@ export function InvoicesTable({
   hasMore = false,
   onLoadMore,
   onInvoiceClick,
+  sorting,
+  onSortingChange,
 }: {
   purchases: CreditPurchaseRowData[];
   loading: boolean;
@@ -23,6 +29,8 @@ export function InvoicesTable({
   hasMore?: boolean;
   onLoadMore?: () => void;
   onInvoiceClick?: (id: string) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
 }) {
   const { t } = useI18n();
 
@@ -100,6 +108,9 @@ export function InvoicesTable({
       emptyMessage={t("invoices.empty")}
       loadingMessage={t("invoices.loading")}
       footer={footer}
+      sorting={sorting}
+      onSortingChange={onSortingChange}
+      manualSorting
     />
   );
 }

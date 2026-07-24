@@ -64,6 +64,8 @@ export function buildCampaignRecipientIdSet(args: {
   selectedContactIds: string[];
   selectedGroupNames: string[];
   excludedContactIds?: string[];
+  /** Membres groupes résolus serveur (mode lists) — pas le scan lazy page. */
+  resolvedGroupMemberIds?: readonly string[];
 }): Set<string> {
   const {
     contacts,
@@ -71,6 +73,7 @@ export function buildCampaignRecipientIdSet(args: {
     selectedContactIds,
     selectedGroupNames,
     excludedContactIds = [],
+    resolvedGroupMemberIds,
   } = args;
 
   const ids = new Set<string>();
@@ -81,7 +84,9 @@ export function buildCampaignRecipientIdSet(args: {
     for (const id of selectedContactIds) ids.add(id);
   } else if (recipientMode === "lists") {
     for (const id of selectedContactIds) ids.add(id);
-    if (selectedGroupNames.length > 0) {
+    if (resolvedGroupMemberIds) {
+      for (const id of resolvedGroupMemberIds) ids.add(id);
+    } else if (selectedGroupNames.length > 0) {
       const wanted = new Set(
         selectedGroupNames.map((x) => x.trim().toLowerCase()),
       );
@@ -103,6 +108,7 @@ export function resolveEligibleCampaignRecipients(args: {
   selectedContactIds: string[];
   selectedGroupNames: string[];
   excludedContactIds?: string[];
+  resolvedGroupMemberIds?: readonly string[];
 }): ContactRowData[] {
   const { contacts, recipientMode } = args;
 

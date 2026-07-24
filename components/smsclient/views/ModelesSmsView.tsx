@@ -24,7 +24,11 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LayoutTemplate, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  OnChangeFn,
+  SortingState,
+} from "@tanstack/react-table";
 
 type ModelesSmsViewProps = {
   rows: UserSmsTemplateRow[];
@@ -35,6 +39,8 @@ type ModelesSmsViewProps = {
   totalCount?: number | null;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
   error: string | null;
   supabase: SupabaseClient;
   userId: string | undefined;
@@ -51,6 +57,8 @@ export function ModelesSmsView({
   totalCount = null,
   searchQuery,
   onSearchChange,
+  sorting,
+  onSortingChange,
   error,
   supabase,
   userId,
@@ -363,6 +371,9 @@ export function ModelesSmsView({
             searchNoResultsMessage={t("templates.noSearchResults")}
             footer={footerLabel}
             clipHorizontalOverflow
+            sorting={sorting}
+            onSortingChange={onSortingChange}
+            manualSorting
           />
         )}
       </div>

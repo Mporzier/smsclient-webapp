@@ -15,6 +15,8 @@ import { Users, Search, Contact, FolderOpen } from "lucide-react";
 import {
   createContext,
   useContext,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -59,7 +61,6 @@ export function CampaignWizardStep1Main() {
     setTab,
     search,
     setSearch,
-    groups,
     groupsLoading,
     contactsLoading,
     recipientExcludedStop,
@@ -75,13 +76,60 @@ export function CampaignWizardStep1Main() {
     handleClearSelection,
     recipientMode,
     selectedGroupNames,
+    listHasMore,
+    listLoadingMore,
+    onListLoadMore,
+    listRowCount,
   } = useStep1Context();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const onListLoadMoreRef = useRef(onListLoadMore);
+  onListLoadMoreRef.current = onListLoadMore;
+
+  useEffect(() => {
+    const listLoading = tab === "manual" ? contactsLoading : groupsLoading;
+    if (!onListLoadMore || !listHasMore || listLoading || listLoadingMore) {
+      return;
+    }
+    const root = scrollRef.current;
+    const target = sentinelRef.current;
+    if (!root || !target) return;
+
+    const maybeLoad = () => {
+      const rootRect = root.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      if (targetRect.top <= rootRect.bottom + 120) {
+        onListLoadMoreRef.current?.();
+      }
+    };
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          onListLoadMoreRef.current?.();
+        }
+      },
+      { root, rootMargin: "120px", threshold: 0 },
+    );
+    obs.observe(target);
+    maybeLoad();
+    return () => obs.disconnect();
+  }, [
+    onListLoadMore,
+    listHasMore,
+    listRowCount,
+    contactsLoading,
+    groupsLoading,
+    listLoadingMore,
+    tab,
+  ]);
 
   return (
     <div
       className={cn(
         fieldBox,
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3"
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3 shadow-none"
       )}
     >
       <div className="shrink-0">
@@ -104,10 +152,7 @@ export function CampaignWizardStep1Main() {
             type="button"
             role="tab"
             aria-selected={tab === id}
-            onClick={() => {
-              setTab(id);
-              setSearch("");
-            }}
+            onClick={() => setTab(id)}
             className={cn(
               "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-extrabold transition-colors",
               tab === id
@@ -163,16 +208,22 @@ export function CampaignWizardStep1Main() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-auto rounded-xl border border-border"
+      >
         {tab === "manual" ? (
           contactsLoading ? (
             <RecipientListSkeleton />
           ) : filteredContacts.length === 0 ? (
             <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
-              Aucun contact trouvé.
+              {search.trim()
+                ? "Aucun contact trouvé."
+                : "Aucun contact."}
             </p>
           ) : (
-            filteredContacts.map((c) => {
+            <>
+              {filteredContacts.map((c) => {
               const isUnsubscribed = c.stopSms || !c.optIn;
               const checked = isContactChecked(c);
               const av = avatarColor(c.id);
@@ -181,7 +232,7 @@ export function CampaignWizardStep1Main() {
                 <label
                   key={c.id}
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-2.5 last:border-b-0",
+                    "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-1.5 last:border-b-0",
                     isUnsubscribed
                       ? "cursor-not-allowed bg-muted/50 opacity-70"
                       : checked
@@ -197,7 +248,7 @@ export function CampaignWizardStep1Main() {
                   />
                   <div
                     className={cn(
-                      "grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-extrabold",
+                      "grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-medium",
                       av.bg,
                       av.text
                     )}
@@ -207,18 +258,18 @@ export function CampaignWizardStep1Main() {
                   <span className="min-w-0 flex-1">
                     <span
                       className={cn(
-                        "block truncate text-sm font-extrabold",
+                        "block truncate text-sm font-normal",
                         isUnsubscribed ? "text-muted-foreground" : "text-foreground"
                       )}
                     >
                       {contactDisplayName(c)}
                     </span>
-                    <span className="block truncate text-xs font-semibold text-muted-foreground">
+                    <span className="block truncate text-xs font-normal text-muted-foreground">
                       {c.phone}
                       {isUnsubscribed ? (
                         <>
                           {" · "}
-                          <span className="font-bold text-rose-600">
+                          <span className="font-medium text-rose-600">
                             désabonné
                           </span>
                         </>
@@ -256,25 +307,36 @@ export function CampaignWizardStep1Main() {
                   </div>
                 </label>
               );
-            })
+            })}
+              {onListLoadMore && listHasMore ? (
+                <div
+                  ref={sentinelRef}
+                  className="flex h-10 items-center justify-center text-xs text-muted-foreground"
+                  aria-hidden
+                >
+                  {listLoadingMore ? "Chargement…" : null}
+                </div>
+              ) : null}
+            </>
           )
         ) : groupsLoading ? (
           <RecipientListSkeleton />
         ) : filteredGroups.length === 0 ? (
           <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
-            {groups.length === 0
-              ? "Aucun groupe créé."
-              : "Aucun groupe trouvé."}
+            {search.trim()
+              ? "Aucun groupe trouvé."
+              : "Aucun groupe créé."}
           </p>
         ) : (
-          filteredGroups.map((g) => {
+          <>
+            {filteredGroups.map((g) => {
             const checked = selectedGroupNames.includes(g.name);
             const gc = groupColor(g.name);
             return (
               <label
                 key={g.id}
                 className={cn(
-                  "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-2.5 last:border-b-0",
+                  "flex cursor-pointer items-center gap-3 border-b border-border/50 px-3 py-1.5 last:border-b-0",
                   checked ? "bg-accent/80" : "bg-card hover:bg-muted/50"
                 )}
               >
@@ -285,19 +347,19 @@ export function CampaignWizardStep1Main() {
                 />
                 <div
                   className={cn(
-                    "grid h-9 w-9 shrink-0 place-items-center rounded-full border text-xs font-extrabold",
+                    "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium",
                     gc.bg,
                     gc.border,
                     gc.text
                   )}
                 >
-                  <Users className="h-4 w-4" aria-hidden />
+                  <Users className="h-3.5 w-3.5" aria-hidden />
                 </div>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-extrabold text-foreground">
+                  <span className="block truncate text-sm font-normal text-foreground">
                     {g.name}
                   </span>
-                  <span className="block truncate text-xs font-semibold text-muted-foreground">
+                  <span className="block truncate text-xs font-normal text-muted-foreground">
                     {g.contactCount} contact
                     {g.contactCount !== 1 ? "s" : ""}
                     {g.description.trim() ? ` · ${g.description.trim()}` : ""}
@@ -305,7 +367,17 @@ export function CampaignWizardStep1Main() {
                 </span>
               </label>
             );
-          })
+          })}
+            {onListLoadMore && listHasMore ? (
+              <div
+                ref={sentinelRef}
+                className="flex h-10 items-center justify-center text-xs text-muted-foreground"
+                aria-hidden
+              >
+                {listLoadingMore ? "Chargement…" : null}
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 
@@ -331,13 +403,14 @@ export function CampaignWizardStep1Summary() {
     contactsSelectedCount,
     selectedGroupsDisplay,
     excludedTotal,
+    recipientsResolving,
   } = useStep1Context();
 
   return (
     <aside
       className={cn(
         fieldBox,
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3"
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3 shadow-none"
       )}
     >
       <h3 className="m-0 shrink-0 text-xs font-black text-foreground">Résumé</h3>
@@ -388,6 +461,12 @@ export function CampaignWizardStep1Summary() {
           Tous vos contacts éligibles sont inclus.
         </p>
       )}
+
+      {recipientsResolving ? (
+        <p className="m-0 shrink-0 text-[11px] font-semibold text-muted-foreground">
+          Calcul des destinataires…
+        </p>
+      ) : null}
 
       <div className="mt-auto shrink-0 pt-1">
         <SummaryStatBubble

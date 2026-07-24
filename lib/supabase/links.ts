@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildShortUrl } from "@/lib/proto/shortLinks";
 import type { LinkRowData } from "@/lib/types/link";
 import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
+import {
+  linkSortToOrders,
+  type ListSort,
+} from "@/lib/proto/listSort";
 
 export type SmsCampaignLinkRecord = {
   id: string;
@@ -75,7 +79,13 @@ function escapeIlike(raw: string): string {
 export async function fetchSmsLinksPage(
   supabase: SupabaseClient,
   userId: string,
-  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+  args: {
+    offset: number;
+    limit?: number;
+    search?: string;
+    includeTotal?: boolean;
+    sort?: ListSort | null;
+  },
 ): Promise<{
   data: LinkRowData[];
   hasMore: boolean;
@@ -90,10 +100,7 @@ export async function fetchSmsLinksPage(
   let query = supabase
     .from("sms_campaign_links")
     .select("*", { count: includeTotal ? "exact" : undefined })
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq("user_id", userId);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -103,7 +110,17 @@ export async function fetchSmsLinksPage(
     );
   }
 
-  const { data, error, count } = await query;
+  for (const o of linkSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data, error, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }

@@ -18,10 +18,13 @@ import {
 } from "@/components/ui/input-group";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { GroupRowData } from "@/lib/types/group";
-import { compareIsoTimestamps } from "@/lib/proto/compareIso";
 import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  OnChangeFn,
+  SortingState,
+} from "@tanstack/react-table";
 
 type TFn = (
   key: MessageKey,
@@ -55,11 +58,6 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
       accessorKey: "lastCampaignLabel",
       header: t("groups.col.lastCampaign"),
       size: GROUP_COL.lastCampaign,
-      sortingFn: (a, b) =>
-        compareIsoTimestamps(
-          a.original.lastCampaignAt,
-          b.original.lastCampaignAt,
-        ),
       cell: ({ getValue }) => (
         <CellTruncate as="div">{getValue<string>()}</CellTruncate>
       ),
@@ -68,8 +66,6 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
       accessorKey: "createdLabel",
       header: t("groups.col.created"),
       size: GROUP_COL.created,
-      sortingFn: (a, b) =>
-        compareIsoTimestamps(a.original.createdAt, b.original.createdAt),
       cell: ({ getValue }) => (
         <CellTruncate as="div">{getValue<string>()}</CellTruncate>
       ),
@@ -86,6 +82,8 @@ type GroupesProps = {
   totalCount?: number | null;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
   error: string | null;
   onCreateGroup: () => void;
   onEditGroup: (row: GroupRowData) => void;
@@ -102,6 +100,8 @@ export function GroupesView({
   totalCount = null,
   searchQuery,
   onSearchChange,
+  sorting,
+  onSortingChange,
   error,
   onCreateGroup,
   onEditGroup,
@@ -325,6 +325,9 @@ export function GroupesView({
           searchNoResultsMessage={t("groups.noSearchResults")}
           onRowClick={onEditGroup}
           footer={footerLabel}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          manualSorting
         />
       )}
     </div>

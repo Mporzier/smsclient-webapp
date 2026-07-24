@@ -106,8 +106,18 @@ export function CampaignWizard({
   setScheduleAt,
   groups,
   groupsLoading,
+  groupsLoadingMore = false,
+  groupsHasMore = false,
+  onGroupsLoadMore,
+  groupsSearchQuery = "",
+  onGroupsSearchChange,
   contacts,
   contactsLoading,
+  contactsLoadingMore = false,
+  contactsHasMore = false,
+  onContactsLoadMore,
+  contactsSearchQuery = "",
+  onContactsSearchChange,
   recipientMode,
   setRecipientMode,
   selectedGroupNames,
@@ -119,6 +129,10 @@ export function CampaignWizard({
   recipientExcludedStop,
   recipientExcludedInvalid,
   recipientCount,
+  resolvedGroupMemberIds = [],
+  groupMemberIdsByName = {},
+  resolvedContacts = [],
+  recipientsResolving = false,
   creditsAvailable,
   onConfirmCampaign,
 }: CampaignWizardProps) {
@@ -191,18 +205,20 @@ export function CampaignWizard({
   const eligibleRecipients = useMemo(
     () =>
       resolveEligibleCampaignRecipients({
-        contacts,
+        contacts: resolvedContacts,
         recipientMode,
         selectedContactIds,
         selectedGroupNames,
         excludedContactIds,
+        resolvedGroupMemberIds,
       }),
     [
-      contacts,
+      resolvedContacts,
       recipientMode,
       selectedContactIds,
       selectedGroupNames,
       excludedContactIds,
+      resolvedGroupMemberIds,
     ]
   );
 
@@ -618,8 +634,18 @@ export function CampaignWizard({
   const step1Props = {
     groups,
     groupsLoading,
+    groupsLoadingMore,
+    groupsHasMore,
+    onGroupsLoadMore,
+    groupsSearchQuery,
+    onGroupsSearchChange,
     contacts,
     contactsLoading,
+    contactsLoadingMore,
+    contactsHasMore,
+    onContactsLoadMore,
+    contactsSearchQuery,
+    onContactsSearchChange,
     recipientMode,
     setRecipientMode,
     selectedGroupNames,
@@ -631,6 +657,9 @@ export function CampaignWizard({
     recipientExcludedStop,
     recipientExcludedInvalid,
     recipientCount,
+    resolvedGroupMemberIds,
+    groupMemberIdsByName,
+    recipientsResolving,
   };
 
   const wizardActions = (
@@ -686,7 +715,7 @@ export function CampaignWizard({
   );
 
   const campaignNameField = (
-    <div className={cn(fieldBox, "shrink-0 py-2.5")}>
+    <div className={cn(fieldBox, "shrink-0 py-2.5 shadow-none")}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="text-[13px] font-black text-slate-900">

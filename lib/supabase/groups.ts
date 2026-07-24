@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GroupRowData } from "@/lib/types/group";
 import {
+  groupSortToOrders,
+  type ListSort,
+} from "@/lib/proto/listSort";
+import {
   LIST_PAGE_SIZE,
   POSTGREST_IN_CHUNK,
-  POSTGREST_PAGE,
   chunkList,
 } from "@/lib/supabase/postgrestChunk";
 
@@ -14,6 +17,7 @@ export type ClientGroupRecord = {
   description: string;
   last_campaign_at: string | null;
   created_at: string;
+  member_count: number;
 };
 
 function formatDateFr(iso: string): string {
@@ -55,37 +59,6 @@ function escapeIlike(raw: string): string {
   return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-async function countMembersForGroups(
-  supabase: SupabaseClient,
-  groupIds: string[],
-): Promise<{ counts: Map<string, number>; error: Error | null }> {
-  const counts = new Map<string, number>();
-  if (groupIds.length === 0) return { counts, error: null };
-
-  for (const idChunk of chunkList(groupIds, POSTGREST_IN_CHUNK)) {
-    for (let from = 0; ; from += POSTGREST_PAGE) {
-      const { data: members, error: mErr } = await supabase
-        .from("client_group_members")
-        .select("group_id")
-        .in("group_id", idChunk)
-        .order("group_id", { ascending: true })
-        .order("client_id", { ascending: true })
-        .range(from, from + POSTGREST_PAGE - 1);
-
-      if (mErr) {
-        return { counts, error: new Error(mErr.message) };
-      }
-      const page = members ?? [];
-      for (const row of page) {
-        const gid = (row as { group_id: string }).group_id;
-        counts.set(gid, (counts.get(gid) ?? 0) + 1);
-      }
-      if (page.length < POSTGREST_PAGE) break;
-    }
-  }
-  return { counts, error: null };
-}
-
 export async function fetchGroupsPage(
   supabase: SupabaseClient,
   userId: string,
@@ -94,6 +67,7 @@ export async function fetchGroupsPage(
     limit?: number;
     search?: string;
     includeTotal?: boolean;
+    sort?: ListSort | null;
   },
 ): Promise<{
   data: GroupRowData[];
@@ -108,14 +82,11 @@ export async function fetchGroupsPage(
 
   let query = supabase
     .from("client_groups")
-    .select("id,name,description,last_campaign_at,created_at", {
+    .select("id,name,description,last_campaign_at,created_at,member_count", {
       count: includeTotal ? "exact" : undefined,
     })
     .eq("user_id", userId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true })
-    .range(offset, offset + limit - 1);
+    .is("deleted_at", null);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -123,29 +94,36 @@ export async function fetchGroupsPage(
     query = query.or(`name.ilike.${p},description.ilike.${p}`);
   }
 
-  const { data: groups, error: gErr, count } = await query;
+  for (const o of groupSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data: groups, error: gErr, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (gErr) {
     return { data: [], hasMore: false, error: new Error(gErr.message) };
   }
 
   const list = (groups ?? []) as Pick<
     ClientGroupRecord,
-    "id" | "name" | "description" | "last_campaign_at" | "created_at"
+    | "id"
+    | "name"
+    | "description"
+    | "last_campaign_at"
+    | "created_at"
+    | "member_count"
   >[];
-
-  const { counts, error: cErr } = await countMembersForGroups(
-    supabase,
-    list.map((g) => g.id),
-  );
-  if (cErr) {
-    return { data: [], hasMore: false, error: cErr };
-  }
 
   const rows: GroupRowData[] = list.map((g) => ({
     id: g.id,
     name: g.name,
     description: g.description?.trim() ?? "",
-    contactCount: counts.get(g.id) ?? 0,
+    contactCount: g.member_count ?? 0,
     lastCampaignLabel: g.last_campaign_at
       ? formatDateFr(g.last_campaign_at)
       : "—",

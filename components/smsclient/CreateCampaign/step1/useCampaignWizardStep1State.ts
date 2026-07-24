@@ -5,9 +5,6 @@ import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
 import {
-  contactBelongsToGroup,
-  contactMatchesSearch,
-  groupMatchesSearch,
   normalizeGroupName,
   selectedGroupsForContact,
 } from "./step1Helpers";
@@ -15,8 +12,18 @@ import {
 export type CampaignWizardStep1Props = {
   groups: GroupRowData[];
   groupsLoading: boolean;
+  groupsLoadingMore?: boolean;
+  groupsHasMore?: boolean;
+  onGroupsLoadMore?: () => void;
+  groupsSearchQuery?: string;
+  onGroupsSearchChange?: (value: string) => void;
   contacts: ContactRowData[];
   contactsLoading: boolean;
+  contactsLoadingMore?: boolean;
+  contactsHasMore?: boolean;
+  onContactsLoadMore?: () => void;
+  contactsSearchQuery?: string;
+  onContactsSearchChange?: (value: string) => void;
   recipientMode: "manual" | "lists" | "all" | "numbers";
   setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
   selectedGroupNames: string[];
@@ -28,6 +35,9 @@ export type CampaignWizardStep1Props = {
   recipientExcludedStop: number;
   recipientExcludedInvalid: number;
   recipientCount: number;
+  resolvedGroupMemberIds?: readonly string[];
+  groupMemberIdsByName?: Record<string, string[]>;
+  recipientsResolving?: boolean;
 };
 
 type RecipientTab = "manual" | "groups";
@@ -35,8 +45,18 @@ type RecipientTab = "manual" | "groups";
 export function useCampaignWizardStep1State({
   groups,
   groupsLoading,
+  groupsLoadingMore = false,
+  groupsHasMore = false,
+  onGroupsLoadMore,
+  groupsSearchQuery = "",
+  onGroupsSearchChange,
   contacts,
   contactsLoading,
+  contactsLoadingMore = false,
+  contactsHasMore = false,
+  onContactsLoadMore,
+  contactsSearchQuery = "",
+  onContactsSearchChange,
   recipientMode,
   setRecipientMode,
   selectedGroupNames,
@@ -48,45 +68,49 @@ export function useCampaignWizardStep1State({
   recipientExcludedStop,
   recipientExcludedInvalid,
   recipientCount,
+  resolvedGroupMemberIds = [],
+  groupMemberIdsByName = {},
+  recipientsResolving = false,
 }: CampaignWizardStep1Props) {
   const [tab, setTab] = useState<RecipientTab>("manual");
-  const [search, setSearch] = useState("");
 
   const recipients = Math.max(0, recipientCount);
 
-  const selectedIdsFromGroups = useMemo(() => {
-    if (selectedGroupNames.length === 0) return new Set<string>();
-    const wanted = selectedGroupNames.map((x) => x.trim().toLowerCase());
-    const ids = new Set<string>();
-    for (const c of contacts) {
-      if (c.groups.some((g) => wanted.includes(g.trim().toLowerCase()))) {
-        ids.add(c.id);
-      }
-    }
-    return ids;
-  }, [contacts, selectedGroupNames]);
+  const search = tab === "manual" ? contactsSearchQuery : groupsSearchQuery;
+  const setSearch = useCallback(
+    (value: string) => {
+      if (tab === "manual") onContactsSearchChange?.(value);
+      else onGroupsSearchChange?.(value);
+    },
+    [tab, onContactsSearchChange, onGroupsSearchChange],
+  );
 
+  const switchTab = useCallback(
+    (next: RecipientTab) => {
+      setTab(next);
+      onContactsSearchChange?.("");
+      onGroupsSearchChange?.("");
+    },
+    [onContactsSearchChange, onGroupsSearchChange],
+  );
+
+  const selectedIdsFromGroups = useMemo(
+    () => new Set(resolvedGroupMemberIds),
+    [resolvedGroupMemberIds]
+  );
+
+  /** Serveur filtre déjà via search — ici seulement tri abo / désabo. */
   const filteredContacts = useMemo(() => {
-    const base = !search.trim()
-      ? contacts
-      : contacts.filter((c) => contactMatchesSearch(c, search));
-
-    const subscribed: typeof base = [];
-    const unsubscribed: typeof base = [];
-    for (const c of base) {
+    const subscribed: ContactRowData[] = [];
+    const unsubscribed: ContactRowData[] = [];
+    for (const c of contacts) {
       if (c.stopSms || !c.optIn) unsubscribed.push(c);
       else subscribed.push(c);
     }
     return [...subscribed, ...unsubscribed];
-  }, [contacts, search]);
+  }, [contacts]);
 
-  const filteredGroups = useMemo(
-    () =>
-      !search.trim()
-        ? groups
-        : groups.filter((g) => groupMatchesSearch(g, search)),
-    [groups, search]
-  );
+  const filteredGroups = groups;
 
   const selectableFilteredContacts = useMemo(
     () => filteredContacts.filter((c) => !c.stopSms && c.optIn),
@@ -101,6 +125,7 @@ export function useCampaignWizardStep1State({
         selectedContactIds,
         selectedGroupNames,
         excludedContactIds,
+        resolvedGroupMemberIds,
       }),
     [
       contacts,
@@ -108,6 +133,7 @@ export function useCampaignWizardStep1State({
       selectedContactIds,
       selectedGroupNames,
       excludedContactIds,
+      resolvedGroupMemberIds,
     ]
   );
 
@@ -124,11 +150,7 @@ export function useCampaignWizardStep1State({
     if (recipientMode === "all") {
       return contacts.filter((c) => c.optIn && !c.stopSms).length;
     }
-    let count = 0;
-    for (const c of contacts) {
-      if (c.optIn && !c.stopSms && effectiveSelectedIds.has(c.id)) count++;
-    }
-    return count;
+    return effectiveSelectedIds.size;
   }, [recipientMode, contacts, effectiveSelectedIds]);
 
   const selectedGroupsDisplay = useMemo(
@@ -166,7 +188,9 @@ export function useCampaignWizardStep1State({
           const contact = contacts.find((c) => c.id === id);
           const affectedGroups = contact
             ? selectedGroupsForContact(contact, selectedGroupNames)
-            : [];
+            : selectedGroupNames.filter((gName) =>
+                (groupMemberIdsByName[gName] ?? []).includes(id)
+              );
           const affectedSet = new Set(
             affectedGroups.map((g) => normalizeGroupName(g))
           );
@@ -178,13 +202,12 @@ export function useCampaignWizardStep1State({
           setSelectedContactIds((prev) => {
             const next = new Set(prev);
             for (const gName of affectedGroups) {
-              for (const c of contacts) {
+              for (const memberId of groupMemberIdsByName[gName] ?? []) {
                 if (
-                  c.id !== id &&
-                  contactBelongsToGroup(c, gName) &&
-                  !excludedContactIds.includes(c.id)
+                  memberId !== id &&
+                  !excludedContactIds.includes(memberId)
                 ) {
-                  next.add(c.id);
+                  next.add(memberId);
                 }
               }
             }
@@ -192,14 +215,14 @@ export function useCampaignWizardStep1State({
             return Array.from(next);
           });
           setExcludedContactIds((prev) =>
-            prev.filter(
-              (excludedId) =>
-                !contacts.some(
-                  (c) =>
-                    c.id === excludedId &&
-                    c.groups.some((g) => affectedSet.has(normalizeGroupName(g)))
-                )
-            )
+            prev.filter((excludedId) => {
+              for (const gName of affectedGroups) {
+                if ((groupMemberIdsByName[gName] ?? []).includes(excludedId)) {
+                  return false;
+                }
+              }
+              return true;
+            })
           );
           setRecipientMode(nextGroupNames.length > 0 ? "lists" : "manual");
           return;
@@ -222,6 +245,7 @@ export function useCampaignWizardStep1State({
       selectedIdsFromGroups,
       effectiveSelectedIds,
       excludedContactIds,
+      groupMemberIdsByName,
       setRecipientMode,
       setSelectedContactIds,
       setSelectedGroupNames,
@@ -238,15 +262,22 @@ export function useCampaignWizardStep1State({
       setSelectedGroupNames(nextGroups);
 
       if (isAdding) {
-        const wanted = groupName.trim().toLowerCase();
-        const memberIds = contacts
-          .filter((c) =>
-            c.groups.some((g) => g.trim().toLowerCase() === wanted)
-          )
-          .map((c) => c.id);
-        setExcludedContactIds((prev) =>
-          prev.filter((id) => !memberIds.includes(id))
-        );
+        const cached = groupMemberIdsByName[groupName];
+        const memberIds =
+          cached ??
+          contacts
+            .filter((c) =>
+              c.groups.some(
+                (g) =>
+                  g.trim().toLowerCase() === groupName.trim().toLowerCase()
+              )
+            )
+            .map((c) => c.id);
+        if (memberIds.length > 0) {
+          setExcludedContactIds((prev) =>
+            prev.filter((id) => !memberIds.includes(id))
+          );
+        }
       }
 
       setRecipientMode(
@@ -259,6 +290,7 @@ export function useCampaignWizardStep1State({
     },
     [
       contacts,
+      groupMemberIdsByName,
       selectedGroupNames,
       selectedContactIds.length,
       setSelectedGroupNames,
@@ -297,13 +329,8 @@ export function useCampaignWizardStep1State({
 
   const clearManualSelection = useCallback(() => {
     setSelectedContactIds([]);
-    if (recipientMode === "all") {
-      setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
-      return;
-    }
     setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
   }, [
-    recipientMode,
     selectedGroupNames.length,
     setSelectedContactIds,
     setRecipientMode,
@@ -313,6 +340,16 @@ export function useCampaignWizardStep1State({
     setSelectedGroupNames([]);
     setRecipientMode(selectedContactIds.length > 0 ? "manual" : "manual");
   }, [selectedContactIds.length, setSelectedGroupNames, setRecipientMode]);
+
+  const handleSelectAll = useCallback(() => {
+    if (tab === "manual") selectAllVisibleContacts();
+    else selectAllVisibleGroups();
+  }, [tab, selectAllVisibleContacts, selectAllVisibleGroups]);
+
+  const handleClearSelection = useCallback(() => {
+    if (tab === "manual") clearManualSelection();
+    else clearGroupSelection();
+  }, [tab, clearManualSelection, clearGroupSelection]);
 
   const canSelectAll =
     tab === "manual"
@@ -324,31 +361,24 @@ export function useCampaignWizardStep1State({
       ? recipientMode === "all" || selectedContactIds.length > 0
       : selectedGroupNames.length > 0;
 
-  const handleSelectAll = () => {
-    if (tab === "manual") selectAllVisibleContacts();
-    else selectAllVisibleGroups();
-  };
-
-  const handleClearSelection = () => {
-    if (tab === "manual") clearManualSelection();
-    else clearGroupSelection();
-  };
+  const listHasMore = tab === "manual" ? contactsHasMore : groupsHasMore;
+  const listLoadingMore =
+    tab === "manual" ? contactsLoadingMore : groupsLoadingMore;
+  const onListLoadMore =
+    tab === "manual" ? onContactsLoadMore : onGroupsLoadMore;
+  const listRowCount =
+    tab === "manual" ? filteredContacts.length : filteredGroups.length;
 
   return {
     tab,
-    setTab,
+    setTab: switchTab,
     search,
     setSearch,
     groups,
     groupsLoading,
     contactsLoading,
-    recipients,
-    recipientMode,
     recipientExcludedStop,
     recipientExcludedInvalid,
-    selectedGroupNames,
-    selectedContactIds,
-    selectedIdsFromGroups,
     filteredContacts,
     filteredGroups,
     isContactChecked,
@@ -358,9 +388,17 @@ export function useCampaignWizardStep1State({
     canClearSelection,
     handleSelectAll,
     handleClearSelection,
+    recipientMode,
+    selectedGroupNames,
+    recipients,
     contactsSelectedCount,
     selectedGroupsDisplay,
     excludedTotal,
+    listHasMore,
+    listLoadingMore,
+    onListLoadMore,
+    listRowCount,
+    recipientsResolving,
   };
 }
 

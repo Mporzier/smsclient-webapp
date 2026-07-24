@@ -23,7 +23,11 @@ import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Link2, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  OnChangeFn,
+  SortingState,
+} from "@tanstack/react-table";
 
 type LiensViewProps = {
   rows: LinkRowData[];
@@ -34,6 +38,8 @@ type LiensViewProps = {
   totalCount?: number | null;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
   error: string | null;
   supabase: SupabaseClient;
   userId: string | undefined;
@@ -50,6 +56,8 @@ export function LiensView({
   totalCount = null,
   searchQuery,
   onSearchChange,
+  sorting,
+  onSortingChange,
   error,
   supabase,
   userId,
@@ -283,6 +291,9 @@ export function LiensView({
           footer={footerLabel}
           clipHorizontalOverflow
           onRowClick={(row) => void copyToClipboard(row.shortUrl)}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          manualSorting
         />
       )}
 

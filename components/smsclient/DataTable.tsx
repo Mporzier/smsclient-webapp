@@ -113,6 +113,7 @@ export function DataTable<T>({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const userResizedRef = useRef(false);
   const fillKeyRef = useRef("");
+  const lastAvailRef = useRef(0);
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
 
@@ -176,15 +177,29 @@ export function DataTable<T>({
     const avail = el.clientWidth;
     if (avail <= 0) return;
     const target = Math.max(avail, minContentWidth ?? 0);
-    const fillKey = `${target}|${sizingWeights
+    const colsKey = sizingWeights
       .map((w) => `${w.id}:${w.weight}:${w.minSize}:${w.maxSize}`)
-      .join(",")}`;
+      .join(",");
     if (!userResizedRef.current) {
-      if (fillKeyRef.current === fillKey) return;
-      fillKeyRef.current = fillKey;
+      const prevAvail = lastAvailRef.current;
+      // Ignore ~scrollbar gutter flicker when lazyload adds rows.
+      if (
+        fillKeyRef.current === colsKey &&
+        prevAvail > 0 &&
+        Math.abs(avail - prevAvail) <= 20
+      ) {
+        return;
+      }
+      lastAvailRef.current = avail;
+      fillKeyRef.current = colsKey;
       setColumnSizing(distributeColumnWidths(sizingWeights, target));
       return;
     }
+    const prevAvail = lastAvailRef.current;
+    if (prevAvail > 0 && Math.abs(avail - prevAvail) <= 20) {
+      return;
+    }
+    lastAvailRef.current = avail;
     setColumnSizing((prev) => clampSizingToContainer(prev, target));
   }, [sizingWeights, clampSizingToContainer, minContentWidth]);
 
@@ -282,10 +297,18 @@ export function DataTable<T>({
     globalFilter.trim() !== "";
 
   useEffect(() => {
-    if (!onLoadMore || !hasMore) return;
+    if (!onLoadMore || !hasMore || loading || loadingMore) return;
     const root = scrollRef.current;
     const target = sentinelRef.current;
     if (!root || !target) return;
+
+    const maybeLoad = () => {
+      const rootRect = root.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      if (targetRect.top <= rootRect.bottom + 120) {
+        onLoadMoreRef.current?.();
+      }
+    };
 
     const obs = new IntersectionObserver(
       (entries) => {
@@ -296,6 +319,8 @@ export function DataTable<T>({
       { root, rootMargin: "120px", threshold: 0 },
     );
     obs.observe(target);
+    // Remplit le viewport si 1ère page trop courte.
+    maybeLoad();
     return () => obs.disconnect();
   }, [onLoadMore, hasMore, data.length, loading, loadingMore]);
 
@@ -304,7 +329,7 @@ export function DataTable<T>({
       <div
         ref={scrollRef}
         className={cn(
-          "min-h-0 w-full flex-1 overflow-y-auto",
+          "min-h-0 w-full flex-1 overflow-y-auto [scrollbar-gutter:stable]",
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >

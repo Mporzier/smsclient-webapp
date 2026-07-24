@@ -6,9 +6,11 @@ import {
   fetchUnsubscribedContacts,
 } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
+import type { ContactListSort } from "@/lib/proto/contactSort";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isContactsRealtimeRefreshPaused } from "@/lib/proto/contactsRefreshGate";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
+import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type UnsubscribedContactSummary = {
@@ -26,20 +28,28 @@ export function useContacts() {
   const supabase = useMemo(() => createClient(), []);
   const enabled = !authLoading && Boolean(userId);
 
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const sort: ContactListSort | null = sorting[0]
+    ? { id: sorting[0].id, desc: !!sorting[0].desc }
+    : null;
+
   const fetchPage = useCallback(
     async ({
       offset,
       limit,
       search,
+      sort: pageSort,
     }: {
       offset: number;
       limit: number;
       search: string;
+      sort: ContactListSort | null;
     }) => {
       const res = await fetchClientsPage(supabase, {
         offset,
         limit,
         search,
+        sort: pageSort,
         includeTotal: offset === 0,
       });
       return {
@@ -66,6 +76,7 @@ export function useContacts() {
   } = useInfiniteList<ContactRowData>({
     enabled,
     fetchPage,
+    sort,
   });
 
   const [unsubscribedContacts, setUnsubscribedContacts] = useState<
@@ -144,5 +155,7 @@ export function useContacts() {
     setSearchInput,
     refresh,
     unsubscribedContacts,
+    sorting,
+    setSorting,
   };
 }

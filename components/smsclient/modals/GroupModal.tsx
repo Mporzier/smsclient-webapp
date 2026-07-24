@@ -25,11 +25,16 @@ import {
 import {
   avatarColor,
   contactInitials,
-  groupColor,
-  groupTagBase,
 } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   CheckCheck,
   Eraser,
@@ -54,6 +59,8 @@ import {
   sortedStringArraysEqual,
   type GroupFormSnapshot,
 } from "./modalFormGuard";
+import { CellTruncate } from "@/components/smsclient/ui";
+import { ContactGroupsCell } from "@/components/smsclient/ContactGroupsCell";
 
 export type GroupModalContactRow = {
   id: string;
@@ -69,6 +76,17 @@ type GroupModalSharedProps = {
   onClose: () => void;
   contacts?: GroupModalContactRow[];
   contactsLoading?: boolean;
+  contactsLoadingMore?: boolean;
+  contactsHasMore?: boolean;
+  onContactsLoadMore?: () => void;
+  contactsTotalCount?: number | null;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  /** IDs membres (edit) — sélection initiale, indépendant du lazyload. */
+  memberIds?: string[];
+  /** Nombre de contacts déjà dans le groupe (edit). */
+  memberCount?: number;
+  membersReady?: boolean;
   /** Autre dialogue empilé (ex. confirmation de suppression). */
   stackedDialogOpen?: boolean;
 };
@@ -114,19 +132,13 @@ const labelIconBadgeCls =
 const contactsPanelShell =
   "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 const tableHeadCls =
-  "border-b border-border px-2 py-2 text-[11px] font-medium text-muted-foreground";
-const tableCellCls = "px-2 py-2 text-[13px] font-normal text-foreground";
-const compactBtnCls = "!h-8 !gap-1.5 !px-2.5 !text-xs !font-medium";
+  "h-9 border-b border-border px-2 py-0 text-[11px] font-medium text-muted-foreground align-middle";
+const tableCellCls =
+  "h-[52px] max-h-[52px] overflow-hidden px-2 py-0 text-[13px] font-normal text-foreground align-middle";
+const compactBtnCls = "!h-8 !min-h-8 !gap-1.5 !px-2.5 !text-xs !font-medium";
+const listCheckboxCls =
+  "size-3.5 shrink-0 overflow-hidden cursor-pointer [&_svg]:size-2.5";
 const footerBtnCls = "!h-9 !text-xs !font-medium";
-
-function contactInGroup(
-  contact: GroupModalContactRow,
-  groupName: string
-): boolean {
-  const gn = groupName.trim();
-  if (!gn) return false;
-  return contact.groups.some((g) => g.trim() === gn);
-}
 
 function buildSaveContactsConfirmCopy(
   selectedIds: string[],
@@ -208,6 +220,12 @@ const CONTACT_ROW_OVERSCAN = 10;
 type GroupModalContactsPanelProps = {
   contacts: GroupModalContactRow[];
   contactsLoading: boolean;
+  contactsLoadingMore: boolean;
+  contactsHasMore: boolean;
+  onContactsLoadMore?: () => void;
+  contactsTotalCount: number | null;
+  memberIds: string[];
+  memberCount: number;
   contactQuery: string;
   onContactQueryChange: (value: string) => void;
   filteredContacts: GroupModalContactRow[];
@@ -225,6 +243,12 @@ type GroupModalContactsPanelProps = {
 function GroupModalContactsPanel({
   contacts,
   contactsLoading,
+  contactsLoadingMore,
+  contactsHasMore,
+  onContactsLoadMore,
+  contactsTotalCount,
+  memberIds,
+  memberCount,
   contactQuery,
   onContactQueryChange,
   filteredContacts,
@@ -242,6 +266,8 @@ function GroupModalContactsPanel({
   const [viewportH, setViewportH] = useState(320);
   const [scrollQuery, setScrollQuery] = useState(contactQuery);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const loadMoreRef = useRef(onContactsLoadMore);
+  loadMoreRef.current = onContactsLoadMore;
 
   if (contactQuery !== scrollQuery) {
     setScrollQuery(contactQuery);
@@ -274,9 +300,22 @@ function GroupModalContactsPanel({
   const padTop = start * CONTACT_ROW_H;
   const padBottom = Math.max(0, (total - end) * CONTACT_ROW_H);
 
+  useEffect(() => {
+    if (!contactsHasMore || contactsLoading || contactsLoadingMore) return;
+    if (end >= total - CONTACT_ROW_OVERSCAN) {
+      loadMoreRef.current?.();
+    }
+  }, [
+    end,
+    total,
+    contactsHasMore,
+    contactsLoading,
+    contactsLoadingMore,
+  ]);
+
   return (
     <div className={contactsPanelShell}>
-      <div className="flex shrink-0 flex-wrap items-start justify-between gap-2">
+      <div className="flex h-[52px] shrink-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className={labelIconBadgeCls} aria-hidden>
@@ -284,11 +323,11 @@ function GroupModalContactsPanel({
             </span>
             <h3 className={cn("m-0", sectionTitleCls)}>Contacts du groupe</h3>
           </div>
-          <p className={cn("mt-1", hintTextCls)}>
+          <p className={cn("mt-0.5 truncate", hintTextCls)}>
             Cochez les contacts à rattacher à ce groupe.
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex shrink-0 gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -356,18 +395,25 @@ function GroupModalContactsPanel({
       ) : (
         <div
           ref={scrollerRef}
-          className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-border [scrollbar-gutter:stable]"
           role="listbox"
           aria-label={listAriaLabel}
           aria-multiselectable
           onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
         >
-          <table className="w-full border-separate border-spacing-0 text-left">
+          <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+            <colgroup>
+              <col style={{ width: 36 }} />
+              <col style={{ width: 44 }} />
+              <col />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "26%" }} />
+            </colgroup>
             <thead className="sticky top-0 z-[1] bg-muted">
               <tr>
                 <th className={cn("w-9", tableHeadCls)} scope="col">
                   <Checkbox
-                    className="size-3.5 cursor-pointer disabled:cursor-not-allowed"
+                    className={cn(listCheckboxCls, "disabled:cursor-not-allowed")}
                     checked={
                       allFilteredSelected
                         ? true
@@ -429,16 +475,16 @@ function GroupModalContactsPanel({
                         role="option"
                         aria-selected={checked}
                       >
-                        <td className={cn(tableCellCls, "align-middle")}>
+                        <td className={tableCellCls}>
                           <Checkbox
-                            className="size-3.5 cursor-pointer"
+                            className={listCheckboxCls}
                             checked={checked}
                             onCheckedChange={() => toggleContact(c.id)}
                             onClick={(e) => e.stopPropagation()}
                             aria-label={`Sélectionner ${c.name}`}
                           />
                         </td>
-                        <td className={cn(tableCellCls, "align-middle")}>
+                        <td className={tableCellCls}>
                           <div
                             className={cn(
                               "grid h-8 w-8 place-items-center rounded-full text-xs font-semibold",
@@ -450,53 +496,33 @@ function GroupModalContactsPanel({
                             {initials}
                           </div>
                         </td>
-                        <td
-                          className={cn(
-                            tableCellCls,
-                            "max-w-[140px] truncate font-medium text-foreground sm:max-w-none"
-                          )}
-                        >
-                          {c.name.trim() || "—"}
+                        <td className={cn(tableCellCls, "min-w-0 font-medium")}>
+                          <CellTruncate as="div">
+                            {c.name.trim() || "—"}
+                          </CellTruncate>
                         </td>
-                        <td className={cn(tableCellCls, "whitespace-nowrap")}>
-                          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                        <td className={cn(tableCellCls, "min-w-0")}>
+                          <span className="flex min-w-0 max-w-full items-center gap-1.5 text-muted-foreground">
                             <Phone
                               className="h-3.5 w-3.5 shrink-0 text-emerald-500"
                               aria-hidden
                             />
-                            {c.phone}
+                            <CellTruncate as="span" className="min-w-0">
+                              {c.phone}
+                            </CellTruncate>
                           </span>
                         </td>
                         <td
                           className={cn(
                             "hidden sm:table-cell",
                             tableCellCls,
-                            "align-middle"
+                            "min-w-0"
                           )}
                         >
-                          {c.groups.length === 0 ? (
-                            <span className={hintTextCls}>Non classé</span>
-                          ) : (
-                            <div className="flex max-h-12 min-w-0 flex-wrap gap-1 overflow-hidden">
-                              {c.groups.map((g) => {
-                                const gc = groupColor(g);
-                                return (
-                                  <span
-                                    key={g}
-                                    className={cn(
-                                      groupTagBase,
-                                      gc.bg,
-                                      gc.border,
-                                      gc.text,
-                                      "max-w-full truncate"
-                                    )}
-                                  >
-                                    {g}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <ContactGroupsCell
+                            groups={c.groups}
+                            emptyLabel="Non classé"
+                          />
                         </td>
                       </tr>
                     );
@@ -516,29 +542,110 @@ function GroupModalContactsPanel({
         </div>
       )}
 
-      {!contactsLoading && contacts.length > 0 && (
-        <p className={cn("m-0 shrink-0", hintTextCls)}>
-          {selectedIds.length === 0 ? (
-            <>Aucun contact sélectionné</>
-          ) : (
-            <>
-              <span className="font-medium text-foreground">
-                {selectedIds.length}
-              </span>{" "}
-              contact{selectedIds.length > 1 ? "s" : ""} sélectionné
-              {selectedIds.length > 1 ? "s" : ""}
-            </>
-          )}
-          {filteredContacts.length < contacts.length && (
-            <span className="text-muted-foreground">
-              {" "}
-              · {filteredContacts.length} affiché
-              {filteredContacts.length > 1 ? "s" : ""} sur {contacts.length}
-            </span>
-          )}
-        </p>
+      {!contactsLoading && (contacts.length > 0 || memberCount > 0) && (
+        <GroupModalContactsFooter
+          memberCount={memberCount}
+          memberIds={memberIds}
+          selectedIds={selectedIds}
+          contactsTotalCount={contactsTotalCount}
+          contactsLoadingMore={contactsLoadingMore}
+        />
       )}
     </div>
+  );
+}
+
+function GroupModalContactsFooter({
+  memberCount,
+  memberIds,
+  selectedIds,
+  contactsTotalCount,
+  contactsLoadingMore,
+}: {
+  memberCount: number;
+  memberIds: string[];
+  selectedIds: string[];
+  contactsTotalCount: number | null;
+  contactsLoadingMore: boolean;
+}) {
+  const memberIdSet = useMemo(() => new Set(memberIds), [memberIds]);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedNewCount = useMemo(
+    () => selectedIds.filter((id) => !memberIdSet.has(id)).length,
+    [selectedIds, memberIdSet],
+  );
+  const deselectedCount = useMemo(
+    () => memberIds.filter((id) => !selectedSet.has(id)).length,
+    [memberIds, selectedSet],
+  );
+
+  const parts: { key: string; node: ReactNode }[] = [];
+  if (memberCount > 0) {
+    parts.push({
+      key: "members",
+      node: (
+        <>
+          <span className="font-medium text-foreground">{memberCount}</span>{" "}
+          contact{memberCount > 1 ? "s" : ""} déjà dans le groupe
+        </>
+      ),
+    });
+  }
+  if (selectedNewCount > 0) {
+    parts.push({
+      key: "selected",
+      node: (
+        <>
+          <span className="font-medium text-foreground">{selectedNewCount}</span>{" "}
+          sélectionné{selectedNewCount > 1 ? "s" : ""}
+        </>
+      ),
+    });
+  }
+  if (deselectedCount > 0) {
+    parts.push({
+      key: "deselected",
+      node: (
+        <span className="font-medium text-destructive">
+          {deselectedCount} contact{deselectedCount > 1 ? "s" : ""}{" "}
+          désélectionné{deselectedCount > 1 ? "s" : ""}
+        </span>
+      ),
+    });
+  } else if (memberCount === 0 && selectedIds.length === 0) {
+    parts.push({ key: "none", node: <>Aucun contact sélectionné</> });
+  }
+  if (typeof contactsTotalCount === "number") {
+    parts.push({
+      key: "total",
+      node: (
+        <>
+          <span className="font-medium text-foreground">{contactsTotalCount}</span>{" "}
+          contact{contactsTotalCount > 1 ? "s" : ""} total
+        </>
+      ),
+    });
+  }
+  if (contactsLoadingMore) {
+    parts.push({ key: "more", node: <>Chargement…</> });
+  }
+
+  if (parts.length === 0) return null;
+
+  return (
+    <p
+      className={cn(
+        "m-0 min-h-[1.25rem] shrink-0 overflow-x-auto whitespace-nowrap",
+        hintTextCls
+      )}
+    >
+      {parts.map((part, i) => (
+        <span key={part.key}>
+          {i > 0 ? <span className="text-muted-foreground"> · </span> : null}
+          {part.node}
+        </span>
+      ))}
+    </p>
   );
 }
 
@@ -547,11 +654,20 @@ export function GroupModal(props: GroupModalProps) {
   const group = isCreate ? null : props.group;
   const contacts = useMemo(() => props.contacts ?? [], [props.contacts]);
   const contactsLoading = props.contactsLoading ?? false;
+  const contactsLoadingMore = props.contactsLoadingMore ?? false;
+  const contactsHasMore = props.contactsHasMore ?? false;
+  const onContactsLoadMore = props.onContactsLoadMore;
+  const contactsTotalCount = props.contactsTotalCount ?? null;
+  const memberIds = props.memberIds ?? [];
+  const memberCount = props.memberCount ?? memberIds.length;
+  const membersReady = props.membersReady ?? true;
   const stackedDialogOpen = props.stackedDialogOpen ?? false;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [contactQuery, setContactQuery] = useState("");
+  const [localContactQuery, setLocalContactQuery] = useState("");
+  const contactQuery = props.searchQuery ?? localContactQuery;
+  const onContactQueryChange = props.onSearchChange ?? setLocalContactQuery;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -564,19 +680,10 @@ export function GroupModal(props: GroupModalProps) {
   const [syncedEditGroupId, setSyncedEditGroupId] = useState<string | null>(
     null
   );
-  const [selectionSync, setSelectionSync] = useState<{
-    key: string;
-    contactCount: number;
-  } | null>(null);
+  const [selectionSyncKey, setSelectionSyncKey] = useState<string | null>(null);
 
-  const filteredContacts = useMemo(() => {
-    const q = contactQuery.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) => {
-      const hay = `${c.name} ${c.phone} ${c.groups.join(" ")}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [contacts, contactQuery]);
+  // Search serveur : la liste reçue est déjà filtrée.
+  const filteredContacts = contacts;
 
   const toggleContact = useCallback((id: string) => {
     setSelectedIds((prev) =>
@@ -639,7 +746,7 @@ export function GroupModal(props: GroupModalProps) {
     if (!props.open) {
       setName("");
       setDescription("");
-      setContactQuery("");
+      setLocalContactQuery("");
       setSelectedIds([]);
       setSaving(false);
       setError(null);
@@ -647,7 +754,7 @@ export function GroupModal(props: GroupModalProps) {
       setSaveConfirmOpen(false);
       setFormBaseline(null);
       setSyncedEditGroupId(null);
-      setSelectionSync(null);
+      setSelectionSyncKey(null);
     }
   }
 
@@ -657,43 +764,28 @@ export function GroupModal(props: GroupModalProps) {
     setDescription(group.description ?? "");
     setError(null);
     setNameError(null);
+    setSelectionSyncKey(null);
   }
 
   if (isCreate || !props.open || !group) {
-    if ((!props.open || isCreate) && selectionSync !== null) {
-      setSelectionSync(null);
+    if ((!props.open || isCreate) && selectionSyncKey !== null) {
+      setSelectionSyncKey(null);
+    }
+  } else if (!membersReady) {
+    // Membres pas encore chargés — invalider le sync pour rejouer avec memberIds.
+    if (selectionSyncKey !== null) {
+      setSelectionSyncKey(null);
     }
   } else {
     const key = `${group.id}:${group.name}`;
-    const ids = contacts
-      .filter((c) => contactInGroup(c, group.name))
-      .map((c) => c.id);
-    if (!selectionSync || selectionSync.key !== key) {
-      setSelectionSync({ key, contactCount: contacts.length });
-      setSelectedIds(ids);
+    if (selectionSyncKey !== key) {
+      setSelectionSyncKey(key);
+      setSelectedIds([...memberIds]);
       setFormBaseline({
         name: group.name,
         description: group.description ?? "",
-        selectedIds: [...ids],
+        selectedIds: [...memberIds],
       });
-    } else if (
-      selectionSync.contactCount === 0 &&
-      contacts.length > 0 &&
-      ids.length > 0
-    ) {
-      setSelectionSync({ key, contactCount: contacts.length });
-      setSelectedIds(ids);
-      setFormBaseline((prevBaseline) =>
-        prevBaseline
-          ? { ...prevBaseline, selectedIds: [...ids] }
-          : {
-              name: group.name,
-              description: group.description ?? "",
-              selectedIds: [...ids],
-            }
-      );
-    } else if (selectionSync.contactCount !== contacts.length) {
-      setSelectionSync({ key, contactCount: contacts.length });
     }
   }
 
@@ -919,8 +1011,14 @@ export function GroupModal(props: GroupModalProps) {
             <GroupModalContactsPanel
               contacts={contacts}
               contactsLoading={contactsLoading}
+              contactsLoadingMore={contactsLoadingMore}
+              contactsHasMore={contactsHasMore}
+              onContactsLoadMore={onContactsLoadMore}
+              contactsTotalCount={contactsTotalCount}
+              memberIds={memberIds}
+              memberCount={memberCount}
               contactQuery={contactQuery}
-              onContactQueryChange={setContactQuery}
+              onContactQueryChange={onContactQueryChange}
               filteredContacts={filteredContacts}
               selectedIds={selectedIds}
               toggleContact={toggleContact}

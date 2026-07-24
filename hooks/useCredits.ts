@@ -8,8 +8,10 @@ import {
   type BuyCreditsInput,
 } from "@/lib/supabase/credits";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
+import type { ListSort } from "@/lib/proto/listSort";
 import { createClient } from "@/lib/supabase/client";
 import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
+import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export function useCredits() {
@@ -23,11 +25,20 @@ export function useCredits() {
   const [loadingMorePurchases, setLoadingMorePurchases] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [settled, setSettled] = useState<{
     nonce: number;
     userId: string | null;
+    sortKey: string;
   } | null>(null);
   const waitersRef = useRef<Array<() => void>>([]);
+
+  const sort: ListSort | null = sorting[0]
+    ? { id: sorting[0].id, desc: !!sorting[0].desc }
+    : null;
+  const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
 
   const flushWaiters = useCallback(() => {
     const waiters = waitersRef.current.splice(0);
@@ -48,7 +59,8 @@ export function useCredits() {
     (userId != null &&
       (settled == null ||
         settled.nonce !== nonce ||
-        settled.userId !== userId));
+        settled.userId !== userId ||
+        settled.sortKey !== sortKey));
 
   useEffect(() => {
     if (userId) return;
@@ -60,28 +72,33 @@ export function useCredits() {
     let cancelled = false;
     const requestNonce = nonce;
     const requestUserId = userId;
+    const requestSortKey = sortKey;
 
-    void fetchCreditsSnapshot(supabase, requestUserId).then(
-      ({ data, error: err }) => {
-        if (cancelled) return;
-        if (err) {
-          setError(err.message);
-        } else {
-          setError(null);
-        }
-        setBalance(data.balance);
-        setBalanceLabel(data.balanceLabel);
-        setPurchases(data.purchases);
-        setHasMorePurchases(data.purchases.length >= LIST_PAGE_SIZE);
-        setSettled({ nonce: requestNonce, userId: requestUserId });
-        flushWaiters();
-      },
-    );
+    void fetchCreditsSnapshot(supabase, requestUserId, {
+      sort: sortRef.current,
+    }).then(({ data, error: err }) => {
+      if (cancelled) return;
+      if (err) {
+        setError(err.message);
+      } else {
+        setError(null);
+      }
+      setBalance(data.balance);
+      setBalanceLabel(data.balanceLabel);
+      setPurchases(data.purchases);
+      setHasMorePurchases(data.purchases.length >= LIST_PAGE_SIZE);
+      setSettled({
+        nonce: requestNonce,
+        userId: requestUserId,
+        sortKey: requestSortKey,
+      });
+      flushWaiters();
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, userId, supabase, nonce, flushWaiters]);
+  }, [authLoading, userId, supabase, nonce, flushWaiters, sortKey]);
 
   const refresh = useCallback(() => {
     return new Promise<void>((resolve) => {
@@ -98,6 +115,7 @@ export function useCredits() {
       limit: LIST_PAGE_SIZE,
       search: "",
       includeTotal: false,
+      sort: sortRef.current,
     });
     if (res.error) {
       setError(res.error.message);
@@ -153,5 +171,7 @@ export function useCredits() {
     error,
     refresh,
     buy,
+    sorting,
+    setSorting,
   };
 }

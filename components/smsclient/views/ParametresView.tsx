@@ -33,6 +33,7 @@ import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 
 function sectionTitleKey(id: SettingSectionId): MessageKey {
@@ -56,6 +57,8 @@ export type ParametresViewProps = {
   purchasesLoadingMore?: boolean;
   purchasesHasMore?: boolean;
   onLoadMorePurchases?: () => void;
+  purchasesSorting?: SortingState;
+  onPurchasesSortingChange?: OnChangeFn<SortingState>;
   onInvoiceClick?: (id: string) => void;
   trashContacts?: DeletedContactRow[];
   trashGroups?: DeletedGroupRow[];
@@ -87,6 +90,8 @@ export function ParametresView({
   purchasesLoadingMore = false,
   purchasesHasMore = false,
   onLoadMorePurchases,
+  purchasesSorting = [],
+  onPurchasesSortingChange,
   onInvoiceClick,
   trashContacts = [],
   trashGroups = [],
@@ -507,6 +512,8 @@ export function ParametresView({
               hasMore={purchasesHasMore}
               onLoadMore={onLoadMorePurchases}
               onInvoiceClick={onInvoiceClick}
+              sorting={purchasesSorting}
+              onSortingChange={onPurchasesSortingChange ?? (() => {})}
             />
           )}
 

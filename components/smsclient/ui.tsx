@@ -102,7 +102,7 @@ export function CellTruncate({
         createPortal(
           <div
             role="tooltip"
-            className="pointer-events-none fixed z-[100] max-w-[min(360px,calc(100vw-16px))] break-words rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-md"
+            className="pointer-events-none fixed z-[10050] max-w-[min(360px,calc(100vw-16px))] break-words rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-md"
             style={{ top: pos.top, left: pos.left }}
           >
             {label}

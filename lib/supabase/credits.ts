@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
+import {
+  purchaseSortToOrders,
+  type ListSort,
+} from "@/lib/proto/listSort";
 
 type SmsCreditsAccountRecord = {
   user_id: string;
@@ -87,6 +91,7 @@ async function ensureCreditsAccount(
 export async function fetchCreditsSnapshot(
   supabase: SupabaseClient,
   userId: string,
+  args?: { sort?: ListSort | null },
 ): Promise<{ data: CreditsSnapshot; error: Error | null }> {
   const ensure = await ensureCreditsAccount(supabase, userId);
   if (ensure.error) {
@@ -115,6 +120,7 @@ export async function fetchCreditsSnapshot(
     limit: LIST_PAGE_SIZE,
     search: "",
     includeTotal: true,
+    sort: args?.sort,
   });
 
   if (purchasesRes.error) {
@@ -141,7 +147,13 @@ function escapeIlike(raw: string): string {
 export async function fetchCreditPurchasesPage(
   supabase: SupabaseClient,
   userId: string,
-  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+  args: {
+    offset: number;
+    limit?: number;
+    search?: string;
+    includeTotal?: boolean;
+    sort?: ListSort | null;
+  },
 ): Promise<{
   data: CreditPurchaseRowData[];
   hasMore: boolean;
@@ -156,10 +168,7 @@ export async function fetchCreditPurchasesPage(
   let query = supabase
     .from("sms_credit_purchases")
     .select("*", { count: includeTotal ? "exact" : undefined })
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq("user_id", userId);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -167,7 +176,17 @@ export async function fetchCreditPurchasesPage(
     query = query.or(`pack_label.ilike.${p},invoice_ref.ilike.${p}`);
   }
 
-  const { data, error, count } = await query;
+  for (const o of purchaseSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data, error, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }

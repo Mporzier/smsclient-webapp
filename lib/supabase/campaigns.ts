@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CampaignRowData, CampaignTargetContact, SmsCampaignStatus } from "@/lib/types/campaign";
 import { smsPartsFor } from "@/lib/proto/smsUtils";
+import {
+  campaignSortToOrders,
+  type ListSort,
+} from "@/lib/proto/listSort";
 
 export type SmsCampaignRecord = {
   id: string;
@@ -94,7 +98,13 @@ function escapeIlike(raw: string): string {
 export async function fetchSmsCampaignsPage(
   supabase: SupabaseClient,
   userId: string,
-  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+  args: {
+    offset: number;
+    limit?: number;
+    search?: string;
+    includeTotal?: boolean;
+    sort?: ListSort | null;
+  },
 ): Promise<{
   data: CampaignRowData[];
   hasMore: boolean;
@@ -109,10 +119,7 @@ export async function fetchSmsCampaignsPage(
   let query = supabase
     .from("sms_campaigns")
     .select("*", { count: includeTotal ? "exact" : undefined })
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq("user_id", userId);
 
   if (q) {
     const safe = escapeIlike(q);
@@ -120,7 +127,17 @@ export async function fetchSmsCampaignsPage(
     query = query.or(`title.ilike.${p},sender.ilike.${p},body.ilike.${p}`);
   }
 
-  const { data, error, count } = await query;
+  for (const o of campaignSortToOrders(args.sort)) {
+    query = query.order(o.column, {
+      ascending: o.ascending,
+      nullsFirst: false,
+    });
+  }
+
+  const { data, error, count } = await query.range(
+    offset,
+    offset + limit - 1,
+  );
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }

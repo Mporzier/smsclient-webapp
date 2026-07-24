@@ -80,6 +80,8 @@ export function renderContentRoute(
           totalCount={linksState.totalCount}
           searchQuery={linksState.searchInput}
           onSearchChange={linksState.setSearchInput}
+          sorting={linksState.sorting}
+          onSortingChange={linksState.setSorting}
           error={linksState.error}
           supabase={linksState.supabase}
           userId={linksState.userId}
@@ -98,6 +100,8 @@ export function renderContentRoute(
           totalCount={smsTemplatesState.totalCount}
           searchQuery={smsTemplatesState.searchInput}
           onSearchChange={smsTemplatesState.setSearchInput}
+          sorting={smsTemplatesState.sorting}
+          onSortingChange={smsTemplatesState.setSorting}
           error={smsTemplatesState.error}
           supabase={smsTemplatesState.supabase}
           userId={smsTemplatesState.userId}

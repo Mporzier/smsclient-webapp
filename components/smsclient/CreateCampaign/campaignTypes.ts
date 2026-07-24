@@ -24,8 +24,18 @@ export type CampaignWizardProps = {
   setAiOpen: (v: boolean) => void;
   groups: GroupRowData[];
   groupsLoading: boolean;
+  groupsLoadingMore?: boolean;
+  groupsHasMore?: boolean;
+  onGroupsLoadMore?: () => void;
+  groupsSearchQuery?: string;
+  onGroupsSearchChange?: (value: string) => void;
   contacts: ContactRowData[];
   contactsLoading: boolean;
+  contactsLoadingMore?: boolean;
+  contactsHasMore?: boolean;
+  onContactsLoadMore?: () => void;
+  contactsSearchQuery?: string;
+  onContactsSearchChange?: (value: string) => void;
   recipientMode: "manual" | "lists" | "all" | "numbers";
   setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
   manualNumbers: string;
@@ -40,6 +50,13 @@ export type CampaignWizardProps = {
   recipientExcludedStop: number;
   recipientExcludedInvalid: number;
   recipientCount: number;
+  /** IDs membres des groupes sélectionnés (serveur). */
+  resolvedGroupMemberIds?: readonly string[];
+  /** Membres par nom de groupe (uncheck contact dans groupe). */
+  groupMemberIdsByName?: Record<string, string[]>;
+  /** Contacts destinataires résolus (hors lazy list). */
+  resolvedContacts?: ContactRowData[];
+  recipientsResolving?: boolean;
   creditsAvailable: number;
   onConfirmCampaign?: () => void | Promise<void>;
 };

@@ -4,8 +4,10 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import { fetchGroupsPage } from "@/lib/supabase/groups";
 import type { GroupRowData } from "@/lib/types/group";
+import type { ListSort } from "@/lib/proto/listSort";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
-import { useCallback, useMemo } from "react";
+import type { SortingState } from "@tanstack/react-table";
+import { useCallback, useMemo, useState } from "react";
 
 export function useGroups() {
   const { user, loading: authLoading } = useAuth();
@@ -13,15 +15,22 @@ export function useGroups() {
   const userId = user?.id ?? null;
   const enabled = !authLoading && Boolean(userId);
 
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const sort: ListSort | null = sorting[0]
+    ? { id: sorting[0].id, desc: !!sorting[0].desc }
+    : null;
+
   const fetchPage = useCallback(
     async ({
       offset,
       limit,
       search,
+      sort: pageSort,
     }: {
       offset: number;
       limit: number;
       search: string;
+      sort: ListSort | null;
     }) => {
       if (!userId) {
         return { data: [], hasMore: false, error: null };
@@ -30,13 +39,14 @@ export function useGroups() {
         offset,
         limit,
         search,
+        sort: pageSort,
         includeTotal: offset === 0,
       });
     },
     [supabase, userId],
   );
 
-  const list = useInfiniteList<GroupRowData>({ enabled, fetchPage });
+  const list = useInfiniteList<GroupRowData>({ enabled, fetchPage, sort });
 
   const refresh = useCallback(() => list.refresh(), [list.refresh]);
 
@@ -51,5 +61,7 @@ export function useGroups() {
     searchInput: list.searchInput,
     setSearchInput: list.setSearchInput,
     refresh,
+    sorting,
+    setSorting,
   };
 }

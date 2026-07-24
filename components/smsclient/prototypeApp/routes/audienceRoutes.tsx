@@ -63,6 +63,8 @@ export function renderAudienceRoute(
           totalCount={contactsState.totalCount}
           searchQuery={contactsState.searchInput}
           onSearchChange={contactsState.setSearchInput}
+          sorting={contactsState.sorting}
+          onSortingChange={contactsState.setSorting}
           error={contactsState.error}
           customFieldDefs={customFieldsState.defs}
           unsubscribedContacts={data.unsubscribedContacts}
@@ -87,6 +89,8 @@ export function renderAudienceRoute(
           totalCount={groupsState.totalCount}
           searchQuery={groupsState.searchInput}
           onSearchChange={groupsState.setSearchInput}
+          sorting={groupsState.sorting}
+          onSortingChange={groupsState.setSorting}
           error={groupsState.error}
           onCreateGroup={() => modals.setGroupModalOpen(true)}
           onEditGroup={modals.openGroupEdit}
@@ -110,6 +114,8 @@ export function renderAudienceRoute(
           totalCount={campaignsState.totalCount}
           searchQuery={campaignsState.searchInput}
           onSearchChange={campaignsState.setSearchInput}
+          sorting={campaignsState.sorting}
+          onSortingChange={campaignsState.setSorting}
           error={campaignsState.error}
           onNewCampaign={() => wizard.openCampaignComposer()}
           onOpenDetails={(row) => {
