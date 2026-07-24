@@ -24,6 +24,7 @@ export function GroupesFlowHarness({
 }: GroupesFlowHarnessProps) {
   const [groups, setGroups] = useState<GroupRowData[]>(initialGroups);
   const [contacts, setContacts] = useState<ContactRowData[]>(initialContacts);
+  const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<GroupRowData | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -130,6 +131,8 @@ export function GroupesFlowHarness({
         rows={groups}
         loading={false}
         error={null}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         onCreateGroup={() => setCreateOpen(true)}
         onEditGroup={setEditGroup}
         onDeleteGroups={onDeleteGroups}

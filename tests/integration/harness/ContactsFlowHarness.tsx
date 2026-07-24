@@ -22,6 +22,7 @@ export function ContactsFlowHarness({
   onCreateCampaign,
 }: ContactsFlowHarnessProps) {
   const [rows, setRows] = useState<ContactRowData[]>(initialRows);
+  const [searchQuery, setSearchQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editRow, setEditRow] = useState<ContactRowData | null>(null);
@@ -121,6 +122,8 @@ export function ContactsFlowHarness({
         rows={rows}
         loading={false}
         error={null}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         onImport={() => {}}
         onAddContact={openAdd}
         onRowClick={openEdit}
