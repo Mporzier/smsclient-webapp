@@ -7,6 +7,7 @@ import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
+import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useState } from "react";
 import { nextMockId } from "../helpers/mockData";
 
@@ -23,6 +24,7 @@ export function ContactsFlowHarness({
 }: ContactsFlowHarnessProps) {
   const [rows, setRows] = useState<ContactRowData[]>(initialRows);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editRow, setEditRow] = useState<ContactRowData | null>(null);
@@ -124,6 +126,8 @@ export function ContactsFlowHarness({
         error={null}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        sorting={sorting}
+        onSortingChange={setSorting}
         onImport={() => {}}
         onAddContact={openAdd}
         onRowClick={openEdit}

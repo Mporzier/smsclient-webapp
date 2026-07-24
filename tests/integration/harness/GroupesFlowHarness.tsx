@@ -5,6 +5,7 @@ import { GroupModal } from "@/components/smsclient/modals/GroupModal";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
+import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import {
   contactToGroupModalRow,
@@ -25,6 +26,7 @@ export function GroupesFlowHarness({
   const [groups, setGroups] = useState<GroupRowData[]>(initialGroups);
   const [contacts, setContacts] = useState<ContactRowData[]>(initialContacts);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<GroupRowData | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -133,6 +135,8 @@ export function GroupesFlowHarness({
         error={null}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        sorting={sorting}
+        onSortingChange={setSorting}
         onCreateGroup={() => setCreateOpen(true)}
         onEditGroup={setEditGroup}
         onDeleteGroups={onDeleteGroups}
