@@ -11,6 +11,9 @@ export const POSTGREST_INSERT_CHUNK = 40;
 /** Page rows quand un select peut dépasser le max-rows PostgREST (~1000). */
 export const POSTGREST_PAGE = 1000;
 
+/** Taille d’un lot liste (lazyload / infinite scroll). */
+export const LIST_PAGE_SIZE = 50;
+
 export function chunkList<T>(
   items: readonly T[],
   size: number = POSTGREST_IN_CHUNK,

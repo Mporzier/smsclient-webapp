@@ -80,6 +80,12 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
 type GroupesProps = {
   rows: GroupRowData[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   error: string | null;
   onCreateGroup: () => void;
   onEditGroup: (row: GroupRowData) => void;
@@ -90,6 +96,12 @@ type GroupesProps = {
 export function GroupesView({
   rows,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  totalCount = null,
+  searchQuery,
+  onSearchChange,
   error,
   onCreateGroup,
   onEditGroup,
@@ -97,18 +109,19 @@ export function GroupesView({
   onCreateCampaignFromGroups,
 }: GroupesProps) {
   const { t } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const hasSelection = selectedIds.size > 0;
-  const showBigEmpty = !loading && !error && rows.length === 0;
+  const showBigEmpty =
+    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
 
+  const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
     () =>
-      t(rows.length === 1 ? "groups.footerOne" : "groups.footerMany", {
-        n: rows.length,
+      t(footerN === 1 ? "groups.footerOne" : "groups.footerMany", {
+        n: footerN,
       }),
-    [rows.length, t],
+    [footerN, t],
   );
 
   const dataColumns = useMemo(() => buildGroupColumns(t), [t]);
@@ -231,7 +244,7 @@ export function GroupesView({
           <InputGroupInput
             placeholder={t("groups.searchPlaceholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             aria-label={t("groups.searchAria")}
           />
         </InputGroup>
@@ -304,7 +317,9 @@ export function GroupesView({
           columns={selectColumns}
           data={rows}
           loading={loading}
-          pageSize={25}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
           globalFilter={searchQuery}
           emptyMessage={t("groups.emptyTable")}
           searchNoResultsMessage={t("groups.noSearchResults")}

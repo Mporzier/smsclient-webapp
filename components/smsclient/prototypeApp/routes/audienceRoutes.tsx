@@ -39,8 +39,10 @@ export function renderAudienceRoute(
             creditsState.loading ? undefined : creditsState.balanceLabel
           }
           creditsBalance={creditsState.balance}
-          contactsCount={contactsState.rows.length}
-          groupsCount={groupsState.rows.length}
+          contactsCount={
+            contactsState.totalCount ?? contactsState.rows.length
+          }
+          groupsCount={groupsState.totalCount ?? groupsState.rows.length}
           campaignRows={campaignsState.rows}
           groupRows={groupsState.rows}
           contacts={contactsState.rows}
@@ -55,6 +57,12 @@ export function renderAudienceRoute(
         <ContactsView
           rows={contactsState.rows}
           loading={contactsState.loading}
+          loadingMore={contactsState.loadingMore}
+          hasMore={contactsState.hasMore}
+          onLoadMore={contactsState.loadMore}
+          totalCount={contactsState.totalCount}
+          searchQuery={contactsState.searchInput}
+          onSearchChange={contactsState.setSearchInput}
           error={contactsState.error}
           customFieldDefs={customFieldsState.defs}
           unsubscribedContacts={data.unsubscribedContacts}
@@ -73,6 +81,12 @@ export function renderAudienceRoute(
         <GroupesView
           rows={groupsState.rows}
           loading={groupsState.loading}
+          loadingMore={groupsState.loadingMore}
+          hasMore={groupsState.hasMore}
+          onLoadMore={groupsState.loadMore}
+          totalCount={groupsState.totalCount}
+          searchQuery={groupsState.searchInput}
+          onSearchChange={groupsState.setSearchInput}
           error={groupsState.error}
           onCreateGroup={() => modals.setGroupModalOpen(true)}
           onEditGroup={modals.openGroupEdit}
@@ -90,6 +104,12 @@ export function renderAudienceRoute(
         <CampagnesView
           rows={campaignsState.rows}
           loading={campaignsState.loading}
+          loadingMore={campaignsState.loadingMore}
+          hasMore={campaignsState.hasMore}
+          onLoadMore={campaignsState.loadMore}
+          totalCount={campaignsState.totalCount}
+          searchQuery={campaignsState.searchInput}
+          onSearchChange={campaignsState.setSearchInput}
           error={campaignsState.error}
           onNewCampaign={() => wizard.openCampaignComposer()}
           onOpenDetails={(row) => {

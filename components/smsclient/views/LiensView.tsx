@@ -28,6 +28,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 type LiensViewProps = {
   rows: LinkRowData[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   error: string | null;
   supabase: SupabaseClient;
   userId: string | undefined;
@@ -38,6 +44,12 @@ type LiensViewProps = {
 export function LiensView({
   rows,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  totalCount = null,
+  searchQuery,
+  onSearchChange,
   error,
   supabase,
   userId,
@@ -45,18 +57,19 @@ export function LiensView({
   onToast,
 }: LiensViewProps) {
   const { t } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LinkRowData | null>(null);
 
-  const showBigEmpty = !loading && !error && rows.length === 0;
+  const showBigEmpty =
+    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
 
+  const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
     () =>
-      t(rows.length === 1 ? "links.footerOne" : "links.footerMany", {
-        n: rows.length,
+      t(footerN === 1 ? "links.footerOne" : "links.footerMany", {
+        n: footerN,
       }),
-    [rows.length, t],
+    [footerN, t],
   );
 
   const copyToClipboard = useCallback(
@@ -217,7 +230,7 @@ export function LiensView({
           <InputGroupInput
             placeholder={t("links.searchPlaceholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             aria-label={t("links.searchAria")}
           />
         </InputGroup>
@@ -261,7 +274,9 @@ export function LiensView({
           columns={columns}
           data={rows}
           loading={loading}
-          pageSize={25}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
           globalFilter={searchQuery}
           emptyMessage={t("links.emptyTable")}
           searchNoResultsMessage={t("links.noSearchResults")}

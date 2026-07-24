@@ -3,8 +3,6 @@
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -14,10 +12,10 @@ import {
 } from "@tanstack/react-table";
 import { distributeColumnWidths } from "@/components/smsclient/listColumnSizes";
 import { cn } from "@/lib/utils";
-import { Pager } from "./views/Pager";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -30,7 +28,9 @@ type DataTableProps<T> = {
   columns: ColumnDef<T, unknown>[];
   data: T[];
   loading?: boolean;
+  /** @deprecated Pagination retirée — lazyload via onLoadMore. */
   pageSize?: number;
+  /** Filtre client (évité si search serveur). */
   globalFilter?: string;
   emptyMessage?: string;
   loadingMessage?: string;
@@ -52,6 +52,9 @@ type DataTableProps<T> = {
    * Utile liste Contacts (tris multi-colonnes d’affilée).
    */
   manualSorting?: boolean;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
 const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
@@ -86,7 +89,7 @@ export function DataTable<T>({
   columns,
   data,
   loading = false,
-  pageSize = 20,
+  pageSize: _pageSize = 20,
   globalFilter = "",
   emptyMessage = "Aucun élément.",
   loadingMessage = "Chargement…",
@@ -98,13 +101,20 @@ export function DataTable<T>({
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
   manualSorting = false,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: DataTableProps<T>) {
+  void _pageSize;
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const sorting = sortingProp ?? internalSorting;
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const userResizedRef = useRef(false);
   const fillKeyRef = useRef("");
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
 
   const sizedColumns = useMemo(
     () => withColumnDefaults(columns),
@@ -229,13 +239,11 @@ export function DataTable<T>({
   const table = useReactTable({
     data,
     columns: sizedColumns,
-    state: { globalFilter, sorting, columnSizing },
+    state: { sorting, columnSizing },
     onSortingChange: handleSortingChange,
     onColumnSizingChange: handleColumnSizingChange,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     enableSorting: true,
     enableMultiSort: false,
     /** Sinon 3e clic (ou clic rapide multi-detail) vide le tri → paraît « cassé ». */
@@ -262,21 +270,34 @@ export function DataTable<T>({
       maxSize: 600,
       sortDescFirst: false,
     },
-    initialState: { pagination: { pageSize } },
   });
 
   const { rows: tableRows } = table.getRowModel();
-
-  const pageCount = table.getPageCount();
-  const pageIndex = table.getState().pagination.pageIndex;
   const totalSize = table.getTotalSize();
 
   const isEmpty = !loading && data.length === 0;
   const isSearchEmpty =
     !loading &&
-    data.length > 0 &&
-    tableRows.length === 0 &&
+    data.length === 0 &&
     globalFilter.trim() !== "";
+
+  useEffect(() => {
+    if (!onLoadMore || !hasMore) return;
+    const root = scrollRef.current;
+    const target = sentinelRef.current;
+    if (!root || !target) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          onLoadMoreRef.current?.();
+        }
+      },
+      { root, rootMargin: "120px", threshold: 0 },
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [onLoadMore, hasMore, data.length, loading, loadingMore]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -530,23 +551,23 @@ export function DataTable<T>({
               ))}
           </tbody>
         </table>
+        {onLoadMore && hasMore ? (
+          <div
+            ref={sentinelRef}
+            className="flex h-10 items-center justify-center text-xs text-muted-foreground"
+            aria-hidden
+          >
+            {loadingMore ? "Chargement…" : null}
+          </div>
+        ) : null}
       </div>
       <div className="flex shrink-0 flex-col gap-2 border-t border-border px-3.5 py-3 text-sm font-medium text-muted-foreground">
         <span className="min-w-0">
           {loading
             ? "…"
             : footer ??
-              `${table.getFilteredRowModel().rows.length} élément${
-                table.getFilteredRowModel().rows.length > 1 ? "s" : ""
-              }`}
+              `${data.length} élément${data.length > 1 ? "s" : ""}`}
         </span>
-        {pageCount > 1 && (
-          <Pager
-            page={pageIndex}
-            totalPages={pageCount}
-            onPageChange={(p) => table.setPageIndex(p)}
-          />
-        )}
       </div>
     </section>
   );

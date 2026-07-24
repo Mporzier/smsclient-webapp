@@ -53,6 +53,9 @@ export type ParametresViewProps = {
   onSaveProfile: (form: UserProfileForm) => Promise<void>;
   purchases?: CreditPurchaseRowData[];
   purchasesLoading?: boolean;
+  purchasesLoadingMore?: boolean;
+  purchasesHasMore?: boolean;
+  onLoadMorePurchases?: () => void;
   onInvoiceClick?: (id: string) => void;
   trashContacts?: DeletedContactRow[];
   trashGroups?: DeletedGroupRow[];
@@ -81,6 +84,9 @@ export function ParametresView({
   onSaveProfile,
   purchases = [],
   purchasesLoading = false,
+  purchasesLoadingMore = false,
+  purchasesHasMore = false,
+  onLoadMorePurchases,
   onInvoiceClick,
   trashContacts = [],
   trashGroups = [],
@@ -497,6 +503,9 @@ export function ParametresView({
             <InvoicesTable
               purchases={purchases}
               loading={purchasesLoading}
+              loadingMore={purchasesLoadingMore}
+              hasMore={purchasesHasMore}
+              onLoadMore={onLoadMorePurchases}
               onInvoiceClick={onInvoiceClick}
             />
           )}

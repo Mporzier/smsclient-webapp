@@ -228,6 +228,12 @@ function ContactGroupsCell({ groups }: { groups: string[] }) {
 type ContactsProps = {
   rows: ContactRowData[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   error: string | null;
   customFieldDefs?: CustomFieldDef[];
   unsubscribedContacts?: UnsubscribedContactRow[];
@@ -437,6 +443,12 @@ function contactsTableMinWidth(customFieldCount: number): number | undefined {
 export function ContactsView({
   rows,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  totalCount = null,
+  searchQuery,
+  onSearchChange,
   error,
   customFieldDefs = [],
   unsubscribedContacts = [],
@@ -448,7 +460,6 @@ export function ContactsView({
   onResubscribeContacts,
 }: ContactsProps) {
   const { t } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
@@ -478,11 +489,13 @@ export function ContactsView({
   const unsubCount = unsubscribedContacts.length;
 
   const hasSelection = selectedIds.size > 0;
-  const showBigEmpty = !loading && !error && rows.length === 0;
+  const showBigEmpty =
+    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
 
   const footer = useMemo(() => {
     if (loading) return "…";
-    const total = eligibleRows.length;
+    const total =
+      typeof totalCount === "number" ? totalCount : eligibleRows.length;
     const contactsLabel = t(
       total === 1 ? "contacts.footerOne" : "contacts.footerMany",
       { n: total },
@@ -512,7 +525,7 @@ export function ContactsView({
         </Button>
       </div>
     );
-  }, [loading, eligibleRows.length, unsubCount, t]);
+  }, [loading, eligibleRows.length, totalCount, unsubCount, t]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -642,7 +655,7 @@ export function ContactsView({
           <InputGroupInput
             placeholder={t("contacts.searchPlaceholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             aria-label={t("contacts.searchAria")}
           />
         </InputGroup>
@@ -726,7 +739,9 @@ export function ContactsView({
           columns={selectColumns}
           data={sortedRows}
           loading={loading}
-          pageSize={25}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
           globalFilter={searchQuery}
           emptyMessage={t("contacts.emptyTable")}
           searchNoResultsMessage={t("contacts.noSearchResults")}

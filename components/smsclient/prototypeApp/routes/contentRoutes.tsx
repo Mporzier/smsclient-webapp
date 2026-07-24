@@ -74,6 +74,12 @@ export function renderContentRoute(
         <LiensView
           rows={linksState.rows}
           loading={linksState.loading}
+          loadingMore={linksState.loadingMore}
+          hasMore={linksState.hasMore}
+          onLoadMore={linksState.loadMore}
+          totalCount={linksState.totalCount}
+          searchQuery={linksState.searchInput}
+          onSearchChange={linksState.setSearchInput}
           error={linksState.error}
           supabase={linksState.supabase}
           userId={linksState.userId}
@@ -86,6 +92,12 @@ export function renderContentRoute(
         <ModelesSmsView
           rows={smsTemplatesState.rows}
           loading={smsTemplatesState.loading}
+          loadingMore={smsTemplatesState.loadingMore}
+          hasMore={smsTemplatesState.hasMore}
+          onLoadMore={smsTemplatesState.loadMore}
+          totalCount={smsTemplatesState.totalCount}
+          searchQuery={smsTemplatesState.searchInput}
+          onSearchChange={smsTemplatesState.setSearchInput}
           error={smsTemplatesState.error}
           supabase={smsTemplatesState.supabase}
           userId={smsTemplatesState.userId}

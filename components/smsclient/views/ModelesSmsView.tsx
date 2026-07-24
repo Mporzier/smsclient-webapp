@@ -29,6 +29,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 type ModelesSmsViewProps = {
   rows: UserSmsTemplateRow[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   error: string | null;
   supabase: SupabaseClient;
   userId: string | undefined;
@@ -39,6 +45,12 @@ type ModelesSmsViewProps = {
 export function ModelesSmsView({
   rows,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  totalCount = null,
+  searchQuery,
+  onSearchChange,
   error,
   supabase,
   userId,
@@ -46,7 +58,6 @@ export function ModelesSmsView({
   onToast,
 }: ModelesSmsViewProps) {
   const { t } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
@@ -65,14 +76,16 @@ export function ModelesSmsView({
     };
   }, [deleteTarget]);
 
-  const showBigEmpty = !loading && !error && rows.length === 0;
+  const showBigEmpty =
+    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
 
+  const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
     () =>
-      t(rows.length === 1 ? "templates.footerOne" : "templates.footerMany", {
-        n: rows.length,
+      t(footerN === 1 ? "templates.footerOne" : "templates.footerMany", {
+        n: footerN,
       }),
-    [rows.length, t],
+    [footerN, t],
   );
 
   const handleCreate = useCallback(async () => {
@@ -317,7 +330,7 @@ export function ModelesSmsView({
         <SearchBar
           placeholder={t("templates.searchPlaceholder")}
           value={searchQuery}
-          onChange={setSearchQuery}
+          onChange={onSearchChange}
         />
 
         {error ? (
@@ -342,7 +355,9 @@ export function ModelesSmsView({
             columns={columns}
             data={rows}
             loading={loading}
-            pageSize={20}
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
             globalFilter={searchQuery}
             emptyMessage={t("templates.emptyTable")}
             searchNoResultsMessage={t("templates.noSearchResults")}

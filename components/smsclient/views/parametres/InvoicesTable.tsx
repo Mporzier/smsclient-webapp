@@ -12,10 +12,16 @@ import { useMemo } from "react";
 export function InvoicesTable({
   purchases,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
   onInvoiceClick,
 }: {
   purchases: CreditPurchaseRowData[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   onInvoiceClick?: (id: string) => void;
 }) {
   const { t } = useI18n();
@@ -88,7 +94,9 @@ export function InvoicesTable({
       columns={cols}
       data={purchases}
       loading={loading}
-      pageSize={10}
+      loadingMore={loadingMore}
+      hasMore={hasMore}
+      onLoadMore={onLoadMore}
       emptyMessage={t("invoices.empty")}
       loadingMessage={t("invoices.loading")}
       footer={footer}

@@ -2,44 +2,54 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { fetchSmsLinks } from "@/lib/supabase/links";
+import { fetchSmsLinksPage } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useInfiniteList } from "@/hooks/useInfiniteList";
+import { useCallback, useMemo } from "react";
 
 export function useLinks() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
   const supabase = useMemo(() => createClient(), []);
-  const [rows, setRows] = useState<LinkRowData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const enabled = !authLoading && Boolean(userId);
 
-  const refresh = useCallback(async () => {
-    if (!userId) {
-      setRows([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const { data, error: err } = await fetchSmsLinks(supabase, userId);
-    if (err) {
-      setError(err.message);
-      setRows([]);
-    } else {
-      setRows(data);
-    }
-    setLoading(false);
-  }, [userId, supabase]);
+  const fetchPage = useCallback(
+    async ({
+      offset,
+      limit,
+      search,
+    }: {
+      offset: number;
+      limit: number;
+      search: string;
+    }) => {
+      if (!userId) {
+        return { data: [], hasMore: false, error: null };
+      }
+      return fetchSmsLinksPage(supabase, userId, {
+        offset,
+        limit,
+        search,
+        includeTotal: offset === 0,
+      });
+    },
+    [supabase, userId],
+  );
 
-  useEffect(() => {
-    if (authLoading) return;
-    const t = window.setTimeout(() => {
-      void refresh();
-    }, 0);
-    return () => window.clearTimeout(t);
-  }, [authLoading, refresh]);
+  const list = useInfiniteList<LinkRowData>({ enabled, fetchPage });
 
-  return { rows, loading, error, refresh, supabase, userId };
+  return {
+    rows: list.rows,
+    loading: list.loading,
+    loadingMore: list.loadingMore,
+    hasMore: list.hasMore,
+    loadMore: list.loadMore,
+    error: list.error,
+    totalCount: list.totalCount,
+    searchInput: list.searchInput,
+    setSearchInput: list.setSearchInput,
+    refresh: list.refresh,
+    supabase,
+    userId,
+  };
 }

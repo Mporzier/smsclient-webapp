@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildShortUrl } from "@/lib/proto/shortLinks";
 import type { LinkRowData } from "@/lib/types/link";
+import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 
 export type SmsCampaignLinkRecord = {
   id: string;
@@ -50,18 +51,68 @@ export async function fetchSmsLinks(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ data: LinkRowData[]; error: Error | null }> {
-  const { data, error } = await supabase
-    .from("sms_campaign_links")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+  const all: LinkRowData[] = [];
+  for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+    const { data, hasMore, error } = await fetchSmsLinksPage(supabase, userId, {
+      offset,
+      limit: LIST_PAGE_SIZE,
+      search: "",
+    });
+    if (error) {
+      if (all.length > 0) break;
+      return { data: [], error };
+    }
+    all.push(...data);
+    if (!hasMore) break;
+  }
+  return { data: all, error: null };
+}
 
-  if (error) {
-    return { data: [], error: new Error(error.message) };
+function escapeIlike(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export async function fetchSmsLinksPage(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+): Promise<{
+  data: LinkRowData[];
+  hasMore: boolean;
+  totalCount?: number;
+  error: Error | null;
+}> {
+  const limit = args.limit ?? LIST_PAGE_SIZE;
+  const offset = Math.max(0, args.offset);
+  const q = (args.search ?? "").trim();
+  const includeTotal = args.includeTotal ?? offset === 0;
+
+  let query = supabase
+    .from("sms_campaign_links")
+    .select("*", { count: includeTotal ? "exact" : undefined })
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (q) {
+    const safe = escapeIlike(q);
+    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+    query = query.or(
+      `label.ilike.${p},original_url.ilike.${p},short_code.ilike.${p}`,
+    );
   }
 
+  const { data, error, count } = await query;
+  if (error) {
+    return { data: [], hasMore: false, error: new Error(error.message) };
+  }
+
+  const rows = (data ?? []) as SmsCampaignLinkRecord[];
   return {
-    data: (data as SmsCampaignLinkRecord[]).map(recordToRow),
+    data: rows.map(recordToRow),
+    hasMore: rows.length === limit,
+    totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
   };
 }

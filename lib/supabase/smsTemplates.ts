@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
+import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 
 export type UserSmsTemplateRecord = {
   id: string;
@@ -35,18 +36,66 @@ export async function fetchUserSmsTemplates(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ data: UserSmsTemplateRow[]; error: Error | null }> {
-  const { data, error } = await supabase
-    .from("user_sms_templates")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+  const all: UserSmsTemplateRow[] = [];
+  for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+    const { data, hasMore, error } = await fetchUserSmsTemplatesPage(
+      supabase,
+      userId,
+      { offset, limit: LIST_PAGE_SIZE, search: "" },
+    );
+    if (error) {
+      if (all.length > 0) break;
+      return { data: [], error };
+    }
+    all.push(...data);
+    if (!hasMore) break;
+  }
+  return { data: all, error: null };
+}
 
-  if (error) {
-    return { data: [], error: new Error(error.message) };
+function escapeIlike(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export async function fetchUserSmsTemplatesPage(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+): Promise<{
+  data: UserSmsTemplateRow[];
+  hasMore: boolean;
+  totalCount?: number;
+  error: Error | null;
+}> {
+  const limit = args.limit ?? LIST_PAGE_SIZE;
+  const offset = Math.max(0, args.offset);
+  const q = (args.search ?? "").trim();
+  const includeTotal = args.includeTotal ?? offset === 0;
+
+  let query = supabase
+    .from("user_sms_templates")
+    .select("*", { count: includeTotal ? "exact" : undefined })
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (q) {
+    const safe = escapeIlike(q);
+    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+    query = query.or(`title.ilike.${p},description.ilike.${p},body.ilike.${p}`);
   }
 
+  const { data, error, count } = await query;
+  if (error) {
+    return { data: [], hasMore: false, error: new Error(error.message) };
+  }
+
+  const rows = (data ?? []) as UserSmsTemplateRecord[];
   return {
-    data: (data as UserSmsTemplateRecord[]).map(recordToRow),
+    data: rows.map(recordToRow),
+    hasMore: rows.length === limit,
+    totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
   };
 }

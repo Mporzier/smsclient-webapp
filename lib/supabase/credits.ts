@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
+import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 
 type SmsCreditsAccountRecord = {
   user_id: string;
@@ -109,27 +110,73 @@ export async function fetchCreditsSnapshot(
   }
 
   const balance = (account as SmsCreditsAccountRecord | null)?.balance ?? 0;
-  const { data: purchases, error: purchasesError } = await supabase
-    .from("sms_credit_purchases")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const purchasesRes = await fetchCreditPurchasesPage(supabase, userId, {
+    offset: 0,
+    limit: LIST_PAGE_SIZE,
+    search: "",
+    includeTotal: true,
+  });
 
-  if (purchasesError) {
+  if (purchasesRes.error) {
     return {
       data: { balance, balanceLabel: formatNumberFr(balance), purchases: [] },
-      error: new Error(purchasesError.message),
+      error: purchasesRes.error,
     };
   }
 
-  const rows = (purchases ?? []) as SmsCreditPurchaseRecord[];
   return {
     data: {
       balance,
       balanceLabel: formatNumberFr(balance),
-      purchases: rows.map(toPurchaseRow),
+      purchases: purchasesRes.data,
     },
+    error: null,
+  };
+}
+
+function escapeIlike(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export async function fetchCreditPurchasesPage(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { offset: number; limit?: number; search?: string; includeTotal?: boolean },
+): Promise<{
+  data: CreditPurchaseRowData[];
+  hasMore: boolean;
+  totalCount?: number;
+  error: Error | null;
+}> {
+  const limit = args.limit ?? LIST_PAGE_SIZE;
+  const offset = Math.max(0, args.offset);
+  const q = (args.search ?? "").trim();
+  const includeTotal = args.includeTotal ?? offset === 0;
+
+  let query = supabase
+    .from("sms_credit_purchases")
+    .select("*", { count: includeTotal ? "exact" : undefined })
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (q) {
+    const safe = escapeIlike(q);
+    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+    query = query.or(`pack_label.ilike.${p},invoice_ref.ilike.${p}`);
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    return { data: [], hasMore: false, error: new Error(error.message) };
+  }
+
+  const rows = (data ?? []) as SmsCreditPurchaseRecord[];
+  return {
+    data: rows.map(toPurchaseRow),
+    hasMore: rows.length === limit,
+    totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
   };
 }

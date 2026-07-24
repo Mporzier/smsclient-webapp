@@ -9,6 +9,7 @@ import type { CustomFieldValues } from "@/lib/types/customFields";
 import {
   POSTGREST_IN_CHUNK,
   POSTGREST_INSERT_CHUNK,
+  LIST_PAGE_SIZE,
   chunkList,
 } from "@/lib/supabase/postgrestChunk";
 
@@ -214,38 +215,91 @@ export async function fetchClients(
   supabase: SupabaseClient,
 ): Promise<{ data: ContactRowData[]; error: Error | null }> {
   const PAGE = 500;
-  const COLS =
-    "id,user_id,first_name,last_name,phone_e164,group_label,notes,birthday,custom_fields,source,opt_in,stop_sms,last_sms_sent_at,last_sms_body,unsubscribed_at,created_at";
-  const rows: ClientRecord[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from("clients")
-      .select(COLS)
-      .is("deleted_at", null)
-      // Tri stable : lots importés partagent souvent le même created_at.
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(from, from + PAGE - 1);
-
+  const all: ContactRowData[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, hasMore, error } = await fetchClientsPage(supabase, {
+      offset,
+      limit: PAGE,
+      search: "",
+      includeTotal: false,
+    });
     if (error) {
-      if (rows.length > 0) break;
-      return { data: [], error: new Error(error.message) };
+      if (all.length > 0) break;
+      return { data: [], error };
     }
-    const page = (data ?? []) as ClientRecord[];
-    rows.push(...page);
-    if (page.length < PAGE) break;
+    all.push(...data);
+    if (!hasMore) break;
+  }
+  return { data: all, error: null };
+}
+
+const CLIENT_LIST_COLS =
+  "id,user_id,first_name,last_name,phone_e164,group_label,notes,birthday,custom_fields,source,opt_in,stop_sms,last_sms_sent_at,last_sms_body,unsubscribed_at,created_at";
+
+function escapeIlike(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export type FetchClientsPageArgs = {
+  offset: number;
+  limit?: number;
+  search?: string;
+  /** Compte exact (coûteux) — seulement offset 0 en pratique. */
+  includeTotal?: boolean;
+};
+
+export async function fetchClientsPage(
+  supabase: SupabaseClient,
+  args: FetchClientsPageArgs,
+): Promise<{
+  data: ContactRowData[];
+  hasMore: boolean;
+  totalCount?: number;
+  error: Error | null;
+}> {
+  const limit = args.limit ?? LIST_PAGE_SIZE;
+  const offset = Math.max(0, args.offset);
+  const q = (args.search ?? "").trim();
+  const includeTotal = args.includeTotal ?? offset === 0;
+
+  let query = supabase
+    .from("clients")
+    .select(CLIENT_LIST_COLS, includeTotal ? { count: "exact" } : undefined)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (q) {
+    const safe = escapeIlike(q);
+    const pattern = `%${safe}%`;
+    // Quotes: espaces / caractères spéciaux dans le filtre `or`.
+    const p = `"${pattern.replace(/"/g, '\\"')}"`;
+    query = query.or(
+      [
+        `first_name.ilike.${p}`,
+        `last_name.ilike.${p}`,
+        `phone_e164.ilike.${p}`,
+        `group_label.ilike.${p}`,
+      ].join(","),
+    );
   }
 
-  const ids = rows.map((r) => r.id);
+  const { data, error, count } = await query;
+  if (error) {
+    return { data: [], hasMore: false, error: new Error(error.message) };
+  }
+
+  const page = (data ?? []) as ClientRecord[];
   const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
     supabase,
-    ids,
+    page.map((r) => r.id),
   );
   if (memErr) {
-    return { data: [], error: memErr };
+    return { data: [], hasMore: false, error: memErr };
   }
 
-  const needsFallback = rows.some((r) => !r.last_sms_body && r.last_sms_sent_at);
+  const needsFallback = page.some((r) => !r.last_sms_body && r.last_sms_sent_at);
   let fallbackBody: string | null = null;
   if (needsFallback) {
     const { data: campaign } = await supabase
@@ -258,12 +312,74 @@ export async function fetchClients(
     fallbackBody = (campaign as { body: string } | null)?.body ?? null;
   }
 
+  const rows = page.map((r) => {
+    const row = r.last_sms_body
+      ? r
+      : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
+    return clientRecordToRow(row, memMap.get(r.id) ?? []);
+  });
+
   return {
-    data: rows.map((r) => {
-      const row = r.last_sms_body
-        ? r
-        : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
-      return clientRecordToRow(row, memMap.get(r.id) ?? []);
+    data: rows,
+    hasMore: page.length === limit,
+    totalCount: includeTotal && typeof count === "number" ? count : undefined,
+    error: null,
+  };
+}
+
+/** Contacts non éligibles campagne (STOP / pas opt-in) — query dédiée lazy-safe. */
+export async function fetchUnsubscribedContacts(
+  supabase: SupabaseClient,
+): Promise<{
+  data: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    name: string;
+    phone: string;
+    date: string;
+  }>;
+  error: Error | null;
+}> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select(
+      "id,first_name,last_name,phone_e164,unsubscribed_at,created_at,opt_in,stop_sms",
+    )
+    .is("deleted_at", null)
+    .or("opt_in.eq.false,stop_sms.eq.true")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) {
+    return { data: [], error: new Error(error.message) };
+  }
+
+  return {
+    data: (data ?? []).map((raw) => {
+      const r = raw as {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        phone_e164: string;
+        unsubscribed_at: string | null;
+        created_at: string;
+      };
+      const firstName = r.first_name?.trim() ?? "";
+      const lastName = r.last_name?.trim() ?? "";
+      const name =
+        [firstName, lastName].filter(Boolean).join(" ") || firstName || "—";
+      const unsub = r.unsubscribed_at
+        ? formatParisCalendarDate(r.unsubscribed_at)
+        : formatParisCalendarDate(r.created_at);
+      return {
+        id: r.id,
+        firstName,
+        lastName,
+        name,
+        phone: e164ToFrDisplay(r.phone_e164),
+        date: unsub !== "—" ? unsub : formatParisCalendarDate(r.created_at),
+      };
     }),
     error: null,
   };

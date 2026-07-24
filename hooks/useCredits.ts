@@ -3,11 +3,13 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   buyCreditsDummy,
+  fetchCreditPurchasesPage,
   fetchCreditsSnapshot,
   type BuyCreditsInput,
 } from "@/lib/supabase/credits";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import { createClient } from "@/lib/supabase/client";
+import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export function useCredits() {
@@ -17,6 +19,8 @@ export function useCredits() {
   const [balance, setBalance] = useState(0);
   const [balanceLabel, setBalanceLabel] = useState("0");
   const [purchases, setPurchases] = useState<CreditPurchaseRowData[]>([]);
+  const [hasMorePurchases, setHasMorePurchases] = useState(false);
+  const [loadingMorePurchases, setLoadingMorePurchases] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
   const [settled, setSettled] = useState<{
@@ -35,6 +39,7 @@ export function useCredits() {
     setBalance(0);
     setBalanceLabel("0");
     setPurchases([]);
+    setHasMorePurchases(false);
     setError(null);
   }
 
@@ -67,6 +72,7 @@ export function useCredits() {
         setBalance(data.balance);
         setBalanceLabel(data.balanceLabel);
         setPurchases(data.purchases);
+        setHasMorePurchases(data.purchases.length >= LIST_PAGE_SIZE);
         setSettled({ nonce: requestNonce, userId: requestUserId });
         flushWaiters();
       },
@@ -83,6 +89,37 @@ export function useCredits() {
       setNonce((n) => n + 1);
     });
   }, []);
+
+  const loadMorePurchases = useCallback(async () => {
+    if (!userId || loadingMorePurchases || !hasMorePurchases) return;
+    setLoadingMorePurchases(true);
+    const res = await fetchCreditPurchasesPage(supabase, userId, {
+      offset: purchases.length,
+      limit: LIST_PAGE_SIZE,
+      search: "",
+      includeTotal: false,
+    });
+    if (res.error) {
+      setError(res.error.message);
+    } else {
+      setPurchases((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        const next = [...prev];
+        for (const row of res.data) {
+          if (!seen.has(row.id)) next.push(row);
+        }
+        return next;
+      });
+      setHasMorePurchases(res.hasMore);
+    }
+    setLoadingMorePurchases(false);
+  }, [
+    userId,
+    loadingMorePurchases,
+    hasMorePurchases,
+    purchases.length,
+    supabase,
+  ]);
 
   const buy = useCallback(
     async (
@@ -110,6 +147,9 @@ export function useCredits() {
     balanceLabel,
     purchases,
     loading,
+    loadingMorePurchases,
+    hasMorePurchases,
+    loadMorePurchases,
     error,
     refresh,
     buy,

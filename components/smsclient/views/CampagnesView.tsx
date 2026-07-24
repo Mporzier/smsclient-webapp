@@ -24,7 +24,7 @@ import {
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { compareIsoTimestamps } from "@/lib/proto/compareIso";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Megaphone, MoreHorizontal, Search } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -57,6 +57,12 @@ function StatusBadge({ status }: { status: SmsCampaignStatus }) {
 type CampagnesProps = {
   rows: CampaignRowData[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   error: string | null;
   onNewCampaign: () => void;
   onOpenDetails: (row: CampaignRowData) => void;
@@ -65,20 +71,27 @@ type CampagnesProps = {
 export function CampagnesView({
   rows,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  totalCount = null,
+  searchQuery,
+  onSearchChange,
   error,
   onOpenDetails,
 }: CampagnesProps) {
   const { t } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const showBigEmpty = !loading && !error && rows.length === 0;
+  const showBigEmpty =
+    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
 
+  const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
     () =>
-      t(rows.length === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
-        n: rows.length,
+      t(footerN === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
+        n: footerN,
       }),
-    [rows.length, t],
+    [footerN, t],
   );
 
   const columns: ColumnDef<CampaignRowData, unknown>[] = useMemo(
@@ -188,7 +201,7 @@ export function CampagnesView({
           <InputGroupInput
             placeholder={t("campaigns.searchPlaceholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             aria-label={t("campaigns.searchAria")}
           />
         </InputGroup>
@@ -221,7 +234,9 @@ export function CampagnesView({
           columns={columns}
           data={rows}
           loading={loading}
-          pageSize={25}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
           globalFilter={searchQuery}
           emptyMessage={t("campaigns.emptyTable")}
           searchNoResultsMessage={t("campaigns.noSearchResults")}

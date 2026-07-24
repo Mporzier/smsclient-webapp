@@ -96,6 +96,9 @@ export function renderSettingsRoute(
           onSaveProfile={profileState.saveProfile}
           purchases={creditsState.purchases}
           purchasesLoading={creditsState.loading}
+          purchasesLoadingMore={creditsState.loadingMorePurchases}
+          purchasesHasMore={creditsState.hasMorePurchases}
+          onLoadMorePurchases={creditsState.loadMorePurchases}
           onInvoiceClick={(id: string) =>
             modals.showToast(`Téléchargement de la facture ${id} (prototype)`)
           }
@@ -157,6 +160,12 @@ export function renderDefaultRoute(ctx: PrototypeAppContext): ReactNode {
     <ContactsView
       rows={contactsState.rows}
       loading={contactsState.loading}
+      loadingMore={contactsState.loadingMore}
+      hasMore={contactsState.hasMore}
+      onLoadMore={contactsState.loadMore}
+      totalCount={contactsState.totalCount}
+      searchQuery={contactsState.searchInput}
+      onSearchChange={contactsState.setSearchInput}
       error={contactsState.error}
       customFieldDefs={customFieldsState.defs}
       onImport={() => modals.setImportContactsOpen(true)}

@@ -16,7 +16,6 @@ import { useUserQrCode } from "@/hooks/useUserQrCode";
 import { createClient } from "@/lib/supabase/client";
 import type { AppRoute } from "@/lib/proto/routes";
 import { statsMonthRange } from "@/lib/statsDateRanges";
-import { isCampaignEligibleContact } from "@/lib/types/contact";
 import { useMemo } from "react";
 
 export function usePrototypeData(route: AppRoute) {
@@ -39,12 +38,8 @@ export function usePrototypeData(route: AppRoute) {
   const { from: mFrom, to: mTo } = useMemo(() => statsMonthRange(), []);
 
   const groupOptions = useMemo(() => {
-    const fromDb = groupsState.rows.map((g) => g.name);
-    const fromContacts = [
-      ...new Set(contactsState.rows.flatMap((c) => c.groups)),
-    ];
-    return [...new Set([...fromDb, ...fromContacts])];
-  }, [contactsState.rows, groupsState.rows]);
+    return [...new Set(groupsState.rows.map((g) => g.name))];
+  }, [groupsState.rows]);
 
   const groupModalContacts = useMemo(
     () =>
@@ -59,20 +54,7 @@ export function usePrototypeData(route: AppRoute) {
     [contactsState.rows]
   );
 
-  const unsubscribedContacts = useMemo(
-    () =>
-      contactsState.rows
-        .filter((c) => !isCampaignEligibleContact(c))
-        .map((c) => ({
-          id: c.id,
-          firstName: c.firstName,
-          lastName: c.lastName,
-          name: c.name,
-          phone: c.phone,
-          date: c.unsubscribed !== "—" ? c.unsubscribed : c.created,
-        })),
-    [contactsState.rows]
-  );
+  const unsubscribedContacts = contactsState.unsubscribedContacts;
 
   return {
     user,
