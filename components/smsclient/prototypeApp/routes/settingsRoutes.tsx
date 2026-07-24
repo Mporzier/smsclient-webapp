@@ -117,7 +117,6 @@ export function renderSettingsRoute(
     case "acheter-credits":
       return (
         <AcheterCreditsView
-          balanceLabel={creditsState.balanceLabel}
           creditsAvailable={creditsState.balance}
           onCancel={() => ctx.go("campagnes")}
           onBuy={async (selection) => {

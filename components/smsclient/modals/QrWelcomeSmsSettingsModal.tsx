@@ -23,7 +23,6 @@ import {
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
-import { useModalFormDirty } from "./modalFormGuard";
 
 type QrWelcomeSmsSettingsModalProps = {
   open: boolean;
@@ -52,11 +51,6 @@ export function QrWelcomeSmsSettingsModal({
   const normalizedLocal = useMemo(
     () => normalizePrenomTokens(localTemplate),
     [localTemplate]
-  );
-  const dirty = useModalFormDirty(
-    open,
-    normalizedLocal.trim(),
-    (a, b) => a === b
   );
 
   const handleClose = useCallback(() => {
@@ -87,10 +81,10 @@ export function QrWelcomeSmsSettingsModal({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <FormDialogHeader

@@ -2,6 +2,7 @@
 
 import { ImportContactsModal } from "@/components/smsclient/ImportContactsModal";
 import { CampaignWizardLeaveConfirmModal } from "@/components/smsclient/modals/CampaignWizardLeaveConfirmModal";
+import { SoumettreAvisModal } from "@/components/smsclient/modals/SoumettreAvisModal";
 import {
   CampaignDetailsModal,
   ConfirmDeleteModal,
@@ -149,6 +150,12 @@ export function PrototypeAppModals({ ctx }: Props) {
           setLeaveWizardConfirmOpen(false);
         }}
         onLeave={confirmWizardLeave}
+      />
+
+      <SoumettreAvisModal
+        open={modals.feedbackOpen}
+        onClose={() => modals.setFeedbackOpen(false)}
+        onToast={modals.showToast}
       />
     </>
   );

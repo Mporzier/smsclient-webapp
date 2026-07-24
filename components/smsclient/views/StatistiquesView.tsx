@@ -4,10 +4,6 @@ import {
   UnsubscribedContactsModal,
   type UnsubscribedContactRow,
 } from "@/components/smsclient/modals/UnsubscribedContactsModal";
-import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
-} from "@/components/smsclient/modals/modalChrome";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,8 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -34,7 +29,10 @@ import {
   type StatsPeriodPreset,
 } from "@/lib/statsDateRanges";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
+import { format, isValid, parse } from "date-fns";
+import { enUS, fr as frLocale } from "date-fns/locale";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { DateRange } from "react-day-picker";
 import {
   CalendarRange,
   CheckCircle2,
@@ -52,6 +50,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+const ISO_DATE = "yyyy-MM-dd";
+
+function parseIsoDate(value: string): Date | undefined {
+  const t = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return undefined;
+  const d = parse(t, ISO_DATE, new Date());
+  return isValid(d) ? d : undefined;
+}
+
 type KpiConfig = {
   id: "smsSent" | "delivery" | "signups" | "unsub" | "credits";
   label: string;
@@ -63,14 +70,6 @@ type KpiConfig = {
 };
 
 const PERIOD_PRESET_IDS = ["today", "week", "month", "year"] as const;
-
-const quickPresetBtnCls = (active: boolean) =>
-  cn(
-    "w-full cursor-pointer rounded-xl border px-3 py-2.5 text-left text-[13px] font-bold transition-colors",
-    active
-      ? "border-blue-200 bg-blue-50 text-blue-700"
-      : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50"
-  );
 
 type StatsProps = {
   statsPeriod: StatsPeriodPreset;
@@ -114,6 +113,7 @@ export function StatistiquesView(props: StatsProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
   const [chartWidth, setChartWidth] = useState(1000);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
 
   const periodLabels = useMemo(
     () => ({
@@ -133,6 +133,13 @@ export function StatistiquesView(props: StatsProps) {
   );
 
   const numberLocale = locale === "en" ? "en-US" : "fr-FR";
+  const dayPickerLocale = locale === "en" ? enUS : frLocale;
+  const selectedRange = useMemo<DateRange | undefined>(() => {
+    const from = parseIsoDate(dateFrom);
+    const to = parseIsoDate(dateTo);
+    if (!from && !to) return undefined;
+    return { from, to };
+  }, [dateFrom, dateTo]);
 
   const kpis: KpiConfig[] = [
     {
@@ -229,11 +236,18 @@ export function StatistiquesView(props: StatsProps) {
     return () => observer.disconnect();
   }, [data.campaignSeries.length]);
 
-  useEffect(() => {
-    if (!statsOpen) return;
-    setDateFrom(appliedDateFrom);
-    setDateTo(appliedDateTo);
-  }, [statsOpen, appliedDateFrom, appliedDateTo, setDateFrom, setDateTo]);
+  const openPeriodPopover = (next: boolean) => {
+    if (next) {
+      setDateFrom(appliedDateFrom);
+      setDateTo(appliedDateTo);
+      setCalendarMonth(
+        parseIsoDate(appliedDateFrom) ??
+          parseIsoDate(appliedDateTo) ??
+          new Date(),
+      );
+    }
+    setStatsOpen(next);
+  };
 
   return (
     <div className="relative -m-4 flex min-h-[calc(100dvh-60px)] w-full flex-col p-3 md:-m-5 md:p-4">
@@ -245,130 +259,92 @@ export function StatistiquesView(props: StatsProps) {
         aria-hidden={loading}
       >
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2.5">
-          <Popover open={statsOpen} onOpenChange={setStatsOpen}>
+          <Popover open={statsOpen} onOpenChange={openPeriodPopover}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
-                className={cn(
-                  "h-11 gap-2 rounded-[14px] border-slate-200 bg-white px-4 text-[14px] font-bold text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:border-slate-300 hover:bg-slate-50",
-                  statsOpen && "border-blue-200 bg-blue-50/50 text-blue-700",
-                  statsPeriod === "custom" &&
-                    !statsOpen &&
-                    "border-blue-200 bg-blue-50/50"
-                )}
+                aria-pressed={statsOpen || statsPeriod === "custom"}
               >
-                <CalendarRange
-                  className="h-[18px] w-[18px] shrink-0 text-blue-600"
-                  aria-hidden
-                />
+                <CalendarRange className="size-4 shrink-0" aria-hidden />
                 {periodLabel}
               </Button>
             </PopoverTrigger>
             <PopoverContent
               align="end"
               sideOffset={12}
-              className="w-[min(560px,calc(100vw-20px))] gap-0 overflow-hidden rounded-[18px] p-0"
+              className="w-auto gap-0 overflow-hidden p-0"
               aria-label={t("stats.periodAria")}
             >
-              <PopoverHeader className="flex-row items-center justify-between border-b border-slate-200 px-4 py-3">
-                <PopoverTitle className="text-base font-black text-slate-900">
+              <PopoverHeader className="flex-row items-center justify-between border-b border-border px-3 py-2.5">
+                <PopoverTitle className="text-sm font-semibold">
                   {t("stats.periodTitle")}
                 </PopoverTitle>
                 <Button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-9 rounded-xl"
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label={t("common.cancel")}
                   onClick={() => setStatsOpen(false)}
                 >
-                  <X className="h-5 w-5" aria-hidden />
+                  <X aria-hidden />
                 </Button>
               </PopoverHeader>
-              <div className="flex flex-col sm:flex-row">
-                <div className="min-w-0 flex-1 p-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
-                      <Label
-                        htmlFor="stats-date-from"
-                        className="text-sm font-black text-slate-600"
-                      >
-                        {t("stats.from")}
-                      </Label>
-                      <DatePicker
-                        id="stats-date-from"
-                        value={dateFrom}
-                        onChange={setDateFrom}
-                        className="h-[46px] rounded-[14px] text-base font-black"
-                        contentClassName="z-[10050]"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-300/40 bg-slate-50/90 p-3">
-                      <Label
-                        htmlFor="stats-date-to"
-                        className="text-sm font-black text-slate-600"
-                      >
-                        {t("stats.to")}
-                      </Label>
-                      <DatePicker
-                        id="stats-date-to"
-                        value={dateTo}
-                        onChange={setDateTo}
-                        className="h-[46px] rounded-[14px] text-base font-black"
-                        contentClassName="z-[10050]"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3 flex justify-end gap-2">
+              <div className="space-y-3 p-3">
+                <div
+                  className="flex flex-wrap gap-1.5"
+                  role="group"
+                  aria-label={t("stats.shortcuts")}
+                >
+                  {PERIOD_PRESET_IDS.map((id) => (
                     <Button
-                      variant="outline"
-                      size="lg"
-                      className={brandBtnCls}
-                      onClick={() => setStatsOpen(false)}
+                      key={id}
+                      type="button"
+                      size="sm"
+                      variant={statsPeriod === id ? "default" : "outline"}
+                      aria-pressed={statsPeriod === id}
+                      onClick={() => onSelectPeriod(id)}
                     >
-                      {t("common.cancel")}
+                      {periodLabels[id]}
                     </Button>
-                    <Button
-                      variant="default"
-                      size="lg"
-                      className={brandBtnPrimaryCls}
-                      onClick={() => {
-                        applyRange();
-                        setStatsOpen(false);
-                      }}
-                    >
-                      {t("stats.apply")}
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-                <div className="border-t border-slate-200 bg-slate-50/60 p-3 sm:w-[188px] sm:border-t-0 sm:border-l">
-                  <p className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
-                    {t("stats.shortcuts")}
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {PERIOD_PRESET_IDS.map((id) => (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => onSelectPeriod(id)}
-                        className={quickPresetBtnCls(statsPeriod === id)}
-                      >
-                        {periodLabels[id]}
-                      </button>
-                    ))}
-                  </div>
+                <Calendar
+                  mode="range"
+                  locale={dayPickerLocale}
+                  selected={selectedRange}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  onSelect={(next) => {
+                    setDateFrom(
+                      next?.from ? format(next.from, ISO_DATE) : "",
+                    );
+                    setDateTo(next?.to ? format(next.to, ISO_DATE) : "");
+                  }}
+                  numberOfMonths={1}
+                  className="mx-auto w-fit bg-transparent p-0"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStatsOpen(false)}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      applyRange();
+                      setStatsOpen(false);
+                    }}
+                  >
+                    {t("stats.apply")}
+                  </Button>
                 </div>
               </div>
             </PopoverContent>
           </Popover>
-          <Button
-            variant="default"
-            size="lg"
-            className={brandBtnPrimaryCls}
-            onClick={onExport}
-          >
+          <Button size="lg" onClick={onExport}>
             {t("stats.export")}
           </Button>
         </div>
@@ -408,7 +384,7 @@ export function StatistiquesView(props: StatsProps) {
                     <Button
                       type="button"
                       size="sm"
-                      className="h-auto shrink-0 rounded-[18px] border border-blue-400/30 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-center text-[11px] font-black leading-tight text-white shadow-[0_10px_24px_rgba(37,99,235,0.38)] hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.48)] active:scale-[0.97]"
+                      className="shrink-0 whitespace-normal text-center leading-tight"
                       onClick={() => setUnsubModalOpen(true)}
                     >
                       {t("stats.viewList")}

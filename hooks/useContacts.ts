@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchClients } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { isContactsRealtimeRefreshPaused } from "@/lib/proto/contactsRefreshGate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useContacts() {
@@ -30,7 +31,6 @@ export function useContacts() {
       const { data, error: err } = await fetchClients(supabase);
       if (err) {
         setError(err.message);
-        setRows([]);
       } else {
         setRows(data);
       }
@@ -58,9 +58,11 @@ export function useContacts() {
 
     let debounce: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefresh = () => {
+      if (isContactsRealtimeRefreshPaused()) return;
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         debounce = null;
+        if (isContactsRealtimeRefreshPaused()) return;
         void refresh({ silent: true });
       }, 300);
     };

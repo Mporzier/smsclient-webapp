@@ -30,9 +30,6 @@ import {
 } from "./modalChrome";
 import {
   hasStackedOpenDialog,
-  smsLinkFormSnapshotsEqual,
-  useModalFormDirty,
-  type SmsLinkFormSnapshot,
 } from "./modalFormGuard";
 
 type CreateSmsLinkModalProps = {
@@ -50,7 +47,7 @@ const fieldMetaCls = "text-xs font-normal text-muted-foreground";
 const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 /** Ring Input UI trop épais en Dialog — border + ring-0 comme Contact. */
 const modalFieldCls =
-  "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
+  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
 export function CreateSmsLinkModal({
   open,
@@ -85,13 +82,6 @@ export function CreateSmsLinkModal({
     setSaveError(null);
     onClose();
   }, [onClose, saving]);
-
-  const formSnapshot: SmsLinkFormSnapshot = { originalUrl, label };
-  const isDirty = useModalFormDirty(
-    open,
-    formSnapshot,
-    smsLinkFormSnapshotsEqual
-  );
 
   const handleSubmit = useCallback(async () => {
     let hasFieldError = false;
@@ -133,7 +123,7 @@ export function CreateSmsLinkModal({
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          if (saving || isDirty || hasStackedOpenDialog()) return;
+          if (saving || hasStackedOpenDialog()) return;
           handleClose();
         }
       }}
@@ -149,11 +139,11 @@ export function CreateSmsLinkModal({
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving || isDirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving || isDirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">

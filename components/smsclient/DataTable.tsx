@@ -354,7 +354,7 @@ export function DataTable<T>({
                         type="button"
                         className={cn(
                           "-mx-3 -my-2 inline-flex w-[calc(100%+1.5rem)] min-w-0 cursor-pointer select-none items-center gap-1.5 px-3 py-2 text-left",
-                          "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
                         )}
                         onClick={() => {
                           const columnId = header.column.id;
@@ -531,8 +531,8 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border px-3.5 py-3 text-sm font-medium text-muted-foreground">
-        <span>
+      <div className="flex shrink-0 flex-col gap-2 border-t border-border px-3.5 py-3 text-sm font-medium text-muted-foreground">
+        <span className="min-w-0">
           {loading
             ? "…"
             : footer ??

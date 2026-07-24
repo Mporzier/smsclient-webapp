@@ -10,7 +10,7 @@ import type {
   AutomationSavePayload,
 } from "@/lib/types/automation";
 import type { ContactRowData } from "@/lib/types/contact";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export type AutomatisationsViewProps = {
   rows: AutomationRowData[];
@@ -37,11 +37,10 @@ export function AutomatisationsView({
     [rows],
   );
 
-  useEffect(() => {
-    if (loading || tabReady) return;
-    setTab(activeCount > 0 ? "mes" : "catalogue");
+  if (!loading && !tabReady) {
     setTabReady(true);
-  }, [loading, activeCount, tabReady]);
+    setTab(activeCount > 0 ? "mes" : "catalogue");
+  }
 
   function handleConfigureFromCatalog(presetKey: AutomationPresetKey) {
     const row = rows.find((r) => r.presetKey === presetKey);

@@ -1,6 +1,11 @@
 import { e164ToFrDisplay } from "@/lib/proto/smsUtils";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  POSTGREST_IN_CHUNK,
+  POSTGREST_PAGE,
+  chunkList,
+} from "@/lib/supabase/postgrestChunk";
 
 function formatDeletedFr(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {
@@ -17,18 +22,33 @@ export async function fetchDeletedContacts(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ data: DeletedContactRow[]; error: Error | null }> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("id, first_name, last_name, phone_e164, group_label, deleted_at")
-    .eq("user_id", userId)
-    .not("deleted_at", "is", null)
-    .order("deleted_at", { ascending: false });
+  const rows: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    phone_e164: string;
+    group_label: string | null;
+    deleted_at: string;
+  }[] = [];
 
-  if (error) {
-    return { data: [], error: new Error(error.message) };
+  for (let from = 0; ; from += POSTGREST_PAGE) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, first_name, last_name, phone_e164, group_label, deleted_at")
+      .eq("user_id", userId)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + POSTGREST_PAGE - 1);
+
+    if (error) {
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = data ?? [];
+    rows.push(...(page as typeof rows));
+    if (page.length < POSTGREST_PAGE) break;
   }
 
-  const rows = data ?? [];
   return {
     data: rows.map((row) => {
       const firstName = row.first_name?.trim() ?? "";
@@ -40,7 +60,7 @@ export async function fetchDeletedContacts(
         name,
         phone: e164ToFrDisplay(row.phone_e164),
         groupsLabel: row.group_label?.trim() || "—",
-        deletedLabel: formatDeletedFr(row.deleted_at as string),
+        deletedLabel: formatDeletedFr(row.deleted_at),
       };
     }),
     error: null,
@@ -67,21 +87,34 @@ export async function fetchDeletedGroups(
   const counts = new Map<string, number>();
 
   if (groupIds.length > 0) {
-    const { data: members, error: mErr } = await supabase
-      .from("client_group_members")
-      .select("group_id, clients!inner(deleted_at)")
-      .in("group_id", groupIds);
+    for (const idChunk of chunkList(groupIds, POSTGREST_IN_CHUNK)) {
+      for (let from = 0; ; from += POSTGREST_PAGE) {
+        const { data: members, error: mErr } = await supabase
+          .from("client_group_members")
+          .select("group_id, clients!inner(deleted_at)")
+          .in("group_id", idChunk)
+          .order("group_id", { ascending: true })
+          .order("client_id", { ascending: true })
+          .range(from, from + POSTGREST_PAGE - 1);
 
-    if (mErr) {
-      return { data: [], error: new Error(mErr.message) };
-    }
+        if (mErr) {
+          return { data: [], error: new Error(mErr.message) };
+        }
 
-    for (const row of members ?? []) {
-      const client = row.clients as { deleted_at: string | null } | { deleted_at: string | null }[];
-      const deletedAt = Array.isArray(client) ? client[0]?.deleted_at : client?.deleted_at;
-      if (deletedAt) continue;
-      const gid = row.group_id as string;
-      counts.set(gid, (counts.get(gid) ?? 0) + 1);
+        const page = members ?? [];
+        for (const row of page) {
+          const client = row.clients as
+            | { deleted_at: string | null }
+            | { deleted_at: string | null }[];
+          const deletedAt = Array.isArray(client)
+            ? client[0]?.deleted_at
+            : client?.deleted_at;
+          if (deletedAt) continue;
+          const gid = row.group_id as string;
+          counts.set(gid, (counts.get(gid) ?? 0) + 1);
+        }
+        if (page.length < POSTGREST_PAGE) break;
+      }
     }
   }
 
@@ -104,27 +137,31 @@ export async function restoreClients(
 ): Promise<{ restored: number; error: Error | null }> {
   if (ids.length === 0) return { restored: 0, error: null };
 
-  const { data, error } = await supabase
-    .from("clients")
-    .update({ deleted_at: null })
-    .eq("user_id", userId)
-    .in("id", ids)
-    .not("deleted_at", "is", null)
-    .select("id");
+  let restored = 0;
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("clients")
+      .update({ deleted_at: null })
+      .eq("user_id", userId)
+      .in("id", batch)
+      .not("deleted_at", "is", null)
+      .select("id");
 
-  if (error) {
-    if (error.code === "23505") {
-      return {
-        restored: 0,
-        error: new Error(
-          "Impossible de restaurer : un contact actif utilise déjà ce numéro.",
-        ),
-      };
+    if (error) {
+      if (error.code === "23505") {
+        return {
+          restored: 0,
+          error: new Error(
+            "Impossible de restaurer : un contact actif utilise déjà ce numéro.",
+          ),
+        };
+      }
+      return { restored: 0, error: new Error(error.message) };
     }
-    return { restored: 0, error: new Error(error.message) };
+    restored += data?.length ?? 0;
   }
 
-  return { restored: data?.length ?? 0, error: null };
+  return { restored, error: null };
 }
 
 export async function restoreGroups(
@@ -134,25 +171,29 @@ export async function restoreGroups(
 ): Promise<{ restored: number; error: Error | null }> {
   if (ids.length === 0) return { restored: 0, error: null };
 
-  const { data, error } = await supabase
-    .from("client_groups")
-    .update({ deleted_at: null })
-    .eq("user_id", userId)
-    .in("id", ids)
-    .not("deleted_at", "is", null)
-    .select("id");
+  let restored = 0;
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("client_groups")
+      .update({ deleted_at: null })
+      .eq("user_id", userId)
+      .in("id", batch)
+      .not("deleted_at", "is", null)
+      .select("id");
 
-  if (error) {
-    if (error.code === "23505") {
-      return {
-        restored: 0,
-        error: new Error(
-          "Impossible de restaurer : un groupe actif porte déjà ce nom.",
-        ),
-      };
+    if (error) {
+      if (error.code === "23505") {
+        return {
+          restored: 0,
+          error: new Error(
+            "Impossible de restaurer : un groupe actif porte déjà ce nom.",
+          ),
+        };
+      }
+      return { restored: 0, error: new Error(error.message) };
     }
-    return { restored: 0, error: new Error(error.message) };
+    restored += data?.length ?? 0;
   }
 
-  return { restored: data?.length ?? 0, error: null };
+  return { restored, error: null };
 }

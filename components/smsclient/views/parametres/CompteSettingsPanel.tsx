@@ -1,28 +1,29 @@
 "use client";
 
-import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { parametresFieldInp } from "@/components/smsclient/views/parametres/parametresSettings";
 import { cn } from "@/lib/cn";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import type { ProfileLanguage, UserProfileForm } from "@/lib/types/profile";
 import { useI18n } from "@/lib/i18n";
 import {
+  Check,
   Mail,
+  Pencil,
   Phone,
   User,
   UserRound,
-  type LucideIcon,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 const rowCls =
-  "grid min-h-[3.25rem] grid-cols-[7rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-2 last:border-b-0 max-[480px]:grid-cols-[5.5rem_minmax(0,1fr)_auto]";
+  "grid min-h-[3.25rem] grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 border-b border-border py-2 last:border-b-0 max-[480px]:grid-cols-[5.5rem_minmax(0,1fr)]";
 const labelCls = "text-sm font-extrabold text-foreground";
-/** Colonne milieu centrée ; contenu aligné à gauche dedans */
-const valueColCls = "flex min-w-0 justify-center";
-const valueCls =
-  "flex min-h-11 w-full max-w-[18rem] items-center gap-2.5 text-left text-sm font-bold text-foreground";
+const valueClusterCls =
+  "flex min-w-0 w-full items-center gap-1.5";
+const valueTextCls =
+  "min-w-0 flex-1 truncate text-left text-sm font-bold text-foreground";
 const valueIconCls = "h-4 w-4 shrink-0";
 
 type EditableKey = "firstName" | "lastName" | "phone" | "language";
@@ -36,44 +37,6 @@ type CompteSettingsPanelProps = {
     key: K,
     value: UserProfileForm[K],
   ) => void | Promise<void>;
-};
-
-const FIELD_META: Record<
-  EditableKey,
-  {
-    titleKey:
-      | "compte.firstNameEditTitle"
-      | "compte.lastNameEditTitle"
-      | "compte.phoneEditTitle"
-      | "compte.languageEditTitle";
-    descKey:
-      | "compte.firstNameEditDesc"
-      | "compte.lastNameEditDesc"
-      | "compte.phoneEditDesc"
-      | "compte.languageEditDesc";
-    icon: LucideIcon | null;
-  }
-> = {
-  firstName: {
-    titleKey: "compte.firstNameEditTitle",
-    descKey: "compte.firstNameEditDesc",
-    icon: User,
-  },
-  lastName: {
-    titleKey: "compte.lastNameEditTitle",
-    descKey: "compte.lastNameEditDesc",
-    icon: UserRound,
-  },
-  phone: {
-    titleKey: "compte.phoneEditTitle",
-    descKey: "compte.phoneEditDesc",
-    icon: Phone,
-  },
-  language: {
-    titleKey: "compte.languageEditTitle",
-    descKey: "compte.languageEditDesc",
-    icon: null,
-  },
 };
 
 /** Drapeaux SVG — pas d’emoji (Windows / certains navigateurs). */
@@ -171,224 +134,249 @@ export function CompteSettingsPanel({
     }
   };
 
-  const meta = editKey ? FIELD_META[editKey] : null;
-  const MetaIcon = meta?.icon;
-  const dirty = editKey !== null && draft !== form[editKey];
-
-  const modalIcon =
-    editKey === "language" ? (
-      <LanguageFlag lang={draft || form.language} className="h-5 w-[1.7rem]" />
-    ) : MetaIcon ? (
-      <MetaIcon className="h-5 w-5 text-ring" strokeWidth={2.25} />
-    ) : null;
-
   return (
-    <>
-      <div className="w-full rounded-xl border border-border bg-card px-4">
-        {loading ? (
-          <p className="py-4 text-sm font-semibold text-muted-foreground">
-            {t("parametres.loading")}
-          </p>
-        ) : null}
-        {saveError ? (
-          <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-            {saveError}
-          </p>
-        ) : null}
-
-        <CompteDisplayRow
-          label={t("compte.icon")}
-          editLabel={t("compte.edit")}
-          leading={
-            <span
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ring text-sm font-black text-white"
-              aria-hidden
-            >
-              {initials}
-            </span>
-          }
-          display=""
-          hideDisplay
-        />
-        <CompteDisplayRow
-          label={t("compte.firstName")}
-          editLabel={t("compte.edit")}
-          leading={
-            <User
-              className={cn(valueIconCls, "text-sky-600")}
-              strokeWidth={2.25}
-              aria-hidden
-            />
-          }
-          display={form.firstName.trim() || "—"}
-          disabled={saving || loading}
-          onEdit={() => openEdit("firstName")}
-        />
-        <CompteDisplayRow
-          label={t("compte.lastName")}
-          editLabel={t("compte.edit")}
-          leading={
-            <UserRound
-              className={cn(valueIconCls, "text-violet-600")}
-              strokeWidth={2.25}
-              aria-hidden
-            />
-          }
-          display={form.lastName.trim() || "—"}
-          disabled={saving || loading}
-          onEdit={() => openEdit("lastName")}
-        />
-        <CompteDisplayRow
-          label={t("compte.email")}
-          editLabel={t("compte.edit")}
-          leading={
-            <Mail
-              className={cn(valueIconCls, "text-amber-600")}
-              strokeWidth={2.25}
-              aria-hidden
-            />
-          }
-          display={form.email.trim() || "—"}
-        />
-        <CompteDisplayRow
-          label={t("compte.phone")}
-          editLabel={t("compte.edit")}
-          leading={
-            <Phone
-              className={cn(valueIconCls, "text-emerald-600")}
-              strokeWidth={2.25}
-              aria-hidden
-            />
-          }
-          display={form.phone.trim() || "—"}
-          disabled={saving || loading}
-          onEdit={() => openEdit("phone")}
-        />
-        <CompteDisplayRow
-          label={t("compte.language")}
-          editLabel={t("compte.edit")}
-          leading={<LanguageFlag lang={form.language} />}
-          display={languageLabel(form.language)}
-          disabled={saving || loading}
-          onEdit={() => openEdit("language")}
-        />
-      </div>
-
-      {editKey && meta && modalIcon ? (
-        <ParametresSettingModal
-          open
-          title={t(meta.titleKey)}
-          description={t(meta.descKey)}
-          icon={modalIcon}
-          bareIcon={editKey === "language"}
-          onClose={closeEdit}
-          onSave={() => void handleSaveEdit()}
-          saving={saving}
-          dirty={dirty || Boolean(fieldError)}
-        >
-          {fieldError ? (
-            <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-              {fieldError}
-            </p>
-          ) : null}
-          {editKey === "language" ? (
-            <div className="grid gap-2">
-              {(
-                [
-                  { id: "fr" as const, label: t("compte.lang.fr") },
-                  { id: "en" as const, label: t("compte.lang.en") },
-                ]
-              ).map((opt) => {
-                const selected = draft === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setDraft(opt.id)}
-                    className={cn(
-                      "flex h-11 w-full cursor-pointer items-center gap-3 rounded-[14px] border px-3.5 text-left text-[15px] font-bold transition-colors",
-                      selected
-                        ? "border-ring bg-ring/10 text-foreground"
-                        : "border-border bg-card text-foreground hover:bg-muted/50",
-                    )}
-                  >
-                    <LanguageFlag lang={opt.id} className="pointer-events-none" />
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <input
-              className={cn(parametresFieldInp, "h-11 w-full")}
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                if (fieldError) setFieldError(null);
-              }}
-              autoFocus
-              autoComplete={
-                editKey === "firstName"
-                  ? "given-name"
-                  : editKey === "lastName"
-                    ? "family-name"
-                    : "tel"
-              }
-            />
-          )}
-        </ParametresSettingModal>
+    <div className="w-full max-w-[50%] min-w-[18rem] rounded-xl border border-border bg-card px-4">
+      {loading ? (
+        <p className="py-4 text-sm font-semibold text-muted-foreground">
+          {t("parametres.loading")}
+        </p>
       ) : null}
-    </>
+      {saveError ? (
+        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+          {saveError}
+        </p>
+      ) : null}
+      {fieldError ? (
+        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+          {fieldError}
+        </p>
+      ) : null}
+
+      <CompteDisplayRow
+        label={t("compte.icon")}
+        leading={
+          <span
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ring text-sm font-black text-white"
+            aria-hidden
+          >
+            {initials}
+          </span>
+        }
+        hideDisplay
+      />
+      <CompteDisplayRow
+        label={t("compte.firstName")}
+        leading={
+          <User
+            className={cn(valueIconCls, "text-sky-600")}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        }
+        display={form.firstName.trim() || "—"}
+        editing={editKey === "firstName"}
+        draft={draft}
+        onDraftChange={setDraft}
+        disabled={saving || loading}
+        saving={saving}
+        autoComplete="given-name"
+        onEdit={() => openEdit("firstName")}
+        onSubmit={() => void handleSaveEdit()}
+        onCancel={closeEdit}
+        editAria={t("compte.edit")}
+        saveAria={t("dialog.save")}
+      />
+      <CompteDisplayRow
+        label={t("compte.lastName")}
+        leading={
+          <UserRound
+            className={cn(valueIconCls, "text-violet-600")}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        }
+        display={form.lastName.trim() || "—"}
+        editing={editKey === "lastName"}
+        draft={draft}
+        onDraftChange={setDraft}
+        disabled={saving || loading}
+        saving={saving}
+        autoComplete="family-name"
+        onEdit={() => openEdit("lastName")}
+        onSubmit={() => void handleSaveEdit()}
+        onCancel={closeEdit}
+        editAria={t("compte.edit")}
+        saveAria={t("dialog.save")}
+      />
+      <CompteDisplayRow
+        label={t("compte.email")}
+        leading={
+          <Mail
+            className={cn(valueIconCls, "text-amber-600")}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        }
+        display={form.email.trim() || "—"}
+      />
+      <CompteDisplayRow
+        label={t("compte.phone")}
+        leading={
+          <Phone
+            className={cn(valueIconCls, "text-emerald-600")}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        }
+        display={form.phone.trim() || "—"}
+        editing={editKey === "phone"}
+        draft={draft}
+        onDraftChange={setDraft}
+        disabled={saving || loading}
+        saving={saving}
+        autoComplete="tel"
+        onEdit={() => openEdit("phone")}
+        onSubmit={() => void handleSaveEdit()}
+        onCancel={closeEdit}
+        editAria={t("compte.edit")}
+        saveAria={t("dialog.save")}
+      />
+      <CompteDisplayRow
+        label={t("compte.language")}
+        leading={<LanguageFlag lang={form.language} />}
+        display={languageLabel(form.language)}
+        editing={editKey === "language"}
+        draft={draft}
+        onDraftChange={setDraft}
+        disabled={saving || loading}
+        saving={saving}
+        languageMode
+        languageOptions={[
+          { id: "fr", label: t("compte.lang.fr") },
+          { id: "en", label: t("compte.lang.en") },
+        ]}
+        onEdit={() => openEdit("language")}
+        onSubmit={() => void handleSaveEdit()}
+        onCancel={closeEdit}
+        editAria={t("compte.edit")}
+        saveAria={t("dialog.save")}
+      />
+    </div>
   );
 }
 
 function CompteDisplayRow({
   label,
-  editLabel,
   leading,
-  display,
+  display = "",
   hideDisplay = false,
+  editing = false,
+  draft = "",
+  onDraftChange,
   disabled = false,
+  saving = false,
+  autoComplete,
+  languageMode = false,
+  languageOptions,
   onEdit,
+  onSubmit,
+  onCancel,
+  editAria,
+  saveAria,
 }: {
   label: string;
-  editLabel: string;
   leading: ReactNode;
-  display: string;
+  display?: string;
   hideDisplay?: boolean;
+  editing?: boolean;
+  draft?: string;
+  onDraftChange?: (v: string) => void;
   disabled?: boolean;
+  saving?: boolean;
+  autoComplete?: string;
+  languageMode?: boolean;
+  languageOptions?: { id: "fr" | "en"; label: string }[];
   onEdit?: () => void;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+  editAria?: string;
+  saveAria?: string;
 }) {
-  const editControl = onEdit ? (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      disabled={disabled}
-      onClick={onEdit}
-    >
-      {editLabel}
-    </Button>
-  ) : (
-    <span className="invisible pointer-events-none select-none" aria-hidden>
-      <Button type="button" variant="outline" size="sm" tabIndex={-1}>
-        {editLabel}
-      </Button>
-    </span>
-  );
-
   return (
     <div className={rowCls}>
       <span className={labelCls}>{label}</span>
-      <div className={valueColCls}>
-        <div className={valueCls}>
-          {leading}
-          {hideDisplay ? null : (
-            <span className="truncate">{display}</span>
-          )}
-        </div>
+      <div className={valueClusterCls}>
+        {leading}
+        {hideDisplay ? null : editing ? (
+          languageMode && languageOptions ? (
+            <div className="flex min-w-0 flex-1 gap-1">
+              {languageOptions.map((opt) => {
+                const selected = draft === opt.id;
+                return (
+                  <Button
+                    key={opt.id}
+                    type="button"
+                    size="sm"
+                    variant={selected ? "secondary" : "outline"}
+                    disabled={saving}
+                    className="h-9 min-w-0 flex-1 gap-1.5 px-2"
+                    onClick={() => onDraftChange?.(opt.id)}
+                  >
+                    <LanguageFlag lang={opt.id} />
+                    <span className="truncate">{opt.label}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          ) : (
+            <Input
+              className={cn(parametresFieldInp, "h-9 min-w-0 flex-1 text-sm")}
+              value={draft}
+              disabled={saving}
+              autoFocus
+              autoComplete={autoComplete}
+              onChange={(e) => onDraftChange?.(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSubmit?.();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  onCancel?.();
+                }
+              }}
+            />
+          )
+        ) : (
+          <span className={valueTextCls}>{display}</span>
+        )}
+        {onEdit ? (
+          editing ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={disabled || saving}
+              aria-label={saveAria}
+              onClick={onSubmit}
+            >
+              <Check aria-hidden />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={disabled}
+              aria-label={editAria}
+              onClick={onEdit}
+            >
+              <Pencil aria-hidden />
+            </Button>
+          )
+        ) : null}
       </div>
-      {editControl}
     </div>
   );
 }

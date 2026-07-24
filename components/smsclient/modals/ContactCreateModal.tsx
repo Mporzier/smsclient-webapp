@@ -39,10 +39,7 @@ import {
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import {
-  contactFormSnapshotsEqual,
   hasStackedOpenDialog,
-  useModalFormDirty,
-  type ContactFormSnapshot,
 } from "./modalFormGuard";
 
 export type ContactCreateModalProps = {
@@ -72,7 +69,7 @@ const fieldMetaCls = "text-xs font-normal text-muted-foreground";
 const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 /** Ring Input UI trop épais en Dialog — border + ring-0 comme Import. */
 const modalFieldCls =
-  "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
+  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
 function FrFlagIcon({ className }: { className?: string }) {
   return (
@@ -247,21 +244,6 @@ export function ContactCreateModal({
     t,
   ]);
 
-  const formSnapshot: ContactFormSnapshot = {
-    first,
-    last,
-    phone,
-    birthday,
-    notes,
-    groups,
-    customFields: draftCustomFields,
-  };
-  const isDirty = useModalFormDirty(
-    open,
-    formSnapshot,
-    contactFormSnapshotsEqual
-  );
-
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneInvalid =
     (phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone)) ||
@@ -291,7 +273,7 @@ export function ContactCreateModal({
         open={open}
         onOpenChange={(next) => {
           if (!next) {
-            if (saving || isDirty || hasStackedOpenDialog()) return;
+            if (saving || hasStackedOpenDialog()) return;
             handleClose();
           }
         }}
@@ -308,11 +290,11 @@ export function ContactCreateModal({
           onPointerDownOutside={(e) => {
             // Confirm empilée : ne pas preventDefault (sinon elle ne se ferme pas).
             if (hasStackedOpenDialog()) return;
-            if (saving || isDirty) e.preventDefault();
+            if (saving) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             if (hasStackedOpenDialog()) return;
-            if (saving || isDirty) e.preventDefault();
+            if (saving) e.preventDefault();
           }}
         >
           <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">

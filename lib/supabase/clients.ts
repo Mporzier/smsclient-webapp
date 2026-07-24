@@ -6,6 +6,11 @@ import {
 import { formatParisCalendarDate } from "@/lib/proto/timezone";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
+import {
+  POSTGREST_IN_CHUNK,
+  POSTGREST_INSERT_CHUNK,
+  chunkList,
+} from "@/lib/supabase/postgrestChunk";
 
 export type ClientRecord = {
   id: string;
@@ -140,32 +145,36 @@ async function fetchMembershipsByClientIds(
   if (clientIds.length === 0) {
     return { map, error: null };
   }
-  const { data, error } = await supabase
-    .from("client_group_members")
-    .select("client_id, client_groups(name, deleted_at)")
-    .in("client_id", clientIds);
 
-  if (error) {
-    return { map, error: new Error(error.message) };
+  for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("client_group_members")
+      .select("client_id, client_groups(name, deleted_at)")
+      .in("client_id", chunk);
+
+    if (error) {
+      return { map, error: new Error(error.message) };
+    }
+    for (const raw of data ?? []) {
+      const row = raw as {
+        client_id: string;
+        client_groups:
+          | { name: string; deleted_at: string | null }
+          | { name: string; deleted_at: string | null }[]
+          | null
+          | undefined;
+      };
+      const cg = row.client_groups;
+      const group = Array.isArray(cg) ? cg[0] : cg;
+      if (group?.deleted_at) continue;
+      const name = group?.name?.trim();
+      if (!name) continue;
+      const list = map.get(row.client_id) ?? [];
+      list.push(name);
+      map.set(row.client_id, list);
+    }
   }
-  for (const raw of data ?? []) {
-    const row = raw as {
-      client_id: string;
-      client_groups:
-        | { name: string; deleted_at: string | null }
-        | { name: string; deleted_at: string | null }[]
-        | null
-        | undefined;
-    };
-    const cg = row.client_groups;
-    const group = Array.isArray(cg) ? cg[0] : cg;
-    if (group?.deleted_at) continue;
-    const name = group?.name?.trim();
-    if (!name) continue;
-    const list = map.get(row.client_id) ?? [];
-    list.push(name);
-    map.set(row.client_id, list);
-  }
+
   for (const [k, v] of map) {
     map.set(k, normalizeGroupLabels(v));
   }
@@ -177,46 +186,65 @@ export async function fetchExistingClientPhoneE164s(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ data: string[]; error: Error | null }> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("phone_e164")
-    .eq("user_id", userId)
-    .is("deleted_at", null);
+  const PAGE = 1000;
+  const phones: string[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("phone_e164")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
 
-  if (error) {
-    return { data: [], error: new Error(error.message) };
+    if (error) {
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = data ?? [];
+    for (const r of page) {
+      const p = (r as { phone_e164: string | null }).phone_e164;
+      if (p) phones.push(p);
+    }
+    if (page.length < PAGE) break;
   }
-  return {
-    data: (data ?? [])
-      .map((r) => (r as { phone_e164: string | null }).phone_e164)
-      .filter((p): p is string => Boolean(p)),
-    error: null,
-  };
+  return { data: phones, error: null };
 }
 
 export async function fetchClients(
   supabase: SupabaseClient,
 ): Promise<{ data: ContactRowData[]; error: Error | null }> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const PAGE = 500;
+  const COLS =
+    "id,user_id,first_name,last_name,phone_e164,group_label,notes,birthday,custom_fields,source,opt_in,stop_sms,last_sms_sent_at,last_sms_body,unsubscribed_at,created_at";
+  const rows: ClientRecord[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select(COLS)
+      .is("deleted_at", null)
+      // Tri stable : lots importés partagent souvent le même created_at.
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + PAGE - 1);
 
-  if (error) {
-    return { data: [], error: new Error(error.message) };
+    if (error) {
+      if (rows.length > 0) break;
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = (data ?? []) as ClientRecord[];
+    rows.push(...page);
+    if (page.length < PAGE) break;
   }
-  const rows = (data ?? []) as ClientRecord[];
+
   const ids = rows.map((r) => r.id);
-  const { map: memMap, error: e2 } = await fetchMembershipsByClientIds(
+  const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
     supabase,
     ids,
   );
-  if (e2) {
-    return { data: [], error: e2 };
+  if (memErr) {
+    return { data: [], error: memErr };
   }
 
-  // Fallback : si last_sms_body est vide, on récupère la dernière campagne envoyée par le user
   const needsFallback = rows.some((r) => !r.last_sms_body && r.last_sms_sent_at);
   let fallbackBody: string | null = null;
   if (needsFallback) {
@@ -232,7 +260,9 @@ export async function fetchClients(
 
   return {
     data: rows.map((r) => {
-      const row = r.last_sms_body ? r : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
+      const row = r.last_sms_body
+        ? r
+        : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
       return clientRecordToRow(row, memMap.get(r.id) ?? []);
     }),
     error: null,
@@ -368,13 +398,21 @@ export async function addClientsToGroupByName(
     };
   }
   const uniqueClientIds = [...new Set(clientIds)];
-  for (const client_id of uniqueClientIds) {
-    const { error } = await supabase.from("client_group_members").insert({
+  for (const idChunk of chunkList(uniqueClientIds, POSTGREST_INSERT_CHUNK)) {
+    const rows = idChunk.map((client_id) => ({
       client_id,
       group_id: g.id,
-    });
+    }));
+    const { error } = await supabase.from("client_group_members").insert(rows);
     if (error && error.code !== "23505") {
-      return { error: new Error(error.message) };
+      for (const client_id of idChunk) {
+        const { error: oneErr } = await supabase
+          .from("client_group_members")
+          .insert({ client_id, group_id: g.id });
+        if (oneErr && oneErr.code !== "23505") {
+          return { error: new Error(oneErr.message) };
+        }
+      }
     }
   }
   return { error: null };
@@ -418,15 +456,17 @@ export async function replaceGroupMembers(
     return { error: null };
   }
 
-  const rows = uniqueClientIds.map((client_id) => ({
-    client_id,
-    group_id: groupId,
-  }));
-  const { error: insErr } = await supabase
-    .from("client_group_members")
-    .insert(rows);
-  if (insErr) {
-    return { error: new Error(insErr.message) };
+  for (const idChunk of chunkList(uniqueClientIds, POSTGREST_INSERT_CHUNK)) {
+    const rows = idChunk.map((client_id) => ({
+      client_id,
+      group_id: groupId,
+    }));
+    const { error: insErr } = await supabase
+      .from("client_group_members")
+      .insert(rows);
+    if (insErr) {
+      return { error: new Error(insErr.message) };
+    }
   }
   return { error: null };
 }
@@ -443,48 +483,58 @@ export type ImportBatchResult = {
   otherErrors: number;
 };
 
-async function linkExistingClientToGroupLabels(
+export type ImportProgress = {
+  current: number;
+  total: number;
+};
+
+async function linkExistingClientsToGroupLabels(
   supabase: SupabaseClient,
   userId: string,
-  phoneE164: string,
+  phoneE164s: string[],
   groupLabels: string[],
-): Promise<boolean> {
+): Promise<number> {
   const labels = normalizeGroupLabels(groupLabels);
-  if (labels.length === 0) return false;
+  if (labels.length === 0 || phoneE164s.length === 0) return 0;
 
-  const { data: existing, error: findErr } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("phone_e164", phoneE164)
-    .is("deleted_at", null)
-    .maybeSingle();
+  const uniquePhones = [...new Set(phoneE164s)];
+  const ids: string[] = [];
+  for (const chunk of chunkList(uniquePhones, POSTGREST_IN_CHUNK)) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("user_id", userId)
+      .in("phone_e164", chunk)
+      .is("deleted_at", null);
+    if (error) return 0;
+    for (const row of data ?? []) {
+      const id = (row as { id: string }).id;
+      if (id) ids.push(id);
+    }
+  }
+  if (ids.length === 0) return 0;
 
-  if (findErr || !existing?.id) return false;
-
-  let linked = false;
+  let linked = 0;
   for (const name of labels) {
     const { error } = await addClientsToGroupByName(
       supabase,
       userId,
-      [existing.id],
+      ids,
       name,
     );
-    if (!error) linked = true;
+    if (!error) linked = ids.length;
   }
   return linked;
 }
 
-/**
- * Import ligne par ligne pour isoler les doublons et erreurs (MVP).
- * Si un numéro existe déjà et que le payload porte des `groupLabels`,
- * rattache le contact existant au(x) groupe(s) sans écraser les autres.
- */
+/** Import CSV par lots (dédup fichier/DB + groupes). */
 export async function insertClientsFromImport(
   supabase: SupabaseClient,
   userId: string,
   payloads: ContactFormSubmitPayload[],
+  options?: { onProgress?: (progress: ImportProgress) => void },
 ): Promise<ImportBatchResult> {
+  const onProgress = options?.onProgress;
   const seen = new Set<string>();
   const result: ImportBatchResult = {
     inserted: 0,
@@ -495,6 +545,9 @@ export async function insertClientsFromImport(
     skippedInvalidRow: 0,
     otherErrors: 0,
   };
+
+  type Prepared = { payload: ContactFormSubmitPayload; e164: string };
+  const prepared: Prepared[] = [];
 
   for (const payload of payloads) {
     const e164 = frDisplayToE164(payload.phoneDisplay);
@@ -508,30 +561,158 @@ export async function insertClientsFromImport(
       continue;
     }
     seen.add(e164);
+    prepared.push({ payload, e164 });
+  }
 
-    const { error } = await insertClient(supabase, userId, payload, {
-      source: "Import CSV",
+  const total = prepared.length;
+  onProgress?.({ current: 0, total: Math.max(total, 1) });
+
+  if (prepared.length === 0) {
+    return result;
+  }
+
+  const { data: existingList } = await fetchExistingClientPhoneE164s(
+    supabase,
+    userId,
+  );
+  const existingDb = new Set(existingList);
+
+  const toInsert: Prepared[] = [];
+  const alreadyInDb: Prepared[] = [];
+  for (const item of prepared) {
+    if (existingDb.has(item.e164)) {
+      alreadyInDb.push(item);
+      result.skippedDuplicateInDb++;
+      result.duplicatePhoneE164s.push(item.e164);
+    } else {
+      toInsert.push(item);
+    }
+  }
+
+  if (alreadyInDb.length > 0) {
+    const byGroupKey = new Map<string, Prepared[]>();
+    for (const item of alreadyInDb) {
+      const key = normalizeGroupLabels(item.payload.groupLabels).join("\0");
+      if (!key) continue;
+      const list = byGroupKey.get(key) ?? [];
+      list.push(item);
+      byGroupKey.set(key, list);
+    }
+    for (const items of byGroupKey.values()) {
+      const labels = items[0]?.payload.groupLabels ?? [];
+      const linked = await linkExistingClientsToGroupLabels(
+        supabase,
+        userId,
+        items.map((x) => x.e164),
+        labels,
+      );
+      result.linkedExistingToGroup += linked;
+    }
+  }
+
+  let processed = alreadyInDb.length;
+  onProgress?.({ current: processed, total: Math.max(total, 1) });
+
+  for (let i = 0; i < toInsert.length; i += POSTGREST_INSERT_CHUNK) {
+    const chunk = toInsert.slice(i, i + POSTGREST_INSERT_CHUNK);
+    const rows = chunk.map(({ payload, e164 }) => {
+      const labels = normalizeGroupLabels(payload.groupLabels);
+      return {
+        user_id: userId,
+        first_name: payload.firstName.trim(),
+        last_name: payload.lastName.trim(),
+        phone_e164: e164,
+        group_label: mirrorGroupColumn(labels),
+        birthday: birthdayToDb(payload.birthday),
+        notes: payload.notes.trim(),
+        custom_fields: customFieldsToDb(payload.customFields),
+        source: "Import CSV",
+        opt_in: payload.optIn,
+        stop_sms: payload.stop,
+      };
     });
+
+    const { data: insertedRows, error } = await supabase
+      .from("clients")
+      .insert(rows)
+      .select("id, phone_e164");
+
     if (error) {
-      if (
-        error.message.includes("déjà") ||
-        error.message.includes("duplicate")
-      ) {
-        result.skippedDuplicateInDb++;
-        result.duplicatePhoneE164s.push(e164);
-        const linked = await linkExistingClientToGroupLabels(
+      // Fallback ligne à ligne si le lot échoue (doublon course / contrainte).
+      for (const item of chunk) {
+        const { error: oneErr } = await insertClient(
           supabase,
           userId,
-          e164,
-          payload.groupLabels,
+          item.payload,
+          { source: "Import CSV" },
         );
-        if (linked) result.linkedExistingToGroup++;
-      } else {
-        result.otherErrors++;
+        if (oneErr) {
+          if (
+            oneErr.message.includes("déjà") ||
+            oneErr.message.includes("duplicate")
+          ) {
+            result.skippedDuplicateInDb++;
+            result.duplicatePhoneE164s.push(item.e164);
+            const linked = await linkExistingClientsToGroupLabels(
+              supabase,
+              userId,
+              [item.e164],
+              item.payload.groupLabels,
+            );
+            if (linked > 0) result.linkedExistingToGroup += linked;
+          } else {
+            result.otherErrors++;
+          }
+        } else {
+          result.inserted++;
+        }
+        processed++;
+        onProgress?.({ current: processed, total: Math.max(total, 1) });
       }
-    } else {
+      continue;
+    }
+
+    const byPhone = new Map(
+      (insertedRows ?? []).map((r) => {
+        const row = r as { id: string; phone_e164: string };
+        return [row.phone_e164, row.id] as const;
+      }),
+    );
+
+    const okItems: { id: string; labels: string[] }[] = [];
+    for (const item of chunk) {
+      const id = byPhone.get(item.e164);
+      if (!id) {
+        result.otherErrors++;
+        continue;
+      }
+      okItems.push({
+        id,
+        labels: normalizeGroupLabels(item.payload.groupLabels),
+      });
       result.inserted++;
     }
+
+    const idsByLabel = new Map<string, string[]>();
+    for (const item of okItems) {
+      for (const label of item.labels) {
+        const list = idsByLabel.get(label) ?? [];
+        list.push(item.id);
+        idsByLabel.set(label, list);
+      }
+    }
+    for (const [label, ids] of idsByLabel) {
+      const { error: linkErr } = await addClientsToGroupByName(
+        supabase,
+        userId,
+        ids,
+        label,
+      );
+      if (linkErr) result.otherErrors++;
+    }
+
+    processed += chunk.length;
+    onProgress?.({ current: processed, total: Math.max(total, 1) });
   }
 
   return result;
@@ -586,9 +767,7 @@ export async function stampLastSmsOnContacts(
 ): Promise<void> {
   if (contactIds.length === 0) return;
   const now = new Date().toISOString();
-  const BATCH = 200;
-  for (let i = 0; i < contactIds.length; i += BATCH) {
-    const batch = contactIds.slice(i, i + BATCH);
+  for (const batch of chunkList(contactIds, POSTGREST_IN_CHUNK)) {
     await supabase
       .from("clients")
       .update({ last_sms_sent_at: now, last_sms_body: smsBody })
@@ -606,9 +785,7 @@ export async function resubscribeClients(
   ids: string[],
 ): Promise<{ error: Error | null }> {
   if (ids.length === 0) return { error: null };
-  const BATCH = 200;
-  for (let i = 0; i < ids.length; i += BATCH) {
-    const batch = ids.slice(i, i + BATCH);
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
     const { error } = await supabase
       .from("clients")
       .update({ opt_in: true, stop_sms: false })
@@ -626,10 +803,13 @@ export async function deleteClients(
 ): Promise<{ error: Error | null }> {
   if (ids.length === 0) return { error: null };
   const deletedAt = new Date().toISOString();
-  const { error } = await supabase
-    .from("clients")
-    .update({ deleted_at: deletedAt })
-    .in("id", ids)
-    .is("deleted_at", null);
-  return { error: error ? new Error(error.message) : null };
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+    const { error } = await supabase
+      .from("clients")
+      .update({ deleted_at: deletedAt })
+      .in("id", batch)
+      .is("deleted_at", null);
+    if (error) return { error: new Error(error.message) };
+  }
+  return { error: null };
 }

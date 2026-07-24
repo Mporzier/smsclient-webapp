@@ -24,6 +24,10 @@ import {
 import { parseCsvText, type ParsedCsv } from "@/lib/import/parseCsv";
 import { frDisplayToE164 } from "@/lib/proto/smsUtils";
 import {
+  pauseContactsRealtimeRefresh,
+  resumeContactsRealtimeRefresh,
+} from "@/lib/proto/contactsRefreshGate";
+import {
   fetchExistingClientPhoneE164s,
   insertClientsFromImport,
 } from "@/lib/supabase/clients";
@@ -59,6 +63,7 @@ const FIXED_ROLE_OPTIONS: FixedImportColumnRole[] = [
   "phone",
   "first_name",
   "last_name",
+  "birthday",
 ];
 
 /** Chrome / WebKit envoient souvent un clic juste après le drop : évite d’ouvrir le file picker et d’écraser l’import. */
@@ -133,7 +138,7 @@ function RowIssueTip({
         ref={anchorRef}
         tabIndex={0}
         aria-label={label}
-        className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="inline-flex shrink-0 rounded-sm outline-none focus-visible:outline-none focus-visible:ring-0"
         onMouseEnter={show}
         onMouseLeave={hide}
         onFocus={show}
@@ -191,8 +196,11 @@ export function ImportContactsModal({
   const [roles, setRoles] = useState<ImportColumnRole[]>([]);
   const [targetGroupName, setTargetGroupName] = useState("");
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [, setDuplicatePhoneE164s] = useState<string[]>([]);
   const [existingDbPhones, setExistingDbPhones] = useState<Set<string>>(
     () => new Set()
   );
@@ -210,8 +218,8 @@ export function ImportContactsModal({
     setRoles([]);
     setTargetGroupName("");
     setImportError(null);
-    setDuplicatePhoneE164s([]);
     setImporting(false);
+    setImportProgress(null);
     setDragActive(false);
   }, []);
 
@@ -278,7 +286,6 @@ export function ImportContactsModal({
     setRoles([]);
     setRawText(null);
     setImportError(null);
-    setDuplicatePhoneE164s([]);
     setFileLoading(false);
     if (!file) {
       setFileName(null);
@@ -348,11 +355,10 @@ export function ImportContactsModal({
       }, 500);
       onPickFile(f);
     },
-    [onPickFile]
+    [onPickFile, t]
   );
 
   const setRole = useCallback((index: number, role: ImportColumnRole) => {
-    setDuplicatePhoneE164s([]);
     setImportError(null);
     setRoles((prev) => {
       const next = [...prev];
@@ -385,6 +391,7 @@ export function ImportContactsModal({
         phone: t("import.role.phone"),
         first_name: t("import.role.first"),
         last_name: t("import.role.last"),
+        birthday: t("import.role.birthday"),
       }),
     [customFieldDefs, t],
   );
@@ -435,23 +442,29 @@ export function ImportContactsModal({
 
   const rowIssueStats = useMemo(() => {
     if (!parsed || phoneColIdx < 0) {
-      return { invalid: 0, existing: 0, fileDupes: 0 };
+      return { invalid: 0, existing: 0, fileDupes: 0, ok: 0 };
     }
     let invalid = 0;
     let existing = 0;
-    for (const row of parsed.rows) {
+    let fileDupes = 0;
+    let ok = 0;
+    parsed.rows.forEach((row, idx) => {
       const { e164, invalid: bad } = rowPhoneMeta(row);
       if (bad) {
         invalid++;
-        continue;
+        return;
       }
-      if (e164 && existingDbPhones.has(e164)) existing++;
-    }
-    return {
-      invalid,
-      existing,
-      fileDupes: fileDuplicateRowIndexes.size,
-    };
+      if (fileDuplicateRowIndexes.has(idx)) {
+        fileDupes++;
+        return;
+      }
+      if (e164 && existingDbPhones.has(e164)) {
+        existing++;
+        return;
+      }
+      ok++;
+    });
+    return { invalid, existing, fileDupes, ok };
   }, [
     parsed,
     phoneColIdx,
@@ -465,19 +478,14 @@ export function ImportContactsModal({
     rowIssueStats.existing > 0 ||
     rowIssueStats.fileDupes > 0;
 
-  const previewRows = useMemo(() => {
-    if (!parsed) return [];
-    if (hasRowIssues) return parsed.rows;
-    return parsed.rows.slice(0, 5);
-  }, [parsed, hasRowIssues]);
-
-  const rowCount = parsed?.rows.length ?? 0;
+  const previewRows = parsed?.rows ?? [];
 
   const handleImport = useCallback(async () => {
     if (!parsed || !hasPhoneColumn || importing) return;
     setImportError(null);
-    setDuplicatePhoneE164s([]);
     setImporting(true);
+    setImportProgress({ current: 0, total: Math.max(rowIssueStats.ok, 1) });
+    pauseContactsRealtimeRefresh();
     const groupLabel = targetGroupName.trim();
     try {
       const payloads = [];
@@ -495,15 +503,14 @@ export function ImportContactsModal({
         payloads.push(p);
       }
 
-      const batch = await insertClientsFromImport(supabase, userId, payloads);
+      const batch = await insertClientsFromImport(supabase, userId, payloads, {
+        onProgress: (p) => setImportProgress(p),
+      });
       const didSomething =
         batch.inserted > 0 || batch.linkedExistingToGroup > 0;
       const dupes = batch.skippedDuplicateInFile + batch.skippedDuplicateInDb;
 
       if (!didSomething) {
-        if (dupes > 0) {
-          setDuplicatePhoneE164s(batch.duplicatePhoneE164s);
-        }
         const invalidTotal = skippedInvalid + batch.skippedInvalidRow;
         const reasons: string[] = [];
         if (invalidTotal > 0) {
@@ -601,7 +608,9 @@ export function ImportContactsModal({
         e instanceof Error ? e.message : t("import.err.generic"),
       );
     } finally {
+      resumeContactsRealtimeRefresh();
       setImporting(false);
+      setImportProgress(null);
     }
   }, [
     parsed,
@@ -609,6 +618,7 @@ export function ImportContactsModal({
     customFieldDefs,
     hasPhoneColumn,
     importing,
+    rowIssueStats.ok,
     targetGroupName,
     supabase,
     userId,
@@ -618,7 +628,22 @@ export function ImportContactsModal({
     t,
   ]);
 
-  const isDirty = fileName !== null || parsed !== null;
+  const canSubmit =
+    rowIssueStats.ok > 0 ||
+    (Boolean(targetGroupName.trim()) && rowIssueStats.existing > 0);
+  const submitCount =
+    rowIssueStats.ok > 0
+      ? rowIssueStats.ok
+      : targetGroupName.trim()
+        ? rowIssueStats.existing
+        : 0;
+  const progressPct =
+    importProgress && importProgress.total > 0
+      ? Math.min(
+          100,
+          Math.round((importProgress.current / importProgress.total) * 100),
+        )
+      : 0;
 
   return (
     <Dialog
@@ -637,12 +662,35 @@ export function ImportContactsModal({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (importing || isDirty) e.preventDefault();
+          if (importing) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (importing || isDirty) e.preventDefault();
+          if (importing) e.preventDefault();
         }}
       >
+        {importing && (
+          <div
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-background/85 px-8 backdrop-blur-[2px]"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+            <p className="m-0 text-sm font-medium text-foreground">
+              {t("import.progress", {
+                current: importProgress?.current ?? 0,
+                total: importProgress?.total ?? 0,
+              })}
+            </p>
+            <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="m-0 text-xs text-muted-foreground">{progressPct}%</p>
+          </div>
+        )}
         <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
           <div className={modalIconCls("sm")} aria-hidden>
             <CloudUpload />
@@ -786,7 +834,7 @@ export function ImportContactsModal({
                 </label>
                 <select
                   id="import-contacts-target-group"
-                  className="mt-1 flex h-9 w-full max-w-md cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-1 flex h-9 w-full max-w-md cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                   value={targetGroupName}
                   disabled={importing || groupOptions.length === 0}
                   onChange={(e) => setTargetGroupName(e.target.value)}
@@ -813,7 +861,7 @@ export function ImportContactsModal({
                     {t("import.needPhone")}
                   </p>
                 )}
-                <div className="overflow-x-auto rounded-lg border border-border">
+                <div className="max-h-[min(50vh,420px)] overflow-auto rounded-lg border border-border">
                   <table className="w-full min-w-[760px] text-xs">
                     <thead>
                       <tr className="bg-muted/40">
@@ -830,7 +878,7 @@ export function ImportContactsModal({
                                 </div>
                                 <select
                                   className={cn(
-                                    "flex h-8 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
+                                    "flex h-8 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50",
                                     role === "phone" &&
                                       "border-foreground ring-[3px] ring-foreground/10"
                                   )}
@@ -929,11 +977,20 @@ export function ImportContactsModal({
 
         <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-between gap-2 rounded-b-xl p-2.5 px-4 sm:justify-between">
           <div className="min-w-0 flex-1">
-            {hasRowIssues && (
-              <div className="flex items-center gap-1.5 text-xs text-destructive">
+            {(hasRowIssues || rowIssueStats.ok > 0) && parsed && (
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 text-xs",
+                  hasRowIssues ? "text-destructive" : "text-muted-foreground",
+                )}
+              >
                 <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span>
                   {[
+                    rowIssueStats.ok > 0 &&
+                      (rowIssueStats.ok === 1
+                        ? t("import.stats.okOne", { n: rowIssueStats.ok })
+                        : t("import.stats.okMany", { n: rowIssueStats.ok })),
                     rowIssueStats.invalid > 0 &&
                       (rowIssueStats.invalid === 1
                         ? t("import.stats.invalidOne", {
@@ -979,16 +1036,21 @@ export function ImportContactsModal({
               type="button"
               variant="default"
               disabled={
-                importing || !parsed || !hasPhoneColumn || rowCount === 0
+                importing || !parsed || !hasPhoneColumn || !canSubmit
               }
               onClick={() => void handleImport()}
-              className="cursor-pointer"
+              className="min-w-[11.5rem] cursor-pointer"
             >
-              {importing
-                ? t("import.busy")
-                : rowCount === 1
-                  ? t("import.submitOne", { n: rowCount })
-                  : t("import.submitMany", { n: rowCount })}
+              {importing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {t("import.busy")}
+                </span>
+              ) : submitCount === 1 ? (
+                t("import.submitOne", { n: submitCount })
+              ) : (
+                t("import.submitMany", { n: submitCount })
+              )}
             </Button>
           </div>
         </DialogFooter>

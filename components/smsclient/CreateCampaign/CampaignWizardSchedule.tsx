@@ -80,7 +80,7 @@ export function SchedulePicker({
   );
 
   const numInput =
-    "h-10 rounded-lg border bg-card px-2 text-center text-sm font-bold text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20";
+    "h-10 rounded-lg border bg-card px-2 text-center text-sm font-bold text-foreground outline-none focus:border-border focus:ring-0";
   const sep = "text-sm font-black text-muted-foreground self-center";
   const borderCls = hasError ? "border-rose-300" : "border-border";
 

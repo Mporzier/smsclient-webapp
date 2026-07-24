@@ -31,7 +31,6 @@ const fr = {
   "route.modeles-sms": "Modèles SMS",
   "route.reglementations-sms": "Réglementations SMS",
   "route.aide": "Centre d'aide",
-  "route.soumettre-avis": "Soumettre un avis",
   "route.nouvelle-campagne": "Nouvelle campagne",
   "route.acheter-credits": "Acheter des crédits",
 
@@ -759,16 +758,6 @@ const fr = {
   "guide.aide.b3":
     "Écrivez à support@smsclient.fr en cas de blocage.",
 
-  "guide.soumettre-avis.eyebrow": "Avis",
-  "guide.soumettre-avis.title": "Donner votre retour",
-  "guide.soumettre-avis.desc":
-    "Suggérez une amélioration ou signalez un point de friction — on lit chaque message.",
-  "guide.soumettre-avis.b1":
-    "Décrivez le contexte et le résultat attendu.",
-  "guide.soumettre-avis.b2": "Joignez une capture si utile.",
-  "guide.soumettre-avis.b3":
-    "Le support peut aussi répondre via le formulaire contact.",
-
   "regs.title": "Réglementation SMS",
   "regs.subtitle":
     "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre campagne.",
@@ -891,6 +880,10 @@ const fr = {
   "import.role.phone": "Téléphone (obligatoire)",
   "import.role.first": "Prénom",
   "import.role.last": "Nom",
+  "import.role.birthday": "Date de naissance",
+  "import.stats.okOne": "{n} contact à importer",
+  "import.stats.okMany": "{n} contacts à importer",
+  "import.progress": "Import {current} / {total}",
 } as const;
 
 export type MessageKey = keyof typeof fr;
@@ -923,7 +916,6 @@ const en: Record<MessageKey, string> = {
   "route.modeles-sms": "SMS templates",
   "route.reglementations-sms": "SMS regulations",
   "route.aide": "Help center",
-  "route.soumettre-avis": "Submit a review",
   "route.nouvelle-campagne": "New campaign",
   "route.acheter-credits": "Buy credits",
 
@@ -1644,16 +1636,6 @@ const en: Record<MessageKey, string> = {
   "guide.aide.b3":
     "Email support@smsclient.fr if you are stuck.",
 
-  "guide.soumettre-avis.eyebrow": "Feedback",
-  "guide.soumettre-avis.title": "Share your feedback",
-  "guide.soumettre-avis.desc":
-    "Suggest an improvement or report friction — we read every message.",
-  "guide.soumettre-avis.b1":
-    "Describe the context and expected outcome.",
-  "guide.soumettre-avis.b2": "Attach a screenshot if useful.",
-  "guide.soumettre-avis.b3":
-    "Support can also reply via the contact form.",
-
   "regs.title": "SMS regulations",
   "regs.subtitle":
     "Review SMS sending rules for each country before launching your campaign.",
@@ -1775,6 +1757,10 @@ const en: Record<MessageKey, string> = {
   "import.role.phone": "Phone (required)",
   "import.role.first": "First name",
   "import.role.last": "Last name",
+  "import.role.birthday": "Date of birth",
+  "import.stats.okOne": "{n} contact to import",
+  "import.stats.okMany": "{n} contacts to import",
+  "import.progress": "Importing {current} / {total}",
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = {

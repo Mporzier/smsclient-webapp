@@ -102,13 +102,12 @@ export function ParametresView({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [openSetting, setOpenSetting] = useState<SettingId | null>(null);
-  const [activeSection, setActiveSection] =
-    useState<SettingSectionId>("compte");
+  const [activeSection, setActiveSection] = useState<SettingSectionId>(
+    () => consumeRequestedParametresSection() ?? "compte",
+  );
   const [compteSaveError, setCompteSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    const pending = consumeRequestedParametresSection();
-    if (pending) setActiveSection(pending);
     const onSection = (e: Event) => {
       const detail = (e as CustomEvent<unknown>).detail;
       if (typeof detail === "string" && isSettingSectionId(detail)) {
@@ -311,7 +310,6 @@ export function ParametresView({
           onClose={handleCloseModal}
           onSave={openCard.savable ? onSaveChanges : undefined}
           saving={saving}
-          dirty={dirty}
           wide={
             openSetting === "factures" ||
             openSetting === "corbeille" ||

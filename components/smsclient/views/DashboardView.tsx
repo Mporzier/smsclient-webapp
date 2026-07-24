@@ -283,8 +283,6 @@ function DashboardFirstVisit({
   contactsLoading,
   onNewCampaign,
   onGo,
-  campaignRows,
-  campaignsLoading = false,
 }: {
   greetingName: string;
   creditsLabel: string;

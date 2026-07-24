@@ -11,11 +11,9 @@ import {
 import { useEffect, useState } from "react";
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [theme, setThemeState] = useState<ThemeMode>(() => getStoredTheme());
 
   useEffect(() => {
-    setThemeState(getStoredTheme());
-
     const onCustom = (e: Event) => {
       const detail = (e as CustomEvent<ThemeMode>).detail;
       setThemeState(parseTheme(detail));

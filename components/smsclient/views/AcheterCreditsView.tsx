@@ -1,47 +1,117 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
-} from "@/components/smsclient/modals/modalChrome";
+import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useCallback, useState } from "react";
-import { Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
+import {
+  Check,
+  Layers,
+  Sparkles,
+  TriangleAlert,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 const TVA_RATE = 0.2;
 
-const PACKS = [
+type BillingPeriod = "once" | "monthly";
+
+/** Prix packs = TTC (10 / 35 / 100 €). Tarif SMS pack = 0,12 / 0,11 / 0,10 €. */
+const PACKS: ReadonlyArray<{
+  code: "starter" | "business" | "pro";
+  name: string;
+  credits: number;
+  priceTTC: number;
+  perSmsEur: number;
+  badge: string;
+  best: boolean;
+  volumeDiscountPct: number;
+  monthlyVolumeDiscountPct: number;
+  monthlyBonusPct: number;
+  icon: LucideIcon;
+  iconBg: string;
+  iconColor: string;
+  features: readonly string[];
+}> = [
   {
     code: "starter",
-    pack: "Starter",
-    credits: 500,
-    priceHT: 32.5,
-    badge: "Idéal pour tester",
+    name: "Découverte",
+    credits: 83,
+    priceTTC: 10,
+    perSmsEur: 0.12,
+    badge: "Idéal pour débuter",
     best: false,
-    perCredit: "0,065 €",
+    volumeDiscountPct: 0,
+    monthlyVolumeDiscountPct: 5,
+    monthlyBonusPct: 0.05,
+    icon: Sparkles,
+    iconBg: "bg-amber-50",
+    iconColor: "text-amber-600",
+    features: ["Envoi SMS campagne", "Statistiques de base", "Support e-mail"],
   },
   {
     code: "business",
-    pack: "Business",
-    credits: 2000,
-    priceHT: 107.5,
+    name: "Croissance",
+    credits: 318,
+    priceTTC: 35,
+    perSmsEur: 0.11,
     badge: "Le plus populaire",
     best: true,
-    perCredit: "0,054 €",
+    volumeDiscountPct: 5,
+    monthlyVolumeDiscountPct: 10,
+    monthlyBonusPct: 0.1,
+    icon: TrendingUp,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    features: [
+      "Tout Découverte",
+      "Rédaction IA",
+      "Modèles SMS illimités",
+      "Groupes avancés",
+    ],
   },
   {
     code: "pro",
-    pack: "Pro",
-    credits: 5000,
-    priceHT: 249.17,
-    badge: "Meilleur ratio",
+    name: "Expansion",
+    credits: 1000,
+    priceTTC: 100,
+    perSmsEur: 0.1,
+    badge: "Meilleur rapport volume",
     best: false,
-    perCredit: "0,050 €",
+    volumeDiscountPct: 10,
+    monthlyVolumeDiscountPct: 15,
+    monthlyBonusPct: 0.15,
+    icon: Layers,
+    iconBg: "bg-violet-50",
+    iconColor: "text-violet-700",
+    features: [
+      "Tout Croissance",
+      "Priorité support",
+      "Multi-utilisateurs",
+      "Exports avancés",
+    ],
   },
-] as const;
+];
 
 type Pack = (typeof PACKS)[number];
+
+function packTitle(pack: Pack, billing: BillingPeriod): string {
+  return billing === "monthly"
+    ? `Abonnement ${pack.name}`
+    : `Pack ${pack.name}`;
+}
+
+export type CreditBuySelection = {
+  code: Pack["code"];
+  pack: string;
+  credits: number;
+  priceHT: number;
+  billing: BillingPeriod;
+};
 
 function fmtEur(n: number): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -54,259 +124,292 @@ function fmtInt(n: number): string {
   return new Intl.NumberFormat("fr-FR").format(n);
 }
 
+function priceTTCFor(pack: Pack): number {
+  return pack.priceTTC;
+}
+
+/** HT envoyé à l’API achat (settingsRoutes re-applique TVA 20 %). */
+function priceHTFromTTC(ttc: number): number {
+  return Math.round((ttc / (1 + TVA_RATE)) * 100) / 100;
+}
+
+function creditsFor(pack: Pack, billing: BillingPeriod): number {
+  const bonusPct = bonusPctFor(pack, billing);
+  if (bonusPct === 0) return pack.credits;
+  return Math.round(pack.credits * (1 + bonusPct));
+}
+
+function bonusPctFor(pack: Pack, billing: BillingPeriod): number {
+  return billing === "monthly"
+    ? pack.monthlyBonusPct
+    : pack.volumeDiscountPct / 100;
+}
+
+function volumeDiscountFor(pack: Pack, billing: BillingPeriod): number {
+  return billing === "monthly"
+    ? pack.monthlyVolumeDiscountPct
+    : pack.volumeDiscountPct;
+}
+
+function perSmsFor(pack: Pack, billing: BillingPeriod): number {
+  const bonusPct = bonusPctFor(pack, billing);
+  if (billing === "once" && bonusPct === 0) return pack.perSmsEur;
+  const credits = creditsFor(pack, billing);
+  return Math.round((pack.priceTTC / credits) * 100) / 100;
+}
+
+const cardShadowCls = "shadow-[0_10px_22px_rgba(15,23,42,0.08)]";
+
 export type AcheterCreditsViewProps = {
-  balanceLabel: string;
   creditsAvailable: number;
   onCancel: () => void;
-  onBuy?: (selection: Pack) => Promise<void> | void;
+  onBuy?: (selection: CreditBuySelection) => Promise<void> | void;
 };
 
 export function AcheterCreditsView({
-  balanceLabel,
   creditsAvailable,
   onCancel,
   onBuy,
 }: AcheterCreditsViewProps) {
-  const [sel, setSel] = useState<Pack | null>(null);
-  const [buying, setBuying] = useState(false);
+  const [billing, setBilling] = useState<BillingPeriod>("once");
+  const [buyingCode, setBuyingCode] = useState<Pack["code"] | null>(null);
   const [buyError, setBuyError] = useState<string | null>(null);
-  const [buySuccess, setBuySuccess] = useState(false);
+  const [bought, setBought] = useState<CreditBuySelection | null>(null);
 
-  const tva = sel ? sel.priceHT * TVA_RATE : 0;
-  const ttc = sel ? sel.priceHT + tva : 0;
-  const newBalance = sel ? creditsAvailable + sel.credits : creditsAvailable;
+  const handleBuy = useCallback(
+    async (pack: Pack) => {
+      const selection: CreditBuySelection = {
+        code: pack.code,
+        pack: packTitle(pack, billing),
+        credits: creditsFor(pack, billing),
+        priceHT: priceHTFromTTC(priceTTCFor(pack)),
+        billing,
+      };
+      setBuyError(null);
+      setBuyingCode(pack.code);
+      try {
+        await onBuy?.(selection);
+        setBought(selection);
+      } catch (e) {
+        setBuyError(e instanceof Error ? e.message : "Achat impossible.");
+      } finally {
+        setBuyingCode(null);
+      }
+    },
+    [billing, onBuy]
+  );
 
-  const handleBuy = useCallback(async () => {
-    if (!sel) return;
-    setBuyError(null);
-    setBuying(true);
-    try {
-      await onBuy?.(sel);
-      setBuySuccess(true);
-    } catch (e) {
-      setBuyError(e instanceof Error ? e.message : "Achat impossible.");
-    } finally {
-      setBuying(false);
-    }
-  }, [sel, onBuy]);
-
-  if (buySuccess && sel) {
+  if (bought) {
+    const ttc = Math.round(bought.priceHT * (1 + TVA_RATE) * 100) / 100;
+    const newBalance = creditsAvailable + bought.credits;
     return (
       <div className="flex flex-1 items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
-            <Check className="h-8 w-8 text-emerald-600" strokeWidth={2.5} />
-          </div>
-          <h2 className="mt-4 text-xl font-black text-slate-900">
-            Achat confirmé
-          </h2>
-          <p className="mt-2 text-sm font-bold text-slate-600">
-            {fmtInt(sel.credits)} crédits ont été ajoutés à votre compte.
-          </p>
-          <p className="mt-1 text-sm font-bold text-slate-600">
-            Nouveau solde : <strong className="text-slate-900">{fmtInt(newBalance)} crédits</strong>
-          </p>
-          <p className="mt-1 text-xs font-semibold text-slate-500">
-            Facture : {fmtEur(ttc)} TTC
-          </p>
-          <div className="mt-5">
-            <Button
-              variant="default"
-              size="lg"
-              className={brandBtnPrimaryCls}
-              onClick={onCancel}
-            >
-              Retour
-            </Button>
-          </div>
-        </div>
+        <Card className={cn("max-w-md text-center", cardShadowCls)}>
+          <CardContent className="pt-2">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
+              <Check className="h-8 w-8 text-emerald-600" strokeWidth={2.5} />
+            </div>
+            <h2 className="mt-4 text-xl font-black text-slate-900">
+              Achat confirmé
+            </h2>
+            <p className="mt-2 text-sm font-bold text-slate-600">
+              {fmtInt(bought.credits)} crédits ont été ajoutés à votre compte.
+            </p>
+            <p className="mt-1 text-sm font-bold text-slate-600">
+              Nouveau solde :{" "}
+              <strong className="text-slate-900">
+                {fmtInt(newBalance)} crédits
+              </strong>
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              Facture : {fmtEur(ttc)} TTC
+              {bought.billing === "monthly" ? " / mois" : ""}
+            </p>
+            <div className="mt-5">
+              <Button
+                variant="default"
+                size="lg"
+                className={brandBtnPrimaryCls}
+                onClick={onCancel}
+              >
+                Retour
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Solde actuel */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="m-0 text-sm font-bold text-slate-600">Solde actuel</p>
-            <p className="m-0 mt-1 text-2xl font-black text-slate-900">
-              {balanceLabel}
-            </p>
-          </div>
-          <Button variant="outline" size="lg" className={brandBtnCls} onClick={onCancel}>
-            Retour
-          </Button>
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <header className="text-center">
+        <h1 className="m-0 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+          Envoyez plus. Payez moins.
+        </h1>
+        <p className="m-0 mx-auto mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500">
+          Rechargez vos crédits en un clic, pour un prix accessible à tous.
+        </p>
+      </header>
 
-      {/* Packs */}
-      <div className="grid grid-cols-3 gap-4 max-[900px]:grid-cols-1">
-        {PACKS.map((p) => {
-          const active = sel?.code === p.code;
+      <div
+        role="group"
+        aria-label="Mode de facturation"
+        className="mx-auto grid w-full max-w-sm grid-cols-2 rounded-full bg-muted ring-1 ring-foreground/10"
+      >
+        {(
+          [
+            { id: "once", label: "Paiement unique" },
+            { id: "monthly", label: "Mensuel" },
+          ] as const
+        ).map((opt) => {
+          const active = billing === opt.id;
           return (
             <button
-              key={p.code}
+              key={opt.id}
               type="button"
+              aria-pressed={active}
               onClick={() => {
-                setSel(p);
+                setBilling(opt.id);
                 setBuyError(null);
               }}
-              aria-pressed={active}
               className={cn(
-                "relative cursor-pointer rounded-2xl border bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.10)]",
+                "cursor-pointer rounded-full px-4 py-2 text-sm font-bold transition-all outline-none focus-visible:outline-none focus-visible:ring-0",
                 active
-                  ? "border-[#2f6fed] shadow-[0_18px_40px_rgba(59,130,246,0.15)] ring-2 ring-blue-300/60"
-                  : "border-slate-200 shadow-[0_10px_22px_rgba(15,23,42,0.08)]",
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {active && (
-                <div className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-[#2f6fed] text-white">
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-black text-slate-900">
-                  {p.pack}
-                </span>
-                <span
-                  className={cn(
-                    "rounded-full border px-2 py-0.5 text-[11px] font-black",
-                    p.best
-                      ? "border-blue-200 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-slate-50 text-slate-600",
-                  )}
-                >
-                  {p.badge}
-                </span>
-              </div>
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-[38px] font-black leading-none tracking-tight text-slate-900">
-                  {fmtInt(p.credits)}
-                </span>
-                <span className="text-sm font-black text-slate-500">
-                  crédits
-                </span>
-              </div>
-              <div className="mt-3 text-xs font-bold text-slate-500">
-                ≈ {fmtInt(p.credits)} SMS · {p.perCredit} / crédit
-              </div>
-              <div className="mt-4 h-px bg-slate-100" />
-              <div className="mt-3 flex items-baseline justify-between">
-                <span className="text-2xl font-black text-slate-900">
-                  {fmtEur(p.priceHT + p.priceHT * TVA_RATE)}
-                </span>
-                <span className="text-xs font-bold text-slate-500">TTC</span>
-              </div>
-              <p className="mt-1 text-xs font-semibold text-slate-400">
-                {fmtEur(p.priceHT)} HT + {fmtEur(p.priceHT * TVA_RATE)} TVA (20 %)
-              </p>
+              {opt.label}
             </button>
           );
         })}
       </div>
 
-      {/* Récap + paiement */}
-      <div className="grid grid-cols-[1fr_1fr] gap-4 max-[900px]:grid-cols-1">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <h2 className="m-0 text-base font-black text-slate-900">
-            Récapitulatif
-          </h2>
-          {!sel ? (
-            <p className="mt-3 text-sm font-semibold text-slate-500">
-              Sélectionnez un pack pour voir le détail.
-            </p>
-          ) : (
-            <div className="mt-3 grid gap-2">
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">Pack</span>
-                <strong>{sel.pack}</strong>
-              </div>
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">Crédits</span>
-                <strong>{fmtInt(sel.credits)}</strong>
-              </div>
-              <div className="my-1 h-px bg-slate-100" />
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">Prix HT</span>
-                <strong>{fmtEur(sel.priceHT)}</strong>
-              </div>
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">TVA (20 %)</span>
-                <strong>{fmtEur(tva)}</strong>
-              </div>
-              <div className="my-1 h-px bg-slate-200" />
-              <div className="flex justify-between text-base font-black">
-                <span className="text-slate-900">Total TTC</span>
-                <strong className="text-[#2f6fed]">{fmtEur(ttc)}</strong>
-              </div>
-              <div className="my-1 h-px bg-slate-100" />
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">Solde actuel</span>
-                <strong>{fmtInt(creditsAvailable)} crédits</strong>
-              </div>
-              <div className="flex justify-between text-sm font-extrabold">
-                <span className="text-slate-600">Nouveau solde</span>
-                <strong className="text-emerald-700">
-                  {fmtInt(newBalance)} crédits
-                </strong>
-              </div>
-            </div>
-          )}
-        </div>
+      {buyError && (
+        <Alert variant="destructive">
+          <TriangleAlert aria-hidden />
+          <AlertDescription className="font-bold">{buyError}</AlertDescription>
+        </Alert>
+      )}
 
-        <div className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-            <h2 className="m-0 text-base font-black text-slate-900">
-              Paiement
-            </h2>
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
-              <CreditCard className="h-4 w-4 text-slate-500" />
-              VISA •••• 8003 — Exp. 12/27
-            </div>
-            <p className="mt-2 text-xs font-semibold text-slate-500">
-              Le paiement sera débité sur votre carte enregistrée.
-            </p>
+      <div className="grid grid-cols-3 items-stretch gap-4 max-[900px]:grid-cols-1">
+        {PACKS.map((p) => {
+          const ttc = priceTTCFor(p);
+          const credits = creditsFor(p, billing);
+          const bonusPct = bonusPctFor(p, billing);
+          const perSms = perSmsFor(p, billing);
+          const volumeDiscountPct = volumeDiscountFor(p, billing);
+          const busy = buyingCode === p.code;
+          const anyBusy = buyingCode != null;
 
-            {buyError && (
-              <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-                {buyError}
-              </p>
-            )}
-
-            <Button
-              variant="default"
-              size="lg"
-              className={cn(brandBtnPrimaryCls, "mt-4 w-full justify-center")}
-              disabled={!sel || buying}
-              onClick={handleBuy}
+          return (
+            <Card
+              key={p.code}
+              className={cn(
+                "relative flex flex-col py-0 transition-all",
+                p.best
+                  ? "z-[1] shadow-[0_18px_40px_rgba(59,130,246,0.18)] ring-2 ring-[#2f6fed]/50 max-[900px]:scale-100 min-[900px]:-my-2 min-[900px]:scale-[1.03]"
+                  : cardShadowCls
+              )}
             >
-              {buying
-                ? "Traitement…"
-                : sel
-                  ? `Payer ${fmtEur(ttc)} TTC`
-                  : "Sélectionnez un pack"}
-            </Button>
-          </div>
+              <CardContent className="flex flex-1 flex-col p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <span
+                    className={cn(
+                      "grid h-10 w-10 shrink-0 place-items-center rounded-full",
+                      p.iconBg
+                    )}
+                  >
+                    <p.icon
+                      className={cn("h-5 w-5", p.iconColor)}
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
+                  </span>
+                  {volumeDiscountPct > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="h-auto shrink-0 rounded-full border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-700"
+                    >
+                      −{volumeDiscountPct} %
+                    </Badge>
+                  )}
+                </div>
+                <h2 className="m-0 mt-3 text-lg font-black text-slate-900">
+                  {packTitle(p, billing)}
+                </h2>
+                <p
+                  className={cn(
+                    "mt-1 text-xs font-bold",
+                    p.best ? "text-blue-700" : "text-slate-500"
+                  )}
+                >
+                  {p.badge}
+                </p>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                <Lock className="h-3.5 w-3.5 text-slate-400" />
-                Paiement sécurisé SSL 256-bit
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
-                Facture disponible immédiatement
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                <CreditCard className="h-3.5 w-3.5 text-slate-400" />
-                Crédits ajoutés instantanément
-              </div>
-            </div>
-          </div>
-        </div>
+                <div className="mt-4 flex flex-wrap items-baseline gap-2">
+                  <span className="text-3xl font-black leading-none tracking-tight text-slate-900">
+                    {fmtEur(ttc)}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">
+                    TTC{billing === "monthly" ? " / mois" : ""}
+                  </span>
+                </div>
+
+                <p className="mt-3 text-sm font-bold text-slate-700">
+                  {fmtInt(credits)} crédits
+                  {bonusPct > 0 && (
+                    <span className="ml-1.5 font-semibold text-emerald-700">
+                      (+{Math.round(bonusPct * 100)} % offerts)
+                    </span>
+                  )}
+                </p>
+
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {fmtEur(perSms)} / SMS
+                </p>
+
+                <div className="mt-4 h-px bg-slate-100" />
+
+                <ul className="mt-4 m-0 flex list-none flex-col gap-2 p-0">
+                  {p.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm font-semibold text-slate-700"
+                    >
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex-1" />
+
+                <Button
+                  variant="default"
+                  size="lg"
+                  className={cn(
+                    brandBtnPrimaryCls,
+                    "mt-5 w-full justify-center"
+                  )}
+                  disabled={anyBusy}
+                  onClick={() => handleBuy(p)}
+                >
+                  {busy
+                    ? "Traitement…"
+                    : billing === "monthly"
+                    ? `S’abonner ${p.name}`
+                    : `Acheter ${p.name}`}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

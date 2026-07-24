@@ -417,6 +417,9 @@ export function CampaignWizard({
     ]
   );
 
+  const [stepErrors, setStepErrors] = useState<string[]>([]);
+  const [stepWarnings, setStepWarnings] = useState<string[]>([]);
+
   const handleGenerateAiMessage = useCallback(async () => {
     const prompt = aiPrompt.trim();
     if (aiGenerating) return;
@@ -510,9 +513,6 @@ export function CampaignWizard({
       setConfirmLoading(false);
     }
   }, [onConfirmCampaign, go, onWizardExit]);
-
-  const [stepErrors, setStepErrors] = useState<string[]>([]);
-  const [stepWarnings, setStepWarnings] = useState<string[]>([]);
 
   const destinatairesLabel =
     recipients === 1

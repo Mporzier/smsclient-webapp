@@ -16,6 +16,5 @@ export {
   QrCodeView,
   ReglementationsSmsView,
   AideView,
-  SoumettreAvisView,
   StatistiquesView,
 } from "./views";

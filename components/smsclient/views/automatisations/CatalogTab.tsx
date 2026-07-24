@@ -78,13 +78,13 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
 
   const favorites = useAutomationFavorites(Boolean(user));
 
+  if (!authLoading && !user) {
+    if (activityId !== null) setActivityId(null);
+    if (profileLoading) setProfileLoading(false);
+  }
+
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setActivityId(null);
-      setProfileLoading(false);
-      return;
-    }
+    if (authLoading || !user) return;
     let cancelled = false;
     const supabase = createClient();
     void getOrCreateUserProfile(supabase, user.id, user.email ?? "").then(

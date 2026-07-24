@@ -38,7 +38,7 @@ function EmojiBtn({
       className={cn(
         "cursor-pointer rounded-xl border border-slate-200/80 bg-white text-center transition-colors",
         "hover:border-slate-300 hover:bg-slate-50 active:scale-95",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed]/30",
+        "focus-visible:outline-none focus-visible:ring-0",
         size === "lg" && "grid h-10 w-10 place-items-center text-xl",
         size === "md" && "grid h-9 w-9 place-items-center text-lg",
         size === "sm" && "grid h-8 w-8 place-items-center text-base"

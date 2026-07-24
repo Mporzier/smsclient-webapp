@@ -9,7 +9,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Gift } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
@@ -38,13 +38,6 @@ export function QrWheelSettingsModal({
   onEnableWithDefaults,
 }: QrWheelSettingsModalProps) {
   const { t } = useI18n();
-  const [dirty, setDirty] = useState(false);
-  const [wasOpen, setWasOpen] = useState(open);
-
-  if (open !== wasOpen) {
-    setWasOpen(open);
-    if (!open) setDirty(false);
-  }
 
   const handleClose = useCallback(() => {
     if (saving) return;
@@ -68,10 +61,10 @@ export function QrWheelSettingsModal({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <FormDialogHeader
@@ -96,7 +89,6 @@ export function QrWheelSettingsModal({
             saving={saving}
             onSave={onSave}
             onEnableWithDefaults={onEnableWithDefaults}
-            onDirtyChange={setDirty}
           />
         </div>
       </DialogContent>

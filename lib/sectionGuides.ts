@@ -31,8 +31,7 @@ export type SectionGuideKey =
   | "reglementations-sms"
   | "nouvelle-campagne"
   | "acheter-credits"
-  | "aide"
-  | "soumettre-avis";
+  | "aide";
 
 /** Structure seule — textes via `guide.{key}.*` dans i18n. */
 export type SectionGuideMeta = {
@@ -105,10 +104,6 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideMeta> = {
   },
   aide: {
     icon: CircleHelp,
-    kbSlug: "accueil",
-  },
-  "soumettre-avis": {
-    icon: MessageSquareText,
     kbSlug: "accueil",
   },
 };

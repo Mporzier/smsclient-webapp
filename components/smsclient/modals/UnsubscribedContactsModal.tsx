@@ -41,7 +41,7 @@ type UnsubscribedContactsModalProps = {
 
 const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 const modalFieldCls =
-  "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
+  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
 function contactLineLabel(c: UnsubscribedContactRow): string {
   const name =

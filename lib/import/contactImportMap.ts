@@ -11,7 +11,8 @@ export type FixedImportColumnRole =
   | "skip"
   | "phone"
   | "first_name"
-  | "last_name";
+  | "last_name"
+  | "birthday";
 
 export type ImportColumnRole = FixedImportColumnRole | `custom:${string}`;
 
@@ -20,6 +21,7 @@ export const FIXED_IMPORT_ROLE_LABELS: Record<FixedImportColumnRole, string> = {
   phone: "Téléphone (obligatoire)",
   first_name: "Prénom",
   last_name: "Nom",
+  birthday: "Date de naissance",
 };
 
 /** @deprecated Prefer FIXED_IMPORT_ROLE_LABELS + buildImportRoleLabels */
@@ -92,6 +94,49 @@ export function formatFrPhoneDisplay(raw: string): string {
   return raw;
 }
 
+/**
+ * Parse une date CSV vers YYYY-MM-DD.
+ * Accepte ISO et formats FR courants (DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY).
+ */
+export function parseImportBirthday(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return "";
+
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (iso) {
+    const y = Number(iso[1]);
+    const m = Number(iso[2]);
+    const d = Number(iso[3]);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() !== m - 1 ||
+      dt.getUTCDate() !== d
+    ) {
+      return null;
+    }
+    return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  }
+
+  const fr = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t);
+  if (fr) {
+    const d = Number(fr[1]);
+    const m = Number(fr[2]);
+    const y = Number(fr[3]);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() !== m - 1 ||
+      dt.getUTCDate() !== d
+    ) {
+      return null;
+    }
+    return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
 /** Suggestion selon l'intitulé de colonne + détection par contenu (numéros FR). */
 export function suggestColumnRoles(
   headers: string[],
@@ -99,6 +144,7 @@ export function suggestColumnRoles(
   defs: CustomFieldDef[] = [],
 ): ImportColumnRole[] {
   let phoneAssigned = false;
+  let birthdayAssigned = false;
   const usedCustom = new Set<string>();
   const roles: ImportColumnRole[] = headers.map((h) => {
     const x = normalizeHeaderKey(h);
@@ -117,6 +163,13 @@ export function suggestColumnRoles(
       (/nom/.test(x) && !/groupe|entreprise|societe|company/.test(x))
     ) {
       return "last_name";
+    }
+    if (
+      /naissance|anniversaire|birthday|birth\s*date|\bdob\b/.test(x)
+    ) {
+      if (birthdayAssigned) return "skip";
+      birthdayAssigned = true;
+      return "birthday";
     }
 
     for (const def of defs) {
@@ -154,6 +207,7 @@ export function buildPayloadFromMappedRow(
   let phoneRaw = "";
   let firstName = "";
   let lastName = "";
+  let birthday = "";
   const customFields: Record<string, string> = {};
   const defById = new Map(defs.map((d) => [d.id, d]));
 
@@ -171,6 +225,13 @@ export function buildPayloadFromMappedRow(
     }
     if (role === "last_name") {
       lastName = v;
+      continue;
+    }
+    if (role === "birthday") {
+      if (!v) continue;
+      const parsed = parseImportBirthday(v);
+      if (parsed === null) return null;
+      birthday = parsed;
       continue;
     }
     if (isCustomImportRole(role)) {
@@ -194,7 +255,7 @@ export function buildPayloadFromMappedRow(
     lastName,
     phoneDisplay,
     groupLabels: [],
-    birthday: "",
+    birthday,
     notes: "",
     customFields,
     optIn: true,

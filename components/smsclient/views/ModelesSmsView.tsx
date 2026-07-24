@@ -233,7 +233,7 @@ export function ModelesSmsView({
                 id="modeles-create-title"
                 type="text"
                 maxLength={SMS_TEMPLATE_TITLE_MAX_LENGTH}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-border focus:ring-0"
                 placeholder={t("templates.field.titlePlaceholder")}
                 value={title}
                 onChange={(e) => {
@@ -259,7 +259,7 @@ export function ModelesSmsView({
               <input
                 id="modeles-create-description"
                 type="text"
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
+                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-border focus:ring-0"
                 placeholder={t("templates.field.descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => {
@@ -279,7 +279,7 @@ export function ModelesSmsView({
             <textarea
               id="modeles-create-body"
               rows={4}
-              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/15"
+              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-border focus:ring-0"
               placeholder={t("templates.field.bodyPlaceholder")}
               value={body}
               onChange={(e) => {

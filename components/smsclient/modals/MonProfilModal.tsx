@@ -74,8 +74,6 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
     return () => window.clearTimeout(t);
   }, [feedback]);
 
-  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
-
   const handleClose = useCallback(() => {
     if (saving) return;
     onClose();
@@ -121,10 +119,10 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <FormDialogHeader

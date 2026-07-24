@@ -6,7 +6,6 @@ import {
   LiensView,
   ModelesSmsView,
   ReglementationsSmsView,
-  SoumettreAvisView,
   StatistiquesView,
 } from "@/components/smsclient/MainViews";
 import type { AppRoute } from "@/lib/proto/routes";
@@ -20,7 +19,6 @@ const CONTENT_ROUTES = new Set<AppRoute>([
   "modeles-sms",
   "reglementations-sms",
   "aide",
-  "soumettre-avis",
 ]);
 
 export function renderContentRoute(
@@ -99,8 +97,6 @@ export function renderContentRoute(
       return <ReglementationsSmsView />;
     case "aide":
       return <AideView onGo={ctx.go} />;
-    case "soumettre-avis":
-      return <SoumettreAvisView onToast={modals.showToast} />;
     default:
       return null;
   }

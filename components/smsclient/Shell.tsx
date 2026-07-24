@@ -59,6 +59,7 @@ export function AppShell({
   route,
   go,
   onNewCampaign,
+  onOpenFeedback,
   creditsLabel,
   campaignWizardStep,
   children,
@@ -175,7 +176,7 @@ export function AppShell({
               onClick={() => go("dashboard")}
               aria-label={t("shell.homeAria")}
               className={cn(
-                "mb-7 flex shrink-0 cursor-pointer items-center rounded-lg border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring",
+                "mb-7 flex shrink-0 cursor-pointer items-center rounded-lg border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-0",
                 sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
               )}
             >
@@ -258,7 +259,7 @@ export function AppShell({
                   <DropdownMenuTrigger
                     aria-label={t("shell.accountMenu")}
                     className={cn(
-                      "grid h-[34px] w-[34px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                      "grid h-[34px] w-[34px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-0",
                       profileOpen && "bg-accent text-primary",
                       sidebarCollapsed && "mx-auto"
                     )}
@@ -298,7 +299,9 @@ export function AppShell({
                         </span>
                       ) : null}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => go("soumettre-avis")}>
+                    <DropdownMenuItem
+                      onSelect={() => onOpenFeedback?.()}
+                    >
                       <SidebarMenuIcon icon={MessageSquareText} />
                       {t("shell.submitReview")}
                     </DropdownMenuItem>
@@ -329,7 +332,7 @@ export function AppShell({
                 type="button"
                 onClick={() => go("dashboard")}
                 aria-label={t("shell.homeAria")}
-                className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring max-[860px]:flex"
+                className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-0 max-[860px]:flex"
               >
                 <div
                   className="grid h-10 w-10 shrink-0 place-items-center"
@@ -356,22 +359,29 @@ export function AppShell({
             <div className="flex items-center gap-2">
               {creditsLabel && (
                 <Badge
+                  asChild
                   variant="outline"
-                  className="h-9 gap-1.5 rounded-lg px-2.5 text-sm font-medium [&>svg]:size-3.5!"
-                  title={t("shell.creditsRemaining")}
+                  className="h-9 cursor-pointer gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted [&>svg]:size-3.5!"
                 >
-                  <Coins
-                    data-icon="inline-start"
-                    className="text-amber-600 dark:text-amber-400"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  <span className="tabular-nums font-semibold text-foreground">
-                    {creditsLabel}
-                  </span>
-                  <span className="font-normal text-muted-foreground">
-                    {t("shell.creditsUnit")}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => go("acheter-credits")}
+                    title={t("shell.creditsRemaining")}
+                    aria-label={t("shell.credits")}
+                  >
+                    <Coins
+                      data-icon="inline-start"
+                      className="text-amber-600 dark:text-amber-400"
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
+                    <span className="tabular-nums font-semibold text-foreground">
+                      {creditsLabel}
+                    </span>
+                    <span className="font-normal text-muted-foreground">
+                      {t("shell.creditsUnit")}
+                    </span>
+                  </button>
                 </Badge>
               )}
               <Button

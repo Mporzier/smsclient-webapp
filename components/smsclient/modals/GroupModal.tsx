@@ -29,7 +29,7 @@ import {
   groupTagBase,
 } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCheck,
   Eraser,
@@ -50,10 +50,8 @@ import {
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
 import {
-  groupFormSnapshotsEqual,
   hasStackedOpenDialog,
   sortedStringArraysEqual,
-  useModalFormDirty,
   type GroupFormSnapshot,
 } from "./modalFormGuard";
 
@@ -204,6 +202,9 @@ function GroupContactSelectionConfirm({
   );
 }
 
+const CONTACT_ROW_H = 52;
+const CONTACT_ROW_OVERSCAN = 10;
+
 type GroupModalContactsPanelProps = {
   contacts: GroupModalContactRow[];
   contactsLoading: boolean;
@@ -236,6 +237,43 @@ function GroupModalContactsPanel({
   toggleSelectAllFiltered,
   listAriaLabel,
 }: GroupModalContactsPanelProps) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportH, setViewportH] = useState(320);
+  const [scrollQuery, setScrollQuery] = useState(contactQuery);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  if (contactQuery !== scrollQuery) {
+    setScrollQuery(contactQuery);
+    setScrollTop(0);
+  }
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const sync = () => setViewportH(el.clientHeight || 320);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [contactsLoading, contacts.length, filteredContacts.length]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = 0;
+  }, [contactQuery]);
+
+  const total = filteredContacts.length;
+  const start = Math.max(
+    0,
+    Math.floor(scrollTop / CONTACT_ROW_H) - CONTACT_ROW_OVERSCAN,
+  );
+  const visible = Math.ceil(viewportH / CONTACT_ROW_H) + CONTACT_ROW_OVERSCAN * 2;
+  const end = Math.min(total, start + visible);
+  const windowed = filteredContacts.slice(start, end);
+  const padTop = start * CONTACT_ROW_H;
+  const padBottom = Math.max(0, (total - end) * CONTACT_ROW_H);
+
   return (
     <div className={contactsPanelShell}>
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-2">
@@ -317,13 +355,15 @@ function GroupModalContactsPanel({
         </div>
       ) : (
         <div
+          ref={scrollerRef}
           className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
           role="listbox"
           aria-label={listAriaLabel}
           aria-multiselectable
+          onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
         >
           <table className="w-full border-separate border-spacing-0 text-left">
-            <thead className="sticky top-0 z-[1] bg-muted/50">
+            <thead className="sticky top-0 z-[1] bg-muted">
               <tr>
                 <th className={cn("w-9", tableHeadCls)} scope="col">
                   <Checkbox
@@ -332,8 +372,8 @@ function GroupModalContactsPanel({
                       allFilteredSelected
                         ? true
                         : someFilteredSelected
-                        ? "indeterminate"
-                        : false
+                          ? "indeterminate"
+                          : false
                     }
                     onCheckedChange={() => toggleSelectAllFiltered()}
                     disabled={contactsLoading || filteredContacts.length === 0}
@@ -370,90 +410,106 @@ function GroupModalContactsPanel({
                   </td>
                 </tr>
               ) : (
-                filteredContacts.map((c) => {
-                  const checked = selectedIds.includes(c.id);
-                  const initials = contactInitials(c);
-                  const av = avatarColor(c.id);
-                  return (
-                    <tr
-                      key={c.id}
-                      className="cursor-pointer border-b border-border/50 bg-card transition-colors hover:bg-muted/50"
-                      onClick={() => toggleContact(c.id)}
-                      role="option"
-                      aria-selected={checked}
-                    >
-                      <td className={cn(tableCellCls, "align-middle")}>
-                        <Checkbox
-                          className="size-3.5 cursor-pointer"
-                          checked={checked}
-                          onCheckedChange={() => toggleContact(c.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Sélectionner ${c.name}`}
-                        />
-                      </td>
-                      <td className={cn(tableCellCls, "align-middle")}>
-                        <div
-                          className={cn(
-                            "grid h-8 w-8 place-items-center rounded-full text-xs font-semibold",
-                            av.bg,
-                            av.text
-                          )}
-                          aria-hidden
-                        >
-                          {initials}
-                        </div>
-                      </td>
-                      <td
-                        className={cn(
-                          tableCellCls,
-                          "max-w-[140px] truncate font-medium text-foreground sm:max-w-none"
-                        )}
-                      >
-                        {c.name.trim() || "—"}
-                      </td>
-                      <td className={cn(tableCellCls, "whitespace-nowrap")}>
-                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                          <Phone
-                            className="h-3.5 w-3.5 shrink-0 text-emerald-500"
-                            aria-hidden
-                          />
-                          {c.phone}
-                        </span>
-                      </td>
-                      <td
-                        className={cn(
-                          "hidden sm:table-cell",
-                          tableCellCls,
-                          "align-middle"
-                        )}
-                      >
-                        {c.groups.length === 0 ? (
-                          <span className={hintTextCls}>Non classé</span>
-                        ) : (
-                          <div className="flex max-h-12 min-w-0 flex-wrap gap-1 overflow-hidden">
-                            {c.groups.map((g) => {
-                              const gc = groupColor(g);
-                              return (
-                                <span
-                                  key={g}
-                                  className={cn(
-                                    groupTagBase,
-                                    gc.bg,
-                                    gc.border,
-                                    gc.text,
-                                    "max-w-full truncate"
-                                  )}
-                                >
-                                  {g}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </td>
+                <>
+                  {padTop > 0 && (
+                    <tr aria-hidden>
+                      <td colSpan={5} style={{ height: padTop, padding: 0 }} />
                     </tr>
-                  );
-                })
+                  )}
+                  {windowed.map((c) => {
+                    const checked = selectedSet.has(c.id);
+                    const initials = contactInitials(c);
+                    const av = avatarColor(c.id);
+                    return (
+                      <tr
+                        key={c.id}
+                        className="cursor-pointer border-b border-border/50 bg-card transition-colors hover:bg-muted/50"
+                        style={{ height: CONTACT_ROW_H }}
+                        onClick={() => toggleContact(c.id)}
+                        role="option"
+                        aria-selected={checked}
+                      >
+                        <td className={cn(tableCellCls, "align-middle")}>
+                          <Checkbox
+                            className="size-3.5 cursor-pointer"
+                            checked={checked}
+                            onCheckedChange={() => toggleContact(c.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Sélectionner ${c.name}`}
+                          />
+                        </td>
+                        <td className={cn(tableCellCls, "align-middle")}>
+                          <div
+                            className={cn(
+                              "grid h-8 w-8 place-items-center rounded-full text-xs font-semibold",
+                              av.bg,
+                              av.text
+                            )}
+                            aria-hidden
+                          >
+                            {initials}
+                          </div>
+                        </td>
+                        <td
+                          className={cn(
+                            tableCellCls,
+                            "max-w-[140px] truncate font-medium text-foreground sm:max-w-none"
+                          )}
+                        >
+                          {c.name.trim() || "—"}
+                        </td>
+                        <td className={cn(tableCellCls, "whitespace-nowrap")}>
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                            <Phone
+                              className="h-3.5 w-3.5 shrink-0 text-emerald-500"
+                              aria-hidden
+                            />
+                            {c.phone}
+                          </span>
+                        </td>
+                        <td
+                          className={cn(
+                            "hidden sm:table-cell",
+                            tableCellCls,
+                            "align-middle"
+                          )}
+                        >
+                          {c.groups.length === 0 ? (
+                            <span className={hintTextCls}>Non classé</span>
+                          ) : (
+                            <div className="flex max-h-12 min-w-0 flex-wrap gap-1 overflow-hidden">
+                              {c.groups.map((g) => {
+                                const gc = groupColor(g);
+                                return (
+                                  <span
+                                    key={g}
+                                    className={cn(
+                                      groupTagBase,
+                                      gc.bg,
+                                      gc.border,
+                                      gc.text,
+                                      "max-w-full truncate"
+                                    )}
+                                  >
+                                    {g}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {padBottom > 0 && (
+                    <tr aria-hidden>
+                      <td
+                        colSpan={5}
+                        style={{ height: padBottom, padding: 0 }}
+                      />
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
@@ -542,22 +598,25 @@ export function GroupModal(props: GroupModalProps) {
     setSelectedIds([]);
   }, []);
 
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
   const allFilteredSelected = useMemo(
     () =>
       filteredContacts.length > 0 &&
-      filteredContacts.every((c) => selectedIds.includes(c.id)),
-    [filteredContacts, selectedIds]
+      filteredContacts.every((c) => selectedSet.has(c.id)),
+    [filteredContacts, selectedSet]
   );
 
   const someFilteredSelected = useMemo(
-    () => filteredContacts.some((c) => selectedIds.includes(c.id)),
-    [filteredContacts, selectedIds]
+    () => filteredContacts.some((c) => selectedSet.has(c.id)),
+    [filteredContacts, selectedSet]
   );
 
   const toggleSelectAllFiltered = useCallback(() => {
     if (filteredContacts.length === 0) return;
     setSelectedIds((prev) => {
-      const allIn = filteredContacts.every((c) => prev.includes(c.id));
+      const prevSet = new Set(prev);
+      const allIn = filteredContacts.every((c) => prevSet.has(c.id));
       if (allIn) {
         const idSet = new Set(filteredContacts.map((c) => c.id));
         return prev.filter((id) => !idSet.has(id));
@@ -720,22 +779,6 @@ export function GroupModal(props: GroupModalProps) {
     onLaunchCampaign(name.trim() || group.name);
   }, [isCreate, group, name, onLaunchCampaign]);
 
-  const createFormSnapshot: GroupFormSnapshot = {
-    name,
-    description,
-    selectedIds,
-  };
-  const isDirtyCreate = useModalFormDirty(
-    props.open && isCreate,
-    createFormSnapshot,
-    groupFormSnapshotsEqual
-  );
-  const isDirtyEdit =
-    !isCreate &&
-    formBaseline !== null &&
-    !groupFormSnapshotsEqual({ name, description, selectedIds }, formBaseline);
-  const isDirty = isCreate ? isDirtyCreate : isDirtyEdit;
-
   const dialogOpen = props.open && (isCreate || !!group);
 
   const groupLabel = name.trim() || (group?.name ?? "ce groupe");
@@ -754,7 +797,7 @@ export function GroupModal(props: GroupModalProps) {
       : null;
 
   const canDismissMain =
-    !saving && !stackedDialogOpen && !saveConfirmOpen && !isDirty;
+    !saving && !stackedDialogOpen && !saveConfirmOpen;
 
   return (
     <>
@@ -785,7 +828,7 @@ export function GroupModal(props: GroupModalProps) {
             ) {
               return;
             }
-            if (saving || isDirty) e.preventDefault();
+            if (saving) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             if (
@@ -795,7 +838,7 @@ export function GroupModal(props: GroupModalProps) {
             ) {
               return;
             }
-            if (saving || isDirty) e.preventDefault();
+            if (saving) e.preventDefault();
           }}
         >
           <FormDialogHeader

@@ -18,7 +18,7 @@ import {
 } from "react";
 
 const modalFieldCls =
-  "focus-visible:border-ring focus-visible:ring-0 aria-invalid:ring-0";
+  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 const fieldErrorCls = "text-xs font-normal leading-snug text-destructive";
 
 type ContactCustomFieldsListProps = {

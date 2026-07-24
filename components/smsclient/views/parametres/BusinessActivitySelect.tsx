@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -67,15 +67,16 @@ export function BusinessActivitySelect({
   const [categoryId, setCategoryId] = useState<BusinessCategoryId | null>(
     initialCategory,
   );
-
-  useEffect(() => {
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (value !== syncedValue) {
+    setSyncedValue(value);
     const next = value ? normalizeBusinessActivityId(value) : null;
     const cat = next ? businessCategoryOf(next) : null;
     if (cat) {
       setCategoryId(cat);
       setStep("type");
     }
-  }, [value]);
+  }
 
   const types = categoryId ? typesForCategory(categoryId) : [];
   const categoryLabel =

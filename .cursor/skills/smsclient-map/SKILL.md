@@ -41,6 +41,6 @@ Read `wiki/index.md` first (+ `wiki/hot.md`, `wiki/conventions-ui.md` si UI/moda
 ## Skills catalogue
 
 - **limits**: `no-heavy-cmds`, `no-verify-build` (+ rules always-on) — gagne sur superpowers ; propose cmds, jamais run
-- **smsclient**: `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`
+- **smsclient**: `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`, `postgrest-in-chunk`
 - **caveman**: `caveman`, `cavecrew`, `caveman-commit`, `caveman-compress`, `caveman-help`, `caveman-review`, `caveman-stats`
 - **obsidian**: `obsidian-markdown`, `obsidian-cli`, `obsidian-bases`, `json-canvas`

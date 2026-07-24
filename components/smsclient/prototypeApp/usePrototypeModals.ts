@@ -54,6 +54,7 @@ export function usePrototypeModals(
 
   const [toast, setToast] = useState<string | null>(null);
   const [qrWheelSaving, setQrWheelSaving] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     const anyModal =
@@ -180,6 +181,8 @@ export function usePrototypeModals(
     toast,
     qrWheelSaving,
     setQrWheelSaving,
+    feedbackOpen,
+    setFeedbackOpen,
     showToast,
     openConfirmDelete,
     openContactAdd,

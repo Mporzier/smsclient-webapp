@@ -11,7 +11,6 @@ export type AppRoute =
   | "modeles-sms"
   | "reglementations-sms"
   | "aide"
-  | "soumettre-avis"
   | "nouvelle-campagne"
   | "acheter-credits";
 
@@ -28,7 +27,6 @@ export const APP_ROUTES: AppRoute[] = [
   "modeles-sms",
   "reglementations-sms",
   "aide",
-  "soumettre-avis",
   "nouvelle-campagne",
   "acheter-credits",
 ];
@@ -50,7 +48,6 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   "modeles-sms": "Modèles SMS",
   "reglementations-sms": "Réglementations SMS",
   aide: "Centre d'aide",
-  "soumettre-avis": "Soumettre un avis",
   "nouvelle-campagne": "Nouvelle campagne",
   "acheter-credits": "Acheter des crédits",
 };
@@ -77,6 +74,7 @@ export function parseLegacyCampaignWizardStep(raw: string): 1 | 2 | 3 | null {
 export function parseHash(raw: string): AppRoute {
   const h = raw.replace(/^#/, "").trim();
   if (h === "" || h === "home" || h === "features") return "dashboard";
+  if (h === "soumettre-avis") return "dashboard";
   if (h === "nouvelle-campagne" || h.startsWith("nouvelle-campagne-")) {
     return "nouvelle-campagne";
   }

@@ -14,6 +14,7 @@ export function PrototypeApp() {
         route={ctx.route}
         go={ctx.wizard.guardedGo}
         onNewCampaign={() => ctx.wizard.openCampaignComposer()}
+        onOpenFeedback={() => ctx.modals.setFeedbackOpen(true)}
         creditsLabel={
           ctx.data.creditsState.loading ? "…" : ctx.data.creditsState.balanceLabel
         }

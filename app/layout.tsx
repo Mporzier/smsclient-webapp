@@ -5,6 +5,7 @@ import { UserProfileProvider } from "@/components/auth/UserProfileProvider";
 import { OpenWidgetLoader } from "@/components/OpenWidgetLoader";
 import type { Metadata } from "next";
 import { Inter, Geist_Mono, Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -38,12 +39,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("h-full", "antialiased", inter.variable, geistMono.variable, "font-sans", geist.variable)}
     >
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem("smsclient.theme");if(t==="dark")document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`,
-        }}
-      />
       <body className="relative h-full w-full overflow-hidden">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem("smsclient.theme");if(t==="dark")document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){}})();`}
+        </Script>
         <AuthProvider>
           <AuthGate>
             <UserProfileProvider>

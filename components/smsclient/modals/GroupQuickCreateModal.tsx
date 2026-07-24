@@ -21,11 +21,6 @@ import {
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
-import {
-  groupQuickFormSnapshotsEqual,
-  useModalFormDirty,
-  type GroupQuickFormSnapshot,
-} from "./modalFormGuard";
 
 export type GroupQuickCreateModalProps = {
   open: boolean;
@@ -96,19 +91,12 @@ export function GroupQuickCreateModal({
     }
   }, [name, desc, onCreated, handleClose]);
 
-  const formSnapshot: GroupQuickFormSnapshot = { name, description: desc };
-  const isDirty = useModalFormDirty(
-    open,
-    formSnapshot,
-    groupQuickFormSnapshotsEqual
-  );
-
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          if (saving || isDirty) return;
+          if (saving) return;
           handleClose();
         }
       }}
@@ -123,10 +111,10 @@ export function GroupQuickCreateModal({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || isDirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || isDirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <FormDialogHeader

@@ -28,7 +28,6 @@ export function renderAudienceRoute(
     customFieldsState,
     groupsState,
     campaignsState,
-    smsTemplatesState,
     creditsState,
   } = data;
 

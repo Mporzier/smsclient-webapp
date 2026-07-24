@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GroupRowData } from "@/lib/types/group";
+import {
+  POSTGREST_IN_CHUNK,
+  POSTGREST_PAGE,
+  chunkList,
+} from "@/lib/supabase/postgrestChunk";
 
 export type ClientGroupRecord = {
   id: string;
@@ -45,17 +50,26 @@ export async function fetchGroupsWithStats(
   const groupIds = list.map((g) => g.id);
   const counts = new Map<string, number>();
   if (groupIds.length > 0) {
-    const { data: members, error: mErr } = await supabase
-      .from("client_group_members")
-      .select("group_id")
-      .in("group_id", groupIds);
+    for (const idChunk of chunkList(groupIds, POSTGREST_IN_CHUNK)) {
+      for (let from = 0; ; from += POSTGREST_PAGE) {
+        const { data: members, error: mErr } = await supabase
+          .from("client_group_members")
+          .select("group_id")
+          .in("group_id", idChunk)
+          .order("group_id", { ascending: true })
+          .order("client_id", { ascending: true })
+          .range(from, from + POSTGREST_PAGE - 1);
 
-    if (mErr) {
-      return { data: [], error: new Error(mErr.message) };
-    }
-    for (const row of members ?? []) {
-      const gid = (row as { group_id: string }).group_id;
-      counts.set(gid, (counts.get(gid) ?? 0) + 1);
+        if (mErr) {
+          return { data: [], error: new Error(mErr.message) };
+        }
+        const page = members ?? [];
+        for (const row of page) {
+          const gid = (row as { group_id: string }).group_id;
+          counts.set(gid, (counts.get(gid) ?? 0) + 1);
+        }
+        if (page.length < POSTGREST_PAGE) break;
+      }
     }
   }
 
@@ -136,10 +150,13 @@ export async function deleteGroups(
 ): Promise<{ error: Error | null }> {
   if (ids.length === 0) return { error: null };
   const deletedAt = new Date().toISOString();
-  const { error } = await supabase
-    .from("client_groups")
-    .update({ deleted_at: deletedAt })
-    .in("id", ids)
-    .is("deleted_at", null);
-  return { error: error ? new Error(error.message) : null };
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+    const { error } = await supabase
+      .from("client_groups")
+      .update({ deleted_at: deletedAt })
+      .in("id", batch)
+      .is("deleted_at", null);
+    if (error) return { error: new Error(error.message) };
+  }
+  return { error: null };
 }

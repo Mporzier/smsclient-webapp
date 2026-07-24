@@ -4,6 +4,7 @@ import {
   type CustomFieldDef,
   type CustomFieldType,
 } from "@/lib/types/customFields";
+import { POSTGREST_PAGE } from "@/lib/supabase/postgrestChunk";
 
 type DefRow = {
   id: string;
@@ -169,29 +170,38 @@ export async function deleteCustomFieldDef(
     return { error: new Error(delErr.message) };
   }
 
-  const { data: clients, error: fetchErr } = await supabase
-    .from("clients")
-    .select("id,custom_fields")
-    .eq("user_id", userId);
-
-  if (fetchErr) {
-    return { error: new Error(fetchErr.message) };
-  }
-
-  for (const raw of clients ?? []) {
-    const row = raw as { id: string; custom_fields: Record<string, unknown> | null };
-    const cf = row.custom_fields ?? {};
-    if (!(fieldId in cf)) continue;
-    const next = { ...cf };
-    delete next[fieldId];
-    const { error: upErr } = await supabase
+  for (let from = 0; ; from += POSTGREST_PAGE) {
+    const { data: clients, error: fetchErr } = await supabase
       .from("clients")
-      .update({ custom_fields: next })
-      .eq("id", row.id)
-      .eq("user_id", userId);
-    if (upErr) {
-      return { error: new Error(upErr.message) };
+      .select("id,custom_fields")
+      .eq("user_id", userId)
+      .order("id", { ascending: true })
+      .range(from, from + POSTGREST_PAGE - 1);
+
+    if (fetchErr) {
+      return { error: new Error(fetchErr.message) };
     }
+
+    const page = clients ?? [];
+    for (const raw of page) {
+      const row = raw as {
+        id: string;
+        custom_fields: Record<string, unknown> | null;
+      };
+      const cf = row.custom_fields ?? {};
+      if (!(fieldId in cf)) continue;
+      const next = { ...cf };
+      delete next[fieldId];
+      const { error: upErr } = await supabase
+        .from("clients")
+        .update({ custom_fields: next })
+        .eq("id", row.id)
+        .eq("user_id", userId);
+      if (upErr) {
+        return { error: new Error(upErr.message) };
+      }
+    }
+    if (page.length < POSTGREST_PAGE) break;
   }
 
   return { error: null };

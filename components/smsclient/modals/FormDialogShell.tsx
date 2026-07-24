@@ -22,7 +22,6 @@ type FormDialogShellProps = {
   onClose: () => void;
   onSave?: () => void | Promise<void>;
   saving?: boolean;
-  dirty?: boolean;
   saveLabel?: string;
   wide?: boolean;
   contentClassName?: string;
@@ -42,7 +41,6 @@ export function FormDialogShell({
   onClose,
   onSave,
   saving = false,
-  dirty = false,
   saveLabel,
   wide = false,
   contentClassName,
@@ -70,10 +68,10 @@ export function FormDialogShell({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || dirty) e.preventDefault();
+          if (saving) e.preventDefault();
         }}
       >
         <FormDialogHeader

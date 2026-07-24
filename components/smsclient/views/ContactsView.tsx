@@ -464,13 +464,16 @@ export function ContactsView({
   );
 
   const selectedIdsRef = useRef(selectedIds);
-  selectedIdsRef.current = selectedIds;
   const eligibleRowsRef = useRef(eligibleRows);
-  eligibleRowsRef.current = eligibleRows;
   const onRowClickRef = useRef(onRowClick);
-  onRowClickRef.current = onRowClick;
   const onDeleteContactsRef = useRef(onDeleteContacts);
-  onDeleteContactsRef.current = onDeleteContacts;
+
+  useEffect(() => {
+    selectedIdsRef.current = selectedIds;
+    eligibleRowsRef.current = eligibleRows;
+    onRowClickRef.current = onRowClick;
+    onDeleteContactsRef.current = onDeleteContacts;
+  });
 
   const unsubCount = unsubscribedContacts.length;
 

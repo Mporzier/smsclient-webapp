@@ -13,7 +13,6 @@ type ParametresSettingModalProps = {
   onClose: () => void;
   onSave?: () => void | Promise<void>;
   saving?: boolean;
-  dirty?: boolean;
   saveLabel?: string;
   wide?: boolean;
   children: ReactNode;

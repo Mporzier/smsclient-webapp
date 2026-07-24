@@ -42,7 +42,7 @@ const sidebarSectionLabelClass =
   "px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-muted-foreground";
 
 const navItemBase = cn(
-  "group flex h-[34px] w-full cursor-pointer select-none items-center gap-[9px] rounded-full border border-transparent px-2.5 text-left no-underline transition-[background-color,color] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+  "group flex h-[34px] w-full cursor-pointer select-none items-center gap-[9px] rounded-full border border-transparent px-2.5 text-left no-underline transition-[background-color,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-0",
   sidebarTextClass
 );
 
@@ -89,7 +89,6 @@ type NavKey =
   | "qr-boutique"
   | "reglementations-sms"
   | "aide"
-  | "soumettre-avis"
   | "liens"
   | "modeles-sms";
 
@@ -97,6 +96,7 @@ export type ShellProps = {
   route: AppRoute;
   go: (path: string) => void;
   onNewCampaign: () => void;
+  onOpenFeedback?: () => void;
   creditsLabel?: string;
   campaignWizardStep?: 1 | 2 | 3;
   children: ReactNode;
@@ -144,7 +144,6 @@ export const ROUTE_ICONS: Record<AppRoute, LucideIcon> = {
   "modeles-sms": MessageSquareText,
   "reglementations-sms": Scale,
   aide: CircleHelp,
-  "soumettre-avis": MessageSquareText,
   "nouvelle-campagne": Megaphone,
   "acheter-credits": Coins,
 };

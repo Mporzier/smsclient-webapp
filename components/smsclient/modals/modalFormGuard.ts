@@ -85,15 +85,15 @@ export function smsLinkFormSnapshotsEqual(
 }
 
 /**
- * Ferme la modale au clic sur l’overlay uniquement si le formulaire n’a pas changé.
+ * Ferme la modale au clic sur l’overlay uniquement si autorisé.
  */
 export function handleModalBackdropClick(
   e: MouseEvent<HTMLElement>,
   onClose: () => void,
-  isDirty: boolean,
+  _isDirty: boolean,
   canClose = true,
 ): void {
-  if (e.target !== e.currentTarget || !canClose || isDirty) return;
+  if (e.target !== e.currentTarget || !canClose) return;
   onClose();
 }
 
