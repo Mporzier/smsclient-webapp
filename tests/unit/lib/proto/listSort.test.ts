@@ -8,10 +8,10 @@ import {
 } from "@/lib/proto/listSort";
 
 describe("listSort maps", () => {
-  it("group defaults created_at asc", () => {
+  it("group defaults member_count desc", () => {
     expect(groupSortToOrders(null)).toEqual([
-      { column: "created_at", ascending: true },
-      { column: "id", ascending: true },
+      { column: "member_count", ascending: false },
+      { column: "id", ascending: false },
     ]);
   });
 
@@ -33,8 +33,8 @@ describe("listSort maps", () => {
       { column: "id", ascending: false },
     ]);
     expect(groupSortToOrders({ id: "unknownCol", desc: false })).toEqual([
-      { column: "created_at", ascending: true },
-      { column: "id", ascending: true },
+      { column: "member_count", ascending: false },
+      { column: "id", ascending: false },
     ]);
   });
 

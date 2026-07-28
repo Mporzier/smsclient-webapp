@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
+import { AI_PROMPT_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 
 type SmsAiPromptFieldProps = {
   value: string;
@@ -30,6 +31,7 @@ export function SmsAiPromptField({
         <textarea
           value={value}
           disabled={disabled}
+          maxLength={AI_PROMPT_MAX_LENGTH}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={4}

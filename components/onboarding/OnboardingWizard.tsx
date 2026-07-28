@@ -11,6 +11,12 @@ import {
   brandInputCls,
 } from "@/components/smsclient/modals/modalChrome";
 import { cn } from "@/lib/cn";
+import {
+  COMPANY_NAME_MAX_LENGTH,
+  PERSON_NAME_MAX_LENGTH,
+  PHONE_DISPLAY_MAX_LENGTH,
+  SMS_SENDER_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import { sanitizeSender } from "@/lib/proto/smsUtils";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
@@ -203,6 +209,7 @@ export function OnboardingWizard() {
                 </Label>
                 <Input
                   className={brandInputCls}
+                  maxLength={PERSON_NAME_MAX_LENGTH}
                   value={form.firstName}
                   onChange={(e) => setField("firstName", e.target.value)}
                   autoFocus
@@ -214,6 +221,7 @@ export function OnboardingWizard() {
                 </Label>
                 <Input
                   className={brandInputCls}
+                  maxLength={PERSON_NAME_MAX_LENGTH}
                   value={form.lastName}
                   onChange={(e) => setField("lastName", e.target.value)}
                 />
@@ -235,6 +243,7 @@ export function OnboardingWizard() {
               </Label>
               <Input
                 className={brandInputCls}
+                maxLength={PHONE_DISPLAY_MAX_LENGTH}
                 value={form.phone}
                 onChange={(e) => setField("phone", e.target.value)}
                 placeholder="06 12 34 56 78"
@@ -270,6 +279,7 @@ export function OnboardingWizard() {
               </Label>
               <Input
                 className={brandInputCls}
+                maxLength={COMPANY_NAME_MAX_LENGTH}
                 value={form.companyName}
                 onChange={(e) => setField("companyName", e.target.value)}
                 autoFocus
@@ -297,7 +307,7 @@ export function OnboardingWizard() {
               </Label>
               <Input
                 className={brandInputCls}
-                maxLength={11}
+                maxLength={SMS_SENDER_MAX_LENGTH}
                 value={form.sender}
                 onChange={(e) =>
                   setField("sender", sanitizeSender(e.target.value))
@@ -305,7 +315,7 @@ export function OnboardingWizard() {
                 autoFocus
               />
               <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                {sanitizeSender(form.sender).length}/11
+                {sanitizeSender(form.sender).length}/{SMS_SENDER_MAX_LENGTH}
               </p>
             </div>
           </div>

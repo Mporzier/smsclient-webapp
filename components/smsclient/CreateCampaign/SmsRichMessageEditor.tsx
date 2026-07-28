@@ -18,6 +18,7 @@ import {
   serializeSmsEditor,
   shouldPreventEditorBeforeInput,
 } from "./smsMessageEditorDom";
+import { SMS_BODY_HARD_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 
 export type SmsRichMessageEditorHandle = {
   insertText: (text: string) => void;
@@ -46,7 +47,11 @@ export const SmsRichMessageEditor = forwardRef<
     const root = editorRef.current;
     if (!root) return;
     repairPrenomChips(root);
-    const next = serializeSmsEditor(root);
+    let next = serializeSmsEditor(root);
+    if (next.length > SMS_BODY_HARD_MAX_LENGTH) {
+      next = next.slice(0, SMS_BODY_HARD_MAX_LENGTH);
+      renderSmsEditorValue(root, next);
+    }
     lastEmittedRef.current = next;
     onChange(next);
   }, [onChange]);

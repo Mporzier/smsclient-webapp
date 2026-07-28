@@ -23,6 +23,7 @@ import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Link2, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "@/components/ui/sonner";
 import type {
   ColumnDef,
   OnChangeFn,
@@ -44,7 +45,6 @@ type LiensViewProps = {
   supabase: SupabaseClient;
   userId: string | undefined;
   onRefresh: () => Promise<void>;
-  onToast?: (message: string) => void;
 };
 
 export function LiensView({
@@ -62,7 +62,6 @@ export function LiensView({
   supabase,
   userId,
   onRefresh,
-  onToast,
 }: LiensViewProps) {
   const { t } = useI18n();
   const [createOpen, setCreateOpen] = useState(false);
@@ -84,12 +83,12 @@ export function LiensView({
     async (text: string) => {
       try {
         await navigator.clipboard.writeText(text);
-        onToast?.(t("links.copied"));
+        toast(t("links.copied"));
       } catch {
-        onToast?.(t("links.copyFailed"));
+        toast.error(t("links.copyFailed"));
       }
     },
-    [onToast, t],
+    [t],
   );
 
   const handleCreate = useCallback(
@@ -114,8 +113,8 @@ export function LiensView({
 
   const handleCreated = useCallback(async () => {
     await onRefresh();
-    onToast?.(t("links.createdToast"));
-  }, [onRefresh, onToast, t]);
+    toast(t("links.createdToast"));
+  }, [onRefresh, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
@@ -127,8 +126,8 @@ export function LiensView({
     if (delError) throw delError;
     setDeleteTarget(null);
     await onRefresh();
-    onToast?.(t("links.deletedToast"));
-  }, [deleteTarget, userId, supabase, onRefresh, onToast, t]);
+    toast(t("links.deletedToast"));
+  }, [deleteTarget, userId, supabase, onRefresh, t]);
 
   const columns: ColumnDef<LinkRowData, unknown>[] = useMemo(
     () => [

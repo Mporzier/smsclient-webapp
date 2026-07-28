@@ -8,6 +8,7 @@ import {
   parametresFieldLbl,
 } from "@/components/smsclient/views/parametres/parametresSettings";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { CUSTOM_FIELD_LABEL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   CUSTOM_FIELD_MAX_PER_ACCOUNT,
   type CustomFieldDef,
@@ -158,6 +159,7 @@ export function CustomFieldsSettingsPanel({
                   <>
                     <input
                       className={parametresFieldInp}
+                      maxLength={CUSTOM_FIELD_LABEL_MAX_LENGTH}
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
                       disabled={busy}
@@ -231,6 +233,7 @@ export function CustomFieldsSettingsPanel({
             <input
               id="custom-field-new-label"
               className={parametresFieldInp}
+              maxLength={CUSTOM_FIELD_LABEL_MAX_LENGTH}
               value={label}
               onChange={(e) => {
                 setLabel(e.target.value);

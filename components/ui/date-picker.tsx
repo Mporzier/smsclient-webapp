@@ -81,6 +81,7 @@ export function DatePicker({
           locale={fr}
           selected={selected}
           defaultMonth={selected}
+          fixedWeeks
           onSelect={(date) => {
             onChange(date ? format(date, ISO_DATE) : "");
             setOpen(false);

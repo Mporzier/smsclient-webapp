@@ -17,6 +17,8 @@ import {
 import {
   isValidSmsTemplateBody,
   isValidSmsTemplateTitle,
+  SMS_TEMPLATE_BODY_MAX_LENGTH,
+  SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH,
   SMS_TEMPLATE_TITLE_MAX_LENGTH,
   SMS_TEMPLATE_TITLE_MIN_LENGTH,
   type UserSmsTemplateRow,
@@ -24,6 +26,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LayoutTemplate, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "@/components/ui/sonner";
 import type {
   ColumnDef,
   OnChangeFn,
@@ -45,7 +48,6 @@ type ModelesSmsViewProps = {
   supabase: SupabaseClient;
   userId: string | undefined;
   onRefresh: () => Promise<void>;
-  onToast?: (message: string) => void;
 };
 
 export function ModelesSmsView({
@@ -63,7 +65,6 @@ export function ModelesSmsView({
   supabase,
   userId,
   onRefresh,
-  onToast,
 }: ModelesSmsViewProps) {
   const { t } = useI18n();
   const [title, setTitle] = useState("");
@@ -136,8 +137,8 @@ export function ModelesSmsView({
     setTitleError(null);
     setBodyError(null);
     await onRefresh();
-    onToast?.(t("templates.createdToast"));
-  }, [title, description, body, userId, supabase, onRefresh, onToast, t]);
+    toast(t("templates.createdToast"));
+  }, [title, description, body, userId, supabase, onRefresh, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
@@ -149,8 +150,8 @@ export function ModelesSmsView({
     if (delError) throw delError;
     setDeleteTarget(null);
     await onRefresh();
-    onToast?.(t("templates.deletedToast"));
-  }, [deleteTarget, userId, supabase, onRefresh, onToast, t]);
+    toast(t("templates.deletedToast"));
+  }, [deleteTarget, userId, supabase, onRefresh, t]);
 
   const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
@@ -280,6 +281,7 @@ export function ModelesSmsView({
               <input
                 id="modeles-create-description"
                 type="text"
+                maxLength={SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH}
                 className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-border focus:ring-0"
                 placeholder={t("templates.field.descriptionPlaceholder")}
                 value={description}
@@ -300,6 +302,7 @@ export function ModelesSmsView({
             <textarea
               id="modeles-create-body"
               rows={4}
+              maxLength={SMS_TEMPLATE_BODY_MAX_LENGTH}
               className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-border focus:ring-0"
               placeholder={t("templates.field.bodyPlaceholder")}
               value={body}

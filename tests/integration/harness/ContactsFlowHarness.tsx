@@ -6,14 +6,15 @@ import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteM
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
+import type { ContactGroupOption } from "@/lib/types/group";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
 import type { SortingState } from "@tanstack/react-table";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { nextMockId } from "../helpers/mockData";
 
 type ContactsFlowHarnessProps = {
   initialRows?: ContactRowData[];
-  groupOptions?: string[];
+  groupOptions?: ContactGroupOption[] | string[];
   onCreateCampaign?: (ids: string[]) => void;
 };
 
@@ -22,6 +23,13 @@ export function ContactsFlowHarness({
   groupOptions = [],
   onCreateCampaign,
 }: ContactsFlowHarnessProps) {
+  const normalizedGroupOptions = useMemo<ContactGroupOption[]>(
+    () =>
+      groupOptions.map((g) =>
+        typeof g === "string" ? { name: g, contactCount: 0 } : g,
+      ),
+    [groupOptions],
+  );
   const [rows, setRows] = useState<ContactRowData[]>(initialRows);
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -147,7 +155,7 @@ export function ContactsFlowHarness({
         customFields={customFields}
         groups={groups}
         setGroups={setGroups}
-        groupOptions={groupOptions}
+        groupOptions={normalizedGroupOptions}
         onCreateGroupRequest={() => {}}
         consentDefaults={
           editRow

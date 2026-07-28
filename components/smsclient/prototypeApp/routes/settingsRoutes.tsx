@@ -9,6 +9,7 @@ import {
 } from "@/components/smsclient/MainViews";
 import type { AppRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
+import { toast } from "@/components/ui/sonner";
 import type { PrototypeAppContext } from "../usePrototypeApp";
 
 const SETTINGS_ROUTES = new Set<AppRoute>([
@@ -102,7 +103,7 @@ export function renderSettingsRoute(
           purchasesSorting={creditsState.sorting}
           onPurchasesSortingChange={creditsState.setSorting}
           onInvoiceClick={(id: string) =>
-            modals.showToast(`Téléchargement de la facture ${id} (prototype)`)
+            toast(`Téléchargement de la facture ${id} (prototype)`)
           }
           trashContacts={trashState.contacts}
           trashGroups={trashState.groups}
@@ -140,7 +141,7 @@ export function renderSettingsRoute(
                 ) / 100,
             });
             if (error) throw error;
-            modals.showToast(
+            toast(
               `Achat confirmé (${new Intl.NumberFormat("fr-FR").format(
                 selection.credits
               )} crédits)${invoiceRef ? ` · ${invoiceRef}` : ""}`

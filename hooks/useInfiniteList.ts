@@ -56,14 +56,14 @@ export function useInfiniteList<T extends { id: string }>({
   const [reloadKey, setReloadKey] = useState(0);
 
   const fetchPageRef = useRef(fetchPage);
-  fetchPageRef.current = fetchPage;
   const inflightRef = useRef(0);
-  const rowsLenRef = useRef(0);
-  rowsLenRef.current = rows.length;
-
   const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
   const sortRef = useRef(sort);
-  sortRef.current = sort;
+
+  useEffect(() => {
+    fetchPageRef.current = fetchPage;
+    sortRef.current = sort;
+  });
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -74,43 +74,49 @@ export function useInfiniteList<T extends { id: string }>({
 
   useEffect(() => {
     if (!enabled) {
-      setRows([]);
-      setLoading(false);
-      setLoadingMore(false);
-      setHasMore(false);
-      setError(null);
-      setTotalCount(null);
+      queueMicrotask(() => {
+        setRows([]);
+        setLoading(false);
+        setLoadingMore(false);
+        setHasMore(false);
+        setError(null);
+        setTotalCount(null);
+      });
       return;
     }
 
     let cancelled = false;
     const reqId = ++inflightRef.current;
-    setLoading(true);
-    setError(null);
 
-    void fetchPageRef
-      .current({
-        offset: 0,
-        limit: pageSize,
-        search,
-        sort: sortRef.current ?? null,
-      })
-      .then((res) => {
-        if (cancelled || reqId !== inflightRef.current) return;
-        if (res.error) {
-          setError(res.error.message);
-          setRows([]);
-          setHasMore(false);
-          setTotalCount(null);
-        } else {
-          setRows(res.data);
-          setHasMore(res.hasMore);
-          if (typeof res.totalCount === "number") {
-            setTotalCount(res.totalCount);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+
+      void fetchPageRef
+        .current({
+          offset: 0,
+          limit: pageSize,
+          search,
+          sort: sortRef.current ?? null,
+        })
+        .then((res) => {
+          if (cancelled || reqId !== inflightRef.current) return;
+          if (res.error) {
+            setError(res.error.message);
+            setRows([]);
+            setHasMore(false);
+            setTotalCount(null);
+          } else {
+            setRows(res.data);
+            setHasMore(res.hasMore);
+            if (typeof res.totalCount === "number") {
+              setTotalCount(res.totalCount);
+            }
           }
-        }
-        setLoading(false);
-      });
+          setLoading(false);
+        });
+    });
 
     return () => {
       cancelled = true;
@@ -120,7 +126,7 @@ export function useInfiniteList<T extends { id: string }>({
   const loadMore = useCallback(async () => {
     if (!enabled || loading || loadingMore || !hasMore) return;
     setLoadingMore(true);
-    const offset = rowsLenRef.current;
+    const offset = rows.length;
     const reqId = inflightRef.current;
     const res = await fetchPageRef.current({
       offset,
@@ -149,7 +155,7 @@ export function useInfiniteList<T extends { id: string }>({
       }
     }
     setLoadingMore(false);
-  }, [enabled, loading, loadingMore, hasMore, pageSize, search, sortKey]);
+  }, [enabled, loading, loadingMore, hasMore, pageSize, search, rows.length]);
 
   const refresh = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -181,7 +187,7 @@ export function useInfiniteList<T extends { id: string }>({
       }
     }
     if (!silent) setLoading(false);
-  }, [enabled, pageSize, search, sortKey]);
+  }, [enabled, pageSize, search]);
 
   const resetAndReload = useCallback(() => {
     setReloadKey((k) => k + 1);

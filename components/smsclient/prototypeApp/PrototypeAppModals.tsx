@@ -149,7 +149,6 @@ export function PrototypeAppModals({ ctx }: Props) {
             await contactsState.refresh();
             await groupsState.refresh();
           }}
-          onNotify={modals.showToast}
         />
       )}
 
@@ -177,7 +176,6 @@ export function PrototypeAppModals({ ctx }: Props) {
       <SoumettreAvisModal
         open={modals.feedbackOpen}
         onClose={() => modals.setFeedbackOpen(false)}
-        onToast={modals.showToast}
       />
     </>
   );

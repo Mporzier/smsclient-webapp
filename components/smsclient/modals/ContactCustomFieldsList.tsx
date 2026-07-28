@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import { isAllowedNumberFieldDraft } from "@/lib/customFields/validate";
+import { CUSTOM_FIELD_VALUE_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import type {
   CustomFieldDef,
   CustomFieldValues,
@@ -56,6 +57,7 @@ const CustomFieldRow = memo(function CustomFieldRow({
         inputMode="decimal"
         autoComplete="off"
         className={modalFieldCls}
+        maxLength={32}
         value={value}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errId : undefined}
@@ -86,6 +88,7 @@ const CustomFieldRow = memo(function CustomFieldRow({
         name={`custom_${def.id}`}
         type="text"
         className={modalFieldCls}
+        maxLength={CUSTOM_FIELD_VALUE_MAX_LENGTH}
         value={value}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errId : undefined}

@@ -3,6 +3,7 @@ import { OnboardingGate } from "@/components/auth/OnboardingGate";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { UserProfileProvider } from "@/components/auth/UserProfileProvider";
 import { OpenWidgetLoader } from "@/components/OpenWidgetLoader";
+import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import { Inter, Geist_Mono, Geist } from "next/font/google";
 import Script from "next/script";
@@ -51,6 +52,7 @@ export default function RootLayout({
           </AuthGate>
         </AuthProvider>
         <OpenWidgetLoader />
+        <Toaster position="bottom-center" />
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import {
   type ContactFormSubmitPayload,
 } from "@/lib/supabase/clients";
 import { useCallback } from "react";
+import { toast } from "@/components/ui/sonner";
 import type { ActionsContext } from "./types";
 
 export function useContactActions({ data, modals }: ActionsContext) {
@@ -17,7 +18,6 @@ export function useContactActions({ data, modals }: ActionsContext) {
     contactModalMode,
     setConfirmDeleteOpen,
     setContactModalOpen,
-    showToast,
     openConfirmDelete,
   } = modals;
 
@@ -38,7 +38,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
           contactsState.refresh();
           groupsState.refresh();
           void trashState.refresh();
-          showToast(
+          toast(
             `${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
           );
         }
@@ -50,7 +50,6 @@ export function useContactActions({ data, modals }: ActionsContext) {
       contactsState,
       groupsState,
       trashState,
-      showToast,
       setConfirmDeleteOpen,
     ]
   );
@@ -78,8 +77,8 @@ export function useContactActions({ data, modals }: ActionsContext) {
     });
     if (error) throw error;
     await contactsState.refresh();
-    showToast("Contact désabonné.");
-  }, [user, contactEditRow, supabase, contactsState, showToast]);
+    toast("Contact désabonné.");
+  }, [user, contactEditRow, supabase, contactsState]);
 
   const handleContactSave = useCallback(
     async (payload: ContactFormSubmitPayload) => {
@@ -102,7 +101,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
       }
       await contactsState.refresh();
       await groupsState.refresh();
-      showToast("Contact enregistré");
+      toast("Contact enregistré");
     },
     [
       user,
@@ -111,7 +110,6 @@ export function useContactActions({ data, modals }: ActionsContext) {
       contactEditRow,
       contactsState,
       groupsState,
-      showToast,
     ]
   );
 
@@ -123,13 +121,13 @@ export function useContactActions({ data, modals }: ActionsContext) {
       const { error } = await resubscribeClients(supabase, user.id, ids);
       if (error) throw error;
       await contactsState.refresh();
-      showToast(
+      toast(
         `${ids.length} contact${ids.length > 1 ? "s" : ""} réabonné${
           ids.length > 1 ? "s" : ""
         }.`
       );
     },
-    [user, supabase, contactsState, showToast]
+    [user, supabase, contactsState]
   );
 
   return {

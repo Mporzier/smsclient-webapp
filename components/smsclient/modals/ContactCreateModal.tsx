@@ -8,22 +8,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
+import {
+  CONTACT_NOTES_MAX_LENGTH,
+  PERSON_NAME_MAX_LENGTH,
+  PHONE_DISPLAY_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import { useI18n } from "@/lib/i18n";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
+import { groupColor } from "@/lib/proto/contactDisplay";
 import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
 import { normalizeCustomFieldValue } from "@/lib/customFields/validate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { CustomFieldValues } from "@/lib/types/customFields";
+import type { ContactGroupOption } from "@/lib/types/group";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useState } from "react";
 import { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
 import { ContactCustomFieldsList } from "./ContactCustomFieldsList";
 import {
   BellOff,
-  Check,
   Pencil,
   Phone,
   Plus,
@@ -38,9 +45,7 @@ import {
   modalIconCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
-import {
-  hasStackedOpenDialog,
-} from "./modalFormGuard";
+import { hasStackedOpenDialog } from "./modalFormGuard";
 
 export type ContactCreateModalProps = {
   open: boolean;
@@ -56,7 +61,7 @@ export type ContactCreateModalProps = {
   customFields: CustomFieldValues;
   groups: string[];
   setGroups: Dispatch<SetStateAction<string[]>>;
-  groupOptions: string[];
+  groupOptions: ContactGroupOption[];
   onCreateGroupRequest: () => void;
   consentDefaults?: { optIn: boolean; stop: boolean } | null;
   onSaveContact?: (payload: ContactFormSubmitPayload) => Promise<void>;
@@ -121,8 +126,9 @@ export function ContactCreateModal({
   const [phone, setPhone] = useState(seedPhone);
   const [birthday, setBirthday] = useState(seedBirthday);
   const [notes, setNotes] = useState(seedNotes);
-  const [draftCustomFields, setDraftCustomFields] =
-    useState<CustomFieldValues>({});
+  const [draftCustomFields, setDraftCustomFields] = useState<CustomFieldValues>(
+    {}
+  );
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -177,15 +183,15 @@ export function ContactCreateModal({
     for (const def of customFieldDefs) {
       const normalized = normalizeCustomFieldValue(
         draftCustomFields[def.id] ?? "",
-        def.fieldType,
+        def.fieldType
       );
       if (normalized === null) {
         nextCustom[def.id] =
           def.fieldType === "date"
             ? t("contact.modal.errDate")
             : def.fieldType === "number"
-              ? t("contact.modal.errNumber")
-              : t("contact.modal.errValue");
+            ? t("contact.modal.errNumber")
+            : t("contact.modal.errValue");
         continue;
       }
       if (normalized) normalizedCustom[def.id] = normalized;
@@ -193,7 +199,11 @@ export function ContactCreateModal({
     setFirstError(nextFirstError);
     setPhoneSubmitError(nextPhoneError);
     setCustomErrors(nextCustom);
-    if (nextFirstError || nextPhoneError || Object.keys(nextCustom).length > 0) {
+    if (
+      nextFirstError ||
+      nextPhoneError ||
+      Object.keys(nextCustom).length > 0
+    ) {
       if (nextPhoneError) setPhoneBlurred(true);
       return;
     }
@@ -218,9 +228,11 @@ export function ContactCreateModal({
       });
       handleClose();
     } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : t("common.errorOccurred");
-      if (msg.includes("déjà enregistré") || msg.toLowerCase().includes("already")) {
+      const msg = e instanceof Error ? e.message : t("common.errorOccurred");
+      if (
+        msg.includes("déjà enregistré") ||
+        msg.toLowerCase().includes("already")
+      ) {
         setPhoneSubmitError(msg);
         setPhoneBlurred(true);
       } else {
@@ -249,8 +261,7 @@ export function ContactCreateModal({
     (phoneBlurred && phoneDigits.length > 0 && !isValidFrMobile(phone)) ||
     Boolean(phoneSubmitError);
   const phoneErrorMsg =
-    phoneSubmitError ??
-    (phoneInvalid ? t("contact.modal.phoneHint") : null);
+    phoneSubmitError ?? (phoneInvalid ? t("contact.modal.phoneHint") : null);
 
   const isUnsubscribed =
     mode === "edit" &&
@@ -321,17 +332,22 @@ export function ContactCreateModal({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="flex justify-between gap-2" htmlFor="contact-create-first">
+                <Label
+                  className="flex justify-between gap-2"
+                  htmlFor="contact-create-first"
+                >
                   <span className={fieldLabelCls}>
                     {t("contacts.col.firstName")}{" "}
                     <span className="text-destructive">*</span>
                   </span>
-                  <span className={fieldMetaCls}>{first.length}/30</span>
+                  <span className={fieldMetaCls}>
+                    {first.length}/{PERSON_NAME_MAX_LENGTH}
+                  </span>
                 </Label>
                 <Input
                   id="contact-create-first"
                   className={modalFieldCls}
-                  maxLength={30}
+                  maxLength={PERSON_NAME_MAX_LENGTH}
                   value={first}
                   aria-invalid={Boolean(firstError)}
                   aria-describedby={
@@ -352,14 +368,21 @@ export function ContactCreateModal({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="flex justify-between gap-2" htmlFor="contact-create-last">
-                  <span className={fieldLabelCls}>{t("contacts.col.lastName")}</span>
-                  <span className={fieldMetaCls}>{last.length}/30</span>
+                <Label
+                  className="flex justify-between gap-2"
+                  htmlFor="contact-create-last"
+                >
+                  <span className={fieldLabelCls}>
+                    {t("contacts.col.lastName")}
+                  </span>
+                  <span className={fieldMetaCls}>
+                    {last.length}/{PERSON_NAME_MAX_LENGTH}
+                  </span>
                 </Label>
                 <Input
                   id="contact-create-last"
                   className={modalFieldCls}
-                  maxLength={30}
+                  maxLength={PERSON_NAME_MAX_LENGTH}
                   value={last}
                   onChange={(e) => setLast(e.target.value)}
                 />
@@ -397,7 +420,7 @@ export function ContactCreateModal({
                   autoComplete="tel-national"
                   enterKeyHint="done"
                   placeholder="06 12 34 56 78"
-                  maxLength={14}
+                  maxLength={PHONE_DISPLAY_MAX_LENGTH}
                   className={cn(modalFieldCls, "pl-8")}
                   value={phone}
                   onChange={(e) => {
@@ -422,24 +445,29 @@ export function ContactCreateModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className={fieldLabelCls} htmlFor="contact-create-birthday">
+              <Label
+                className={fieldLabelCls}
+                htmlFor="contact-create-birthday"
+              >
                 {t("contact.modal.birthday")}
               </Label>
-              <Input
+              <DatePicker
                 id="contact-create-birthday"
-                name="birthday"
-                type="date"
-                className={modalFieldCls}
                 value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+                onChange={setBirthday}
               />
               <p className={hintTextCls}>{t("contact.modal.optional")}</p>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="flex justify-between gap-2" htmlFor="contact-create-notes">
+              <Label
+                className="flex justify-between gap-2"
+                htmlFor="contact-create-notes"
+              >
                 <span className={fieldLabelCls}>{t("contacts.col.notes")}</span>
-                <span className={fieldMetaCls}>{notes.length}/280</span>
+                <span className={fieldMetaCls}>
+                  {notes.length}/{CONTACT_NOTES_MAX_LENGTH}
+                </span>
               </Label>
               <textarea
                 id="contact-create-notes"
@@ -447,7 +475,7 @@ export function ContactCreateModal({
                   "min-h-[72px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground",
                   modalFieldCls
                 )}
-                maxLength={280}
+                maxLength={CONTACT_NOTES_MAX_LENGTH}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
@@ -475,13 +503,20 @@ export function ContactCreateModal({
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className="flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                  <span className={fieldLabelCls}>{t("contacts.col.groups")}</span>
+                  <Users
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <span className={fieldLabelCls}>
+                    {t("contacts.col.groups")}
+                  </span>
                 </Label>
                 {groups.length > 0 && (
                   <span className={fieldMetaCls}>
                     {groups.length === 1
-                      ? t("contact.modal.groupsSelectedOne", { n: groups.length })
+                      ? t("contact.modal.groupsSelectedOne", {
+                          n: groups.length,
+                        })
                       : t("contact.modal.groupsSelectedMany", {
                           n: groups.length,
                         })}
@@ -499,16 +534,27 @@ export function ContactCreateModal({
                     role="group"
                     aria-label={t("contact.modal.groupsAria")}
                   >
-                    {groupOptions.map((g) => {
+                    {groupOptions.map((opt) => {
+                      const g = opt.name;
                       const selected = groups.includes(g);
+                      const gc = groupColor(g);
+                      const sizeLabel =
+                        opt.contactCount === 1
+                          ? t("contact.modal.groupSizeOne", {
+                              n: opt.contactCount,
+                            })
+                          : t("contact.modal.groupSizeMany", {
+                              n: opt.contactCount,
+                            });
                       return (
                         <button
                           key={g}
                           type="button"
                           aria-pressed={selected}
+                          title={g}
                           onClick={() => toggleContactGroup(g)}
                           className={cn(
-                            "relative flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-xs font-medium leading-snug transition-colors",
+                            "relative flex h-11 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg border px-2 py-1.5 text-left text-xs font-medium leading-snug transition-colors",
                             selected
                               ? "border-ring bg-accent text-ring ring-1 ring-ring/20"
                               : "border-border bg-card text-foreground hover:bg-muted/80"
@@ -516,18 +562,28 @@ export function ContactCreateModal({
                         >
                           <span
                             className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
-                              selected
-                                ? "border-ring bg-primary text-primary-foreground"
-                                : "border-border/80 bg-card"
+                              "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11px] font-medium",
+                              gc.bg,
+                              gc.border,
+                              gc.text
                             )}
                             aria-hidden
                           >
-                            {selected && (
-                              <Check className="h-3 w-3" strokeWidth={3} />
-                            )}
+                            <Users className="h-3 w-3" />
                           </span>
-                          <span className="min-w-0 flex-1 break-words">{g}</span>
+                          <span className="min-w-0 flex-1 overflow-hidden">
+                            <span className="block truncate">{g}</span>
+                            <span
+                              className={cn(
+                                "mt-0.5 block truncate text-[10px] font-normal",
+                                selected
+                                  ? "text-ring/80"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {sizeLabel}
+                            </span>
+                          </span>
                         </button>
                       );
                     })}
@@ -602,8 +658,8 @@ export function ContactCreateModal({
                 {saving
                   ? t("dialog.saving")
                   : mode === "edit"
-                    ? t("dialog.save")
-                    : t("contact.modal.saveContact")}
+                  ? t("dialog.save")
+                  : t("contact.modal.saveContact")}
               </Button>
             </div>
           </DialogFooter>

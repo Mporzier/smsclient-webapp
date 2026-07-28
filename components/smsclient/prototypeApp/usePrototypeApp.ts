@@ -49,7 +49,6 @@ export function usePrototypeApp() {
     supabase: data.supabase,
     userId: data.user?.id,
     onCampaignSaved,
-    showToast: modals.showToast,
   });
 
   const actions = usePrototypeActions({ data, modals });

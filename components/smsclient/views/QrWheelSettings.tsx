@@ -8,6 +8,13 @@ import {
   brandBtnPrimaryCls,
 } from "@/components/smsclient/modals/modalChrome";
 import { cn } from "@/lib/cn";
+import {
+  QR_WHEEL_SCREEN_MSG_MAX_LENGTH,
+  QR_WHEEL_SEGMENT_LABEL_MAX_LENGTH,
+  QR_WHEEL_SMS_MSG_MAX_LENGTH,
+  QR_WHEEL_SUBTITLE_MAX_LENGTH,
+  QR_WHEEL_TITLE_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import { useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n/messages";
 import {
@@ -310,6 +317,7 @@ export function QrWheelSettings({
             </Label>
             <Input
               className={inputCls}
+              maxLength={QR_WHEEL_TITLE_MAX_LENGTH}
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               placeholder={t("qr.wheel.titlePh")}
@@ -321,6 +329,7 @@ export function QrWheelSettings({
             </Label>
             <Input
               className={inputCls}
+              maxLength={QR_WHEEL_SUBTITLE_MAX_LENGTH}
               value={draft.subtitle}
               onChange={(e) =>
                 setDraft({ ...draft, subtitle: e.target.value })
@@ -415,6 +424,7 @@ export function QrWheelSettings({
                   </Label>
                   <Input
                     className={inputCls}
+                    maxLength={QR_WHEEL_SEGMENT_LABEL_MAX_LENGTH}
                     value={seg.label}
                     onChange={(e) => updateSegment(i, { label: e.target.value })}
                     placeholder={t("qr.wheel.labelPh")}
@@ -508,6 +518,7 @@ export function QrWheelSettings({
                   </Label>
                   <Input
                     className={inputCls}
+                    maxLength={QR_WHEEL_SCREEN_MSG_MAX_LENGTH}
                     value={seg.screenMessage}
                     onChange={(e) =>
                       updateSegment(i, { screenMessage: e.target.value })
@@ -526,6 +537,7 @@ export function QrWheelSettings({
                     </Label>
                     <Input
                       className={inputCls}
+                      maxLength={QR_WHEEL_SMS_MSG_MAX_LENGTH}
                       value={seg.smsMessage}
                       onChange={(e) =>
                         updateSegment(i, { smsMessage: e.target.value })

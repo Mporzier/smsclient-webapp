@@ -10,6 +10,7 @@ import {
   updateClientGroup,
 } from "@/lib/supabase/groups";
 import { useCallback } from "react";
+import { toast } from "@/components/ui/sonner";
 import type { ActionsContext } from "./types";
 
 export function useGroupActions({ data, modals }: ActionsContext) {
@@ -20,7 +21,6 @@ export function useGroupActions({ data, modals }: ActionsContext) {
     setConfirmDeleteOpen,
     setGroupEditOpen,
     setGroupEditRow,
-    showToast,
     openConfirmDelete,
     setCmGroups,
   } = modals;
@@ -52,7 +52,7 @@ export function useGroupActions({ data, modals }: ActionsContext) {
           setConfirmDeleteOpen(false);
           groupsState.refresh();
           void trashState.refresh();
-          showToast(
+          toast(
             `${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
           );
         }
@@ -63,7 +63,6 @@ export function useGroupActions({ data, modals }: ActionsContext) {
       supabase,
       groupsState,
       trashState,
-      showToast,
       setConfirmDeleteOpen,
     ]
   );
@@ -83,7 +82,7 @@ export function useGroupActions({ data, modals }: ActionsContext) {
         setGroupEditRow(null);
         groupsState.refresh();
         void trashState.refresh();
-        showToast("Groupe supprimé.");
+        toast("Groupe supprimé.");
       }
     );
   }, [
@@ -92,7 +91,6 @@ export function useGroupActions({ data, modals }: ActionsContext) {
     supabase,
     groupsState,
     trashState,
-    showToast,
     setConfirmDeleteOpen,
     setGroupEditOpen,
     setGroupEditRow,
@@ -120,7 +118,7 @@ export function useGroupActions({ data, modals }: ActionsContext) {
       if (contactModalOpen) {
         preselectGroupOnContactForm(trimmed);
       }
-      showToast(
+      toast(
         selectedContactIds.length > 0
           ? `Groupe créé · ${selectedContactIds.length} contact${
               selectedContactIds.length > 1 ? "s" : ""
@@ -135,7 +133,6 @@ export function useGroupActions({ data, modals }: ActionsContext) {
       contactsState,
       contactModalOpen,
       preselectGroupOnContactForm,
-      showToast,
     ]
   );
 
@@ -154,9 +151,9 @@ export function useGroupActions({ data, modals }: ActionsContext) {
       if (error) throw error;
       await groupsState.refresh();
       preselectGroupOnContactForm(trimmed);
-      showToast("Groupe créé");
+      toast("Groupe créé");
     },
-    [user, supabase, groupsState, preselectGroupOnContactForm, showToast]
+    [user, supabase, groupsState, preselectGroupOnContactForm]
   );
 
   const handleGroupUpdate = useCallback(
@@ -183,9 +180,9 @@ export function useGroupActions({ data, modals }: ActionsContext) {
       if (memErr) throw memErr;
       await groupsState.refresh();
       await contactsState.refresh();
-      showToast("Groupe modifié");
+      toast("Groupe modifié");
     },
-    [user, supabase, groupsState, contactsState, showToast]
+    [user, supabase, groupsState, contactsState]
   );
 
   return {

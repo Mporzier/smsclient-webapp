@@ -38,7 +38,10 @@ export function useCredits() {
     : null;
   const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
   const sortRef = useRef(sort);
-  sortRef.current = sort;
+
+  useEffect(() => {
+    sortRef.current = sort;
+  });
 
   const flushWaiters = useCallback(() => {
     const waiters = waitersRef.current.splice(0);

@@ -10,6 +10,7 @@ import {
 } from "@/components/smsclient/MainViews";
 import type { AppRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
+import { toast } from "@/components/ui/sonner";
 import type { PrototypeAppContext } from "../usePrototypeApp";
 
 const CONTENT_ROUTES = new Set<AppRoute>([
@@ -64,7 +65,7 @@ export function renderContentRoute(
           error={statisticsState.error}
           data={statisticsState.data}
           onExport={() =>
-            modals.showToast("Export des statistiques (à implémenter).")
+            toast("Export des statistiques (à implémenter).")
           }
           unsubscribedContacts={unsubscribedContacts}
         />
@@ -86,7 +87,6 @@ export function renderContentRoute(
           supabase={linksState.supabase}
           userId={linksState.userId}
           onRefresh={linksState.refresh}
-          onToast={modals.showToast}
         />
       );
     case "modeles-sms":
@@ -106,7 +106,6 @@ export function renderContentRoute(
           supabase={smsTemplatesState.supabase}
           userId={smsTemplatesState.userId}
           onRefresh={smsTemplatesState.refresh}
-          onToast={modals.showToast}
         />
       );
     case "reglementations-sms":

@@ -27,6 +27,7 @@ export const CONTACT_COL = {
 
 export const GROUP_COL = {
   select: 40,
+  avatar: 50,
   name: 180,
   description: 240,
   contactCount: 90,

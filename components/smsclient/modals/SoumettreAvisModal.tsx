@@ -20,8 +20,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "@/components/ui/sonner";
+import { FEEDBACK_MESSAGE_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 
-const MAX_LENGTH = 2000;
+const MAX_LENGTH = FEEDBACK_MESSAGE_MAX_LENGTH;
 
 const CATEGORIES: {
   id: FeedbackCategory;
@@ -38,13 +40,11 @@ const CATEGORIES: {
 type SoumettreAvisModalProps = {
   open: boolean;
   onClose: () => void;
-  onToast?: (message: string) => void;
 };
 
 export function SoumettreAvisModal({
   open,
   onClose,
-  onToast,
 }: SoumettreAvisModalProps) {
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
@@ -91,13 +91,13 @@ export function SoumettreAvisModal({
 
     if (error) {
       setSubmitError(error.message);
-      onToast?.(error.message);
+      toast.error(error.message);
       return;
     }
 
-    onToast?.("Merci, votre avis a bien été envoyé.");
+    toast("Merci, votre avis a bien été envoyé.");
     onClose();
-  }, [category, message, user, supabase, onToast, onClose]);
+  }, [category, message, user, supabase, onClose]);
 
   return (
     <FormDialogShell
@@ -149,6 +149,7 @@ export function SoumettreAvisModal({
           <Textarea
             id="feedback-message"
             value={message}
+            maxLength={MAX_LENGTH}
             onChange={(e) => {
               setMessage(e.target.value.slice(0, MAX_LENGTH));
               setSubmitError(null);

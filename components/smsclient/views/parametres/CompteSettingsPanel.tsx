@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parametresFieldInp } from "@/components/smsclient/views/parametres/parametresSettings";
 import { cn } from "@/lib/cn";
+import {
+  PERSON_NAME_MAX_LENGTH,
+  PHONE_DISPLAY_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import type { ProfileLanguage, UserProfileForm } from "@/lib/types/profile";
 import { useI18n } from "@/lib/i18n";
@@ -177,6 +181,7 @@ export function CompteSettingsPanel({
         editing={editKey === "firstName"}
         draft={draft}
         onDraftChange={setDraft}
+        maxLength={PERSON_NAME_MAX_LENGTH}
         disabled={saving || loading}
         saving={saving}
         autoComplete="given-name"
@@ -199,6 +204,7 @@ export function CompteSettingsPanel({
         editing={editKey === "lastName"}
         draft={draft}
         onDraftChange={setDraft}
+        maxLength={PERSON_NAME_MAX_LENGTH}
         disabled={saving || loading}
         saving={saving}
         autoComplete="family-name"
@@ -232,6 +238,7 @@ export function CompteSettingsPanel({
         editing={editKey === "phone"}
         draft={draft}
         onDraftChange={setDraft}
+        maxLength={PHONE_DISPLAY_MAX_LENGTH}
         disabled={saving || loading}
         saving={saving}
         autoComplete="tel"
@@ -273,6 +280,7 @@ function CompteDisplayRow({
   editing = false,
   draft = "",
   onDraftChange,
+  maxLength,
   disabled = false,
   saving = false,
   autoComplete,
@@ -291,6 +299,7 @@ function CompteDisplayRow({
   editing?: boolean;
   draft?: string;
   onDraftChange?: (v: string) => void;
+  maxLength?: number;
   disabled?: boolean;
   saving?: boolean;
   autoComplete?: string;
@@ -332,6 +341,7 @@ function CompteDisplayRow({
             <Input
               className={cn(parametresFieldInp, "h-9 min-w-0 flex-1 text-sm")}
               value={draft}
+              maxLength={maxLength}
               disabled={saving}
               autoFocus
               autoComplete={autoComplete}

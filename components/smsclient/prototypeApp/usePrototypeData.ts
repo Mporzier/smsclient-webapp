@@ -38,7 +38,10 @@ export function usePrototypeData(route: AppRoute) {
   const { from: mFrom, to: mTo } = useMemo(() => statsMonthRange(), []);
 
   const groupOptions = useMemo(() => {
-    return [...new Set(groupsState.rows.map((g) => g.name))];
+    return groupsState.rows.map((g) => ({
+      name: g.name,
+      contactCount: g.contactCount,
+    }));
   }, [groupsState.rows]);
 
   const unsubscribedContacts = contactsState.unsubscribedContacts;

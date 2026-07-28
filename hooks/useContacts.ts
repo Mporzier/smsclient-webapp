@@ -102,10 +102,12 @@ export function useContacts() {
 
   useEffect(() => {
     if (!enabled) {
-      setUnsubscribedContacts([]);
+      queueMicrotask(() => setUnsubscribedContacts([]));
       return;
     }
-    void refreshUnsubscribed();
+    queueMicrotask(() => {
+      void refreshUnsubscribed();
+    });
   }, [enabled, refreshUnsubscribed]);
 
   useEffect(() => {

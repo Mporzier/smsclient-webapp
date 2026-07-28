@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
+import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   avatarColor,
   contactInitials,
@@ -85,7 +86,10 @@ export function CampaignWizardStep1Main() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const onListLoadMoreRef = useRef(onListLoadMore);
-  onListLoadMoreRef.current = onListLoadMore;
+
+  useEffect(() => {
+    onListLoadMoreRef.current = onListLoadMore;
+  });
 
   useEffect(() => {
     const listLoading = tab === "manual" ? contactsLoading : groupsLoading;
@@ -180,6 +184,7 @@ export function CampaignWizardStep1Main() {
                 : "Rechercher un groupe"
             }
             value={search}
+            maxLength={SEARCH_QUERY_MAX_LENGTH}
             onChange={(e) => setSearch(e.target.value)}
             aria-label={
               tab === "manual"

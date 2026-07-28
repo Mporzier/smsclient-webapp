@@ -16,7 +16,9 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { groupColor } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
 import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
@@ -33,6 +35,28 @@ type TFn = (
 
 function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
   return [
+    {
+      id: "avatar",
+      size: GROUP_COL.avatar,
+      minSize: GROUP_COL.avatar,
+      maxSize: GROUP_COL.avatar,
+      header: "",
+      cell: ({ row }) => {
+        const c = groupColor(row.original.name);
+        return (
+          <div
+            className={cn(
+              "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium",
+              c.bg,
+              c.border,
+              c.text,
+            )}
+          >
+            <Users className="h-3.5 w-3.5" aria-hidden />
+          </div>
+        );
+      },
+    },
     {
       accessorKey: "name",
       header: t("groups.col.name"),

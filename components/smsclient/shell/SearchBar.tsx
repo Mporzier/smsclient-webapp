@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { Search } from "lucide-react";
 
 export function SearchBar({
@@ -25,6 +26,7 @@ export function SearchBar({
         className="h-auto flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
         placeholder={placeholder}
         value={value ?? ""}
+        maxLength={SEARCH_QUERY_MAX_LENGTH}
         onChange={(e) => onChange?.(e.target.value)}
       />
     </div>

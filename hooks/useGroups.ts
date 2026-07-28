@@ -15,7 +15,9 @@ export function useGroups() {
   const userId = user?.id ?? null;
   const enabled = !authLoading && Boolean(userId);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "contactCount", desc: true },
+  ]);
   const sort: ListSort | null = sorting[0]
     ? { id: sorting[0].id, desc: !!sorting[0].desc }
     : null;
@@ -48,8 +50,6 @@ export function useGroups() {
 
   const list = useInfiniteList<GroupRowData>({ enabled, fetchPage, sort });
 
-  const refresh = useCallback(() => list.refresh(), [list.refresh]);
-
   return {
     rows: list.rows,
     loading: list.loading,
@@ -60,7 +60,7 @@ export function useGroups() {
     totalCount: list.totalCount,
     searchInput: list.searchInput,
     setSearchInput: list.setSearchInput,
-    refresh,
+    refresh: list.refresh,
     sorting,
     setSorting,
   };

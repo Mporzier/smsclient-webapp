@@ -19,7 +19,7 @@ export function mapSortToOrders(
   ];
 }
 
-/** Groups — défaut historique created_at asc. */
+/** Groups — défaut member_count desc (plus de contacts d’abord). */
 export const GROUP_SORT_COLUMNS: Record<string, string> = {
   name: "name",
   description: "description",
@@ -29,8 +29,8 @@ export const GROUP_SORT_COLUMNS: Record<string, string> = {
 };
 
 export const GROUP_SORT_DEFAULT: OrderSpec[] = [
-  { column: "created_at", ascending: true },
-  { column: "id", ascending: true },
+  { column: "member_count", ascending: false },
+  { column: "id", ascending: false },
 ];
 
 export function groupSortToOrders(sort: ListSort | null | undefined): OrderSpec[] {

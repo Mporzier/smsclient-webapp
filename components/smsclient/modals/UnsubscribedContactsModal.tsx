@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
+import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { useCallback, useMemo, useState } from "react";
 import { BellOff, Search } from "lucide-react";
 import {
@@ -170,6 +171,7 @@ export function UnsubscribedContactsModal({
               className={cn(modalFieldCls, "pl-8")}
               placeholder="Rechercher par nom, téléphone…"
               value={search}
+              maxLength={SEARCH_QUERY_MAX_LENGTH}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>

@@ -27,6 +27,7 @@ import type { AppRoute } from "@/lib/proto/routes";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "@/components/ui/sonner";
 import { DEFAULT_SMS } from "./constants";
 import {
   defaultCampaignTitle,
@@ -57,7 +58,6 @@ type CampaignWizardOptions = {
   supabase: SupabaseClient;
   userId: string | undefined;
   onCampaignSaved: () => Promise<void>;
-  showToast: (msg: string) => void;
 };
 
 export function useCampaignWizard({
@@ -82,7 +82,6 @@ export function useCampaignWizard({
   supabase,
   userId,
   onCampaignSaved,
-  showToast,
 }: CampaignWizardOptions) {
   const [campaignRecipientMode, setCampaignRecipientMode] = useState<
     "manual" | "lists" | "all" | "numbers"
@@ -587,7 +586,7 @@ export function useCampaignWizard({
       await stampLastSmsOnContacts(supabase, ids, smsBody);
     }
     await onCampaignSaved();
-    showToast("Campagne enregistrée");
+    toast("Campagne enregistrée");
   }, [
     userId,
     supabase,
@@ -601,7 +600,6 @@ export function useCampaignWizard({
     scheduledAt,
     campaignSelectedGroupNames,
     onCampaignSaved,
-    showToast,
   ]);
 
   const campaignWizardProps = {

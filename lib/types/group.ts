@@ -1,3 +1,9 @@
+/** Option groupe pour sélection (ex. modale contact). */
+export type ContactGroupOption = {
+  name: string;
+  contactCount: number;
+};
+
 /** Ligne affichée dans la vue Groupes. */
 export type GroupRowData = {
   id: string;

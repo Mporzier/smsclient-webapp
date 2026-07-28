@@ -6,6 +6,7 @@ import type { AutomationSavePayload } from "@/lib/types/automation";
 import type { StatsPeriodPreset } from "@/lib/statsDateRanges";
 import { statsPeriodRange } from "@/lib/statsDateRanges";
 import { useCallback } from "react";
+import { toast } from "@/components/ui/sonner";
 import type { ActionsContext } from "./types";
 
 export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
@@ -14,7 +15,6 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
   const {
     dateFrom,
     dateTo,
-    showToast,
     setStatsPeriod,
     setStatsOpen,
     setDateFrom,
@@ -29,13 +29,13 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
       const { restored, error } = await restoreClients(supabase, user.id, ids);
       if (error) throw error;
       contactsState.refresh();
-      showToast(
+      toast(
         `${restored} contact${restored > 1 ? "s" : ""} restauré${
           restored > 1 ? "s" : ""
         }.`
       );
     },
-    [supabase, user, contactsState, showToast]
+    [supabase, user, contactsState]
   );
 
   const handleRestoreTrashGroups = useCallback(
@@ -44,13 +44,13 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
       const { restored, error } = await restoreGroups(supabase, user.id, ids);
       if (error) throw error;
       groupsState.refresh();
-      showToast(
+      toast(
         `${restored} groupe${restored > 1 ? "s" : ""} restauré${
           restored > 1 ? "s" : ""
         }.`
       );
     },
-    [supabase, user, groupsState, showToast]
+    [supabase, user, groupsState]
   );
 
   const handleAutomationSave = useCallback(
@@ -63,13 +63,13 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
       const { error } = await upsertAutomation(supabase, user.id, payload);
       if (error) throw error;
       await automationsState.refresh();
-      showToast(
+      toast(
         payload.enabled
           ? "Automatisation activée."
           : "Automatisation enregistrée."
       );
     },
-    [user, supabase, automationsState, showToast]
+    [user, supabase, automationsState]
   );
 
   const applyStatsPreset = useCallback(

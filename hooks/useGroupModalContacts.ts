@@ -46,44 +46,50 @@ export function useGroupModalContacts(
 
   useEffect(() => {
     if (!ready || !editGroupId) {
-      setMemberIds([]);
-      setMemberRows([]);
-      setMembersLoading(false);
-      setMembersReady(true);
-      return;
-    }
-
-    let cancelled = false;
-    setMembersLoading(true);
-    setMembersReady(false);
-    setMemberIds([]);
-    setMemberRows([]);
-
-    void (async () => {
-      const { data: ids, error: idErr } = await fetchGroupMemberClientIds(
-        supabase,
-        editGroupId,
-      );
-      if (cancelled) return;
-      if (idErr) {
+      queueMicrotask(() => {
         setMemberIds([]);
         setMemberRows([]);
         setMembersLoading(false);
         setMembersReady(true);
-        return;
-      }
-      setMemberIds(ids);
-      const { data: rows, error: rowErr } =
-        await fetchContactPickerSummariesByIds(supabase, ids);
+      });
+      return;
+    }
+
+    let cancelled = false;
+
+    queueMicrotask(() => {
       if (cancelled) return;
-      if (rowErr) {
-        setMemberRows([]);
-      } else {
-        setMemberRows(rows);
-      }
-      setMembersLoading(false);
-      setMembersReady(true);
-    })();
+      setMembersLoading(true);
+      setMembersReady(false);
+      setMemberIds([]);
+      setMemberRows([]);
+
+      void (async () => {
+        const { data: ids, error: idErr } = await fetchGroupMemberClientIds(
+          supabase,
+          editGroupId,
+        );
+        if (cancelled) return;
+        if (idErr) {
+          setMemberIds([]);
+          setMemberRows([]);
+          setMembersLoading(false);
+          setMembersReady(true);
+          return;
+        }
+        setMemberIds(ids);
+        const { data: rows, error: rowErr } =
+          await fetchContactPickerSummariesByIds(supabase, ids);
+        if (cancelled) return;
+        if (rowErr) {
+          setMemberRows([]);
+        } else {
+          setMemberRows(rows);
+        }
+        setMembersLoading(false);
+        setMembersReady(true);
+      })();
+    });
 
     return () => {
       cancelled = true;

@@ -18,6 +18,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   innerInputSm,
   innerTextareaSm,
@@ -267,7 +268,10 @@ function GroupModalContactsPanel({
   const [scrollQuery, setScrollQuery] = useState(contactQuery);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const loadMoreRef = useRef(onContactsLoadMore);
-  loadMoreRef.current = onContactsLoadMore;
+
+  useEffect(() => {
+    loadMoreRef.current = onContactsLoadMore;
+  });
 
   if (contactQuery !== scrollQuery) {
     setScrollQuery(contactQuery);
@@ -367,6 +371,7 @@ function GroupModalContactsPanel({
           className={cn(inpText, "min-w-0 flex-1")}
           placeholder="Filtrer par nom, téléphone, groupe…"
           value={contactQuery}
+          maxLength={SEARCH_QUERY_MAX_LENGTH}
           onChange={(e) => onContactQueryChange(e.target.value)}
           aria-label="Filtrer les contacts"
         />

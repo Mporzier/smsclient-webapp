@@ -16,6 +16,7 @@ import {
   validateSignupEmail,
   validateSignupPassword,
 } from "@/lib/auth/validation";
+import { EMAIL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -216,6 +217,7 @@ export function AuthForm({ mode }: Props) {
               type="email"
               autoComplete="email"
               required
+              maxLength={EMAIL_MAX_LENGTH}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);

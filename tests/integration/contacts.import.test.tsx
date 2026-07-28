@@ -3,6 +3,22 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImportContactsModal } from "@/components/smsclient/ImportContactsModal";
 import * as clientsApi from "@/lib/supabase/clients";
+import { toast as sonnerToast } from "sonner";
+
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    message: vi.fn(),
+    loading: vi.fn(),
+    promise: vi.fn(),
+    custom: vi.fn(),
+    dismiss: vi.fn(),
+  }),
+  Toaster: () => null,
+}));
 
 vi.mock("@/lib/supabase/clients", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/supabase/clients")>();
@@ -17,6 +33,7 @@ const mockSupabase = {} as import("@supabase/supabase-js").SupabaseClient;
 describe("Import contacts — flow (intégration, mock API)", () => {
   beforeEach(() => {
     vi.mocked(clientsApi.insertClientsFromImport).mockReset();
+    vi.mocked(sonnerToast).mockReset();
     vi.mocked(clientsApi.insertClientsFromImport).mockResolvedValue({
       inserted: 2,
       skippedDuplicateInFile: 0,
@@ -36,7 +53,6 @@ describe("Import contacts — flow (intégration, mock API)", () => {
         supabase={mockSupabase}
         userId="user-mock"
         onImported={async () => {}}
-        onNotify={() => {}}
         groupOptions={["Clients VIP", "Prospects"]}
       />,
     );
@@ -52,7 +68,6 @@ describe("Import contacts — flow (intégration, mock API)", () => {
   it("importe un CSV via insertClientsFromImport mocké", async () => {
     const user = userEvent.setup();
     const onImported = vi.fn().mockResolvedValue(undefined);
-    const onNotify = vi.fn();
     const onClose = vi.fn();
 
     render(
@@ -62,7 +77,6 @@ describe("Import contacts — flow (intégration, mock API)", () => {
         supabase={mockSupabase}
         userId="user-mock"
         onImported={onImported}
-        onNotify={onNotify}
         groupOptions={["Clients VIP", "Prospects"]}
       />,
     );
@@ -96,7 +110,7 @@ Bob;Durand;06 98 76 54 32;Prospects`;
         true,
       );
       expect(onImported).toHaveBeenCalled();
-      expect(onNotify).toHaveBeenCalled();
+      expect(sonnerToast).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });
   });

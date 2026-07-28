@@ -52,7 +52,6 @@ export function usePrototypeModals(
   const [appliedStatsFrom, setAppliedStatsFrom] = useState(statsDefaults.from);
   const [appliedStatsTo, setAppliedStatsTo] = useState(statsDefaults.to);
 
-  const [toast, setToast] = useState<string | null>(null);
   const [qrWheelSaving, setQrWheelSaving] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
@@ -80,12 +79,6 @@ export function usePrototypeModals(
       if (route !== "statistiques") setStatsOpen(false);
     });
   }, [route]);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    const t = window.setTimeout(() => setToast(null), 2200);
-    return () => window.clearTimeout(t);
-  }, []);
 
   const openConfirmDelete = useCallback(
     (title: string, desc: string, action: () => Promise<void>) => {
@@ -178,12 +171,10 @@ export function usePrototypeModals(
     setAppliedStatsFrom,
     appliedStatsTo,
     setAppliedStatsTo,
-    toast,
     qrWheelSaving,
     setQrWheelSaving,
     feedbackOpen,
     setFeedbackOpen,
-    showToast,
     openConfirmDelete,
     openContactAdd,
     openContactEdit,

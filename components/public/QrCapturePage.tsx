@@ -11,6 +11,10 @@ import {
   spinQrWheel,
 } from "@/lib/supabase/qrWheel";
 import { frDisplayToE164, normalizeFRPhone } from "@/lib/proto/smsUtils";
+import {
+  PERSON_NAME_MAX_LENGTH,
+  PHONE_DISPLAY_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import type { QrSubmitResult, QrWheelPublicConfig, QrWheelSpinResult } from "@/lib/types/qrWheel";
 import { useEffect, useMemo, useState } from "react";
 
@@ -261,7 +265,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               </Label>
               <Input
                 className={brandInputCls}
-                maxLength={30}
+                maxLength={PERSON_NAME_MAX_LENGTH}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Ex : Patrick"
@@ -273,7 +277,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               </Label>
               <Input
                 className={brandInputCls}
-                maxLength={30}
+                maxLength={PERSON_NAME_MAX_LENGTH}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Ex : Dupont"
@@ -286,6 +290,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
               <Input
                 className={brandInputCls}
                 inputMode="tel"
+                maxLength={PHONE_DISPLAY_MAX_LENGTH}
                 value={phone}
                 onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}
                 placeholder="06 12 34 56 78"

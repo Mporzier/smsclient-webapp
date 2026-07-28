@@ -42,6 +42,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "@/components/ui/sonner";
 import {
   CircleAlert,
   CloudUpload,
@@ -167,7 +168,6 @@ type ImportContactsModalProps = {
   supabase: SupabaseClient;
   userId: string;
   onImported: () => Promise<void>;
-  onNotify: (msg: string) => void;
   /** Noms de groupes existants (segments) pour l’option « Ajouter au groupe ». */
   groupOptions?: string[];
   /** Pré-sélection d’un groupe (ex. import depuis une fiche groupe). */
@@ -182,7 +182,6 @@ export function ImportContactsModal({
   supabase,
   userId,
   onImported,
-  onNotify,
   groupOptions = [],
   defaultGroupLabel = null,
   customFieldDefs = [],
@@ -600,7 +599,7 @@ export function ImportContactsModal({
         );
       }
 
-      onNotify(parts.join(" · "));
+      toast(parts.join(" · "));
       await onImported();
       onClose();
     } catch (e) {
@@ -623,7 +622,6 @@ export function ImportContactsModal({
     supabase,
     userId,
     onImported,
-    onNotify,
     onClose,
     t,
   ]);

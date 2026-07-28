@@ -302,14 +302,10 @@ export function ContactsView({
     [rows]
   );
 
-  const selectedIdsRef = useRef(selectedIds);
-  const eligibleRowsRef = useRef(eligibleRows);
   const onRowClickRef = useRef(onRowClick);
   const onDeleteContactsRef = useRef(onDeleteContacts);
 
   useEffect(() => {
-    selectedIdsRef.current = selectedIds;
-    eligibleRowsRef.current = eligibleRows;
     onRowClickRef.current = onRowClick;
     onDeleteContactsRef.current = onDeleteContacts;
   });
@@ -366,11 +362,10 @@ export function ContactsView({
 
   const toggleAll = useCallback(() => {
     setSelectedIds((prev) => {
-      const rows = eligibleRowsRef.current;
-      if (prev.size === rows.length) return new Set();
-      return new Set(rows.map((r) => r.id));
+      if (prev.size === eligibleRows.length) return new Set();
+      return new Set(eligibleRows.map((r) => r.id));
     });
-  }, []);
+  }, [eligibleRows]);
 
   const columns = useMemo(
     () => buildContactColumns(customFieldDefs, t),
@@ -390,29 +385,25 @@ export function ContactsView({
       minSize: CONTACT_COL.select,
       maxSize: CONTACT_COL.select,
       enableResizing: false,
-      header: () => {
-        const ids = selectedIdsRef.current;
-        const total = eligibleRowsRef.current.length;
-        return (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={
-                ids.size > 0 && ids.size === total
-                  ? true
-                  : ids.size > 0
-                    ? "indeterminate"
-                    : false
-              }
-              onCheckedChange={() => toggleAll()}
-              aria-label={t("contacts.selectAllAria")}
-            />
-          </div>
-        );
-      },
+      header: () => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={
+              selectedIds.size > 0 && selectedIds.size === eligibleRows.length
+                ? true
+                : selectedIds.size > 0
+                  ? "indeterminate"
+                  : false
+            }
+            onCheckedChange={() => toggleAll()}
+            aria-label={t("contacts.selectAllAria")}
+          />
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <Checkbox
-            checked={selectedIdsRef.current.has(row.original.id)}
+            checked={selectedIds.has(row.original.id)}
             onCheckedChange={() => toggleSelect(row.original.id)}
             onClick={(e) => e.stopPropagation()}
             aria-label={t("contacts.selectOneAria", {
@@ -467,7 +458,7 @@ export function ContactsView({
       ),
     },
   ],
-    [columns, t, toggleAll, toggleSelect],
+    [columns, t, toggleAll, toggleSelect, selectedIds, eligibleRows.length],
   );
 
   return (

@@ -33,6 +33,17 @@ import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import {
+  ADDRESS_MAX_LENGTH,
+  BILLING_CONTACT_MAX_LENGTH,
+  CITY_MAX_LENGTH,
+  COMPANY_NAME_MAX_LENGTH,
+  COUNTRY_MAX_LENGTH,
+  SIRET_MAX_LENGTH,
+  VAT_MAX_LENGTH,
+  ZIP_MAX_LENGTH,
+  SMS_SENDER_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 
@@ -352,6 +363,7 @@ export function ParametresView({
                       changed("companyName") &&
                         "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={COMPANY_NAME_MAX_LENGTH}
                     value={draftForm.companyName}
                     onChange={(e) => setField("companyName", e.target.value)}
                   />
@@ -382,6 +394,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("siret") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={SIRET_MAX_LENGTH}
                     value={draftForm.siret}
                     onChange={(e) => setField("siret", e.target.value)}
                   />
@@ -395,6 +408,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("tva") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={VAT_MAX_LENGTH}
                     value={draftForm.tva}
                     onChange={(e) => setField("tva", e.target.value)}
                   />
@@ -415,6 +429,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("address") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={ADDRESS_MAX_LENGTH}
                     value={draftForm.address}
                     onChange={(e) => setField("address", e.target.value)}
                   />
@@ -428,6 +443,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("zip") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={ZIP_MAX_LENGTH}
                     value={draftForm.zip}
                     onChange={(e) => setField("zip", e.target.value)}
                   />
@@ -441,6 +457,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("city") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={CITY_MAX_LENGTH}
                     value={draftForm.city}
                     onChange={(e) => setField("city", e.target.value)}
                   />
@@ -454,6 +471,7 @@ export function ParametresView({
                       parametresFieldInp,
                       changed("country") && "border-blue-400 ring-2 ring-blue-100"
                     )}
+                    maxLength={COUNTRY_MAX_LENGTH}
                     value={draftForm.country}
                     onChange={(e) => setField("country", e.target.value)}
                   />
@@ -474,6 +492,7 @@ export function ParametresView({
                     changed("billingContact") &&
                       "border-blue-400 ring-2 ring-blue-100"
                   )}
+                  maxLength={BILLING_CONTACT_MAX_LENGTH}
                   value={draftForm.billingContact}
                   onChange={(e) => setField("billingContact", e.target.value)}
                   placeholder={t("parametres.field.billingContactPlaceholder")}
@@ -528,7 +547,7 @@ export function ParametresView({
                     parametresFieldInp,
                     changed("sender") && "border-blue-400 ring-2 ring-blue-100"
                   )}
-                  maxLength={11}
+                  maxLength={SMS_SENDER_MAX_LENGTH}
                   value={draftForm.sender}
                   onChange={(e) => setField("sender", e.target.value)}
                   placeholder="BOULANGERIE"

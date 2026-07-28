@@ -9,6 +9,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  EMAIL_MAX_LENGTH,
+  PERSON_NAME_MAX_LENGTH,
+  PHONE_DISPLAY_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
 import { cn } from "@/lib/utils";
@@ -163,6 +168,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
               <Input
                 id="profil-first-name"
                 className={brandInputCls}
+                maxLength={PERSON_NAME_MAX_LENGTH}
                 value={draft.firstName}
                 aria-invalid={Boolean(firstNameError)}
                 onChange={(e) => {
@@ -184,6 +190,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
               <Input
                 id="profil-last-name"
                 className={brandInputCls}
+                maxLength={PERSON_NAME_MAX_LENGTH}
                 value={draft.lastName}
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, lastName: e.target.value }))
@@ -198,6 +205,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
               <Input
                 id="profil-email"
                 className={brandInputCls}
+                maxLength={EMAIL_MAX_LENGTH}
                 value={draft.email}
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, email: e.target.value }))
@@ -212,6 +220,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
               <Input
                 id="profil-phone"
                 className={brandInputCls}
+                maxLength={PHONE_DISPLAY_MAX_LENGTH}
                 value={draft.phone}
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, phone: e.target.value }))
