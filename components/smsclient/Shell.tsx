@@ -154,18 +154,18 @@ export function AppShell({
                   ? t("shell.expandSidebar")
                   : t("shell.collapseSidebar")
               }
-              className="absolute right-0 top-8 z-40 grid h-7 w-7 translate-x-1/2 cursor-pointer place-items-center rounded-full border border-border bg-card text-primary transition-colors hover:bg-muted"
+              className="absolute right-0 top-8 z-40 grid h-8 w-8 translate-x-1/2 cursor-pointer place-items-center rounded-full border-2 border-border bg-card text-primary shadow-[0_2px_8px_rgba(15,23,42,0.12)] ring-2 ring-canvas transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
             >
               {sidebarCollapsed ? (
                 <ChevronRight
                   className="h-4 w-4"
-                  strokeWidth={2.5}
+                  strokeWidth={2.75}
                   aria-hidden
                 />
               ) : (
                 <ChevronLeft
                   className="h-4 w-4"
-                  strokeWidth={2.5}
+                  strokeWidth={2.75}
                   aria-hidden
                 />
               )}
@@ -326,7 +326,7 @@ export function AppShell({
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col p-1.5 pl-0 max-[860px]:pl-1.5">
           <div className={MAIN_PANEL_CLASS}>
-          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border px-4 pr-[22px] md:px-5">
+          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border pl-8 pr-[22px] md:pl-9 md:pr-5">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <button
                 type="button"
@@ -344,7 +344,7 @@ export function AppShell({
                   smsclient.fr
                 </span>
               </button>
-              <h1 className="m-0 flex shrink-0 items-center gap-2.5 rounded-full bg-muted px-3 py-1.5 text-xl font-semibold tracking-tight text-foreground">
+              <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
                 <TitleIcon
                   className="size-6 shrink-0 text-primary"
                   strokeWidth={2.25}

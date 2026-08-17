@@ -133,6 +133,10 @@ export function CampaignWizard({
   groupMemberIdsByName = {},
   resolvedContacts = [],
   recipientsResolving = false,
+  onCountEligibleContacts,
+  onFetchEligibleContactIds,
+  onCountMatchingGroups,
+  onFetchMatchingGroupNames,
   creditsAvailable,
   onConfirmCampaign,
 }: CampaignWizardProps) {
@@ -660,6 +664,10 @@ export function CampaignWizard({
     resolvedGroupMemberIds,
     groupMemberIdsByName,
     recipientsResolving,
+    onCountEligibleContacts,
+    onFetchEligibleContactIds,
+    onCountMatchingGroups,
+    onFetchMatchingGroupNames,
   };
 
   const wizardActions = (

@@ -239,6 +239,7 @@ export function CampagnesView({
           hasMore={hasMore}
           onLoadMore={onLoadMore}
           globalFilter={searchQuery}
+          loadingMessage={t("campaigns.loading")}
           emptyMessage={t("campaigns.emptyTable")}
           searchNoResultsMessage={t("campaigns.noSearchResults")}
           onRowClick={onOpenDetails}

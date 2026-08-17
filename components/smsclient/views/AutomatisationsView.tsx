@@ -80,7 +80,6 @@ export function AutomatisationsView({
         <MesAutomatisationsTab
           rows={rows}
           contacts={contacts}
-          loading={loading}
           error={error}
           onSave={onSave}
           onEdit={setEditRow}

@@ -57,6 +57,18 @@ export type CampaignWizardProps = {
   /** Contacts destinataires résolus (hors lazy list). */
   resolvedContacts?: ContactRowData[];
   recipientsResolving?: boolean;
+  onCountEligibleContacts?: (
+    search: string,
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchEligibleContactIds?: (
+    search: string,
+  ) => Promise<{ data: string[]; error: Error | null }>;
+  onCountMatchingGroups?: (
+    search: string,
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchMatchingGroupNames?: (
+    search: string,
+  ) => Promise<{ data: string[]; error: Error | null }>;
   creditsAvailable: number;
   onConfirmCampaign?: () => void | Promise<void>;
 };

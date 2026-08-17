@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
+import { TRASH_RETENTION_DAYS } from "@/lib/proto/trashRetention";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
-import { Loader2, RotateCcw, Trash2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 type ParametresTrashSectionProps = {
@@ -90,7 +92,7 @@ export function ParametresTrashSection({
               {t("trash.title")}
             </h2>
             <p className="mt-1.5 max-w-[640px] text-sm font-semibold text-slate-600">
-              {t("trash.description")}
+              {t("trash.description", { days: TRASH_RETENTION_DAYS })}
             </p>
           </div>
           {selectedCount > 0 && (
@@ -123,7 +125,7 @@ export function ParametresTrashSection({
 
       {loading && (
         <div className="grid min-h-[160px] place-items-center rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-500">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" aria-hidden />
+          <Spinner className="size-6 text-primary" />
         </div>
       )}
 
@@ -144,12 +146,19 @@ export function ParametresTrashSection({
             t("trash.col.phone"),
             t("trash.col.groups"),
             t("trash.col.deletedAt"),
+            t("trash.col.expiresAt"),
           ]}
           rows={contacts.map((c) => ({
             id: c.id,
             selected: selectedContactIds.has(c.id),
             onToggle: () => toggleContact(c.id),
-            cells: [c.name, c.phone, c.groupsLabel, c.deletedLabel],
+            cells: [
+              c.name,
+              c.phone,
+              c.groupsLabel,
+              c.deletedLabel,
+              c.expiresLabel,
+            ],
           }))}
         />
       )}
@@ -165,6 +174,7 @@ export function ParametresTrashSection({
             t("trash.col.description"),
             t("trash.col.activeContacts"),
             t("trash.col.deletedAt"),
+            t("trash.col.expiresAt"),
           ]}
           rows={groups.map((g) => ({
             id: g.id,
@@ -175,6 +185,7 @@ export function ParametresTrashSection({
               g.description || "—",
               String(g.contactCount),
               g.deletedLabel,
+              g.expiresLabel,
             ],
           }))}
         />
@@ -213,7 +224,7 @@ function TrashTable({
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
       <h3 className="m-0 text-sm font-black text-slate-900">{title}</h3>
       <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full min-w-[640px] text-left text-[13px]">
+        <table className="w-full min-w-[760px] text-left text-[13px]">
           <thead>
             <tr className="bg-slate-50">
               {headers.map((h, i) => (

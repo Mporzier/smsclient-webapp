@@ -1,3 +1,4 @@
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { groupTagBase } from "@/lib/proto/contactDisplay";
 import { formatContactGroups, type ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
@@ -136,21 +137,10 @@ export function SummaryStatBubble({
 }
 
 export function RecipientListSkeleton({ rows = 6 }: { rows?: number }) {
+  void rows;
   return (
-    <div className="divide-y divide-border/50">
-      {Array.from({ length: rows }, (_, i) => (
-        <div
-          key={i}
-          className="flex animate-pulse items-center gap-3 px-3 py-1.5"
-        >
-          <div className="h-4 w-4 shrink-0 rounded bg-muted" />
-          <div className="h-7 w-7 shrink-0 rounded-full bg-muted" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="h-3.5 w-2/5 max-w-[140px] rounded bg-muted" />
-            <div className="h-3 w-3/5 max-w-[200px] rounded bg-muted/60" />
-          </div>
-        </div>
-      ))}
+    <div className="flex min-h-[160px] items-center justify-center px-3 py-8 text-sm font-semibold text-muted-foreground">
+      <LoadingLabel>Chargement…</LoadingLabel>
     </div>
   );
 }

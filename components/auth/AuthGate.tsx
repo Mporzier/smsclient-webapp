@@ -86,14 +86,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const hideChildren =
-    !loading &&
-    ((!user && !isPublicPage) || Boolean(user && isAuthPage));
+  if (loading) {
+    return <AppLoadingOverlay />;
+  }
 
-  return (
-    <>
-      {!hideChildren ? children : null}
-      {loading ? <AppLoadingOverlay /> : null}
-    </>
-  );
+  const hideChildren =
+    (!user && !isPublicPage) || Boolean(user && isAuthPage);
+
+  return <>{!hideChildren ? children : null}</>;
 }

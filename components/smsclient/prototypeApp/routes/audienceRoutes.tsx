@@ -6,6 +6,14 @@ import {
   ContactsView,
   GroupesView,
 } from "@/components/smsclient/MainViews";
+import {
+  countClientIds,
+  fetchClientIds,
+} from "@/lib/supabase/clients";
+import {
+  countMatchingGroups,
+  fetchMatchingGroups,
+} from "@/lib/supabase/groups";
 import type { AppRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
 import type { PrototypeAppContext } from "../usePrototypeApp";
@@ -24,6 +32,8 @@ export function renderAudienceRoute(
   if (!AUDIENCE_ROUTES.has(r)) return null;
   const { data, modals, wizard, actions } = ctx;
   const {
+    user,
+    supabase,
     contactsState,
     customFieldsState,
     groupsState,
@@ -76,6 +86,12 @@ export function renderAudienceRoute(
             wizard.openCampaignComposer({ contactIds: ids })
           }
           onResubscribeContacts={actions.handleResubscribeContacts}
+          onCountSelectableMatches={(search) =>
+            countClientIds(supabase, { search, eligibleOnly: true })
+          }
+          onFetchSelectableMatchIds={(search) =>
+            fetchClientIds(supabase, { search, eligibleOnly: true })
+          }
         />
       );
     case "groupes":
@@ -96,10 +112,38 @@ export function renderAudienceRoute(
           onEditGroup={modals.openGroupEdit}
           onDeleteGroups={actions.handleDeleteGroups}
           onCreateCampaignFromGroups={(ids) => {
-            const names = groupsState.rows
-              .filter((g) => ids.includes(g.id))
-              .map((g) => g.name);
-            wizard.openCampaignComposer({ groupNames: names });
+            void (async () => {
+              if (!user?.id) return;
+              const wanted = new Set(ids);
+              const { data: matched, error } = await fetchMatchingGroups(
+                supabase,
+                user.id,
+                { search: groupsState.searchInput },
+              );
+              const names = error
+                ? groupsState.rows
+                    .filter((g) => wanted.has(g.id))
+                    .map((g) => g.name)
+                : matched
+                    .filter((g) => wanted.has(g.id))
+                    .map((g) => g.name);
+              wizard.openCampaignComposer({ groupNames: names });
+            })();
+          }}
+          onCountSelectableMatches={(search) =>
+            user?.id
+              ? countMatchingGroups(supabase, user.id, { search })
+              : Promise.resolve({ count: 0, error: null })
+          }
+          onFetchSelectableMatchIds={async (search) => {
+            if (!user?.id) return { data: [], error: null };
+            const { data: matched, error } = await fetchMatchingGroups(
+              supabase,
+              user.id,
+              { search },
+            );
+            if (error) return { data: [], error };
+            return { data: matched.map((g) => g.id), error: null };
           }}
         />
       );

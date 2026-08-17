@@ -1,6 +1,7 @@
 "use client";
 
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import {
   buildRecentActivities,
   countActiveGroups,
@@ -620,7 +621,7 @@ export function DashboardView({
   if (profileLoading) {
     return (
       <p className="m-0 text-sm font-semibold text-muted-foreground">
-        {t("common.loading")}
+        <LoadingLabel>{t("common.loading")}</LoadingLabel>
       </p>
     );
   }

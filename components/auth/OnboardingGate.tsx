@@ -14,6 +14,10 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  if (profileLoading) {
+    return <AppLoadingOverlay />;
+  }
+
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] p-6">
@@ -28,10 +32,5 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     return <OnboardingWizard />;
   }
 
-  return (
-    <>
-      {children}
-      {profileLoading ? <AppLoadingOverlay /> : null}
-    </>
-  );
+  return <>{children}</>;
 }

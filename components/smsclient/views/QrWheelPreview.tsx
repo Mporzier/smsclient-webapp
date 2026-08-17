@@ -1,6 +1,7 @@
 "use client";
 
 import { RewardWheel } from "@/components/public/RewardWheel";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { useI18n } from "@/lib/i18n";
 import type { QrWheelConfig, QrWheelPublicSegment } from "@/lib/types/qrWheel";
 import { useCallback, useMemo, useState } from "react";
@@ -65,7 +66,7 @@ export function QrWheelPreview({
   if (loading) {
     return (
       <div className="grid min-h-[420px] place-items-center text-sm font-bold text-slate-500">
-        {t("qr.wheel.loading")}
+        <LoadingLabel>{t("qr.wheel.loading")}</LoadingLabel>
       </div>
     );
   }

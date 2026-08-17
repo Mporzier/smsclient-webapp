@@ -13,20 +13,14 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   innerInputSm,
   innerTextareaSm,
 } from "@/components/smsclient/flowFieldStyles";
-import {
-  avatarColor,
-  contactInitials,
-} from "@/lib/proto/contactDisplay";
+import { avatarColor, contactInitials } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
 import {
   useCallback,
@@ -62,6 +56,9 @@ import {
 } from "./modalFormGuard";
 import { CellTruncate } from "@/components/smsclient/ui";
 import { ContactGroupsCell } from "@/components/smsclient/ContactGroupsCell";
+import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { LoadingLabel } from "@/components/ui/loading-label";
+import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 
 export type GroupModalContactRow = {
   id: string;
@@ -90,6 +87,12 @@ type GroupModalSharedProps = {
   membersReady?: boolean;
   /** Autre dialogue empilé (ex. confirmation de suppression). */
   stackedDialogOpen?: boolean;
+  onCountSelectableMatches?: (
+    search: string
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchSelectableMatchIds?: (
+    search: string
+  ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
 export type GroupModalCreateProps = GroupModalSharedProps & {
@@ -239,6 +242,12 @@ type GroupModalContactsPanelProps = {
   toggleSelectAllFiltered: () => void;
   groupLabel: string;
   listAriaLabel: string;
+  showExpandBanner?: boolean;
+  matchTotal?: number | null;
+  countingSelection?: boolean;
+  expandingSelection?: boolean;
+  expandError?: string | null;
+  onExpandSelection?: () => void;
 };
 
 function GroupModalContactsPanel({
@@ -261,6 +270,12 @@ function GroupModalContactsPanel({
   someFilteredSelected,
   toggleSelectAllFiltered,
   listAriaLabel,
+  showExpandBanner = false,
+  matchTotal = null,
+  countingSelection = false,
+  expandingSelection = false,
+  expandError = null,
+  onExpandSelection,
 }: GroupModalContactsPanelProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -296,9 +311,10 @@ function GroupModalContactsPanel({
   const total = filteredContacts.length;
   const start = Math.max(
     0,
-    Math.floor(scrollTop / CONTACT_ROW_H) - CONTACT_ROW_OVERSCAN,
+    Math.floor(scrollTop / CONTACT_ROW_H) - CONTACT_ROW_OVERSCAN
   );
-  const visible = Math.ceil(viewportH / CONTACT_ROW_H) + CONTACT_ROW_OVERSCAN * 2;
+  const visible =
+    Math.ceil(viewportH / CONTACT_ROW_H) + CONTACT_ROW_OVERSCAN * 2;
   const end = Math.min(total, start + visible);
   const windowed = filteredContacts.slice(start, end);
   const padTop = start * CONTACT_ROW_H;
@@ -309,17 +325,11 @@ function GroupModalContactsPanel({
     if (end >= total - CONTACT_ROW_OVERSCAN) {
       loadMoreRef.current?.();
     }
-  }, [
-    end,
-    total,
-    contactsHasMore,
-    contactsLoading,
-    contactsLoadingMore,
-  ]);
+  }, [end, total, contactsHasMore, contactsLoading, contactsLoadingMore]);
 
   return (
     <div className={contactsPanelShell}>
-      <div className="flex h-[52px] shrink-0 items-center justify-between gap-2">
+      <div className="flex h-[52px] shrink-0 items-center gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className={labelIconBadgeCls} aria-hidden>
@@ -331,7 +341,40 @@ function GroupModalContactsPanel({
             Cochez les contacts à rattacher à ce groupe.
           </p>
         </div>
-        <div className="flex shrink-0 gap-1.5">
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            innerInputSm,
+            "h-9 min-w-0 max-w-xs flex-1 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
+          )}
+        >
+          <Search
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            className={cn(inpText, "min-w-0 flex-1")}
+            placeholder="Filtrer par nom, téléphone, groupe…"
+            value={contactQuery}
+            maxLength={SEARCH_QUERY_MAX_LENGTH}
+            onChange={(e) => onContactQueryChange(e.target.value)}
+            aria-label="Filtrer les contacts"
+          />
+        </div>
+        {showExpandBanner ? (
+          <SelectAllExpandBanner
+            matchTotal={matchTotal}
+            hasSearch={contactQuery.trim().length > 0}
+            entityLabel="contacts"
+            counting={countingSelection}
+            expanding={expandingSelection}
+            error={expandError}
+            onExpand={() => onExpandSelection?.()}
+          />
+        ) : null}
+        <div className="ml-auto flex shrink-0 gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -357,26 +400,6 @@ function GroupModalContactsPanel({
         </div>
       </div>
 
-      <div
-        className={cn(
-          innerInputSm,
-          "h-9 shrink-0 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
-        )}
-      >
-        <Search
-          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-          aria-hidden
-        />
-        <input
-          className={cn(inpText, "min-w-0 flex-1")}
-          placeholder="Filtrer par nom, téléphone, groupe…"
-          value={contactQuery}
-          maxLength={SEARCH_QUERY_MAX_LENGTH}
-          onChange={(e) => onContactQueryChange(e.target.value)}
-          aria-label="Filtrer les contacts"
-        />
-      </div>
-
       {contactsLoading ? (
         <div
           className={cn(
@@ -384,7 +407,7 @@ function GroupModalContactsPanel({
             hintTextCls
           )}
         >
-          Chargement des contacts…
+          <LoadingLabel>Chargement des contacts…</LoadingLabel>
         </div>
       ) : contacts.length === 0 ? (
         <div
@@ -418,13 +441,16 @@ function GroupModalContactsPanel({
               <tr>
                 <th className={cn("w-9", tableHeadCls)} scope="col">
                   <Checkbox
-                    className={cn(listCheckboxCls, "disabled:cursor-not-allowed")}
+                    className={cn(
+                      listCheckboxCls,
+                      "disabled:cursor-not-allowed"
+                    )}
                     checked={
                       allFilteredSelected
                         ? true
                         : someFilteredSelected
-                          ? "indeterminate"
-                          : false
+                        ? "indeterminate"
+                        : false
                     }
                     onCheckedChange={() => toggleSelectAllFiltered()}
                     disabled={contactsLoading || filteredContacts.length === 0}
@@ -577,11 +603,11 @@ function GroupModalContactsFooter({
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedNewCount = useMemo(
     () => selectedIds.filter((id) => !memberIdSet.has(id)).length,
-    [selectedIds, memberIdSet],
+    [selectedIds, memberIdSet]
   );
   const deselectedCount = useMemo(
     () => memberIds.filter((id) => !selectedSet.has(id)).length,
-    [memberIds, selectedSet],
+    [memberIds, selectedSet]
   );
 
   const parts: { key: string; node: ReactNode }[] = [];
@@ -601,7 +627,9 @@ function GroupModalContactsFooter({
       key: "selected",
       node: (
         <>
-          <span className="font-medium text-foreground">{selectedNewCount}</span>{" "}
+          <span className="font-medium text-foreground">
+            {selectedNewCount}
+          </span>{" "}
           sélectionné{selectedNewCount > 1 ? "s" : ""}
         </>
       ),
@@ -625,14 +653,23 @@ function GroupModalContactsFooter({
       key: "total",
       node: (
         <>
-          <span className="font-medium text-foreground">{contactsTotalCount}</span>{" "}
+          <span className="font-medium text-foreground">
+            {contactsTotalCount}
+          </span>{" "}
           contact{contactsTotalCount > 1 ? "s" : ""} total
         </>
       ),
     });
   }
   if (contactsLoadingMore) {
-    parts.push({ key: "more", node: <>Chargement…</> });
+    parts.push({
+      key: "more",
+      node: (
+        <LoadingLabel className="gap-1.5" spinnerClassName="size-3.5">
+          Chargement…
+        </LoadingLabel>
+      ),
+    });
   }
 
   if (parts.length === 0) return null;
@@ -667,6 +704,8 @@ export function GroupModal(props: GroupModalProps) {
   const memberCount = props.memberCount ?? memberIds.length;
   const membersReady = props.membersReady ?? true;
   const stackedDialogOpen = props.stackedDialogOpen ?? false;
+  const onCountSelectableMatches = props.onCountSelectableMatches;
+  const onFetchSelectableMatchIds = props.onFetchSelectableMatchIds;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -690,25 +729,59 @@ export function GroupModal(props: GroupModalProps) {
   // Search serveur : la liste reçue est déjà filtrée.
   const filteredContacts = contacts;
 
+  const loadedIds = useMemo(
+    () => filteredContacts.map((c) => c.id),
+    [filteredContacts]
+  );
+
+  const countMatch = useCallback(async () => {
+    if (!onCountSelectableMatches) {
+      return { count: loadedIds.length, error: null };
+    }
+    return onCountSelectableMatches(contactQuery);
+  }, [onCountSelectableMatches, contactQuery, loadedIds.length]);
+
+  const fetchAllIds = useCallback(async () => {
+    if (!onFetchSelectableMatchIds) {
+      return { data: loadedIds, error: null };
+    }
+    return onFetchSelectableMatchIds(contactQuery);
+  }, [onFetchSelectableMatchIds, contactQuery, loadedIds]);
+
+  const {
+    selectLoaded,
+    deselectLoaded,
+    clearSelection,
+    showExpandBanner,
+    matchTotal,
+    counting,
+    expanding,
+    expandError,
+    expandToMatchAll,
+  } = useGmailSelectAll({
+    search: contactQuery,
+    loadedIds,
+    selectedIds,
+    setSelectedIds,
+    countMatch,
+    fetchAllIds,
+    selectLoadedMode: "merge",
+    expandMode: "merge",
+    // Membres hors filtre doivent survivre au search (edit groupe).
+    clearOnSearchChange: false,
+    expandCandidate:
+      contactsHasMore ||
+      (typeof contactsTotalCount === "number" &&
+        contactsTotalCount > loadedIds.length),
+  });
+
   const toggleContact = useCallback((id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   }, []);
 
-  const selectAllFiltered = useCallback(() => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      for (const c of filteredContacts) {
-        next.add(c.id);
-      }
-      return Array.from(next);
-    });
-  }, [filteredContacts]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedIds([]);
-  }, []);
+  const selectAllFiltered = selectLoaded;
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -726,20 +799,14 @@ export function GroupModal(props: GroupModalProps) {
 
   const toggleSelectAllFiltered = useCallback(() => {
     if (filteredContacts.length === 0) return;
-    setSelectedIds((prev) => {
-      const prevSet = new Set(prev);
-      const allIn = filteredContacts.every((c) => prevSet.has(c.id));
-      if (allIn) {
-        const idSet = new Set(filteredContacts.map((c) => c.id));
-        return prev.filter((id) => !idSet.has(id));
-      }
-      const next = new Set(prev);
-      for (const c of filteredContacts) {
-        next.add(c.id);
-      }
-      return Array.from(next);
-    });
-  }, [filteredContacts]);
+    if (allFilteredSelected) deselectLoaded();
+    else selectLoaded();
+  }, [
+    filteredContacts.length,
+    allFilteredSelected,
+    deselectLoaded,
+    selectLoaded,
+  ]);
 
   const contactsSelectionChanged = useMemo(() => {
     if (isCreate || formBaseline === null) return false;
@@ -814,8 +881,7 @@ export function GroupModal(props: GroupModalProps) {
       await onCreated?.(trimmed, description.trim(), selectedIds);
       onClose();
     } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : "Enregistrement impossible.";
+      const msg = e instanceof Error ? e.message : "Enregistrement impossible.";
       if (msg.includes("existe déjà")) {
         setNameError(msg);
       } else {
@@ -844,8 +910,7 @@ export function GroupModal(props: GroupModalProps) {
       });
       onClose();
     } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : "Enregistrement impossible.";
+      const msg = e instanceof Error ? e.message : "Enregistrement impossible.";
       if (msg.includes("existe déjà")) {
         setNameError(msg);
       } else {
@@ -893,8 +958,7 @@ export function GroupModal(props: GroupModalProps) {
         )
       : null;
 
-  const canDismissMain =
-    !saving && !stackedDialogOpen && !saveConfirmOpen;
+  const canDismissMain = !saving && !stackedDialogOpen && !saveConfirmOpen;
 
   return (
     <>
@@ -989,7 +1053,11 @@ export function GroupModal(props: GroupModalProps) {
                 {nameError ? (
                   <p
                     id="group-modal-name-err"
-                    className={cn("m-0 mt-1.5", hintTextCls, "text-destructive")}
+                    className={cn(
+                      "m-0 mt-1.5",
+                      hintTextCls,
+                      "text-destructive"
+                    )}
                   >
                     {nameError}
                   </p>
@@ -1002,7 +1070,7 @@ export function GroupModal(props: GroupModalProps) {
                 </label>
                 <div className={cn(innerTextareaSm, "mt-1.5")}>
                   <textarea
-                    className="min-h-[52px] w-full resize-y border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
+                    className="min-h-[52px] w-full resize-none border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
                     maxLength={120}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -1034,6 +1102,12 @@ export function GroupModal(props: GroupModalProps) {
               toggleSelectAllFiltered={toggleSelectAllFiltered}
               groupLabel={groupLabel}
               listAriaLabel={listAriaLabel}
+              showExpandBanner={showExpandBanner}
+              matchTotal={matchTotal}
+              countingSelection={counting}
+              expandingSelection={expanding}
+              expandError={expandError}
+              onExpandSelection={() => void expandToMatchAll()}
             />
           </div>
 

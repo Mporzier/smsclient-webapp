@@ -43,12 +43,13 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/components/ui/sonner";
+import { LoadingLabel } from "@/components/ui/loading-label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   CircleAlert,
   CloudUpload,
   FileSpreadsheet,
   Info,
-  Loader2,
   Upload,
 } from "lucide-react";
 import {
@@ -673,7 +674,7 @@ export function ImportContactsModal({
             aria-live="polite"
             aria-busy="true"
           >
-            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+            <Spinner className="size-8 text-primary" />
             <p className="m-0 text-sm font-medium text-foreground">
               {t("import.progress", {
                 current: importProgress?.current ?? 0,
@@ -746,13 +747,14 @@ export function ImportContactsModal({
             >
               {fileLoading ? (
                 <>
-                  <Loader2
-                    className="mx-auto h-7 w-7 animate-spin text-muted-foreground"
-                    aria-hidden
-                  />
-                  <p className="mt-3 text-sm font-medium text-foreground">
-                    {t("import.analyzing")}
-                  </p>
+                  <LoadingLabel
+                    className="flex-col gap-3"
+                    spinnerClassName="size-7 text-muted-foreground"
+                  >
+                    <span className="text-sm font-medium text-foreground">
+                      {t("import.analyzing")}
+                    </span>
+                  </LoadingLabel>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {fileName}
                   </p>
@@ -1040,10 +1042,7 @@ export function ImportContactsModal({
               className="min-w-[11.5rem] cursor-pointer"
             >
               {importing ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {t("import.busy")}
-                </span>
+                <LoadingLabel className="gap-2">{t("import.busy")}</LoadingLabel>
               ) : submitCount === 1 ? (
                 t("import.submitOne", { n: submitCount })
               ) : (

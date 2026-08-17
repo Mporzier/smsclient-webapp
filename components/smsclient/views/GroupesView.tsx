@@ -10,28 +10,34 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
+import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { groupColor } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
-import { MoreHorizontal, Plus, Search, Send, Trash2, Users } from "lucide-react";
+import {
+  MoreHorizontal,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  Users,
+} from "lucide-react";
 import type {
   ColumnDef,
   OnChangeFn,
   SortingState,
 } from "@tanstack/react-table";
 
-type TFn = (
-  key: MessageKey,
-  vars?: Record<string, string | number>,
-) => string;
+type TFn = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
   return [
@@ -49,7 +55,7 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
               "grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium",
               c.bg,
               c.border,
-              c.text,
+              c.text
             )}
           >
             <Users className="h-3.5 w-3.5" aria-hidden />
@@ -113,6 +119,12 @@ type GroupesProps = {
   onEditGroup: (row: GroupRowData) => void;
   onDeleteGroups: (ids: string[]) => void;
   onCreateCampaignFromGroups: (ids: string[]) => void;
+  onCountSelectableMatches?: (
+    search: string
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchSelectableMatchIds?: (
+    search: string
+  ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
 export function GroupesView({
@@ -131,13 +143,60 @@ export function GroupesView({
   onEditGroup,
   onDeleteGroups,
   onCreateCampaignFromGroups,
+  onCountSelectableMatches,
+  onFetchSelectableMatchIds,
 }: GroupesProps) {
   const { t } = useI18n();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const hasSelection = selectedIds.size > 0;
+  const loadedIds = useMemo(() => rows.map((r) => r.id), [rows]);
+
+  const setSelectedIdsList = useCallback((ids: string[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const countMatch = useCallback(async () => {
+    if (!onCountSelectableMatches)
+      return { count: loadedIds.length, error: null };
+    return onCountSelectableMatches(searchQuery);
+  }, [onCountSelectableMatches, searchQuery, loadedIds.length]);
+
+  const fetchAllIds = useCallback(async () => {
+    if (!onFetchSelectableMatchIds) {
+      return { data: loadedIds, error: null };
+    }
+    return onFetchSelectableMatchIds(searchQuery);
+  }, [onFetchSelectableMatchIds, searchQuery, loadedIds]);
+
+  const {
+    selectLoaded,
+    clearSelection,
+    showExpandBanner,
+    matchTotal,
+    displaySelectedCount,
+    counting,
+    expanding,
+    expandError,
+    expandToMatchAll,
+    ensureSelectionReady,
+  } = useGmailSelectAll({
+    search: searchQuery,
+    loadedIds,
+    selectedIds,
+    setSelectedIds: setSelectedIdsList,
+    countMatch,
+    fetchAllIds,
+    expandCandidate:
+      hasMore ||
+      (typeof totalCount === "number" && totalCount > loadedIds.length),
+  });
+
+  const hasSelection = displaySelectedCount > 0;
   const showBigEmpty =
     !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+
+  const allLoadedSelected =
+    rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
 
   const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
@@ -145,7 +204,7 @@ export function GroupesView({
       t(footerN === 1 ? "groups.footerOne" : "groups.footerMany", {
         n: footerN,
       }),
-    [footerN, t],
+    [footerN, t]
   );
 
   const dataColumns = useMemo(() => buildGroupColumns(t), [t]);
@@ -160,11 +219,12 @@ export function GroupesView({
   }, []);
 
   const toggleAll = useCallback(() => {
-    setSelectedIds((prev) => {
-      if (prev.size === rows.length) return new Set();
-      return new Set(rows.map((r) => r.id));
-    });
-  }, [rows]);
+    if (allLoadedSelected) {
+      clearSelection();
+      return;
+    }
+    selectLoaded();
+  }, [allLoadedSelected, clearSelection, selectLoaded]);
 
   const selectColumns: ColumnDef<GroupRowData, unknown>[] = useMemo(
     () => [
@@ -178,11 +238,11 @@ export function GroupesView({
           <div className="flex items-center justify-center">
             <Checkbox
               checked={
-                selectedIds.size > 0 && selectedIds.size === rows.length
+                allLoadedSelected
                   ? true
                   : selectedIds.size > 0
-                    ? "indeterminate"
-                    : false
+                  ? "indeterminate"
+                  : false
               }
               onCheckedChange={() => toggleAll()}
               aria-label={t("groups.selectAllAria")}
@@ -245,21 +305,21 @@ export function GroupesView({
     ],
     [
       selectedIds,
-      rows.length,
+      allLoadedSelected,
       toggleAll,
       toggleSelect,
       onEditGroup,
       onDeleteGroups,
       dataColumns,
       t,
-    ],
+    ]
   );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <InputGroup
-          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
           role="search"
         >
           <InputGroupAddon align="inline-start">
@@ -272,7 +332,20 @@ export function GroupesView({
             aria-label={t("groups.searchAria")}
           />
         </InputGroup>
-        <div className="flex flex-wrap items-center gap-2">
+        {showExpandBanner ? (
+          <SelectAllExpandBanner
+            matchTotal={matchTotal}
+            hasSearch={searchQuery.trim().length > 0}
+            entityLabel="groupes"
+            counting={counting}
+            expanding={expanding}
+            error={expandError}
+            onExpand={() => void expandToMatchAll()}
+          />
+        ) : (
+          <div className="min-w-0 flex-1" aria-hidden />
+        )}
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
           {hasSelection ? (
             <>
               <Button
@@ -280,20 +353,26 @@ export function GroupesView({
                 size="lg"
                 className="rounded-full"
                 onClick={() => {
-                  onDeleteGroups(Array.from(selectedIds));
-                  setSelectedIds(new Set());
+                  void (async () => {
+                    const ids = await ensureSelectionReady();
+                    onDeleteGroups(ids);
+                    clearSelection();
+                  })();
                 }}
               >
                 <Trash2 aria-hidden />
-                {t("groups.deleteSelected", { n: selectedIds.size })}
+                {t("groups.deleteSelected", { n: displaySelectedCount })}
               </Button>
               <Button
                 variant="default"
                 size="lg"
                 className="rounded-full"
                 onClick={() => {
-                  onCreateCampaignFromGroups(Array.from(selectedIds));
-                  setSelectedIds(new Set());
+                  void (async () => {
+                    const ids = await ensureSelectionReady();
+                    onCreateCampaignFromGroups(ids);
+                    clearSelection();
+                  })();
                 }}
               >
                 <Send aria-hidden />
@@ -320,6 +399,12 @@ export function GroupesView({
         </div>
       )}
 
+      {expandError && !showExpandBanner ? (
+        <p className="m-0 text-xs font-semibold text-destructive">
+          {expandError}
+        </p>
+      ) : null}
+
       {showBigEmpty ? (
         <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
           <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
@@ -345,6 +430,7 @@ export function GroupesView({
           hasMore={hasMore}
           onLoadMore={onLoadMore}
           globalFilter={searchQuery}
+          loadingMessage={t("groups.loading")}
           emptyMessage={t("groups.emptyTable")}
           searchNoResultsMessage={t("groups.noSearchResults")}
           onRowClick={onEditGroup}

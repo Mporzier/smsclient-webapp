@@ -52,7 +52,7 @@ export const LINK_COL = {
   created: 130,
   label: 140,
   originalUrl: 220,
-  shortUrl: 140,
+  shortUrl: 168,
   clickCount: 56,
   /** Menu … sticky droite — même largeur que select contacts */
   actions: 40,

@@ -96,8 +96,8 @@ export function useGroupModalContacts(
     };
   }, [ready, editGroupId, supabase]);
 
-  // Liste générale seulement après membres (edit) — membres apparaissent en premier.
-  const listEnabled = ready && membersReady;
+  // Liste en parallèle des membres (merge client-side met membres en tête).
+  const listEnabled = ready;
 
   const fetchPage = useCallback(
     async ({

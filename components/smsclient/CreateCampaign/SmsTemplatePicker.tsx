@@ -11,6 +11,7 @@ import {
   toCampaignSmsTemplate,
   type UserSmsTemplateRow,
 } from "@/lib/types/smsTemplate";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { LayoutTemplate } from "lucide-react";
 
 type SmsTemplatePickerProps = {
@@ -125,7 +126,7 @@ export function SmsTemplatePicker({
 
         {customLoading ? (
           <p className="m-0 text-[11px] font-semibold text-slate-400">
-            Chargement…
+            <LoadingLabel spinnerClassName="size-3.5">Chargement…</LoadingLabel>
           </p>
         ) : personalTemplates.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-6 text-center">

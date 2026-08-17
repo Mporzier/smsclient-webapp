@@ -370,6 +370,7 @@ export function ModelesSmsView({
             hasMore={hasMore}
             onLoadMore={onLoadMore}
             globalFilter={searchQuery}
+            loadingMessage={t("templates.loading")}
             emptyMessage={t("templates.emptyTable")}
             searchNoResultsMessage={t("templates.noSearchResults")}
             footer={footerLabel}

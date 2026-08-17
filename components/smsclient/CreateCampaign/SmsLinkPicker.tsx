@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import type { LinkRowData } from "@/lib/types/link";
 import { Link2, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -68,7 +69,9 @@ export function SmsLinkPicker({
   if (loading) {
     return (
       <p className="m-0 text-[11px] font-semibold text-slate-500">
-        Chargement des liens…
+        <LoadingLabel spinnerClassName="size-3.5">
+          Chargement des liens…
+        </LoadingLabel>
       </p>
     );
   }

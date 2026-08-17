@@ -100,7 +100,7 @@ const fr = {
     "Champs date, texte ou nombre sur les contacts.",
   "parametres.card.corbeille.title": "Corbeille",
   "parametres.card.corbeille.description":
-    "Contacts et groupes supprimés.",
+    "Contacts et groupes supprimés (purge auto après 30 jours).",
 
   "parametres.upcoming": "Bientôt",
   "parametres.loading": "Chargement…",
@@ -199,7 +199,7 @@ const fr = {
 
   "trash.title": "Éléments supprimés",
   "trash.description":
-    "Les contacts et groupes que vous supprimez sont retirés de vos listes mais conservés ici. Sélectionnez-les puis cliquez sur Restaurer pour les récupérer.",
+    "Les contacts et groupes que vous supprimez sont retirés de vos listes mais conservés ici pendant {days} jours. Sélectionnez-les puis cliquez sur Restaurer pour les récupérer. Passé ce délai, suppression définitive automatique.",
   "trash.restoring": "Restauration…",
   "trash.restoreSelected": "Restaurer la sélection ({n})",
   "trash.restoreFailed": "Restauration impossible.",
@@ -212,6 +212,7 @@ const fr = {
   "trash.col.phone": "Téléphone",
   "trash.col.groups": "Groupes",
   "trash.col.deletedAt": "Supprimé le",
+  "trash.col.expiresAt": "Suppression définitive",
   "trash.col.group": "Groupe",
   "trash.col.description": "Description",
   "trash.col.activeContacts": "Contacts actifs",
@@ -291,6 +292,7 @@ const fr = {
   "contacts.emptyBody":
     "Cliquez sur « Ajouter un contact » pour enregistrer votre premier numéro.",
   "contacts.emptyTable": "Aucune cible disponible.",
+  "contacts.loading": "Chargement de la liste des contacts…",
   "contacts.noSearchResults":
     "Aucun contact ne correspond à votre recherche.",
   "contacts.col.firstName": "Prénom",
@@ -318,6 +320,7 @@ const fr = {
   "groups.emptyTitle": "Aucun groupe",
   "groups.emptyBody": "Créez votre premier segment avec « Créer un groupe ».",
   "groups.emptyTable": "Aucun groupe.",
+  "groups.loading": "Chargement de la liste des groupes…",
   "groups.noSearchResults": "Aucun groupe ne correspond à votre recherche.",
   "groups.col.name": "Nom du groupe",
   "groups.col.description": "Description",
@@ -334,6 +337,7 @@ const fr = {
   "campaigns.emptyTitle": "Aucune campagne",
   "campaigns.emptyBody": "Créez une campagne avec « Nouvelle campagne ».",
   "campaigns.emptyTable": "Aucune campagne.",
+  "campaigns.loading": "Chargement de la liste des campagnes…",
   "campaigns.noSearchResults": "Aucun résultat pour cette recherche.",
   "campaigns.col.date": "Date",
   "campaigns.col.name": "Campagne",
@@ -367,6 +371,7 @@ const fr = {
   "links.emptyBody":
     "Créez votre premier lien ou activez le suivi des liens dans une campagne SMS.",
   "links.emptyTable": "Aucun lien.",
+  "links.loading": "Chargement de la liste des liens…",
   "links.noSearchResults": "Aucun résultat pour cette recherche.",
   "links.col.created": "Créé le",
   "links.col.label": "Libellé",
@@ -404,6 +409,7 @@ const fr = {
   "templates.emptyBody":
     "Créez votre premier modèle ci-dessus pour le retrouver dans le wizard campagne.",
   "templates.emptyTable": "Aucun modèle.",
+  "templates.loading": "Chargement de la liste des modèles…",
   "templates.noSearchResults": "Aucun résultat pour cette recherche.",
   "templates.col.created": "Créé le",
   "templates.col.title": "Titre",
@@ -983,7 +989,8 @@ const en: Record<MessageKey, string> = {
   "parametres.card.champs-perso.description":
     "Date, text, or number fields on contacts.",
   "parametres.card.corbeille.title": "Trash",
-  "parametres.card.corbeille.description": "Deleted contacts and groups.",
+  "parametres.card.corbeille.description":
+    "Deleted contacts and groups (auto-purge after 30 days).",
 
   "parametres.upcoming": "Soon",
   "parametres.loading": "Loading…",
@@ -1079,7 +1086,7 @@ const en: Record<MessageKey, string> = {
 
   "trash.title": "Deleted items",
   "trash.description":
-    "Contacts and groups you delete are removed from your lists but kept here. Select them, then click Restore to get them back.",
+    "Contacts and groups you delete are removed from your lists but kept here for {days} days. Select them, then click Restore to get them back. After that, they are permanently deleted automatically.",
   "trash.restoring": "Restoring…",
   "trash.restoreSelected": "Restore selection ({n})",
   "trash.restoreFailed": "Could not restore.",
@@ -1092,6 +1099,7 @@ const en: Record<MessageKey, string> = {
   "trash.col.phone": "Phone",
   "trash.col.groups": "Groups",
   "trash.col.deletedAt": "Deleted on",
+  "trash.col.expiresAt": "Permanent deletion",
   "trash.col.group": "Group",
   "trash.col.description": "Description",
   "trash.col.activeContacts": "Active contacts",
@@ -1171,6 +1179,7 @@ const en: Record<MessageKey, string> = {
   "contacts.emptyBody":
     "Click “Add a contact” to save your first number.",
   "contacts.emptyTable": "No targets available.",
+  "contacts.loading": "Loading contacts list…",
   "contacts.noSearchResults": "No contacts match your search.",
   "contacts.col.firstName": "First name",
   "contacts.col.lastName": "Last name",
@@ -1197,6 +1206,7 @@ const en: Record<MessageKey, string> = {
   "groups.emptyTitle": "No groups yet",
   "groups.emptyBody": "Create your first segment with “Create a group”.",
   "groups.emptyTable": "No groups.",
+  "groups.loading": "Loading groups list…",
   "groups.noSearchResults": "No groups match your search.",
   "groups.col.name": "Group name",
   "groups.col.description": "Description",
@@ -1213,6 +1223,7 @@ const en: Record<MessageKey, string> = {
   "campaigns.emptyTitle": "No campaigns yet",
   "campaigns.emptyBody": "Create a campaign with “New campaign”.",
   "campaigns.emptyTable": "No campaigns.",
+  "campaigns.loading": "Loading campaigns list…",
   "campaigns.noSearchResults": "No results for this search.",
   "campaigns.col.date": "Date",
   "campaigns.col.name": "Campaign",
@@ -1246,6 +1257,7 @@ const en: Record<MessageKey, string> = {
   "links.emptyBody":
     "Create your first link or enable link tracking in an SMS campaign.",
   "links.emptyTable": "No links.",
+  "links.loading": "Loading links list…",
   "links.noSearchResults": "No results for this search.",
   "links.col.created": "Created",
   "links.col.label": "Label",
@@ -1283,6 +1295,7 @@ const en: Record<MessageKey, string> = {
   "templates.emptyBody":
     "Create your first template above to use it in the campaign wizard.",
   "templates.emptyTable": "No templates.",
+  "templates.loading": "Loading templates list…",
   "templates.noSearchResults": "No results for this search.",
   "templates.col.created": "Created",
   "templates.col.title": "Title",

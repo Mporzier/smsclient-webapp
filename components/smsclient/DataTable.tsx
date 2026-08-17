@@ -11,6 +11,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { distributeColumnWidths } from "@/components/smsclient/listColumnSizes";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import {
@@ -333,6 +334,17 @@ export function DataTable<T>({
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
+        {loading ? (
+          <div
+            className="flex min-h-[240px] w-full flex-1 items-center justify-center px-[18px] py-12 text-sm font-medium text-muted-foreground"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <LoadingLabel>{loadingMessage}</LoadingLabel>
+          </div>
+        ) : null}
+        {!loading ? (
         <table
           className="table-fixed border-separate border-spacing-0 text-sm"
           style={{
@@ -473,16 +485,6 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
-                >
-                  {loadingMessage}
-                </td>
-              </tr>
-            )}
             {isEmpty && (
               <tr>
                 <td
@@ -503,8 +505,7 @@ export function DataTable<T>({
                 </td>
               </tr>
             )}
-            {!loading &&
-              !isEmpty &&
+            {!isEmpty &&
               !isSearchEmpty &&
               tableRows.map((row: Row<T>) => (
                 <tr
@@ -576,13 +577,18 @@ export function DataTable<T>({
               ))}
           </tbody>
         </table>
-        {onLoadMore && hasMore ? (
+        ) : null}
+        {!loading && onLoadMore && hasMore ? (
           <div
             ref={sentinelRef}
             className="flex h-10 items-center justify-center text-xs text-muted-foreground"
             aria-hidden
           >
-            {loadingMore ? "Chargement…" : null}
+            {loadingMore ? (
+              <LoadingLabel className="text-xs" spinnerClassName="size-3.5">
+                Chargement…
+              </LoadingLabel>
+            ) : null}
           </div>
         ) : null}
       </div>

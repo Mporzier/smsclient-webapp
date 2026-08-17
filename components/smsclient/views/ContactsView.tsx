@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
+import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import {
   UnsubscribedContactsModal,
   type UnsubscribedContactRow,
@@ -21,24 +22,16 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import {
-  avatarColor,
-  contactInitials,
-} from "@/lib/proto/contactDisplay";
+import { avatarColor, contactInitials } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
 import { compareIsoTimestampsStable } from "@/lib/proto/compareIso";
 import { formatCustomFieldDisplay } from "@/lib/customFields/validate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   MoreHorizontal,
@@ -75,11 +68,17 @@ type ContactsProps = {
   onDeleteContacts: (ids: string[]) => void;
   onCreateCampaignFromContacts: (ids: string[]) => void;
   onResubscribeContacts?: (ids: string[]) => Promise<void>;
+  onCountSelectableMatches?: (
+    search: string
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchSelectableMatchIds?: (
+    search: string
+  ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
 function buildContactColumns(
   customFieldDefs: CustomFieldDef[],
-  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
+  t: (key: MessageKey, vars?: Record<string, string | number>) => string
 ): ColumnDef<ContactRowData, unknown>[] {
   const customCols: ColumnDef<ContactRowData, unknown>[] = customFieldDefs.map(
     (def) => ({
@@ -98,160 +97,161 @@ function buildContactColumns(
         <CellTruncate as="div">
           {formatCustomFieldDisplay(
             row.original.customFields?.[def.id],
-            def.fieldType,
+            def.fieldType
           )}
         </CellTruncate>
       ),
-    }),
+    })
   );
 
   return [
-  {
-    id: "avatar",
-    size: CONTACT_COL.avatar,
-    minSize: CONTACT_COL.avatar,
-    maxSize: CONTACT_COL.avatar,
-    header: "",
-    cell: ({ row }) => {
-      const initials = contactInitials(row.original);
-      const c = avatarColor(row.original.id);
-      return (
-        <div
-          className={cn(
-            "grid h-7 w-7 place-items-center rounded-full text-[11px] font-medium",
-            c.bg,
-            c.text
-          )}
-        >
-          {initials}
-        </div>
-      );
+    {
+      id: "avatar",
+      size: CONTACT_COL.avatar,
+      minSize: CONTACT_COL.avatar,
+      maxSize: CONTACT_COL.avatar,
+      header: "",
+      cell: ({ row }) => {
+        const initials = contactInitials(row.original);
+        const c = avatarColor(row.original.id);
+        return (
+          <div
+            className={cn(
+              "grid h-7 w-7 place-items-center rounded-full text-[11px] font-medium",
+              c.bg,
+              c.text
+            )}
+          >
+            {initials}
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "firstName",
-    header: t("contacts.col.firstName"),
-    size: CONTACT_COL.firstName,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div" className="">
-        {getValue<string>().trim() || "—"}
-      </CellTruncate>
-    ),
-  },
-  {
-    accessorKey: "lastName",
-    header: t("contacts.col.lastName"),
-    size: CONTACT_COL.lastName,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div" className="">
-        {getValue<string>().trim() || "—"}
-      </CellTruncate>
-    ),
-  },
-  {
-    accessorKey: "phone",
-    header: t("contacts.col.phone"),
-    size: CONTACT_COL.phone,
-    cell: ({ getValue }) => (
-      <div className="flex items-center gap-1.5">
-        <Phone className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
-        <CellTruncate as="span">{getValue<string>()}</CellTruncate>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "groups",
-    header: t("contacts.col.groups"),
-    size: CONTACT_COL.groups,
-    enableSorting: false,
-    cell: ({ getValue }) => (
-      <ContactGroupsCell groups={getValue<string[]>() ?? []} />
-    ),
-    filterFn: (row, _columnId, filterValue: string) => {
-      if (!filterValue) return true;
-      return row.original.groups.some((g) =>
-        g.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    },
-  },
-  {
-    id: "notes",
-    header: t("contacts.col.notes"),
-    size: CONTACT_COL.notes,
-    accessorFn: (row) => {
-      const n = row.notes.trim();
-      return n || undefined;
-    },
-    sortUndefined: "last",
-    sortDescFirst: false,
-    cell: ({ row }) => (
-      <CellTruncate as="div">
-        {row.original.notes.trim() || "—"}
-      </CellTruncate>
-    ),
-  },
-  {
-    id: "lastSms",
-    header: t("contacts.col.lastSms"),
-    size: CONTACT_COL.lastSms,
-    accessorFn: (row) => row.lastSmsAt ?? undefined,
-    sortingFn: (a, b) =>
-      compareIsoTimestampsStable(
-        a.original.lastSmsAt,
-        b.original.lastSmsAt,
-        a.original.id,
-        b.original.id,
+    {
+      accessorKey: "firstName",
+      header: t("contacts.col.firstName"),
+      size: CONTACT_COL.firstName,
+      cell: ({ getValue }) => (
+        <CellTruncate as="div" className="">
+          {getValue<string>().trim() || "—"}
+        </CellTruncate>
       ),
-    sortUndefined: "last",
-    sortDescFirst: false,
-    cell: ({ row }) => {
-      const date = row.original.lastSms;
-      const body = row.original.lastSmsBody;
-      if (!body && date === "—")
-        return <span className="text-sm text-slate-400">—</span>;
-      return (
-        <div className="flex flex-col gap-0.5 truncate">
-          {body ? (
-            <span className="truncate text-sm text-slate-700">
-              &laquo;&thinsp;{body.slice(0, 50)}
-              {body.length > 50 ? "…" : ""}&thinsp;&raquo;
-            </span>
-          ) : null}
-          {date !== "—" && (
-            <span className="text-xs text-slate-400">{date}</span>
-          )}
-        </div>
-      );
     },
-  },
-  {
-    accessorKey: "source",
-    header: t("contacts.col.source"),
-    size: CONTACT_COL.source,
-    cell: ({ getValue }) => (
-      <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-    ),
-  },
-  {
-    id: "created",
-    header: t("contacts.col.created"),
-    size: CONTACT_COL.created,
-    accessorFn: (row) => row.createdAt,
-    sortingFn: (a, b) =>
-      compareIsoTimestampsStable(
-        a.original.createdAt,
-        b.original.createdAt,
-        a.original.id,
-        b.original.id,
+    {
+      accessorKey: "lastName",
+      header: t("contacts.col.lastName"),
+      size: CONTACT_COL.lastName,
+      cell: ({ getValue }) => (
+        <CellTruncate as="div" className="">
+          {getValue<string>().trim() || "—"}
+        </CellTruncate>
       ),
-    sortDescFirst: false,
-    cell: ({ row }) => (
-      <CellTruncate as="div">{row.original.created}</CellTruncate>
-    ),
-  },
-  /** Champs perso à droite (avant actions sticky). */
-  ...customCols,
-];
+    },
+    {
+      accessorKey: "phone",
+      header: t("contacts.col.phone"),
+      size: CONTACT_COL.phone,
+      cell: ({ getValue }) => (
+        <div className="flex items-center gap-1.5">
+          <Phone
+            className="h-3.5 w-3.5 shrink-0 text-emerald-500"
+            aria-hidden
+          />
+          <CellTruncate as="span">{getValue<string>()}</CellTruncate>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "groups",
+      header: t("contacts.col.groups"),
+      size: CONTACT_COL.groups,
+      enableSorting: false,
+      cell: ({ getValue }) => (
+        <ContactGroupsCell groups={getValue<string[]>() ?? []} />
+      ),
+      filterFn: (row, _columnId, filterValue: string) => {
+        if (!filterValue) return true;
+        return row.original.groups.some((g) =>
+          g.toLowerCase().includes(filterValue.toLowerCase())
+        );
+      },
+    },
+    {
+      id: "notes",
+      header: t("contacts.col.notes"),
+      size: CONTACT_COL.notes,
+      accessorFn: (row) => {
+        const n = row.notes.trim();
+        return n || undefined;
+      },
+      sortUndefined: "last",
+      sortDescFirst: false,
+      cell: ({ row }) => (
+        <CellTruncate as="div">{row.original.notes.trim() || "—"}</CellTruncate>
+      ),
+    },
+    {
+      id: "lastSms",
+      header: t("contacts.col.lastSms"),
+      size: CONTACT_COL.lastSms,
+      accessorFn: (row) => row.lastSmsAt ?? undefined,
+      sortingFn: (a, b) =>
+        compareIsoTimestampsStable(
+          a.original.lastSmsAt,
+          b.original.lastSmsAt,
+          a.original.id,
+          b.original.id
+        ),
+      sortUndefined: "last",
+      sortDescFirst: false,
+      cell: ({ row }) => {
+        const date = row.original.lastSms;
+        const body = row.original.lastSmsBody;
+        if (!body && date === "—")
+          return <span className="text-sm text-slate-400">—</span>;
+        return (
+          <div className="flex flex-col gap-0.5 truncate">
+            {body ? (
+              <span className="truncate text-sm text-slate-700">
+                &laquo;&thinsp;{body.slice(0, 50)}
+                {body.length > 50 ? "…" : ""}&thinsp;&raquo;
+              </span>
+            ) : null}
+            {date !== "—" && (
+              <span className="text-xs text-slate-400">{date}</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "source",
+      header: t("contacts.col.source"),
+      size: CONTACT_COL.source,
+      cell: ({ getValue }) => (
+        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
+      ),
+    },
+    {
+      id: "created",
+      header: t("contacts.col.created"),
+      size: CONTACT_COL.created,
+      accessorFn: (row) => row.createdAt,
+      sortingFn: (a, b) =>
+        compareIsoTimestampsStable(
+          a.original.createdAt,
+          b.original.createdAt,
+          a.original.id,
+          b.original.id
+        ),
+      sortDescFirst: false,
+      cell: ({ row }) => (
+        <CellTruncate as="div">{row.original.created}</CellTruncate>
+      ),
+    },
+    /** Champs perso à droite (avant actions sticky). */
+    ...customCols,
+  ];
 }
 
 /** Largeur naturelle base + champs perso — force scroll horizontal si defs. */
@@ -292,6 +292,8 @@ export function ContactsView({
   onDeleteContacts,
   onCreateCampaignFromContacts,
   onResubscribeContacts,
+  onCountSelectableMatches,
+  onFetchSelectableMatchIds,
 }: ContactsProps) {
   const { t } = useI18n();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -301,6 +303,51 @@ export function ContactsView({
     () => rows.filter((r) => isCampaignEligibleContact(r)),
     [rows]
   );
+
+  const loadedIds = useMemo(
+    () => eligibleRows.map((r) => r.id),
+    [eligibleRows]
+  );
+
+  const setSelectedIdsList = useCallback((ids: string[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const countMatch = useCallback(async () => {
+    if (!onCountSelectableMatches)
+      return { count: loadedIds.length, error: null };
+    return onCountSelectableMatches(searchQuery);
+  }, [onCountSelectableMatches, searchQuery, loadedIds.length]);
+
+  const fetchAllIds = useCallback(async () => {
+    if (!onFetchSelectableMatchIds) {
+      return { data: loadedIds, error: null };
+    }
+    return onFetchSelectableMatchIds(searchQuery);
+  }, [onFetchSelectableMatchIds, searchQuery, loadedIds]);
+
+  const {
+    selectLoaded,
+    clearSelection,
+    showExpandBanner,
+    matchTotal,
+    displaySelectedCount,
+    counting,
+    expanding,
+    expandError,
+    expandToMatchAll,
+    ensureSelectionReady,
+  } = useGmailSelectAll({
+    search: searchQuery,
+    loadedIds,
+    selectedIds,
+    setSelectedIds: setSelectedIdsList,
+    countMatch,
+    fetchAllIds,
+    expandCandidate:
+      hasMore ||
+      (typeof totalCount === "number" && totalCount > loadedIds.length),
+  });
 
   const onRowClickRef = useRef(onRowClick);
   const onDeleteContactsRef = useRef(onDeleteContacts);
@@ -312,9 +359,12 @@ export function ContactsView({
 
   const unsubCount = unsubscribedContacts.length;
 
-  const hasSelection = selectedIds.size > 0;
+  const hasSelection = displaySelectedCount > 0;
   const showBigEmpty =
     !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+
+  const allLoadedSelected =
+    eligibleRows.length > 0 && eligibleRows.every((r) => selectedIds.has(r.id));
 
   const footer = useMemo(() => {
     if (loading) return "…";
@@ -322,7 +372,7 @@ export function ContactsView({
       typeof totalCount === "number" ? totalCount : eligibleRows.length;
     const contactsLabel = t(
       total === 1 ? "contacts.footerOne" : "contacts.footerMany",
-      { n: total },
+      { n: total }
     );
     if (unsubCount === 0) return contactsLabel;
     return (
@@ -332,10 +382,9 @@ export function ContactsView({
           <span className="text-muted-foreground/80">
             {" "}
             ·{" "}
-            {t(
-              unsubCount > 1 ? "contacts.unsubMany" : "contacts.unsubOne",
-              { n: unsubCount },
-            )}
+            {t(unsubCount > 1 ? "contacts.unsubMany" : "contacts.unsubOne", {
+              n: unsubCount,
+            })}
           </span>
         </span>
         <Button
@@ -361,111 +410,112 @@ export function ContactsView({
   }, []);
 
   const toggleAll = useCallback(() => {
-    setSelectedIds((prev) => {
-      if (prev.size === eligibleRows.length) return new Set();
-      return new Set(eligibleRows.map((r) => r.id));
-    });
-  }, [eligibleRows]);
+    if (allLoadedSelected) {
+      clearSelection();
+      return;
+    }
+    selectLoaded();
+  }, [allLoadedSelected, clearSelection, selectLoaded]);
 
   const columns = useMemo(
     () => buildContactColumns(customFieldDefs, t),
-    [customFieldDefs, t],
+    [customFieldDefs, t]
   );
 
   const minContentWidth = useMemo(
     () => contactsTableMinWidth(customFieldDefs.length),
-    [customFieldDefs.length],
+    [customFieldDefs.length]
   );
 
   const selectColumns: ColumnDef<ContactRowData, unknown>[] = useMemo(
     () => [
-    {
-      id: "select",
-      size: CONTACT_COL.select,
-      minSize: CONTACT_COL.select,
-      maxSize: CONTACT_COL.select,
-      enableResizing: false,
-      header: () => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              selectedIds.size > 0 && selectedIds.size === eligibleRows.length
-                ? true
-                : selectedIds.size > 0
+      {
+        id: "select",
+        size: CONTACT_COL.select,
+        minSize: CONTACT_COL.select,
+        maxSize: CONTACT_COL.select,
+        enableResizing: false,
+        header: () => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                allLoadedSelected
+                  ? true
+                  : selectedIds.size > 0
                   ? "indeterminate"
                   : false
-            }
-            onCheckedChange={() => toggleAll()}
-            aria-label={t("contacts.selectAllAria")}
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={selectedIds.has(row.original.id)}
-            onCheckedChange={() => toggleSelect(row.original.id)}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={t("contacts.selectOneAria", {
-              name: row.original.name,
-            })}
-          />
-        </div>
-      ),
-    },
-    ...columns,
-    {
-      id: "actions",
-      size: CONTACT_COL.actions,
-      minSize: CONTACT_COL.actions,
-      maxSize: CONTACT_COL.actions,
-      enableResizing: false,
-      header: () => null,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="size-7 rounded-full text-muted-foreground"
-                aria-label={t("contacts.actionsAria", {
-                  name: row.original.name,
-                })}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="size-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                onSelect={() => onRowClickRef.current(row.original)}
-              >
-                {t("common.edit")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() =>
-                  onDeleteContactsRef.current([row.original.id])
-                }
-              >
-                {t("common.delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
-  ],
-    [columns, t, toggleAll, toggleSelect, selectedIds, eligibleRows.length],
+              }
+              onCheckedChange={() => toggleAll()}
+              aria-label={t("contacts.selectAllAria")}
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={selectedIds.has(row.original.id)}
+              onCheckedChange={() => toggleSelect(row.original.id)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={t("contacts.selectOneAria", {
+                name: row.original.name,
+              })}
+            />
+          </div>
+        ),
+      },
+      ...columns,
+      {
+        id: "actions",
+        size: CONTACT_COL.actions,
+        minSize: CONTACT_COL.actions,
+        maxSize: CONTACT_COL.actions,
+        enableResizing: false,
+        header: () => null,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-7 rounded-full text-muted-foreground"
+                  aria-label={t("contacts.actionsAria", {
+                    name: row.original.name,
+                  })}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="size-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  onSelect={() => onRowClickRef.current(row.original)}
+                >
+                  {t("common.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() =>
+                    onDeleteContactsRef.current([row.original.id])
+                  }
+                >
+                  {t("common.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    [columns, t, toggleAll, toggleSelect, selectedIds, allLoadedSelected]
   );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <InputGroup
-          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
           role="search"
         >
           <InputGroupAddon align="inline-start">
@@ -478,7 +528,20 @@ export function ContactsView({
             aria-label={t("contacts.searchAria")}
           />
         </InputGroup>
-        <div className="flex flex-wrap items-center gap-2">
+        {showExpandBanner ? (
+          <SelectAllExpandBanner
+            matchTotal={matchTotal}
+            hasSearch={searchQuery.trim().length > 0}
+            entityLabel="contacts éligibles"
+            counting={counting}
+            expanding={expanding}
+            error={expandError}
+            onExpand={() => void expandToMatchAll()}
+          />
+        ) : (
+          <div className="min-w-0 flex-1" aria-hidden />
+        )}
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
           {hasSelection ? (
             <>
               <Button
@@ -486,20 +549,26 @@ export function ContactsView({
                 size="lg"
                 className="rounded-full"
                 onClick={() => {
-                  onDeleteContacts(Array.from(selectedIds));
-                  setSelectedIds(new Set());
+                  void (async () => {
+                    const ids = await ensureSelectionReady();
+                    onDeleteContacts(ids);
+                    clearSelection();
+                  })();
                 }}
               >
                 <Trash2 aria-hidden />
-                {t("contacts.deleteSelected", { n: selectedIds.size })}
+                {t("contacts.deleteSelected", { n: displaySelectedCount })}
               </Button>
               <Button
                 variant="default"
                 size="lg"
                 className="rounded-full"
                 onClick={() => {
-                  onCreateCampaignFromContacts(Array.from(selectedIds));
-                  setSelectedIds(new Set());
+                  void (async () => {
+                    const ids = await ensureSelectionReady();
+                    onCreateCampaignFromContacts(ids);
+                    clearSelection();
+                  })();
                 }}
               >
                 <Send aria-hidden />
@@ -530,6 +599,12 @@ export function ContactsView({
           )}
         </div>
       </div>
+
+      {expandError && !showExpandBanner ? (
+        <p className="m-0 text-xs font-semibold text-destructive">
+          {expandError}
+        </p>
+      ) : null}
 
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
@@ -562,6 +637,7 @@ export function ContactsView({
           hasMore={hasMore}
           onLoadMore={onLoadMore}
           globalFilter={searchQuery}
+          loadingMessage={t("contacts.loading")}
           emptyMessage={t("contacts.emptyTable")}
           searchNoResultsMessage={t("contacts.noSearchResults")}
           onRowClick={onRowClick}

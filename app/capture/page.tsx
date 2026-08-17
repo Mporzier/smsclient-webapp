@@ -1,4 +1,5 @@
 import { QrCaptureContent } from "./QrCaptureContent";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { Suspense } from "react";
 
 /**
@@ -11,7 +12,9 @@ export default function CapturePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-600">
-          <p className="text-sm font-semibold">Chargement…</p>
+          <LoadingLabel className="text-sm font-semibold">
+            Chargement…
+          </LoadingLabel>
         </div>
       }
     >

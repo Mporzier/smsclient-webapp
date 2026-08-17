@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import {
   Dialog,
   DialogContent,
@@ -147,7 +148,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
         <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-4 py-4">
           {loading && (
             <p className="m-0 text-sm font-semibold text-muted-foreground">
-              Chargement…
+              <LoadingLabel>Chargement…</LoadingLabel>
             </p>
           )}
           {feedback && (

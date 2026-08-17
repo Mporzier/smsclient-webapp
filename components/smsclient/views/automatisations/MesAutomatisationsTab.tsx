@@ -109,7 +109,6 @@ function AutomationCard({
 export type MesAutomatisationsTabProps = {
   rows: AutomationRowData[];
   contacts: ContactRowData[];
-  loading: boolean;
   error: string | null;
   onSave: (payload: AutomationSavePayload) => Promise<void>;
   onEdit: (row: AutomationRowData) => void;
@@ -118,7 +117,6 @@ export type MesAutomatisationsTabProps = {
 export function MesAutomatisationsTab({
   rows,
   contacts,
-  loading,
   error,
   onSave,
   onEdit,
@@ -161,14 +159,12 @@ export function MesAutomatisationsTab({
 
   return (
     <div className="flex flex-col gap-3">
-      {!loading && (
-        <p className="m-0 text-xs font-bold text-muted-foreground">
-          {activeCount} automatisation{activeCount !== 1 ? "s" : ""} active
-          {activeCount !== 1 ? "s" : ""} · {eligibleCount} contact
-          {eligibleCount > 1 ? "s" : ""} éligible
-          {eligibleCount > 1 ? "s" : ""}
-        </p>
-      )}
+      <p className="m-0 text-xs font-bold text-muted-foreground">
+        {activeCount} automatisation{activeCount !== 1 ? "s" : ""} active
+        {activeCount !== 1 ? "s" : ""} · {eligibleCount} contact
+        {eligibleCount > 1 ? "s" : ""} éligible
+        {eligibleCount > 1 ? "s" : ""}
+      </p>
 
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
@@ -183,62 +179,49 @@ export function MesAutomatisationsTab({
         </div>
       )}
 
-      {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-40 animate-pulse rounded-2xl border border-border bg-muted"
+      <section>
+        <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
+          Anniversaires
+        </h2>
+        {birthdayRow ? (
+          <AutomationCard
+            row={birthdayRow}
+            meta={`${birthdayEligible} contact${
+              birthdayEligible > 1 ? "s" : ""
+            } avec une date d'anniversaire`}
+            onEdit={() => onEdit(birthdayRow)}
+            onToggle={(enabled) => void handleToggle(birthdayRow, enabled)}
+            toggling={togglingKey === birthdayRow.presetKey}
+          />
+        ) : null}
+      </section>
+
+      <section>
+        <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
+          Événements
+        </h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {eventRows.map((row) => (
+            <AutomationCard
+              key={row.presetKey}
+              row={row}
+              meta={
+                row.enabled
+                  ? `Envoi à tous les contacts abonnés (${eligibleCount})`
+                  : undefined
+              }
+              onEdit={() => onEdit(row)}
+              onToggle={(enabled) => void handleToggle(row, enabled)}
+              toggling={togglingKey === row.presetKey}
             />
           ))}
         </div>
-      ) : (
-        <>
-          <section>
-            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
-              Anniversaires
-            </h2>
-            {birthdayRow ? (
-              <AutomationCard
-                row={birthdayRow}
-                meta={`${birthdayEligible} contact${
-                  birthdayEligible > 1 ? "s" : ""
-                } avec une date d'anniversaire`}
-                onEdit={() => onEdit(birthdayRow)}
-                onToggle={(enabled) => void handleToggle(birthdayRow, enabled)}
-                toggling={togglingKey === birthdayRow.presetKey}
-              />
-            ) : null}
-          </section>
+      </section>
 
-          <section>
-            <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
-              Événements
-            </h2>
-            <div className="grid gap-3 lg:grid-cols-2">
-              {eventRows.map((row) => (
-                <AutomationCard
-                  key={row.presetKey}
-                  row={row}
-                  meta={
-                    row.enabled
-                      ? `Envoi à tous les contacts abonnés (${eligibleCount})`
-                      : undefined
-                  }
-                  onEdit={() => onEdit(row)}
-                  onToggle={(enabled) => void handleToggle(row, enabled)}
-                  toggling={togglingKey === row.presetKey}
-                />
-              ))}
-            </div>
-          </section>
-
-          <p className="text-xs font-medium text-muted-foreground">
-            L&apos;envoi effectif des SMS automatiques sera déclenché côté
-            serveur (cron). La configuration est enregistrée pour votre compte.
-          </p>
-        </>
-      )}
+      <p className="text-xs font-medium text-muted-foreground">
+        L&apos;envoi effectif des SMS automatiques sera déclenché côté serveur
+        (cron). La configuration est enregistrée pour votre compte.
+      </p>
     </div>
   );
 }

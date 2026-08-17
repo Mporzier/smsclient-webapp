@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { parametresFieldInp } from "@/components/smsclient/views/parametres/parametresSettings";
 import { cn } from "@/lib/cn";
 import {
@@ -142,7 +143,7 @@ export function CompteSettingsPanel({
     <div className="w-full max-w-[50%] min-w-[18rem] rounded-xl border border-border bg-card px-4">
       {loading ? (
         <p className="py-4 text-sm font-semibold text-muted-foreground">
-          {t("parametres.loading")}
+          <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
         </p>
       ) : null}
       {saveError ? (

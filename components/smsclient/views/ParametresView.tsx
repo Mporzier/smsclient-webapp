@@ -2,6 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
@@ -341,7 +342,7 @@ export function ParametresView({
         >
           {profileLoading && openCard.savable && (
             <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-              {t("parametres.loading")}
+              <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
             </p>
           )}
           {saveError && (

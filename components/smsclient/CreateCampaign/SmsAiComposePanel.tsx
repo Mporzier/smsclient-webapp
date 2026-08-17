@@ -9,7 +9,8 @@ import {
 } from "@/components/smsclient/CreateCampaign/SmsAiOptionCards";
 import type { LinkRowData } from "@/lib/types/link";
 import { stripStopMention } from "@/lib/proto/smsStopMention";
-import { ChevronDown, Check, Loader2, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { ChevronDown, Check, SlidersHorizontal, Sparkles } from "lucide-react";
 
 const VARIANT_LABELS = ["Direct", "Chaleureux", "Dynamique"] as const;
 
@@ -87,7 +88,7 @@ export function SmsAiComposePanel({
             onClick={onGenerate}
           >
             {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              <Spinner className="size-4" />
             ) : (
               <Sparkles className="h-4 w-4" aria-hidden />
             )}

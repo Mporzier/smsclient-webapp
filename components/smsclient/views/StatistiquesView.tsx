@@ -7,6 +7,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import {
   Card,
   CardContent,
@@ -41,7 +42,6 @@ import {
   CircleCheck,
   Coins,
   Info,
-  Loader2,
   Send,
   TriangleAlert,
   UserMinus,
@@ -621,14 +621,13 @@ export function StatistiquesView(props: StatsProps) {
           aria-busy="true"
           aria-label={t("stats.loadingAria")}
         >
-          <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
-            <Loader2
-              className="h-5 w-5 shrink-0 animate-spin text-blue-600"
-              aria-hidden
-            />
-            <span className="text-sm font-bold text-slate-700">
+          <div className="rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+            <LoadingLabel
+              className="text-sm font-bold text-slate-700"
+              spinnerClassName="size-5"
+            >
               {t("stats.loading")}
-            </span>
+            </LoadingLabel>
           </div>
         </div>
       )}

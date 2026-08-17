@@ -21,7 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Link2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Copy, Link2, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import type {
@@ -158,11 +158,29 @@ export function LiensView({
         accessorKey: "shortUrl",
         header: t("links.col.shortUrl"),
         size: LINK_COL.shortUrl,
-        cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-primary">
-            {getValue<string>()}
-          </CellTruncate>
-        ),
+        cell: ({ getValue }) => {
+          const shortUrl = getValue<string>();
+          return (
+            <div className="flex min-w-0 items-center gap-1">
+              <CellTruncate as="div" className="min-w-0 flex-1 text-primary">
+                {shortUrl}
+              </CellTruncate>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-7 shrink-0 rounded-full text-muted-foreground"
+                aria-label={t("links.copyShort")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void copyToClipboard(shortUrl);
+                }}
+              >
+                <Copy className="size-3.5" aria-hidden />
+              </Button>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "clickCount",
@@ -285,11 +303,11 @@ export function LiensView({
           hasMore={hasMore}
           onLoadMore={onLoadMore}
           globalFilter={searchQuery}
+          loadingMessage={t("links.loading")}
           emptyMessage={t("links.emptyTable")}
           searchNoResultsMessage={t("links.noSearchResults")}
           footer={footerLabel}
           clipHorizontalOverflow
-          onRowClick={(row) => void copyToClipboard(row.shortUrl)}
           sorting={sorting}
           onSortingChange={onSortingChange}
           manualSorting

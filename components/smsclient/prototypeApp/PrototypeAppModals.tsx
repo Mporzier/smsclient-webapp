@@ -12,6 +12,7 @@ import {
 } from "@/components/smsclient/PrototypeModals";
 import type { PrototypeAppContext } from "./usePrototypeApp";
 import { useGroupModalContacts } from "@/hooks/useGroupModalContacts";
+import { countClientIds, fetchClientIds } from "@/lib/supabase/clients";
 
 type Props = {
   ctx: PrototypeAppContext;
@@ -56,6 +57,12 @@ export function PrototypeAppModals({ ctx }: Props) {
         searchQuery={groupModalContacts.searchInput}
         onSearchChange={groupModalContacts.setSearchInput}
         onCreated={actions.onGroupCreatedFromModal}
+        onCountSelectableMatches={(search) =>
+          countClientIds(supabase, { search, eligibleOnly: false })
+        }
+        onFetchSelectableMatchIds={(search) =>
+          fetchClientIds(supabase, { search, eligibleOnly: false })
+        }
       />
       <GroupModal
         mode="edit"
@@ -84,6 +91,12 @@ export function PrototypeAppModals({ ctx }: Props) {
           wizard.openCampaignComposer(groupName);
         }}
         onDeleteGroup={actions.handleDeleteGroupFromModal}
+        onCountSelectableMatches={(search) =>
+          countClientIds(supabase, { search, eligibleOnly: false })
+        }
+        onFetchSelectableMatchIds={(search) =>
+          fetchClientIds(supabase, { search, eligibleOnly: false })
+        }
       />
 
       <ContactCreateModal

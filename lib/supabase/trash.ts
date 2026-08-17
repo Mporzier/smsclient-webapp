@@ -1,4 +1,5 @@
 import { e164ToFrDisplay } from "@/lib/proto/smsUtils";
+import { trashPurgeAtIso } from "@/lib/proto/trashRetention";
 import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -16,6 +17,16 @@ function formatDeletedFr(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function trashLabels(deletedAt: string): {
+  deletedLabel: string;
+  expiresLabel: string;
+} {
+  return {
+    deletedLabel: formatDeletedFr(deletedAt),
+    expiresLabel: formatDeletedFr(trashPurgeAtIso(deletedAt)),
+  };
 }
 
 export async function fetchDeletedContacts(
@@ -60,7 +71,7 @@ export async function fetchDeletedContacts(
         name,
         phone: e164ToFrDisplay(row.phone_e164),
         groupsLabel: row.group_label?.trim() || "—",
-        deletedLabel: formatDeletedFr(row.deleted_at),
+        ...trashLabels(row.deleted_at),
       };
     }),
     error: null,
@@ -124,7 +135,7 @@ export async function fetchDeletedGroups(
       name: g.name,
       description: g.description?.trim() ?? "",
       contactCount: counts.get(g.id) ?? 0,
-      deletedLabel: formatDeletedFr(g.deleted_at as string),
+      ...trashLabels(g.deleted_at as string),
     })),
     error: null,
   };

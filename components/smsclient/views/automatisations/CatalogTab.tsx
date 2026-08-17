@@ -74,13 +74,11 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
   const [tag, setTag] = useState<string | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [activityId, setActivityId] = useState<string | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
 
   const favorites = useAutomationFavorites(Boolean(user));
 
   if (!authLoading && !user) {
     if (activityId !== null) setActivityId(null);
-    if (profileLoading) setProfileLoading(false);
   }
 
   useEffect(() => {
@@ -91,7 +89,6 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
       ({ data }) => {
         if (cancelled) return;
         setActivityId(data?.businessActivity?.trim() || null);
-        setProfileLoading(false);
       },
     );
     return () => {
@@ -128,8 +125,6 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
     setTag(null);
     setFavoritesOnly(false);
   }
-
-  const loading = profileLoading || favorites.loading;
 
   return (
     <div className="flex flex-col gap-3">
@@ -203,16 +198,7 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
         </div>
       )}
 
-      {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-36 animate-pulse rounded-2xl border border-border bg-muted"
-            />
-          ))}
-        </div>
-      ) : empty ? (
+      {empty ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center">
           <p className="m-0 text-sm font-bold text-foreground">
             Aucun résultat

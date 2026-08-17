@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { RewardWheel } from "@/components/public/RewardWheel";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -197,7 +198,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
 
         {loading ? (
           <p className="mt-6 text-sm font-bold text-slate-500">
-            Chargement du formulaire…
+            <LoadingLabel>Chargement du formulaire…</LoadingLabel>
           </p>
         ) : invalidSlug ? (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">

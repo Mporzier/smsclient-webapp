@@ -1,4 +1,3 @@
-import { fetchGroupsWithStats } from "@/lib/supabase/groups";
 import { QR_CAPTURE_SOURCE } from "@/lib/supabase/qrStats";
 import type { StatisticsSnapshot } from "@/lib/types/statistics";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -49,50 +48,56 @@ export async function fetchStatisticsSnapshot(
 ): Promise<{ data: StatisticsSnapshot; error: Error | null }> {
   const { fromIso, toIso } = buildUtcRange(range.from, range.to);
 
-  const { data: campaignsRaw, error: campaignsError } = await supabase
-    .from("sms_campaigns")
-    .select("created_at,status,recipient_count,credits_estimated")
-    .eq("user_id", userId)
-    .gte("created_at", fromIso)
-    .lte("created_at", toIso)
-    .order("created_at", { ascending: true });
+  const [campaignsRes, stopsRes, inscriptionsRes, topGroupsRes] =
+    await Promise.all([
+      supabase
+        .from("sms_campaigns")
+        .select("created_at,status,recipient_count,credits_estimated")
+        .eq("user_id", userId)
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("clients")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("stop_sms", true)
+        .is("deleted_at", null),
+      supabase
+        .from("clients")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("source", QR_CAPTURE_SOURCE)
+        .is("deleted_at", null)
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso),
+      supabase
+        .from("client_groups")
+        .select("name,member_count")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .order("member_count", { ascending: false })
+        .order("name", { ascending: true })
+        .limit(5),
+    ]);
 
-  if (campaignsError) {
-    return { data: emptySnapshot(), error: new Error(campaignsError.message) };
+  if (campaignsRes.error) {
+    return { data: emptySnapshot(), error: new Error(campaignsRes.error.message) };
   }
-  const campaigns = (campaignsRaw ?? []) as SmsCampaignStatRecord[];
-
-  const { count: stopCount, error: stopsError } = await supabase
-    .from("clients")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("stop_sms", true)
-    .is("deleted_at", null);
-
-  if (stopsError) {
-    return { data: emptySnapshot(), error: new Error(stopsError.message) };
+  if (stopsRes.error) {
+    return { data: emptySnapshot(), error: new Error(stopsRes.error.message) };
   }
-
-  const { count: inscriptionCount, error: inscriptionsError } = await supabase
-    .from("clients")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("source", QR_CAPTURE_SOURCE)
-    .is("deleted_at", null)
-    .gte("created_at", fromIso)
-    .lte("created_at", toIso);
-
-  if (inscriptionsError) {
+  if (inscriptionsRes.error) {
     return {
       data: emptySnapshot(),
-      error: new Error(inscriptionsError.message),
+      error: new Error(inscriptionsRes.error.message),
     };
   }
-
-  const groupsResult = await fetchGroupsWithStats(supabase, userId);
-  if (groupsResult.error) {
-    return { data: emptySnapshot(), error: groupsResult.error };
+  if (topGroupsRes.error) {
+    return { data: emptySnapshot(), error: new Error(topGroupsRes.error.message) };
   }
+
+  const campaigns = (campaignsRes.data ?? []) as SmsCampaignStatRecord[];
 
   let smsSent = 0;
   let creditsConsumed = 0;
@@ -136,21 +141,20 @@ export async function fetchStatisticsSnapshot(
     }))
     .slice(-12);
 
-  const topGroups = [...groupsResult.data]
-    .sort((a, b) => b.contactCount - a.contactCount)
-    .slice(0, 5)
-    .map((g) => ({
-      groupName: g.name,
-      contacts: g.contactCount,
-    }));
+  const topGroups = (
+    (topGroupsRes.data ?? []) as { name: string; member_count: number | null }[]
+  ).map((g) => ({
+    groupName: g.name,
+    contacts: g.member_count ?? 0,
+  }));
 
   return {
     data: {
       kpis: {
         smsSent,
         deliveryRate,
-        inscriptionCount: inscriptionCount ?? 0,
-        stopCount: stopCount ?? 0,
+        inscriptionCount: inscriptionsRes.count ?? 0,
+        stopCount: stopsRes.count ?? 0,
         creditsConsumed,
       },
       campaignSeries,

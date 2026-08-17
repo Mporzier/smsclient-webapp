@@ -17,7 +17,8 @@ import { QrCapturePhonePreview } from "@/components/smsclient/views/QrCapturePho
 import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
 import { useQrStats } from "@/hooks/useQrStats";
 import type { QrWheelConfig } from "@/lib/types/qrWheel";
-import { CircleCheck, Copy, Download, Gift, Loader2, MessageCircle, QrCode } from "lucide-react";
+import { LoadingLabel } from "@/components/ui/loading-label";
+import { CircleCheck, Copy, Download, Gift, MessageCircle, QrCode } from "lucide-react";
 
 type QrCodeViewProps = {
   publicUrl: string;
@@ -444,14 +445,13 @@ export function QrCodeView({
                 aria-busy="true"
                 aria-label={t("common.loading")}
               >
-                <div className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
-                  <Loader2
-                    className="h-5 w-5 shrink-0 animate-spin text-blue-600"
-                    aria-hidden
-                  />
-                  <span className="text-sm font-bold text-slate-700">
+                <div className="rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+                  <LoadingLabel
+                    className="text-sm font-bold text-slate-700"
+                    spinnerClassName="size-5"
+                  >
                     {t("common.loading")}
-                  </span>
+                  </LoadingLabel>
                 </div>
               </div>
             ) : null}

@@ -25,3 +25,35 @@ export function chunkList<T>(
   }
   return out;
 }
+
+/**
+ * Pagination ids-safe : avance de `page.length`, stop seulement sur page vide.
+ * `pageSize` défaut = LIST_PAGE_SIZE (50) pour coller au max-rows fréquent.
+ * Ne pas utiliser un pageSize > max-rows serveur avec un break `length < pageSize`
+ * (faux « fin » après la 1re page).
+ */
+export async function paginateRange<T>(
+  fetchPage: (
+    from: number,
+    to: number,
+  ) => Promise<{ data: T[] | null; error: { message: string } | null }>,
+  pageSize: number = LIST_PAGE_SIZE,
+): Promise<{ data: T[]; error: Error | null }> {
+  const out: T[] = [];
+  let from = 0;
+  for (let guard = 0; guard < 10_000; guard++) {
+    const { data, error } = await fetchPage(from, from + pageSize - 1);
+    if (error) {
+      // Garde le partiel si déjà des pages — l’appelant décide.
+      if (out.length > 0) {
+        return { data: out, error: new Error(error.message) };
+      }
+      return { data: [], error: new Error(error.message) };
+    }
+    const page = data ?? [];
+    if (page.length === 0) break;
+    out.push(...page);
+    from += page.length;
+  }
+  return { data: out, error: null };
+}

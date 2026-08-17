@@ -4,6 +4,7 @@ export type DeletedContactRow = {
   phone: string;
   groupsLabel: string;
   deletedLabel: string;
+  expiresLabel: string;
 };
 
 export type DeletedGroupRow = {
@@ -12,4 +13,5 @@ export type DeletedGroupRow = {
   description: string;
   contactCount: number;
   deletedLabel: string;
+  expiresLabel: string;
 };

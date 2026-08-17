@@ -1,5 +1,6 @@
 "use client";
 
+import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { buildCampaignRecipientIdSet } from "@/lib/proto/smsPersonalization";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
@@ -38,6 +39,18 @@ export type CampaignWizardStep1Props = {
   resolvedGroupMemberIds?: readonly string[];
   groupMemberIdsByName?: Record<string, string[]>;
   recipientsResolving?: boolean;
+  onCountEligibleContacts?: (
+    search: string,
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchEligibleContactIds?: (
+    search: string,
+  ) => Promise<{ data: string[]; error: Error | null }>;
+  onCountMatchingGroups?: (
+    search: string,
+  ) => Promise<{ count: number; error: Error | null }>;
+  onFetchMatchingGroupNames?: (
+    search: string,
+  ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
 type RecipientTab = "manual" | "groups";
@@ -71,6 +84,10 @@ export function useCampaignWizardStep1State({
   resolvedGroupMemberIds = [],
   groupMemberIdsByName = {},
   recipientsResolving = false,
+  onCountEligibleContacts,
+  onFetchEligibleContactIds,
+  onCountMatchingGroups,
+  onFetchMatchingGroupNames,
 }: CampaignWizardStep1Props) {
   const [tab, setTab] = useState<RecipientTab>("manual");
 
@@ -145,13 +162,6 @@ export function useCampaignWizardStep1State({
     },
     [recipientMode, effectiveSelectedIds]
   );
-
-  const contactsSelectedCount = useMemo(() => {
-    if (recipientMode === "all") {
-      return contacts.filter((c) => c.optIn && !c.stopSms).length;
-    }
-    return effectiveSelectedIds.size;
-  }, [recipientMode, contacts, effectiveSelectedIds]);
 
   const selectedGroupsDisplay = useMemo(
     () =>
@@ -299,67 +309,172 @@ export function useCampaignWizardStep1State({
     ]
   );
 
-  const selectAllVisibleContacts = useCallback(() => {
-    const visibleIds = selectableFilteredContacts.map((c) => c.id);
-    setExcludedContactIds((prev) =>
-      prev.filter((id) => !visibleIds.includes(id))
-    );
-    setSelectedContactIds((prev) => {
-      const next = new Set(prev);
-      for (const id of visibleIds) next.add(id);
-      return Array.from(next);
-    });
-    setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
+  const contactLoadedIds = useMemo(
+    () => selectableFilteredContacts.map((c) => c.id),
+    [selectableFilteredContacts],
+  );
+
+  const setContactIdsFromGmail = useCallback(
+    (ids: string[]) => {
+      setSelectedContactIds(ids);
+      setExcludedContactIds([]);
+      setRecipientMode(
+        selectedGroupNames.length > 0
+          ? "lists"
+          : ids.length > 0
+            ? "manual"
+            : "manual",
+      );
+    },
+    [
+      setSelectedContactIds,
+      setExcludedContactIds,
+      setRecipientMode,
+      selectedGroupNames.length,
+    ],
+  );
+
+  const countEligibleContacts = useCallback(async () => {
+    if (!onCountEligibleContacts) {
+      return { count: contactLoadedIds.length, error: null };
+    }
+    return onCountEligibleContacts(contactsSearchQuery);
+  }, [onCountEligibleContacts, contactsSearchQuery, contactLoadedIds.length]);
+
+  const fetchEligibleContactIds = useCallback(async () => {
+    if (!onFetchEligibleContactIds) {
+      return { data: contactLoadedIds, error: null };
+    }
+    return onFetchEligibleContactIds(contactsSearchQuery);
+  }, [onFetchEligibleContactIds, contactsSearchQuery, contactLoadedIds]);
+
+  const {
+    selectLoaded: selectContactsLoaded,
+    clearSelection: clearContactsSelection,
+    showExpandBanner: showContactsExpandBanner,
+    matchTotal: contactsMatchTotal,
+    displaySelectedCount: contactsDisplaySelectedCount,
+    counting: contactsCounting,
+    expanding: contactsExpanding,
+    expandError: contactsExpandError,
+    expandToMatchAll: expandContactsSelection,
+  } = useGmailSelectAll({
+    search: contactsSearchQuery,
+    loadedIds: contactLoadedIds,
+    selectedIds: selectedContactIds,
+    setSelectedIds: setContactIdsFromGmail,
+    countMatch: countEligibleContacts,
+    fetchAllIds: fetchEligibleContactIds,
+    expandCandidate: contactsHasMore,
+  });
+
+  const groupLoadedNames = useMemo(
+    () => filteredGroups.map((g) => g.name),
+    [filteredGroups],
+  );
+
+  const setGroupNamesFromGmail = useCallback(
+    (names: string[]) => {
+      setSelectedGroupNames(names);
+      setRecipientMode(
+        names.length > 0
+          ? "lists"
+          : selectedContactIds.length > 0
+            ? "manual"
+            : "manual",
+      );
+    },
+    [setSelectedGroupNames, setRecipientMode, selectedContactIds.length],
+  );
+
+  const countGroupsMatch = useCallback(async () => {
+    if (!onCountMatchingGroups) {
+      return { count: groupLoadedNames.length, error: null };
+    }
+    return onCountMatchingGroups(groupsSearchQuery);
+  }, [onCountMatchingGroups, groupsSearchQuery, groupLoadedNames.length]);
+
+  const fetchGroupNamesMatch = useCallback(async () => {
+    if (!onFetchMatchingGroupNames) {
+      return { data: groupLoadedNames, error: null };
+    }
+    return onFetchMatchingGroupNames(groupsSearchQuery);
+  }, [onFetchMatchingGroupNames, groupsSearchQuery, groupLoadedNames]);
+
+  const {
+    selectLoaded: selectGroupsLoaded,
+    clearSelection: clearGroupsSelection,
+    showExpandBanner: showGroupsExpandBanner,
+    matchTotal: groupsMatchTotal,
+    displaySelectedCount: groupsDisplaySelectedCount,
+    counting: groupsCounting,
+    expanding: groupsExpanding,
+    expandError: groupsExpandError,
+    expandToMatchAll: expandGroupsSelection,
+  } = useGmailSelectAll({
+    search: groupsSearchQuery,
+    loadedIds: groupLoadedNames,
+    selectedIds: selectedGroupNames,
+    setSelectedIds: setGroupNamesFromGmail,
+    countMatch: countGroupsMatch,
+    fetchAllIds: fetchGroupNamesMatch,
+    expandCandidate: groupsHasMore,
+  });
+
+  const contactsSelectedCount = useMemo(() => {
+    if (recipientMode === "all") {
+      return contacts.filter((c) => c.optIn && !c.stopSms).length;
+    }
+    return Math.max(contactsDisplaySelectedCount, effectiveSelectedIds.size);
   }, [
-    selectableFilteredContacts,
-    selectedGroupNames.length,
-    setExcludedContactIds,
-    setSelectedContactIds,
-    setRecipientMode,
+    recipientMode,
+    contacts,
+    effectiveSelectedIds,
+    contactsDisplaySelectedCount,
   ]);
-
-  const selectAllVisibleGroups = useCallback(() => {
-    setSelectedGroupNames((prev) => {
-      const next = new Set(prev);
-      for (const g of filteredGroups) next.add(g.name);
-      return Array.from(next);
-    });
-    setRecipientMode("lists");
-  }, [filteredGroups, setSelectedGroupNames, setRecipientMode]);
-
-  const clearManualSelection = useCallback(() => {
-    setSelectedContactIds([]);
-    setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
-  }, [
-    selectedGroupNames.length,
-    setSelectedContactIds,
-    setRecipientMode,
-  ]);
-
-  const clearGroupSelection = useCallback(() => {
-    setSelectedGroupNames([]);
-    setRecipientMode(selectedContactIds.length > 0 ? "manual" : "manual");
-  }, [selectedContactIds.length, setSelectedGroupNames, setRecipientMode]);
 
   const handleSelectAll = useCallback(() => {
-    if (tab === "manual") selectAllVisibleContacts();
-    else selectAllVisibleGroups();
-  }, [tab, selectAllVisibleContacts, selectAllVisibleGroups]);
+    if (tab === "manual") selectContactsLoaded();
+    else selectGroupsLoaded();
+  }, [tab, selectContactsLoaded, selectGroupsLoaded]);
 
   const handleClearSelection = useCallback(() => {
-    if (tab === "manual") clearManualSelection();
-    else clearGroupSelection();
-  }, [tab, clearManualSelection, clearGroupSelection]);
+    if (tab === "manual") clearContactsSelection();
+    else clearGroupsSelection();
+  }, [tab, clearContactsSelection, clearGroupsSelection]);
 
   const canSelectAll =
     tab === "manual"
-      ? selectableFilteredContacts.length > 0 && recipientMode !== "all"
+      ? selectableFilteredContacts.length > 0
       : filteredGroups.length > 0;
 
   const canClearSelection =
     tab === "manual"
-      ? recipientMode === "all" || selectedContactIds.length > 0
-      : selectedGroupNames.length > 0;
+      ? contactsDisplaySelectedCount > 0
+      : groupsDisplaySelectedCount > 0;
+
+  const expandBanner =
+    tab === "manual"
+      ? {
+          show: showContactsExpandBanner,
+          matchTotal: contactsMatchTotal,
+          counting: contactsCounting,
+          expanding: contactsExpanding,
+          expandError: contactsExpandError,
+          hasSearch: contactsSearchQuery.trim().length > 0,
+          entityLabel: "contacts éligibles",
+          onExpand: () => void expandContactsSelection(),
+        }
+      : {
+          show: showGroupsExpandBanner,
+          matchTotal: groupsMatchTotal,
+          counting: groupsCounting,
+          expanding: groupsExpanding,
+          expandError: groupsExpandError,
+          hasSearch: groupsSearchQuery.trim().length > 0,
+          entityLabel: "groupes",
+          onExpand: () => void expandGroupsSelection(),
+        };
 
   const listHasMore = tab === "manual" ? contactsHasMore : groupsHasMore;
   const listLoadingMore =
@@ -399,6 +514,7 @@ export function useCampaignWizardStep1State({
     onListLoadMore,
     listRowCount,
     recipientsResolving,
+    expandBanner,
   };
 }
 

@@ -13,10 +13,11 @@ import {
 import {
   POSTGREST_IN_CHUNK,
   POSTGREST_INSERT_CHUNK,
-  POSTGREST_PAGE,
   LIST_PAGE_SIZE,
   chunkList,
+  paginateRange,
 } from "@/lib/supabase/postgrestChunk";
+import { applyClientListSearch } from "@/lib/supabase/clientSearch";
 
 export type ClientRecord = {
   id: string;
@@ -143,49 +144,41 @@ export function clientRecordToRow(
   };
 }
 
-async function fetchMembershipsByClientIds(
-  supabase: SupabaseClient,
-  clientIds: string[],
-): Promise<{ map: Map<string, string[]>; error: Error | null }> {
-  const map = new Map<string, string[]>();
-  if (clientIds.length === 0) {
-    return { map, error: null };
-  }
+/** Embed PostgREST — groupes en même round-trip que `clients`. */
+const CLIENT_MEMBERSHIPS_EMBED =
+  "client_group_members(client_groups(name,deleted_at))";
 
-  for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
-    const { data, error } = await supabase
-      .from("client_group_members")
-      .select("client_id, client_groups(name, deleted_at)")
-      .in("client_id", chunk);
+type GroupRefEmbed = { name: string; deleted_at: string | null };
+type MembershipEmbedRow = {
+  client_groups: GroupRefEmbed | GroupRefEmbed[] | null | undefined;
+};
 
-    if (error) {
-      return { map, error: new Error(error.message) };
-    }
-    for (const raw of data ?? []) {
-      const row = raw as {
-        client_id: string;
-        client_groups:
-          | { name: string; deleted_at: string | null }
-          | { name: string; deleted_at: string | null }[]
-          | null
-          | undefined;
-      };
-      const cg = row.client_groups;
-      const group = Array.isArray(cg) ? cg[0] : cg;
-      if (group?.deleted_at) continue;
-      const name = group?.name?.trim();
-      if (!name) continue;
-      const list = map.get(row.client_id) ?? [];
-      list.push(name);
-      map.set(row.client_id, list);
-    }
+function groupsFromMembershipEmbed(
+  memberships: MembershipEmbedRow[] | null | undefined,
+): string[] {
+  const names: string[] = [];
+  for (const m of memberships ?? []) {
+    const cg = m.client_groups;
+    const group = Array.isArray(cg) ? cg[0] : cg;
+    if (group?.deleted_at) continue;
+    const name = group?.name?.trim();
+    if (name) names.push(name);
   }
-
-  for (const [k, v] of map) {
-    map.set(k, normalizeGroupLabels(v));
-  }
-  return { map, error: null };
+  return normalizeGroupLabels(names);
 }
+
+type ClientRecordWithMemberships = ClientRecord & {
+  client_group_members?: MembershipEmbedRow[] | null;
+};
+
+type PickerRecordWithMemberships = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone_e164: string;
+  group_label: string | null;
+  client_group_members?: MembershipEmbedRow[] | null;
+};
 
 /** Numéros E164 déjà en base (non soft-deleted) — preview import CSV. */
 export async function fetchExistingClientPhoneE164s(
@@ -241,9 +234,9 @@ export async function fetchClients(
 const CLIENT_LIST_COLS =
   "id,user_id,first_name,last_name,phone_e164,group_label,notes,birthday,custom_fields,source,opt_in,stop_sms,last_sms_sent_at,last_sms_body,unsubscribed_at,created_at";
 
-function escapeIlike(raw: string): string {
-  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
+const CLIENT_LIST_SELECT = `${CLIENT_LIST_COLS},${CLIENT_MEMBERSHIPS_EMBED}`;
+
+const PICKER_LIST_SELECT = `id,first_name,last_name,phone_e164,group_label,${CLIENT_MEMBERSHIPS_EMBED}`;
 
 export type FetchClientsPageArgs = {
   offset: number;
@@ -265,28 +258,14 @@ export async function fetchClientsPage(
 }> {
   const limit = args.limit ?? LIST_PAGE_SIZE;
   const offset = Math.max(0, args.offset);
-  const q = (args.search ?? "").trim();
   const includeTotal = args.includeTotal ?? offset === 0;
 
   let query = supabase
     .from("clients")
-    .select(CLIENT_LIST_COLS, includeTotal ? { count: "exact" } : undefined)
+    .select(CLIENT_LIST_SELECT, includeTotal ? { count: "exact" } : undefined)
     .is("deleted_at", null);
 
-  if (q) {
-    const safe = escapeIlike(q);
-    const pattern = `%${safe}%`;
-    // Quotes: espaces / caractères spéciaux dans le filtre `or`.
-    const p = `"${pattern.replace(/"/g, '\\"')}"`;
-    query = query.or(
-      [
-        `first_name.ilike.${p}`,
-        `last_name.ilike.${p}`,
-        `phone_e164.ilike.${p}`,
-        `group_label.ilike.${p}`,
-      ].join(","),
-    );
-  }
+  query = applyClientListSearch(query, args.search ?? "");
 
   for (const o of contactSortToOrders(args.sort)) {
     query = query.order(o.column, {
@@ -303,14 +282,7 @@ export async function fetchClientsPage(
     return { data: [], hasMore: false, error: new Error(error.message) };
   }
 
-  const page = (data ?? []) as ClientRecord[];
-  const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
-    supabase,
-    page.map((r) => r.id),
-  );
-  if (memErr) {
-    return { data: [], hasMore: false, error: memErr };
-  }
+  const page = (data ?? []) as ClientRecordWithMemberships[];
 
   const needsFallback = page.some((r) => !r.last_sms_body && r.last_sms_sent_at);
   let fallbackBody: string | null = null;
@@ -326,16 +298,59 @@ export async function fetchClientsPage(
   }
 
   const rows = page.map((r) => {
+    const groups = groupsFromMembershipEmbed(r.client_group_members);
     const row = r.last_sms_body
       ? r
       : { ...r, last_sms_body: r.last_sms_sent_at ? fallbackBody : null };
-    return clientRecordToRow(row, memMap.get(r.id) ?? []);
+    return clientRecordToRow(row, groups);
   });
 
   return {
     data: rows,
     hasMore: page.length === limit,
     totalCount: includeTotal && typeof count === "number" ? count : undefined,
+    error: null,
+  };
+}
+
+export async function countClientIds(
+  supabase: SupabaseClient,
+  args: { search?: string; eligibleOnly: boolean },
+): Promise<{ count: number; error: Error | null }> {
+  let query = supabase
+    .from("clients")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null);
+  if (args.eligibleOnly) {
+    query = query.eq("opt_in", true).eq("stop_sms", false);
+  }
+  query = applyClientListSearch(query, args.search ?? "");
+  const { count, error } = await query;
+  if (error) return { count: 0, error: new Error(error.message) };
+  return { count: typeof count === "number" ? count : 0, error: null };
+}
+
+export async function fetchClientIds(
+  supabase: SupabaseClient,
+  args: { search?: string; eligibleOnly: boolean },
+): Promise<{ data: string[]; error: Error | null }> {
+  const { data, error } = await paginateRange<{ id: string }>(
+    async (from, to) => {
+      let query = supabase
+        .from("clients")
+        .select("id")
+        .is("deleted_at", null);
+      if (args.eligibleOnly) {
+        query = query.eq("opt_in", true).eq("stop_sms", false);
+      }
+      query = applyClientListSearch(query, args.search ?? "");
+      const res = await query.order("id", { ascending: true }).range(from, to);
+      return { data: (res.data as { id: string }[] | null) ?? null, error: res.error };
+    },
+  );
+  if (error) return { data: [], error };
+  return {
+    data: data.map((row) => row.id).filter(Boolean),
     error: null,
   };
 }
@@ -397,46 +412,29 @@ export async function fetchContactPickerSummariesPage(
 }> {
   const limit = args.limit ?? LIST_PAGE_SIZE;
   const offset = Math.max(0, args.offset);
-  const q = (args.search ?? "").trim();
   const includeTotal = args.includeTotal ?? offset === 0;
 
   let query = supabase
     .from("clients")
-    .select("id,first_name,last_name,phone_e164,group_label", {
+    .select(PICKER_LIST_SELECT, {
       count: includeTotal ? "exact" : undefined,
     })
-    .is("deleted_at", null)
+    .is("deleted_at", null);
+
+  query = applyClientListSearch(query, args.search ?? "");
+
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .range(offset, offset + limit - 1);
-
-  if (q) {
-    const safe = escapeIlike(q);
-    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
-    query = query.or(
-      [
-        `first_name.ilike.${p}`,
-        `last_name.ilike.${p}`,
-        `phone_e164.ilike.${p}`,
-        `group_label.ilike.${p}`,
-      ].join(","),
-    );
-  }
-
-  const { data, error, count } = await query;
   if (error) {
     return { data: [], hasMore: false, error: new Error(error.message) };
   }
-  const page = (data ?? []) as Parameters<typeof rowToPickerSummary>[0][];
-  const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
-    supabase,
-    page.map((r) => r.id),
-  );
-  if (memErr) {
-    return { data: [], hasMore: false, error: memErr };
-  }
+  const page = (data ?? []) as PickerRecordWithMemberships[];
   return {
-    data: page.map((r) => rowToPickerSummary(r, memMap.get(r.id))),
+    data: page.map((r) =>
+      rowToPickerSummary(r, groupsFromMembershipEmbed(r.client_group_members)),
+    ),
     hasMore: page.length === limit,
     totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
@@ -448,25 +446,25 @@ export async function fetchGroupMemberClientIds(
   supabase: SupabaseClient,
   groupId: string,
 ): Promise<{ data: string[]; error: Error | null }> {
-  const ids: string[] = [];
-  for (let from = 0; ; from += POSTGREST_PAGE) {
-    const { data, error } = await supabase
-      .from("client_group_members")
-      .select("client_id")
-      .eq("group_id", groupId)
-      .order("client_id", { ascending: true })
-      .range(from, from + POSTGREST_PAGE - 1);
-    if (error) {
-      return { data: [], error: new Error(error.message) };
-    }
-    const page = data ?? [];
-    for (const row of page) {
-      const id = (row as { client_id: string }).client_id;
-      if (id) ids.push(id);
-    }
-    if (page.length < POSTGREST_PAGE) break;
-  }
-  return { data: ids, error: null };
+  const { data, error } = await paginateRange<{ client_id: string }>(
+    async (from, to) => {
+      const res = await supabase
+        .from("client_group_members")
+        .select("client_id")
+        .eq("group_id", groupId)
+        .order("client_id", { ascending: true })
+        .range(from, to);
+      return {
+        data: (res.data as { client_id: string }[] | null) ?? null,
+        error: res.error,
+      };
+    },
+  );
+  if (error) return { data: [], error };
+  return {
+    data: data.map((row) => row.client_id).filter(Boolean),
+    error: null,
+  };
 }
 
 /** Contacts complets par IDs (wizard campagne — indépendant du lazyload liste). */
@@ -479,22 +477,20 @@ export async function fetchClientsByIds(
   for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
     const { data, error } = await supabase
       .from("clients")
-      .select(CLIENT_LIST_COLS)
+      .select(CLIENT_LIST_SELECT)
       .in("id", chunk)
       .is("deleted_at", null);
     if (error) {
       return { data: [], error: new Error(error.message) };
     }
-    const page = (data ?? []) as ClientRecord[];
-    const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
-      supabase,
-      page.map((r) => r.id),
-    );
-    if (memErr) {
-      return { data: [], error: memErr };
-    }
+    const page = (data ?? []) as ClientRecordWithMemberships[];
     for (const raw of page) {
-      out.push(clientRecordToRow(raw, memMap.get(raw.id) ?? []));
+      out.push(
+        clientRecordToRow(
+          raw,
+          groupsFromMembershipEmbed(raw.client_group_members),
+        ),
+      );
     }
   }
   return { data: out, error: null };
@@ -509,22 +505,20 @@ export async function fetchContactPickerSummariesByIds(
   for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
     const { data, error } = await supabase
       .from("clients")
-      .select("id,first_name,last_name,phone_e164,group_label")
+      .select(PICKER_LIST_SELECT)
       .in("id", chunk)
       .is("deleted_at", null);
     if (error) {
       return { data: [], error: new Error(error.message) };
     }
-    const rows = (data ?? []) as Parameters<typeof rowToPickerSummary>[0][];
-    const { map: memMap, error: memErr } = await fetchMembershipsByClientIds(
-      supabase,
-      rows.map((r) => r.id),
-    );
-    if (memErr) {
-      return { data: [], error: memErr };
-    }
+    const rows = (data ?? []) as PickerRecordWithMemberships[];
     for (const raw of rows) {
-      out.push(rowToPickerSummary(raw, memMap.get(raw.id)));
+      out.push(
+        rowToPickerSummary(
+          raw,
+          groupsFromMembershipEmbed(raw.client_group_members),
+        ),
+      );
     }
   }
   return { data: out, error: null };
@@ -637,6 +631,7 @@ async function syncClientGroupMemberships(
     .from("client_groups")
     .select("id,name")
     .eq("user_id", userId)
+    .in("name", normalized)
     .is("deleted_at", null);
   if (gErr) {
     return { error: new Error(gErr.message) };

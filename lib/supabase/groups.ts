@@ -8,6 +8,7 @@ import {
   LIST_PAGE_SIZE,
   POSTGREST_IN_CHUNK,
   chunkList,
+  paginateRange,
 } from "@/lib/supabase/postgrestChunk";
 
 export type ClientGroupRecord = {
@@ -59,6 +60,17 @@ function escapeIlike(raw: string): string {
   return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
+function applyGroupListSearch<T extends { or: (filters: string) => T }>(
+  query: T,
+  search: string,
+): T {
+  const q = search.trim();
+  if (!q) return query;
+  const safe = escapeIlike(q);
+  const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+  return query.or(`name.ilike.${p},description.ilike.${p}`);
+}
+
 export async function fetchGroupsPage(
   supabase: SupabaseClient,
   userId: string,
@@ -77,7 +89,6 @@ export async function fetchGroupsPage(
 }> {
   const limit = args.limit ?? LIST_PAGE_SIZE;
   const offset = Math.max(0, args.offset);
-  const q = (args.search ?? "").trim();
   const includeTotal = args.includeTotal ?? offset === 0;
 
   let query = supabase
@@ -88,11 +99,7 @@ export async function fetchGroupsPage(
     .eq("user_id", userId)
     .is("deleted_at", null);
 
-  if (q) {
-    const safe = escapeIlike(q);
-    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
-    query = query.or(`name.ilike.${p},description.ilike.${p}`);
-  }
+  query = applyGroupListSearch(query, args.search ?? "");
 
   for (const o of groupSortToOrders(args.sort)) {
     query = query.order(o.column, {
@@ -138,6 +145,42 @@ export async function fetchGroupsPage(
     totalCount: includeTotal && typeof count === "number" ? count : undefined,
     error: null,
   };
+}
+
+export async function countMatchingGroups(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { search?: string } = {},
+): Promise<{ count: number; error: Error | null }> {
+  let query = supabase
+    .from("client_groups")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+  query = applyGroupListSearch(query, args.search ?? "");
+  const { count, error } = await query;
+  if (error) return { count: 0, error: new Error(error.message) };
+  return { count: typeof count === "number" ? count : 0, error: null };
+}
+
+export async function fetchMatchingGroups(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { search?: string } = {},
+): Promise<{ data: { id: string; name: string }[]; error: Error | null }> {
+  return paginateRange<{ id: string; name: string }>(async (from, to) => {
+    let query = supabase
+      .from("client_groups")
+      .select("id,name")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+    query = applyGroupListSearch(query, args.search ?? "");
+    const res = await query.order("id", { ascending: true }).range(from, to);
+    return {
+      data: (res.data as { id: string; name: string }[] | null) ?? null,
+      error: res.error,
+    };
+  });
 }
 
 export async function insertClientGroup(

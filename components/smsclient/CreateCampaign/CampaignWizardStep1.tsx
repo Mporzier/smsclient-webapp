@@ -1,8 +1,10 @@
 "use client";
 
 import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
@@ -81,6 +83,7 @@ export function CampaignWizardStep1Main() {
     listLoadingMore,
     onListLoadMore,
     listRowCount,
+    expandBanner,
   } = useStep1Context();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -172,7 +175,7 @@ export function CampaignWizardStep1Main() {
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <div
-          className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5"
+          className="flex h-9 min-w-0 max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5"
           role="search"
         >
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -193,6 +196,17 @@ export function CampaignWizardStep1Main() {
             }
           />
         </div>
+        {expandBanner.show ? (
+          <SelectAllExpandBanner
+            matchTotal={expandBanner.matchTotal}
+            hasSearch={expandBanner.hasSearch}
+            entityLabel={expandBanner.entityLabel}
+            counting={expandBanner.counting}
+            expanding={expandBanner.expanding}
+            error={expandBanner.expandError}
+            onExpand={expandBanner.onExpand}
+          />
+        ) : null}
         <Button
           variant="outline"
           size="lg"
@@ -319,7 +333,11 @@ export function CampaignWizardStep1Main() {
                   className="flex h-10 items-center justify-center text-xs text-muted-foreground"
                   aria-hidden
                 >
-                  {listLoadingMore ? "Chargement…" : null}
+                  {listLoadingMore ? (
+                    <LoadingLabel className="text-xs" spinnerClassName="size-3.5">
+                      Chargement…
+                    </LoadingLabel>
+                  ) : null}
                 </div>
               ) : null}
             </>
@@ -379,7 +397,11 @@ export function CampaignWizardStep1Main() {
                 className="flex h-10 items-center justify-center text-xs text-muted-foreground"
                 aria-hidden
               >
-                {listLoadingMore ? "Chargement…" : null}
+                {listLoadingMore ? (
+                  <LoadingLabel className="text-xs" spinnerClassName="size-3.5">
+                    Chargement…
+                  </LoadingLabel>
+                ) : null}
               </div>
             ) : null}
           </>

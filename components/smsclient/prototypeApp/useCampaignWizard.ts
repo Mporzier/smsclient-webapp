@@ -4,10 +4,16 @@ import { buildDefaultCampaignTitle } from "@/components/smsclient/CreateCampaign
 import type { SmsComposeApproach } from "@/components/smsclient/CreateCampaign/SmsComposeApproachCards";
 import { insertSmsCampaign } from "@/lib/supabase/campaigns";
 import {
+  countClientIds,
+  fetchClientIds,
   fetchClientsByIds,
   fetchGroupMemberClientIds,
   stampLastSmsOnContacts,
 } from "@/lib/supabase/clients";
+import {
+  countMatchingGroups,
+  fetchMatchingGroups,
+} from "@/lib/supabase/groups";
 import { buildCampaignRecipientIdSet } from "@/lib/proto/smsPersonalization";
 import { isValidFrMobile } from "@/lib/proto/smsUtils";
 import { parisLocalToISO } from "@/lib/proto/timezone";
@@ -653,6 +659,22 @@ export function useCampaignWizard({
     groupMemberIdsByName,
     resolvedContacts: campaignSelectedContacts,
     recipientsResolving,
+    onCountEligibleContacts: (search: string) =>
+      countClientIds(supabase, { search, eligibleOnly: true }),
+    onFetchEligibleContactIds: (search: string) =>
+      fetchClientIds(supabase, { search, eligibleOnly: true }),
+    onCountMatchingGroups: (search: string) =>
+      userId
+        ? countMatchingGroups(supabase, userId, { search })
+        : Promise.resolve({ count: 0, error: null }),
+    onFetchMatchingGroupNames: async (search: string) => {
+      if (!userId) return { data: [], error: null };
+      const { data, error } = await fetchMatchingGroups(supabase, userId, {
+        search,
+      });
+      if (error) return { data: [], error };
+      return { data: data.map((g) => g.name), error: null };
+    },
     creditsAvailable: creditsBalance,
     onConfirmCampaign: handleCampaignConfirm,
   } as const;

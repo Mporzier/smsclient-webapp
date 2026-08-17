@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { ModalPanel } from "@/components/smsclient/views/parametres/SettingCard";
 import {
@@ -141,7 +142,7 @@ export function CustomFieldsSettingsPanel({
 
         {loading ? (
           <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-            {t("common.loading")}
+            <LoadingLabel>{t("common.loading")}</LoadingLabel>
           </p>
         ) : (
           <ul className="m-0 mb-4 list-none space-y-2 p-0">
