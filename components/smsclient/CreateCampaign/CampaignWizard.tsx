@@ -43,6 +43,7 @@ import {
   CampaignWizardStep1Provider,
   CampaignWizardStep1Main,
   CampaignWizardStep1Summary,
+  CampaignWizardStep1ContinueButton,
 } from "./CampaignWizardStep1";
 import { SmsMessageComposer } from "./SmsMessageComposer";
 import {
@@ -551,15 +552,6 @@ export function CampaignWizard({
     setStepWarnings([]);
   }
 
-  const validateStep1 = useCallback((): boolean => {
-    const errors: string[] = [];
-    if (recipients === 0)
-      errors.push("Sélectionnez au moins un destinataire éligible.");
-    setStepErrors(errors);
-    setStepWarnings([]);
-    return errors.length === 0;
-  }, [recipients]);
-
   const validateStep2 = useCallback((): boolean => {
     const errors: string[] = [];
     if (!composeApproach) {
@@ -619,16 +611,29 @@ export function CampaignWizard({
   ]);
 
   const handleNext = useCallback(() => {
-    if (step === 1) {
-      if (!validateStep1()) return;
-      onWizardStepChange(2);
-      return;
-    }
     if (step === 2) {
       if (!validateStep2()) return;
       onWizardStepChange(3);
     }
-  }, [step, validateStep1, validateStep2, onWizardStepChange]);
+  }, [step, validateStep2, onWizardStepChange]);
+
+  const handleStep1Continue = useCallback(
+    (ready: { contactIds: string[]; groupNames: string[] }) => {
+      const hasSelection =
+        ready.contactIds.length > 0 ||
+        ready.groupNames.length > 0 ||
+        recipients > 0;
+      if (!hasSelection) {
+        setStepErrors(["Sélectionnez au moins un destinataire éligible."]);
+        setStepWarnings([]);
+        return;
+      }
+      setStepErrors([]);
+      setStepWarnings([]);
+      onWizardStepChange(2);
+    },
+    [recipients, onWizardStepChange]
+  );
 
   const handleConfirmWithValidation = useCallback(async () => {
     if (!validateStep3()) return;
@@ -693,17 +698,23 @@ export function CampaignWizard({
           </>
         )}
       </Button>
-      {step < 3 && (
-        <Button
-          variant="default"
-          size="lg"
-          className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
-          onClick={handleNext}
-        >
-          Continuer
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      )}
+      {step < 3 &&
+        (step === 1 ? (
+          <CampaignWizardStep1ContinueButton
+            className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
+            onContinue={handleStep1Continue}
+          />
+        ) : (
+          <Button
+            variant="default"
+            size="lg"
+            className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
+            onClick={handleNext}
+          >
+            Continuer
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        ))}
       {step === 3 && (
         <Button
           variant="default"

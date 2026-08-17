@@ -156,14 +156,6 @@ export function useGmailSelectAll({
     resetBanner();
   }, [search, clearOnSearchChange, setSelectedIds, resetBanner]);
 
-  // Si ids ont rattrapé le total attendu → drop le compteur optimiste.
-  useEffect(() => {
-    if (pendingDisplayTotal == null) return;
-    if (selectedCountOf(selectedIds) >= pendingDisplayTotal) {
-      setPendingDisplayTotal(null);
-    }
-  }, [selectedIds, pendingDisplayTotal]);
-
   const selectLoaded = useCallback(() => {
     if (selectLoadedMode === "merge") {
       const next = new Set(toIdArray(selectedIdsRef.current));
@@ -266,7 +258,11 @@ export function useGmailSelectAll({
   }, [pendingDisplayTotal, expandToMatchAll]);
 
   const selectedCount = selectedCountOf(selectedIds);
-  const displaySelectedCount = pendingDisplayTotal ?? selectedCount;
+  // Optimiste tant que les ids n’ont pas rattrapé le total expand (pas d’effect setState).
+  const displaySelectedCount =
+    pendingDisplayTotal != null && selectedCount < pendingDisplayTotal
+      ? pendingDisplayTotal
+      : selectedCount;
   const showExpandBanner = shouldShowExpandBanner({
     pageSelectActive,
     matchTotal,

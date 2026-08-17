@@ -358,6 +358,7 @@ export function useCampaignWizardStep1State({
     expanding: contactsExpanding,
     expandError: contactsExpandError,
     expandToMatchAll: expandContactsSelection,
+    ensureSelectionReady: ensureContactsSelectionReady,
   } = useGmailSelectAll({
     search: contactsSearchQuery,
     loadedIds: contactLoadedIds,
@@ -411,6 +412,7 @@ export function useCampaignWizardStep1State({
     expanding: groupsExpanding,
     expandError: groupsExpandError,
     expandToMatchAll: expandGroupsSelection,
+    ensureSelectionReady: ensureGroupsSelectionReady,
   } = useGmailSelectAll({
     search: groupsSearchQuery,
     loadedIds: groupLoadedNames,
@@ -442,6 +444,14 @@ export function useCampaignWizardStep1State({
     if (tab === "manual") clearContactsSelection();
     else clearGroupsSelection();
   }, [tab, clearContactsSelection, clearGroupsSelection]);
+
+  const ensureSelectionReady = useCallback(async () => {
+    const [contactIds, groupNames] = await Promise.all([
+      ensureContactsSelectionReady(),
+      ensureGroupsSelectionReady(),
+    ]);
+    return { contactIds, groupNames };
+  }, [ensureContactsSelectionReady, ensureGroupsSelectionReady]);
 
   const canSelectAll =
     tab === "manual"
@@ -503,10 +513,12 @@ export function useCampaignWizardStep1State({
     canClearSelection,
     handleSelectAll,
     handleClearSelection,
+    ensureSelectionReady,
     recipientMode,
     selectedGroupNames,
     recipients,
     contactsSelectedCount,
+    groupsSelectedCount: groupsDisplaySelectedCount,
     selectedGroupsDisplay,
     excludedTotal,
     listHasMore,

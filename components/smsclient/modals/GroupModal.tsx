@@ -248,6 +248,7 @@ type GroupModalContactsPanelProps = {
   expandingSelection?: boolean;
   expandError?: string | null;
   onExpandSelection?: () => void;
+  displaySelectedCount?: number;
 };
 
 function GroupModalContactsPanel({
@@ -276,7 +277,10 @@ function GroupModalContactsPanel({
   expandingSelection = false,
   expandError = null,
   onExpandSelection,
+  displaySelectedCount,
 }: GroupModalContactsPanelProps) {
+  const clearDisabled =
+    (displaySelectedCount ?? selectedIds.length) === 0;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportH, setViewportH] = useState(320);
@@ -392,7 +396,7 @@ function GroupModalContactsPanel({
             size="lg"
             className={compactBtnCls}
             onClick={clearSelection}
-            disabled={selectedIds.length === 0}
+            disabled={clearDisabled}
           >
             <Eraser className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Effacer la sélection
@@ -580,6 +584,7 @@ function GroupModalContactsPanel({
           selectedIds={selectedIds}
           contactsTotalCount={contactsTotalCount}
           contactsLoadingMore={contactsLoadingMore}
+          displaySelectedCount={displaySelectedCount ?? selectedIds.length}
         />
       )}
     </div>
@@ -592,19 +597,24 @@ function GroupModalContactsFooter({
   selectedIds,
   contactsTotalCount,
   contactsLoadingMore,
+  displaySelectedCount,
 }: {
   memberCount: number;
   memberIds: string[];
   selectedIds: string[];
   contactsTotalCount: number | null;
   contactsLoadingMore: boolean;
+  displaySelectedCount: number;
 }) {
   const memberIdSet = useMemo(() => new Set(memberIds), [memberIds]);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const selectedNewCount = useMemo(
-    () => selectedIds.filter((id) => !memberIdSet.has(id)).length,
-    [selectedIds, memberIdSet]
-  );
+  const selectedNewCount = useMemo(() => {
+    const fromIds = selectedIds.filter((id) => !memberIdSet.has(id)).length;
+    if (displaySelectedCount > selectedIds.length) {
+      return Math.max(fromIds, displaySelectedCount - memberCount);
+    }
+    return fromIds;
+  }, [selectedIds, memberIdSet, displaySelectedCount, memberCount]);
   const deselectedCount = useMemo(
     () => memberIds.filter((id) => !selectedSet.has(id)).length,
     [memberIds, selectedSet]
@@ -645,7 +655,7 @@ function GroupModalContactsFooter({
         </span>
       ),
     });
-  } else if (memberCount === 0 && selectedIds.length === 0) {
+  } else if (memberCount === 0 && displaySelectedCount === 0) {
     parts.push({ key: "none", node: <>Aucun contact sélectionné</> });
   }
   if (typeof contactsTotalCount === "number") {
@@ -754,10 +764,12 @@ export function GroupModal(props: GroupModalProps) {
     clearSelection,
     showExpandBanner,
     matchTotal,
+    displaySelectedCount,
     counting,
     expanding,
     expandError,
     expandToMatchAll,
+    ensureSelectionReady,
   } = useGmailSelectAll({
     search: contactQuery,
     loadedIds,
@@ -878,7 +890,8 @@ export function GroupModal(props: GroupModalProps) {
     setError(null);
     setSaving(true);
     try {
-      await onCreated?.(trimmed, description.trim(), selectedIds);
+      const ids = await ensureSelectionReady();
+      await onCreated?.(trimmed, description.trim(), ids);
       onClose();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Enregistrement impossible.";
@@ -890,7 +903,7 @@ export function GroupModal(props: GroupModalProps) {
     } finally {
       setSaving(false);
     }
-  }, [isCreate, name, description, selectedIds, onCreated, onClose]);
+  }, [isCreate, name, description, ensureSelectionReady, onCreated, onClose]);
 
   const handleSave = useCallback(async () => {
     if (isCreate || !group?.id || !onSave) return;
@@ -902,11 +915,12 @@ export function GroupModal(props: GroupModalProps) {
     setSaving(true);
     setError(null);
     try {
+      const ids = await ensureSelectionReady();
       await onSave({
         id: group.id,
         name,
         description,
-        selectedContactIds: selectedIds,
+        selectedContactIds: ids,
       });
       onClose();
     } catch (e) {
@@ -919,7 +933,15 @@ export function GroupModal(props: GroupModalProps) {
     } finally {
       setSaving(false);
     }
-  }, [isCreate, group, name, description, selectedIds, onSave, onClose]);
+  }, [
+    isCreate,
+    group,
+    name,
+    description,
+    ensureSelectionReady,
+    onSave,
+    onClose,
+  ]);
 
   const requestSave = useCallback(() => {
     if (isCreate || !group?.id || !onSave) return;
@@ -1108,6 +1130,7 @@ export function GroupModal(props: GroupModalProps) {
               expandingSelection={expanding}
               expandError={expandError}
               onExpandSelection={() => void expandToMatchAll()}
+              displaySelectedCount={displaySelectedCount}
             />
           </div>
 

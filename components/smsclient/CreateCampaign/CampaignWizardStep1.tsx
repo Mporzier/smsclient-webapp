@@ -14,7 +14,7 @@ import {
   groupColor,
   groupTagBase,
 } from "@/lib/proto/contactDisplay";
-import { Users, Search, Contact, FolderOpen } from "lucide-react";
+import { Users, Search, Contact, FolderOpen, ChevronRight } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -46,6 +46,39 @@ function useStep1Context() {
     );
   }
   return ctx;
+}
+
+export function useCampaignWizardStep1() {
+  return useStep1Context();
+}
+
+export function CampaignWizardStep1ContinueButton({
+  className,
+  onContinue,
+}: {
+  className?: string;
+  onContinue: (ready: {
+    contactIds: string[];
+    groupNames: string[];
+  }) => void;
+}) {
+  const { ensureSelectionReady } = useStep1Context();
+  return (
+    <Button
+      variant="default"
+      size="lg"
+      className={className}
+      onClick={() => {
+        void (async () => {
+          const ready = await ensureSelectionReady();
+          onContinue(ready);
+        })();
+      }}
+    >
+      Continuer
+      <ChevronRight className="h-4 w-4" />
+    </Button>
+  );
 }
 
 export function CampaignWizardStep1Provider({
@@ -428,6 +461,7 @@ export function CampaignWizardStep1Summary() {
     recipients,
     recipientMode,
     contactsSelectedCount,
+    groupsSelectedCount,
     selectedGroupsDisplay,
     excludedTotal,
     recipientsResolving,
@@ -449,7 +483,7 @@ export function CampaignWizardStep1Summary() {
 
       <SummaryStatBubble
         label="Groupes sélectionnés"
-        value={selectedGroupsDisplay.length}
+        value={groupsSelectedCount}
       >
         {selectedGroupsDisplay.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-1">
