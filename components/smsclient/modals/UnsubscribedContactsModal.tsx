@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxVisual } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,8 @@ export type UnsubscribedContactRow = {
 type UnsubscribedContactsModalProps = {
   open: boolean;
   contacts: UnsubscribedContactRow[];
+  /** Liste chargée à l'ouverture — évite « aucun contact » pendant le fetch. */
+  loading?: boolean;
   onClose: () => void;
   /** Si fourni : checkboxes + CTA réabonnement */
   onResubscribe?: (ids: string[]) => Promise<void>;
@@ -55,6 +57,7 @@ function contactLineLabel(c: UnsubscribedContactRow): string {
 export function UnsubscribedContactsModal({
   open,
   contacts,
+  loading = false,
   onClose,
   onResubscribe,
 }: UnsubscribedContactsModalProps) {
@@ -176,7 +179,10 @@ export function UnsubscribedContactsModal({
             />
           </div>
 
-          {contacts.length === 0 && (
+          {loading && contacts.length === 0 && (
+            <p className={cn("py-8 text-center", hintTextCls)}>Chargement…</p>
+          )}
+          {!loading && contacts.length === 0 && (
             <p className={cn("py-8 text-center", hintTextCls)}>
               Aucun contact désabonné.
             </p>
@@ -199,7 +205,7 @@ export function UnsubscribedContactsModal({
                     className="flex w-full cursor-pointer items-center gap-3 bg-muted/40 px-3 py-2.5 text-left transition-colors hover:bg-muted/70"
                     onClick={toggleAllFiltered}
                   >
-                    <Checkbox
+                    <CheckboxVisual
                       checked={
                         allFilteredSelected
                           ? true
@@ -207,9 +213,6 @@ export function UnsubscribedContactsModal({
                             ? "indeterminate"
                             : false
                       }
-                      tabIndex={-1}
-                      aria-hidden
-                      className="pointer-events-none"
                     />
                     <span className={hintTextCls}>Tout sélectionner</span>
                   </button>
@@ -221,12 +224,7 @@ export function UnsubscribedContactsModal({
                 const row = (
                   <>
                     {canResubscribe && (
-                      <Checkbox
-                        checked={selected}
-                        tabIndex={-1}
-                        aria-hidden
-                        className="pointer-events-none shrink-0"
-                      />
+                      <CheckboxVisual checked={selected} className="shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-foreground">

@@ -20,7 +20,10 @@ function emptyData(): StatisticsSnapshot {
   };
 }
 
-export function useStatistics(range: { from: string; to: string }) {
+export function useStatistics(
+  range: { from: string; to: string },
+  enabled = true,
+) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
@@ -51,12 +54,13 @@ export function useStatistics(range: { from: string; to: string }) {
     (settled.from !== range.from || settled.to !== range.to);
 
   const loading =
-    authLoading ||
-    (userId != null &&
-      (settled == null ||
-        settled.nonce !== nonce ||
-        settled.userId !== userId ||
-        rangeDirty));
+    enabled &&
+    (authLoading ||
+      (userId != null &&
+        (settled == null ||
+          settled.nonce !== nonce ||
+          settled.userId !== userId ||
+          rangeDirty)));
 
   useEffect(() => {
     if (userId) return;
@@ -64,7 +68,7 @@ export function useStatistics(range: { from: string; to: string }) {
   }, [userId, flushWaiters]);
 
   useEffect(() => {
-    if (authLoading || !userId) return;
+    if (authLoading || !userId || !enabled) return;
     let cancelled = false;
     const requestNonce = nonce;
     const requestUserId = userId;
@@ -94,7 +98,16 @@ export function useStatistics(range: { from: string; to: string }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, userId, supabase, nonce, range.from, range.to, flushWaiters]);
+  }, [
+    authLoading,
+    userId,
+    supabase,
+    nonce,
+    enabled,
+    range.from,
+    range.to,
+    flushWaiters,
+  ]);
 
   const refresh = useCallback(() => {
     return new Promise<void>((resolve) => {

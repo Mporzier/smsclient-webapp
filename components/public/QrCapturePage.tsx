@@ -11,7 +11,13 @@ import {
   fetchPublicQrConfig,
   spinQrWheel,
 } from "@/lib/supabase/qrWheel";
-import { frDisplayToE164, normalizeFRPhone } from "@/lib/proto/smsUtils";
+import {
+  caretAfterPhoneFormat,
+  frDisplayToE164,
+  normalizeFRPhone,
+  sanitizePersonName,
+} from "@/lib/proto/smsUtils";
+import { todayIsoLocal } from "@/lib/import/contactImportMap";
 import {
   PERSON_NAME_MAX_LENGTH,
   PHONE_DISPLAY_MAX_LENGTH,
@@ -114,7 +120,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const first = firstName.trim();
+    const first = sanitizePersonName(firstName).trim();
     if (!first) {
       setError("Le prénom est obligatoire.");
       return;
@@ -135,7 +141,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
     const { data, error: submitErr } = await supabase.rpc("submit_qr_lead", {
       p_slug: slug,
       p_first_name: first,
-      p_last_name: lastName.trim(),
+      p_last_name: sanitizePersonName(lastName).trim(),
       p_phone_e164: e164,
       p_opt_in: optIn,
       p_birthday: birthdayValue || null,
@@ -268,7 +274,9 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 className={brandInputCls}
                 maxLength={PERSON_NAME_MAX_LENGTH}
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) =>
+                  setFirstName(sanitizePersonName(e.target.value))
+                }
                 placeholder="Ex : Patrick"
               />
             </div>
@@ -280,7 +288,9 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 className={brandInputCls}
                 maxLength={PERSON_NAME_MAX_LENGTH}
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={(e) =>
+                  setLastName(sanitizePersonName(e.target.value))
+                }
                 placeholder="Ex : Dupont"
               />
             </div>
@@ -293,7 +303,20 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 inputMode="tel"
                 maxLength={PHONE_DISPLAY_MAX_LENGTH}
                 value={phone}
-                onChange={(e) => setPhone(normalizeFRPhone(e.target.value))}
+                onChange={(e) => {
+                  const input = e.currentTarget;
+                  const raw = input.value;
+                  const caret = input.selectionStart ?? raw.length;
+                  const formatted = normalizeFRPhone(raw);
+                  const nextCaret = caretAfterPhoneFormat(
+                    raw,
+                    caret,
+                    formatted,
+                  );
+                  input.value = formatted;
+                  input.setSelectionRange(nextCaret, nextCaret);
+                  setPhone(formatted);
+                }}
                 placeholder="06 12 34 56 78"
               />
             </div>
@@ -309,8 +332,13 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 name="birthday"
                 type="date"
                 className={brandInputCls}
+                max={todayIsoLocal()}
                 value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (next && next > todayIsoLocal()) return;
+                  setBirthday(next);
+                }}
               />
               <p className="mt-1 text-xs font-semibold text-muted-foreground">
                 Optionnel

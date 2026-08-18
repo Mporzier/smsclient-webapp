@@ -9,11 +9,11 @@ import { useInfiniteList } from "@/hooks/useInfiniteList";
 import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 
-export function useSmsTemplates() {
+export function useSmsTemplates(active = true) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
   const supabase = useMemo(() => createClient(), []);
-  const enabled = !authLoading && Boolean(userId);
+  const enabled = active && !authLoading && Boolean(userId);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const sort: ListSort | null = sorting[0]

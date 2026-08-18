@@ -91,16 +91,8 @@ async function ensureCreditsAccount(
 export async function fetchCreditsSnapshot(
   supabase: SupabaseClient,
   userId: string,
-  args?: { sort?: ListSort | null },
+  args?: { sort?: ListSort | null; withPurchases?: boolean },
 ): Promise<{ data: CreditsSnapshot; error: Error | null }> {
-  const ensure = await ensureCreditsAccount(supabase, userId);
-  if (ensure.error) {
-    return {
-      data: { balance: 0, balanceLabel: "0", purchases: [] },
-      error: ensure.error,
-    };
-  }
-
   const { data: account, error: accountError } = await supabase
     .from("sms_credits_accounts")
     .select("user_id,balance")
@@ -115,11 +107,18 @@ export async function fetchCreditsSnapshot(
   }
 
   const balance = (account as SmsCreditsAccountRecord | null)?.balance ?? 0;
+  if (args?.withPurchases === false) {
+    return {
+      data: { balance, balanceLabel: formatNumberFr(balance), purchases: [] },
+      error: null,
+    };
+  }
+
   const purchasesRes = await fetchCreditPurchasesPage(supabase, userId, {
     offset: 0,
     limit: LIST_PAGE_SIZE,
     search: "",
-    includeTotal: true,
+    includeTotal: false,
     sort: args?.sort,
   });
 

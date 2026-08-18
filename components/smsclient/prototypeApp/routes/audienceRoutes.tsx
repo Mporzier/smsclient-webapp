@@ -78,6 +78,9 @@ export function renderAudienceRoute(
           error={contactsState.error}
           customFieldDefs={customFieldsState.defs}
           unsubscribedContacts={data.unsubscribedContacts}
+          unsubscribedCount={data.unsubscribedCount}
+          unsubscribedLoading={contactsState.unsubscribedLoading}
+          onLoadUnsubscribed={data.loadUnsubscribed}
           onImport={() => modals.setImportContactsOpen(true)}
           onAddContact={modals.openContactAdd}
           onRowClick={modals.openContactEdit}

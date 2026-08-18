@@ -14,7 +14,7 @@ import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 import type { SortingState } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-export function useCredits() {
+export function useCredits(withPurchases = true) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
@@ -30,6 +30,7 @@ export function useCredits() {
     nonce: number;
     userId: string | null;
     sortKey: string;
+    withPurchases: boolean;
   } | null>(null);
   const waitersRef = useRef<Array<() => void>>([]);
 
@@ -63,7 +64,8 @@ export function useCredits() {
       (settled == null ||
         settled.nonce !== nonce ||
         settled.userId !== userId ||
-        settled.sortKey !== sortKey));
+        settled.sortKey !== sortKey ||
+        settled.withPurchases !== withPurchases));
 
   useEffect(() => {
     if (userId) return;
@@ -79,6 +81,7 @@ export function useCredits() {
 
     void fetchCreditsSnapshot(supabase, requestUserId, {
       sort: sortRef.current,
+      withPurchases,
     }).then(({ data, error: err }) => {
       if (cancelled) return;
       if (err) {
@@ -94,6 +97,7 @@ export function useCredits() {
         nonce: requestNonce,
         userId: requestUserId,
         sortKey: requestSortKey,
+        withPurchases,
       });
       flushWaiters();
     });
@@ -101,7 +105,15 @@ export function useCredits() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, userId, supabase, nonce, flushWaiters, sortKey]);
+  }, [
+    authLoading,
+    userId,
+    supabase,
+    nonce,
+    flushWaiters,
+    sortKey,
+    withPurchases,
+  ]);
 
   const refresh = useCallback(() => {
     return new Promise<void>((resolve) => {

@@ -26,7 +26,7 @@ function patchCaptureMode(
   };
 }
 
-export function useUserQrCode() {
+export function useUserQrCode(enabled = true) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
@@ -135,11 +135,11 @@ export function useUserQrCode() {
   );
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !enabled) return;
     queueMicrotask(() => {
       void refresh();
     });
-  }, [authLoading, refresh]);
+  }, [authLoading, enabled, refresh]);
 
   const publicUrl =
     record?.slug && typeof window !== "undefined"

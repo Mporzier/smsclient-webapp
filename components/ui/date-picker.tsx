@@ -31,6 +31,8 @@ type DatePickerProps = {
   className?: string;
   /** Au-dessus des Dialog smsclient (z-9999). */
   contentClassName?: string;
+  /** ISO `YYYY-MM-DD` — jours après cette date désactivés (ex. anniversaire). */
+  max?: string;
 };
 
 /** DatePicker shadcn — valeur stockée `YYYY-MM-DD` (vide = aucune). */
@@ -42,9 +44,11 @@ export function DatePicker({
   disabled = false,
   className,
   contentClassName,
+  max,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = parseIsoDate(value);
+  const maxDate = max ? parseIsoDate(max) : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -81,8 +85,11 @@ export function DatePicker({
           locale={fr}
           selected={selected}
           defaultMonth={selected}
+          endMonth={maxDate}
           fixedWeeks
+          disabled={maxDate ? { after: maxDate } : undefined}
           onSelect={(date) => {
+            if (date && maxDate && date > maxDate) return;
             onChange(date ? format(date, ISO_DATE) : "");
             setOpen(false);
           }}

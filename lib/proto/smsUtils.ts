@@ -41,6 +41,14 @@ export function sanitizeSender(v: string): string {
 }
 
 /**
+ * Nom / prénom contact : lettres (accents OK), espaces, tiret.
+ * Retire chiffres et caractères spéciaux (hors `-`).
+ */
+export function sanitizePersonName(v: string): string {
+  return v.replace(/[^\p{L}\p{M}\s-]/gu, "");
+}
+
+/**
  * Aplanit les formats qu’Excel/Sheets sort souvent (notation scientifique, décimale ,0, guillemets).
  * À utiliser en import CSV avant `normalizeFRPhone`.
  */
@@ -82,6 +90,27 @@ export function formatFrPhoneInput(raw: string): string {
   const digits = frPhoneDigitsOnly(raw);
   if (!digits) return "";
   return digits.replace(/(\d{2})(?=\d)/g, "$1 ");
+}
+
+/**
+ * Position du caret après reformatage : on compte les chiffres saisis avant le
+ * caret et on retrouve la même frontière dans la valeur formatée, sinon fin.
+ */
+export function caretAfterPhoneFormat(
+  raw: string,
+  caret: number,
+  formatted: string,
+): number {
+  const digitsBefore = (raw.slice(0, caret).match(/\d/g) ?? []).length;
+  if (digitsBefore === 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (formatted.charCodeAt(i) >= 48 && formatted.charCodeAt(i) <= 57) {
+      seen++;
+      if (seen === digitsBefore) return i + 1;
+    }
+  }
+  return formatted.length;
 }
 
 export function normalizeFRPhone(v: string): string {

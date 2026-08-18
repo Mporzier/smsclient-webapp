@@ -88,6 +88,8 @@ type StatsProps = {
   data: StatisticsSnapshot;
   onExport: () => void;
   unsubscribedContacts?: UnsubscribedContactRow[];
+  unsubscribedLoading?: boolean;
+  onLoadUnsubscribed?: () => void;
 };
 
 export function StatistiquesView(props: StatsProps) {
@@ -108,6 +110,8 @@ export function StatistiquesView(props: StatsProps) {
     data,
     onExport,
     unsubscribedContacts = [],
+    unsubscribedLoading = false,
+    onLoadUnsubscribed,
   } = props;
   const { t, locale } = useI18n();
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -385,7 +389,10 @@ export function StatistiquesView(props: StatsProps) {
                       type="button"
                       size="sm"
                       className="shrink-0 whitespace-normal text-center leading-tight"
-                      onClick={() => setUnsubModalOpen(true)}
+                      onClick={() => {
+                        setUnsubModalOpen(true);
+                        onLoadUnsubscribed?.();
+                      }}
                     >
                       {t("stats.viewList")}
                     </Button>
@@ -635,6 +642,7 @@ export function StatistiquesView(props: StatsProps) {
       <UnsubscribedContactsModal
         open={unsubModalOpen}
         contacts={unsubscribedContacts}
+        loading={unsubscribedLoading}
         onClose={() => setUnsubModalOpen(false)}
       />
     </div>

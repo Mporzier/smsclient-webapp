@@ -26,6 +26,11 @@ describe("parseImportBirthday", () => {
     expect(parseImportBirthday("1990/03/15")).toBeNull();
     expect(parseImportBirthday("pas-une-date")).toBeNull();
   });
+
+  it("date future → null", () => {
+    expect(parseImportBirthday("2099-01-01")).toBeNull();
+    expect(parseImportBirthday("01/01/2099")).toBeNull();
+  });
 });
 
 describe("suggestColumnRoles birthday", () => {

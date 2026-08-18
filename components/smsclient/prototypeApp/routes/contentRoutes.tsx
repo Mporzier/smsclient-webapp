@@ -68,6 +68,8 @@ export function renderContentRoute(
             toast("Export des statistiques (à implémenter).")
           }
           unsubscribedContacts={unsubscribedContacts}
+          unsubscribedLoading={contactsState.unsubscribedLoading}
+          onLoadUnsubscribed={data.loadUnsubscribed}
         />
       );
     case "liens":

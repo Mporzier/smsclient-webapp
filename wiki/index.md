@@ -1,6 +1,6 @@
 # smsclient — index agent
 
-Lire [[hot]] d'abord si session récente documentée. Conventions UI durables : [[conventions-ui]].
+Lire [[hot]] d'abord si session récente documentée. Conventions UI durables : [[conventions-ui]]. Fetch / anti-surcharge API : [[api-fetch]].
 
 ## Routes → fichiers (max 3)
 
@@ -25,6 +25,7 @@ Lire [[hot]] d'abord si session récente documentée. Conventions UI durables : 
 - `shell/` — LogoMark, SidebarNav, SearchBar
 - `lib/proto/routes.ts` — `AppRoute` enum
 - `prototypeApp/usePrototypeApp.ts` — compositor proto
+- Fetch route-gated : [[api-fetch]] (`usePrototypeData`)
 
 ## Contacts / listes / modales (complément)
 

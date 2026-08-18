@@ -545,6 +545,20 @@ export async function fetchAllContactPickerSummaries(
 }
 
 /** Contacts non éligibles campagne (STOP / pas opt-in) — query dédiée lazy-safe. */
+/** Compteur seul — la liste ne part qu'à l'ouverture de la modale. */
+export async function countUnsubscribedContacts(
+  supabase: SupabaseClient,
+): Promise<{ count: number; error: Error | null }> {
+  const { count, error } = await supabase
+    .from("clients")
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .or("opt_in.eq.false,stop_sms.eq.true");
+
+  if (error) return { count: 0, error: new Error(error.message) };
+  return { count: count ?? 0, error: null };
+}
+
 export async function fetchUnsubscribedContacts(
   supabase: SupabaseClient,
 ): Promise<{

@@ -4,7 +4,7 @@ import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, MinusIcon } from "lucide-react";
 
 function Checkbox({
   className,
@@ -29,4 +29,38 @@ function Checkbox({
   );
 }
 
-export { Checkbox };
+type CheckboxVisualState = boolean | "indeterminate";
+
+/** Rendu `span` — pour l'intérieur d'un `button` (imbrication `button` interdite). */
+function CheckboxVisual({
+  checked = false,
+  className,
+  ...props
+}: Omit<React.ComponentProps<"span">, "children"> & {
+  checked?: CheckboxVisualState;
+}) {
+  const state =
+    checked === "indeterminate"
+      ? "indeterminate"
+      : checked
+        ? "checked"
+        : "unchecked";
+
+  return (
+    <span
+      data-slot="checkbox"
+      data-state={state}
+      aria-hidden
+      className={cn(
+        "peer grid size-4 shrink-0 place-content-center rounded-[4px] border border-input shadow-xs transition-shadow dark:bg-input/30 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground dark:data-[state=checked]:bg-primary",
+        className
+      )}
+      {...props}
+    >
+      {state === "checked" && <CheckIcon className="size-3.5" />}
+      {state === "indeterminate" && <MinusIcon className="size-3.5" />}
+    </span>
+  );
+}
+
+export { Checkbox, CheckboxVisual };

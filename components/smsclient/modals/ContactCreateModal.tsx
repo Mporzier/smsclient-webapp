@@ -20,12 +20,18 @@ import {
 import { useI18n } from "@/lib/i18n";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import { groupColor } from "@/lib/proto/contactDisplay";
-import { formatFrPhoneInput, isValidFrMobile } from "@/lib/proto/smsUtils";
+import {
+  caretAfterPhoneFormat,
+  formatFrPhoneInput,
+  isValidFrMobile,
+  sanitizePersonName,
+} from "@/lib/proto/smsUtils";
 import { normalizeCustomFieldValue } from "@/lib/customFields/validate";
+import { todayIsoLocal } from "@/lib/import/contactImportMap";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { CustomFieldValues } from "@/lib/types/customFields";
 import type { ContactGroupOption } from "@/lib/types/group";
-import type { Dispatch, SetStateAction } from "react";
+import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { useCallback, useState } from "react";
 import { ConfirmUnsubscribeModal } from "./ConfirmUnsubscribeModal";
 import { ContactCustomFieldsList } from "./ContactCustomFieldsList";
@@ -121,8 +127,8 @@ export function ContactCreateModal({
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [phoneBlurred, setPhoneBlurred] = useState(false);
   const [confirmUnsubscribeOpen, setConfirmUnsubscribeOpen] = useState(false);
-  const [first, setFirst] = useState(seedFirst);
-  const [last, setLast] = useState(seedLast);
+  const [first, setFirst] = useState(() => sanitizePersonName(seedFirst));
+  const [last, setLast] = useState(() => sanitizePersonName(seedLast));
   const [phone, setPhone] = useState(seedPhone);
   const [birthday, setBirthday] = useState(seedBirthday);
   const [notes, setNotes] = useState(seedNotes);
@@ -140,14 +146,31 @@ export function ContactCreateModal({
       setCustomErrors({});
       setPhoneBlurred(false);
       setConfirmUnsubscribeOpen(false);
-      setFirst(seedFirst);
-      setLast(seedLast);
+      setFirst(sanitizePersonName(seedFirst));
+      setLast(sanitizePersonName(seedLast));
       setPhone(seedPhone);
       setBirthday(seedBirthday);
       setNotes(seedNotes);
       setDraftCustomFields({ ...customFields });
     }
   }
+
+  const handlePhoneChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const input = e.currentTarget;
+      const raw = input.value;
+      const caret = input.selectionStart ?? raw.length;
+      const formatted = formatFrPhoneInput(raw);
+      // Écrit la valeur formatée avant React pour que le caret reste sur le
+      // chiffre édité au lieu de sauter en fin de champ.
+      const nextCaret = caretAfterPhoneFormat(raw, caret, formatted);
+      input.value = formatted;
+      input.setSelectionRange(nextCaret, nextCaret);
+      setPhone(formatted);
+      setPhoneSubmitError(null);
+    },
+    [],
+  );
 
   const handleClose = useCallback(() => {
     setSaveError(null);
@@ -216,8 +239,8 @@ export function ContactCreateModal({
     setSaving(true);
     try {
       await onSaveContact({
-        firstName: first.trim(),
-        lastName: last.trim(),
+        firstName: sanitizePersonName(first).trim(),
+        lastName: sanitizePersonName(last).trim(),
         phoneDisplay: phone,
         groupLabels: groups,
         birthday,
@@ -354,7 +377,7 @@ export function ContactCreateModal({
                     firstError ? "contact-create-first-err" : undefined
                   }
                   onChange={(e) => {
-                    setFirst(e.target.value);
+                    setFirst(sanitizePersonName(e.target.value));
                     setFirstError(null);
                   }}
                 />
@@ -384,7 +407,9 @@ export function ContactCreateModal({
                   className={modalFieldCls}
                   maxLength={PERSON_NAME_MAX_LENGTH}
                   value={last}
-                  onChange={(e) => setLast(e.target.value)}
+                  onChange={(e) =>
+                    setLast(sanitizePersonName(e.target.value))
+                  }
                 />
               </div>
             </div>
@@ -423,10 +448,7 @@ export function ContactCreateModal({
                   maxLength={PHONE_DISPLAY_MAX_LENGTH}
                   className={cn(modalFieldCls, "pl-8")}
                   value={phone}
-                  onChange={(e) => {
-                    setPhone(formatFrPhoneInput(e.target.value));
-                    setPhoneSubmitError(null);
-                  }}
+                  onChange={handlePhoneChange}
                   onBlur={() => setPhoneBlurred(true)}
                   aria-invalid={phoneInvalid}
                   aria-describedby={
@@ -455,6 +477,7 @@ export function ContactCreateModal({
                 id="contact-create-birthday"
                 value={birthday}
                 onChange={setBirthday}
+                max={todayIsoLocal()}
               />
               <p className={hintTextCls}>{t("contact.modal.optional")}</p>
             </div>

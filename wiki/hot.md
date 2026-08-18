@@ -1,6 +1,6 @@
 ---
 title: hot
-updated: 2026-07-16
+updated: 2026-08-19
 tags:
   - agent
   - session
@@ -8,7 +8,15 @@ tags:
 
 # hot — contexte récent
 
-Updated: 2026-07-21
+Updated: 2026-08-19
+
+## Session 2026-08-19 (perf fetch contacts)
+
+- Trop de calls au mount `#contacts` : hooks proto sans gating + stats globales + unsub 500 rows + crédits purchases/count
+- Fix : route-gate dans `usePrototypeData` ; `useStatistics` seulement `#statistiques` ; unsub = count head puis liste lazy modale ; crédits balance seule hors params
+- Doc durable : [[api-fetch]]
+- UI footer contacts : « N contacts · M désabonné(s) » aéré, désabonnés `text-rose-500/80`
+- Hydration : `CheckboxVisual` (span) dans `UnsubscribedContactsModal` — pas de `<button>` dans `<button>`
 
 ## Session 2026-07-21 (dark mode v1)
 

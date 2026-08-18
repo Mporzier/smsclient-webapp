@@ -22,16 +22,22 @@ export function usePrototypeData(route: AppRoute) {
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
 
-  const contactsState = useContacts();
+  const contactsState = useContacts(
+    route === "contacts" || route === "statistiques",
+  );
   const customFieldsState = useCustomFieldDefs();
   const groupsState = useGroups();
-  const campaignsState = useCampaigns();
-  const linksState = useLinks();
-  const smsTemplatesState = useSmsTemplates();
+  const campaignsState = useCampaigns(
+    route === "dashboard" ||
+      route === "campagnes" ||
+      route === "nouvelle-campagne",
+  );
+  const linksState = useLinks(route === "liens");
+  const smsTemplatesState = useSmsTemplates(route === "modeles-sms");
   const automationsState = useAutomations(route === "automatisations");
-  const creditsState = useCredits();
+  const creditsState = useCredits(route === "parametres");
   const profileState = useUserProfile();
-  const userQrState = useUserQrCode();
+  const userQrState = useUserQrCode(route === "qr-boutique");
   const qrWheelState = useQrWheel(route === "qr-boutique");
   const trashState = useTrashItems(supabase, user?.id, route === "parametres");
 
@@ -45,6 +51,8 @@ export function usePrototypeData(route: AppRoute) {
   }, [groupsState.rows]);
 
   const unsubscribedContacts = contactsState.unsubscribedContacts;
+  const unsubscribedCount = contactsState.unsubscribedCount;
+  const loadUnsubscribed = contactsState.loadUnsubscribed;
 
   return {
     user,
@@ -63,6 +71,8 @@ export function usePrototypeData(route: AppRoute) {
     trashState,
     groupOptions,
     unsubscribedContacts,
+    unsubscribedCount,
+    loadUnsubscribed,
     statsDefaultFrom: mFrom,
     statsDefaultTo: mTo,
   };

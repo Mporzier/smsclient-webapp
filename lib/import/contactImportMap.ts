@@ -4,6 +4,7 @@ import {
   coerceFrPhoneForImport,
   isValidFrMobile,
   normalizeFRPhone,
+  sanitizePersonName,
 } from "@/lib/proto/smsUtils";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 
@@ -97,6 +98,7 @@ export function formatFrPhoneDisplay(raw: string): string {
 /**
  * Parse une date CSV vers YYYY-MM-DD.
  * Accepte ISO et formats FR courants (DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY).
+ * Refuse dates futures (anniversaire).
  */
 export function parseImportBirthday(raw: string): string | null {
   const t = raw.trim();
@@ -115,7 +117,8 @@ export function parseImportBirthday(raw: string): string | null {
     ) {
       return null;
     }
-    return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    const value = `${iso[1]}-${iso[2]}-${iso[3]}`;
+    return value > todayIsoLocal() ? null : value;
   }
 
   const fr = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t);
@@ -131,10 +134,19 @@ export function parseImportBirthday(raw: string): string | null {
     ) {
       return null;
     }
-    return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const value = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    return value > todayIsoLocal() ? null : value;
   }
 
   return null;
+}
+
+/** Aujourd’hui en `YYYY-MM-DD` (fuseau local). */
+export function todayIsoLocal(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /** Suggestion selon l'intitulé de colonne + détection par contenu (numéros FR). */
@@ -220,11 +232,11 @@ export function buildPayloadFromMappedRow(
       continue;
     }
     if (role === "first_name") {
-      firstName = v;
+      firstName = sanitizePersonName(v);
       continue;
     }
     if (role === "last_name") {
-      lastName = v;
+      lastName = sanitizePersonName(v);
       continue;
     }
     if (role === "birthday") {

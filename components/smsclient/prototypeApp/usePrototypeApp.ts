@@ -17,10 +17,13 @@ export function usePrototypeApp() {
     to: data.statsDefaultTo,
   });
 
-  const statisticsState = useStatistics({
-    from: modals.appliedStatsFrom,
-    to: modals.appliedStatsTo,
-  });
+  const statisticsState = useStatistics(
+    {
+      from: modals.appliedStatsFrom,
+      to: modals.appliedStatsTo,
+    },
+    route === "statistiques",
+  );
 
   const onCampaignSaved = useCallback(async () => {
     await data.campaignsState.refresh();

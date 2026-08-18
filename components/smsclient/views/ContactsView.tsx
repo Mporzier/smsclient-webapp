@@ -62,6 +62,9 @@ type ContactsProps = {
   error: string | null;
   customFieldDefs?: CustomFieldDef[];
   unsubscribedContacts?: UnsubscribedContactRow[];
+  unsubscribedCount?: number;
+  unsubscribedLoading?: boolean;
+  onLoadUnsubscribed?: () => void;
   onImport: () => void;
   onAddContact: () => void;
   onRowClick: (row: ContactRowData) => void;
@@ -286,6 +289,9 @@ export function ContactsView({
   error,
   customFieldDefs = [],
   unsubscribedContacts = [],
+  unsubscribedCount,
+  unsubscribedLoading = false,
+  onLoadUnsubscribed,
   onImport,
   onAddContact,
   onRowClick,
@@ -357,7 +363,12 @@ export function ContactsView({
     onDeleteContactsRef.current = onDeleteContacts;
   });
 
-  const unsubCount = unsubscribedContacts.length;
+  const unsubCount = unsubscribedCount ?? unsubscribedContacts.length;
+
+  const openUnsubModal = useCallback(() => {
+    setUnsubModalOpen(true);
+    onLoadUnsubscribed?.();
+  }, [onLoadUnsubscribed]);
 
   const hasSelection = displaySelectedCount > 0;
   const showBigEmpty =
@@ -376,12 +387,11 @@ export function ContactsView({
     );
     if (unsubCount === 0) return contactsLabel;
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        <span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="text-muted-foreground">
           {contactsLabel}
-          <span className="text-muted-foreground/80">
-            {" "}
-            ·{" "}
+          <span className="mx-2.5 text-muted-foreground/50">·</span>
+          <span className="text-rose-500/80">
             {t(unsubCount > 1 ? "contacts.unsubMany" : "contacts.unsubOne", {
               n: unsubCount,
             })}
@@ -391,14 +401,14 @@ export function ContactsView({
           type="button"
           variant="outline"
           size="sm"
-          className="h-7 cursor-pointer px-2.5 text-xs font-semibold"
-          onClick={() => setUnsubModalOpen(true)}
+          className="h-7 cursor-pointer border-rose-200/60 bg-rose-50/70 px-2.5 text-xs font-semibold text-rose-500/90 hover:bg-rose-50 hover:text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/25 dark:text-rose-400/80 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+          onClick={openUnsubModal}
         >
           {t("contacts.viewUnsubList")}
         </Button>
       </div>
     );
-  }, [loading, eligibleRows.length, totalCount, unsubCount, t]);
+  }, [loading, eligibleRows.length, totalCount, unsubCount, openUnsubModal, t]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -652,6 +662,7 @@ export function ContactsView({
       <UnsubscribedContactsModal
         open={unsubModalOpen}
         contacts={unsubscribedContacts}
+        loading={unsubscribedLoading}
         onClose={() => setUnsubModalOpen(false)}
         onResubscribe={onResubscribeContacts}
       />
