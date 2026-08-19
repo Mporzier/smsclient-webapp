@@ -4,9 +4,18 @@ import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   avatarColor,
@@ -14,7 +23,7 @@ import {
   groupColor,
   groupTagBase,
 } from "@/lib/proto/contactDisplay";
-import { Users, Search, Contact, FolderOpen, ChevronRight } from "lucide-react";
+import { Users, Search, Contact, FolderOpen, ChevronRight, Download, Plus, UserRound } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -117,7 +126,10 @@ export function CampaignWizardStep1Main() {
     onListLoadMore,
     listRowCount,
     expandBanner,
+    onGoToContacts,
+    onGoToGroups,
   } = useStep1Context();
+  const { t } = useI18n();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -268,11 +280,43 @@ export function CampaignWizardStep1Main() {
           contactsLoading ? (
             <RecipientListSkeleton />
           ) : filteredContacts.length === 0 ? (
-            <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
-              {search.trim()
-                ? "Aucun contact trouvé."
-                : "Aucun contact."}
-            </p>
+            search.trim() ? (
+              <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
+                {t("contacts.noSearchResults")}
+              </p>
+            ) : (
+              <Empty className="min-h-[240px] border-0 p-6">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <UserRound aria-hidden />
+                  </EmptyMedia>
+                  <EmptyTitle>{t("contacts.emptyTitle")}</EmptyTitle>
+                  <EmptyDescription>{t("contacts.emptyBody")}</EmptyDescription>
+                </EmptyHeader>
+                {onGoToContacts ? (
+                  <EmptyContent>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <Button
+                        variant="default"
+                        className="rounded-full"
+                        onClick={() => onGoToContacts("add")}
+                      >
+                        <Plus aria-hidden />
+                        {t("contacts.add")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => onGoToContacts("import")}
+                      >
+                        <Download aria-hidden />
+                        {t("contacts.import")}
+                      </Button>
+                    </div>
+                  </EmptyContent>
+                ) : null}
+              </Empty>
+            )
           ) : (
             <>
               {filteredContacts.map((c) => {
@@ -378,11 +422,33 @@ export function CampaignWizardStep1Main() {
         ) : groupsLoading ? (
           <RecipientListSkeleton />
         ) : filteredGroups.length === 0 ? (
-          <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
-            {search.trim()
-              ? "Aucun groupe trouvé."
-              : "Aucun groupe créé."}
-          </p>
+          search.trim() ? (
+            <p className="m-0 px-3 py-8 text-center text-sm font-semibold text-muted-foreground">
+              {t("groups.noSearchResults")}
+            </p>
+          ) : (
+            <Empty className="min-h-[240px] border-0 p-6">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Users aria-hidden />
+                </EmptyMedia>
+                <EmptyTitle>{t("groups.emptyTitle")}</EmptyTitle>
+                <EmptyDescription>{t("groups.emptyBody")}</EmptyDescription>
+              </EmptyHeader>
+              {onGoToGroups ? (
+                <EmptyContent>
+                  <Button
+                    variant="default"
+                    className="rounded-full"
+                    onClick={onGoToGroups}
+                  >
+                    <Plus aria-hidden />
+                    {t("groups.create")}
+                  </Button>
+                </EmptyContent>
+              ) : null}
+            </Empty>
+          )
         ) : (
           <>
             {filteredGroups.map((g) => {

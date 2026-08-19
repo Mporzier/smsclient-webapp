@@ -9,7 +9,7 @@ import type { CustomFieldValues } from "@/lib/types/customFields";
 import type { ContactGroupOption } from "@/lib/types/group";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
 import type { SortingState } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { nextMockId } from "../helpers/mockData";
 
 type ContactsFlowHarnessProps = {
@@ -45,6 +45,8 @@ export function ContactsFlowHarness({
   const [groups, setGroups] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+  const [pendingDeleteCount, setPendingDeleteCount] = useState(0);
+  const pendingResolveRef = useRef<(() => Promise<string[]>) | null>(null);
 
   const openAdd = useCallback(() => {
     setModalMode("add");
@@ -113,18 +115,36 @@ export function ContactsFlowHarness({
     [modalMode, editRow, payloadToRow],
   );
 
-  const onDeleteContacts = useCallback((ids: string[]) => {
-    setPendingDeleteIds(ids);
-    setConfirmOpen(true);
-  }, []);
+  const onDeleteContacts = useCallback(
+    (
+      idsOrResolve: string[] | (() => Promise<string[]>),
+      countHint?: number,
+    ) => {
+      if (Array.isArray(idsOrResolve)) {
+        pendingResolveRef.current = null;
+        setPendingDeleteIds(idsOrResolve);
+        setPendingDeleteCount(countHint ?? idsOrResolve.length);
+      } else {
+        pendingResolveRef.current = idsOrResolve;
+        setPendingDeleteIds([]);
+        setPendingDeleteCount(countHint ?? 0);
+      }
+      setConfirmOpen(true);
+    },
+    [],
+  );
 
   const confirmDelete = useCallback(async () => {
-    setRows((prev) => prev.filter((row) => !pendingDeleteIds.includes(row.id)));
+    const resolve = pendingResolveRef.current;
+    const ids = resolve ? await resolve() : pendingDeleteIds;
+    setRows((prev) => prev.filter((row) => !ids.includes(row.id)));
     setConfirmOpen(false);
     setPendingDeleteIds([]);
+    setPendingDeleteCount(0);
+    pendingResolveRef.current = null;
   }, [pendingDeleteIds]);
 
-  const n = pendingDeleteIds.length;
+  const n = pendingDeleteCount;
 
   return (
     <>

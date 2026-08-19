@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import {
@@ -91,13 +92,15 @@ export function BusinessActivitySelect({
   };
 
   return (
-    <div
+    <Card
+      size="sm"
       className={cn(
-        "space-y-3 rounded-xl border border-border bg-card p-3 text-card-foreground shadow-sm",
+        "gap-0 py-0 text-card-foreground",
         highlighted && "ring-2 ring-ring/30",
         className,
       )}
     >
+      <CardContent className="space-y-3 p-3">
       {step === "category" || !categoryId ? (
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">
@@ -182,6 +185,7 @@ export function BusinessActivitySelect({
           </div>
         </div>
       )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

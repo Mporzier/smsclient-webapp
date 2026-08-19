@@ -13,6 +13,14 @@ import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
@@ -192,8 +200,28 @@ export function GroupesView({
   });
 
   const hasSelection = displaySelectedCount > 0;
-  const showBigEmpty =
-    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+
+  const emptyState = (
+    <Empty className="p-0 md:p-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Users aria-hidden />
+        </EmptyMedia>
+        <EmptyTitle>{t("groups.emptyTitle")}</EmptyTitle>
+        <EmptyDescription>{t("groups.emptyBody")}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button
+          variant="default"
+          className="rounded-full"
+          onClick={onCreateGroup}
+        >
+          <Plus aria-hidden />
+          {t("groups.create")}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
 
   const allLoadedSelected =
     rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
@@ -405,41 +433,23 @@ export function GroupesView({
         </p>
       ) : null}
 
-      {showBigEmpty ? (
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <Users
-              className="h-14 w-14 text-slate-400"
-              strokeWidth={1.25}
-              aria-hidden
-            />
-            <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              {t("groups.emptyTitle")}
-            </p>
-            <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              {t("groups.emptyBody")}
-            </p>
-          </div>
-        </section>
-      ) : (
-        <DataTable
-          columns={selectColumns}
-          data={rows}
-          loading={loading}
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-          onLoadMore={onLoadMore}
-          globalFilter={searchQuery}
-          loadingMessage={t("groups.loading")}
-          emptyMessage={t("groups.emptyTable")}
-          searchNoResultsMessage={t("groups.noSearchResults")}
-          onRowClick={onEditGroup}
-          footer={footerLabel}
-          sorting={sorting}
-          onSortingChange={onSortingChange}
-          manualSorting
-        />
-      )}
+      <DataTable
+        columns={selectColumns}
+        data={rows}
+        loading={loading}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMore={onLoadMore}
+        globalFilter={searchQuery}
+        loadingMessage={t("groups.loading")}
+        emptyMessage={emptyState}
+        searchNoResultsMessage={t("groups.noSearchResults")}
+        onRowClick={onEditGroup}
+        footer={footerLabel}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+        manualSorting
+      />
     </div>
   );
 }

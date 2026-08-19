@@ -81,9 +81,9 @@ export const emptyProfileForm: UserProfileForm = {
   notifySummary: true,
 };
 
-export const parametresFieldInp =
-  "h-11 w-full rounded-[14px] border border-border bg-card px-3.5 text-[15px] font-bold text-foreground outline-none focus:border-ring focus:shadow-[0_0_0_4px_rgba(59,130,246,0.12)]";
-export const parametresFieldLbl = "mb-1.5 block text-xs font-black text-muted-foreground";
+export const parametresFieldLbl =
+  "text-xs font-semibold text-muted-foreground";
+export const parametresDirtyInp = "border-ring ring-2 ring-ring/20";
 
 export const allSettingCards: SettingCardDef[] = [
   {

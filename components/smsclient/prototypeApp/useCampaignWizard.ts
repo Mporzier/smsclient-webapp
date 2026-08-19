@@ -459,19 +459,21 @@ export function useCampaignWizard({
     if (!action) return;
     if (action.type === "navigate") {
       go(action.path);
+      action.after?.();
       return;
     }
     openCampaignComposerInternal(action.preset);
   }, [go, handleWizardExit, openCampaignComposerInternal]);
 
   const requestWizardLeave = useCallback(
-    (path = "campagnes") => {
+    (path = "campagnes", after?: () => void) => {
       if (!wizardIsDirty) {
         handleWizardExit();
         go(path);
+        after?.();
         return;
       }
-      pendingWizardLeaveActionRef.current = { type: "navigate", path };
+      pendingWizardLeaveActionRef.current = { type: "navigate", path, after };
       setLeaveWizardConfirmOpen(true);
     },
     [wizardIsDirty, handleWizardExit, go]

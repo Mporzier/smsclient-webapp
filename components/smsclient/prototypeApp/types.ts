@@ -3,5 +3,5 @@ export type CampaignComposerPreset =
   | { contactIds?: string[]; groupNames?: string[] };
 
 export type PendingWizardLeaveAction =
-  | { type: "navigate"; path: string }
+  | { type: "navigate"; path: string; after?: () => void }
   | { type: "open"; preset?: CampaignComposerPreset };

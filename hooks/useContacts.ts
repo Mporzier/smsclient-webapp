@@ -52,6 +52,7 @@ export function useContacts(withUnsubscribed = true) {
         search,
         sort: pageSort,
         includeTotal: offset === 0,
+        eligibleOnly: true,
       });
       return {
         data: res.data,

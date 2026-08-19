@@ -7,7 +7,7 @@ export type CampaignWizardProps = {
   step: 1 | 2 | 3;
   onWizardStepChange: (step: 1 | 2 | 3) => void;
   onWizardExit: () => void;
-  requestWizardLeave: (path?: string) => void;
+  requestWizardLeave: (path?: string, after?: () => void) => void;
   onComposeApproachChange: (approach: SmsComposeApproach | null) => void;
   go: (h: string) => void;
   title: string;
@@ -71,4 +71,8 @@ export type CampaignWizardProps = {
   ) => Promise<{ data: string[]; error: Error | null }>;
   creditsAvailable: number;
   onConfirmCampaign?: () => void | Promise<void>;
+  /** Ouvre la modale contact depuis l'empty state destinataires (après retour Contacts). */
+  onAddContact?: () => void;
+  onImportContacts?: () => void;
+  onCreateGroup?: () => void;
 };

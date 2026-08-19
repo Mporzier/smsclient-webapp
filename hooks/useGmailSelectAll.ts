@@ -66,6 +66,10 @@ export type UseGmailSelectAllResult = {
   expandToMatchAll: () => Promise<string[]>;
   /** Attend la fin du fetch ids (si expand en cours) puis renvoie la sélection complète. */
   ensureSelectionReady: () => Promise<string[]>;
+  /** true = sélection « tous les matchs » intacte → actions par filtre serveur possibles. */
+  matchAllActive: boolean;
+  /** À appeler dès qu'une case est cochée/décochée à la main. */
+  exitMatchAll: () => void;
 };
 
 export function useGmailSelectAll({
@@ -89,6 +93,7 @@ export function useGmailSelectAll({
   const [pendingDisplayTotal, setPendingDisplayTotal] = useState<number | null>(
     null,
   );
+  const [matchAllActive, setMatchAllActive] = useState(false);
 
   const countGenRef = useRef(0);
   const prevSearchRef = useRef(search);
@@ -98,6 +103,7 @@ export function useGmailSelectAll({
   const fetchAllIdsRef = useRef(fetchAllIds);
   const matchTotalRef = useRef(matchTotal);
   const expandPromiseRef = useRef<Promise<string[]> | null>(null);
+  const expandGenRef = useRef(0);
   const expandModeRef = useRef(expandMode);
 
   useEffect(() => {
@@ -127,7 +133,10 @@ export function useGmailSelectAll({
     setExpandError(null);
     setExpanding(false);
     setPendingDisplayTotal(null);
+    setMatchAllActive(false);
     countGenRef.current += 1;
+    expandGenRef.current += 1;
+    expandPromiseRef.current = null;
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -166,6 +175,7 @@ export function useGmailSelectAll({
     }
     setPendingDisplayTotal(null);
     setPageSelectActive(true);
+    setMatchAllActive(false);
     setExpandError(null);
     setMatchTotal(null);
     setCounting(true);
@@ -193,6 +203,7 @@ export function useGmailSelectAll({
     setCounting(false);
     setPageSelectActive(false);
     setExpandError(null);
+    setMatchAllActive(expandModeRef.current === "replace");
     if (expected != null && expected > 0) {
       setPendingDisplayTotal(expected);
     }
@@ -202,14 +213,18 @@ export function useGmailSelectAll({
     }
 
     const run = async (): Promise<string[]> => {
+      const gen = ++expandGenRef.current;
       setExpanding(true);
       const { data, error } = await fetchAllIdsRef.current();
+      // Expand annulé (clear / delete global / nouvelle recherche) : on jette.
+      if (gen !== expandGenRef.current) return data;
       setExpanding(false);
 
       if (error && data.length === 0) {
         setExpandError(error.message);
         setPendingDisplayTotal(null);
         setPageSelectActive(true);
+        setMatchAllActive(false);
         if (expected != null) setMatchTotal(expected);
         return toIdArray(selectedIdsRef.current);
       }
@@ -257,6 +272,10 @@ export function useGmailSelectAll({
     return current;
   }, [pendingDisplayTotal, expandToMatchAll]);
 
+  const exitMatchAll = useCallback(() => {
+    setMatchAllActive(false);
+  }, []);
+
   const selectedCount = selectedCountOf(selectedIds);
   // Optimiste tant que les ids n’ont pas rattrapé le total expand (pas d’effect setState).
   const displaySelectedCount =
@@ -283,5 +302,7 @@ export function useGmailSelectAll({
     expandError,
     expandToMatchAll,
     ensureSelectionReady,
+    matchAllActive,
+    exitMatchAll,
   };
 }

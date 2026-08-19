@@ -140,6 +140,9 @@ export function CampaignWizard({
   onFetchMatchingGroupNames,
   creditsAvailable,
   onConfirmCampaign,
+  onAddContact,
+  onImportContacts,
+  onCreateGroup,
 }: CampaignWizardProps) {
   const { profile } = useUserProfile();
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -669,6 +672,12 @@ export function CampaignWizard({
     resolvedGroupMemberIds,
     groupMemberIdsByName,
     recipientsResolving,
+    onGoToContacts: (intent: "add" | "import") =>
+      requestWizardLeave(
+        "contacts",
+        intent === "add" ? onAddContact : onImportContacts,
+      ),
+    onGoToGroups: () => requestWizardLeave("groupes", onCreateGroup),
     onCountEligibleContacts,
     onFetchEligibleContactIds,
     onCountMatchingGroups,

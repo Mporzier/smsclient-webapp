@@ -2,6 +2,7 @@
 
 import {
   deleteClients,
+  deleteClientsMatching,
   insertClient,
   resubscribeClients,
   updateClient,
@@ -21,9 +22,8 @@ export function useContactActions({ data, modals }: ActionsContext) {
     openConfirmDelete,
   } = modals;
 
-  const handleDeleteContacts = useCallback(
-    (ids: string[]) => {
-      const n = ids.length;
+  const confirmContactDelete = useCallback(
+    (n: number, run: () => Promise<number>) => {
       openConfirmDelete(
         `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
         `${
@@ -32,26 +32,60 @@ export function useContactActions({ data, modals }: ActionsContext) {
           n > 1 ? "les" : "le"
         } restaurer dans Paramètres → Éléments supprimés.`,
         async () => {
-          const { error } = await deleteClients(supabase, ids);
-          if (error) throw error;
+          const deleted = await run();
           setConfirmDeleteOpen(false);
           contactsState.refresh();
           groupsState.refresh();
           void trashState.refresh();
           toast(
-            `${n} contact${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
+            `${deleted} contact${deleted > 1 ? "s" : ""} supprimé${
+              deleted > 1 ? "s" : ""
+            }.`
           );
         }
       );
     },
     [
       openConfirmDelete,
-      supabase,
       contactsState,
       groupsState,
       trashState,
       setConfirmDeleteOpen,
     ]
+  );
+
+  const handleDeleteContacts = useCallback(
+    (
+      idsOrResolve: string[] | (() => Promise<string[]>),
+      countHint?: number,
+    ) => {
+      const n =
+        countHint ?? (Array.isArray(idsOrResolve) ? idsOrResolve.length : 0);
+      confirmContactDelete(n, async () => {
+        const ids = Array.isArray(idsOrResolve)
+          ? idsOrResolve
+          : await idsOrResolve();
+        const { error } = await deleteClients(supabase, ids);
+        if (error) throw error;
+        return ids.length;
+      });
+    },
+    [confirmContactDelete, supabase]
+  );
+
+  /** Sélection « tous les contacts » : delete par filtre, sans rapatrier les ids. */
+  const handleDeleteContactsMatching = useCallback(
+    (search: string, countHint: number) => {
+      confirmContactDelete(countHint, async () => {
+        const { count, error } = await deleteClientsMatching(supabase, {
+          search,
+          eligibleOnly: true,
+        });
+        if (error) throw error;
+        return count;
+      });
+    },
+    [confirmContactDelete, supabase]
   );
 
   const handleDeleteContactFromModal = useCallback(() => {
@@ -132,6 +166,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
 
   return {
     handleDeleteContacts,
+    handleDeleteContactsMatching,
     handleDeleteContactFromModal,
     handleUnsubscribeContact,
     handleContactSave,

@@ -33,9 +33,9 @@ type DataTableProps<T> = {
   pageSize?: number;
   /** Filtre client (évité si search serveur). */
   globalFilter?: string;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   loadingMessage?: string;
-  searchNoResultsMessage?: string;
+  searchNoResultsMessage?: ReactNode;
   onRowClick?: (row: T) => void;
   footer?: ReactNode;
   /** Tronque le contenu au lieu de faire défiler horizontalement. */
@@ -291,11 +291,35 @@ export function DataTable<T>({
   const { rows: tableRows } = table.getRowModel();
   const totalSize = table.getTotalSize();
 
-  const isEmpty = !loading && data.length === 0;
+  const isEmpty = !loading && data.length === 0 && globalFilter.trim() === "";
   const isSearchEmpty =
     !loading &&
     data.length === 0 &&
     globalFilter.trim() !== "";
+
+  // Largeur visible du scroller : garde le message vide centré même quand les
+  // colonnes (champs perso) rendent le tableau plus large que l'écran.
+  const [viewportWidth, setViewportWidth] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setViewportWidth(el.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const emptyRowContent = (node: ReactNode) => (
+    <td colSpan={columns.length} className="border-b border-border/60 p-0">
+      <div
+        className="sticky left-0 flex items-center justify-center px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
+        style={viewportWidth ? { width: viewportWidth } : undefined}
+      >
+        {node}
+      </div>
+    </td>
+  );
 
   useEffect(() => {
     if (!onLoadMore || !hasMore || loading || loadingMore) return;
@@ -485,26 +509,8 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {isEmpty && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            )}
-            {isSearchEmpty && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="border-b border-border/60 px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
-                >
-                  {searchNoResultsMessage}
-                </td>
-              </tr>
-            )}
+            {isEmpty && <tr>{emptyRowContent(emptyMessage)}</tr>}
+            {isSearchEmpty && <tr>{emptyRowContent(searchNoResultsMessage)}</tr>}
             {!isEmpty &&
               !isSearchEmpty &&
               tableRows.map((row: Row<T>) => (

@@ -2,6 +2,7 @@
 
 import { DataTable } from "@/components/smsclient/DataTable";
 import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
@@ -49,14 +50,19 @@ export function InvoicesTable({
         size: 100,
         cell: ({ getValue }) => {
           const status = getValue<string>();
-          return status === "paid" ? (
-            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-              {t("invoices.status.paid")}
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {t("invoices.status.refunded")}
-            </span>
+          return (
+            <Badge
+              variant={status === "paid" ? "default" : "secondary"}
+              className={
+                status === "paid"
+                  ? "border-transparent bg-emerald-500/12 text-emerald-800 dark:text-emerald-300"
+                  : undefined
+              }
+            >
+              {status === "paid"
+                ? t("invoices.status.paid")
+                : t("invoices.status.refunded")}
+            </Badge>
           );
         },
       },

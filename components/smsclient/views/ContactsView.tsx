@@ -18,6 +18,14 @@ import {
 } from "@/components/smsclient/modals/UnsubscribedContactsModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
@@ -68,7 +76,12 @@ type ContactsProps = {
   onImport: () => void;
   onAddContact: () => void;
   onRowClick: (row: ContactRowData) => void;
-  onDeleteContacts: (ids: string[]) => void;
+  onDeleteContacts: (
+    ids: string[] | (() => Promise<string[]>),
+    countHint?: number,
+  ) => void;
+  /** Suppression par filtre serveur quand toute la recherche est sélectionnée. */
+  onDeleteContactsMatching?: (search: string, countHint: number) => void;
   onCreateCampaignFromContacts: (ids: string[]) => void;
   onResubscribeContacts?: (ids: string[]) => Promise<void>;
   onCountSelectableMatches?: (
@@ -296,6 +309,7 @@ export function ContactsView({
   onAddContact,
   onRowClick,
   onDeleteContacts,
+  onDeleteContactsMatching,
   onCreateCampaignFromContacts,
   onResubscribeContacts,
   onCountSelectableMatches,
@@ -343,6 +357,8 @@ export function ContactsView({
     expandError,
     expandToMatchAll,
     ensureSelectionReady,
+    matchAllActive,
+    exitMatchAll,
   } = useGmailSelectAll({
     search: searchQuery,
     loadedIds,
@@ -371,8 +387,34 @@ export function ContactsView({
   }, [onLoadUnsubscribed]);
 
   const hasSelection = displaySelectedCount > 0;
-  const showBigEmpty =
-    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+
+  const emptyState = (
+    <Empty className="p-0 md:p-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <UserRound aria-hidden />
+        </EmptyMedia>
+        <EmptyTitle>{t("contacts.emptyTitle")}</EmptyTitle>
+        <EmptyDescription>{t("contacts.emptyBody")}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="default"
+            className="rounded-full"
+            onClick={onAddContact}
+          >
+            <Plus aria-hidden />
+            {t("contacts.add")}
+          </Button>
+          <Button variant="outline" className="rounded-full" onClick={onImport}>
+            <Download aria-hidden />
+            {t("contacts.import")}
+          </Button>
+        </div>
+      </EmptyContent>
+    </Empty>
+  );
 
   const allLoadedSelected =
     eligibleRows.length > 0 && eligibleRows.every((r) => selectedIds.has(r.id));
@@ -410,14 +452,18 @@ export function ContactsView({
     );
   }, [loading, eligibleRows.length, totalCount, unsubCount, openUnsubModal, t]);
 
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const toggleSelect = useCallback(
+    (id: string) => {
+      exitMatchAll();
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [exitMatchAll]
+  );
 
   const toggleAll = useCallback(() => {
     if (allLoadedSelected) {
@@ -559,11 +605,16 @@ export function ContactsView({
                 size="lg"
                 className="rounded-full"
                 onClick={() => {
-                  void (async () => {
-                    const ids = await ensureSelectionReady();
-                    onDeleteContacts(ids);
+                  if (matchAllActive && onDeleteContactsMatching) {
+                    onDeleteContactsMatching(searchQuery, displaySelectedCount);
                     clearSelection();
-                  })();
+                    return;
+                  }
+                  // Résolution des ids (expand en cours) pendant que la modale
+                  // est déjà ouverte : pas d'attente au clic.
+                  const idsPromise = ensureSelectionReady();
+                  onDeleteContacts(() => idsPromise, displaySelectedCount);
+                  void idsPromise.then(() => clearSelection());
                 }}
               >
                 <Trash2 aria-hidden />
@@ -622,42 +673,25 @@ export function ContactsView({
         </div>
       )}
 
-      {showBigEmpty ? (
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <UserRound
-              className="h-14 w-14 text-slate-400"
-              strokeWidth={1.25}
-              aria-hidden
-            />
-            <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              {t("contacts.emptyTitle")}
-            </p>
-            <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              {t("contacts.emptyBody")}
-            </p>
-          </div>
-        </section>
-      ) : (
-        <DataTable
-          columns={selectColumns}
-          data={eligibleRows}
-          loading={loading}
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-          onLoadMore={onLoadMore}
-          globalFilter={searchQuery}
-          loadingMessage={t("contacts.loading")}
-          emptyMessage={t("contacts.emptyTable")}
-          searchNoResultsMessage={t("contacts.noSearchResults")}
-          onRowClick={onRowClick}
-          footer={footer}
-          minContentWidth={minContentWidth}
-          sorting={sorting}
-          onSortingChange={onSortingChange}
-          manualSorting
-        />
-      )}
+      <DataTable
+        columns={selectColumns}
+        data={eligibleRows}
+        loading={loading}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMore={onLoadMore}
+        globalFilter={searchQuery}
+        loadingMessage={t("contacts.loading")}
+        emptyMessage={emptyState}
+        searchNoResultsMessage={t("contacts.noSearchResults")}
+        onRowClick={onRowClick}
+        footer={footer}
+        minContentWidth={minContentWidth}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+        manualSorting
+      />
+
 
       <UnsubscribedContactsModal
         open={unsubModalOpen}

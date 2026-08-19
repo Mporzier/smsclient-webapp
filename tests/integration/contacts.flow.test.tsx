@@ -12,9 +12,7 @@ describe("Contacts — flows (intégration, mocks)", () => {
   it("affiche l'état vide et les actions principales", () => {
     render(<ContactsFlowHarness />);
 
-    expect(
-      screen.getByText("Aucun contact pour l'instant"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucun contact trouvé")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Importer" }),
     ).toBeInTheDocument();
@@ -153,8 +151,6 @@ describe("Contacts — flows (intégration, mocks)", () => {
     await waitFor(() => {
       expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     });
-    expect(
-      screen.getByText("Aucun contact pour l'instant"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Aucun contact trouvé")).toBeInTheDocument();
   });
 });

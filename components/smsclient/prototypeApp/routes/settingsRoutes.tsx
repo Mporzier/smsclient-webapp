@@ -150,7 +150,14 @@ export function renderSettingsRoute(
         />
       );
     case "nouvelle-campagne":
-      return <CampaignWizard {...wizard.campaignWizardProps} />;
+      return (
+        <CampaignWizard
+          {...wizard.campaignWizardProps}
+          onAddContact={modals.openContactAdd}
+          onImportContacts={() => modals.setImportContactsOpen(true)}
+          onCreateGroup={() => modals.setGroupModalOpen(true)}
+        />
+      );
     default:
       return null;
   }

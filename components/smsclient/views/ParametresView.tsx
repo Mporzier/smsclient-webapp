@@ -1,7 +1,11 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
@@ -11,13 +15,9 @@ import { CompteSettingsPanel } from "@/components/smsclient/views/parametres/Com
 import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
 import {
-  ModalPanel,
-  SettingCard,
-} from "@/components/smsclient/views/parametres/SettingCard";
-import {
   allSettingCards,
   emptyProfileForm,
-  parametresFieldInp,
+  parametresDirtyInp,
   parametresFieldLbl,
   settingSections,
   type SettingId,
@@ -46,7 +46,8 @@ import {
   SMS_SENDER_MAX_LENGTH,
 } from "@/lib/forms/fieldLimits";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 
 function sectionTitleKey(id: SettingSectionId): MessageKey {
   return `parametres.section.${id}` as MessageKey;
@@ -58,6 +59,110 @@ function cardTitleKey(id: SettingId): MessageKey {
 
 function cardDescKey(id: SettingId): MessageKey {
   return `parametres.card.${id}.description` as MessageKey;
+}
+
+/** Réglages assez riches pour rester en modale (tableaux, CRUD). */
+const MODAL_SETTINGS = new Set<SettingId>([
+  "factures",
+  "champs-perso",
+  "corbeille",
+]);
+
+function SettingsField({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id} className={parametresFieldLbl}>
+        {label}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
+function SettingsBlock({
+  icon: Icon,
+  title,
+  description,
+  upcoming,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  upcoming?: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <section className="grid gap-3 border-b border-border pb-6 last:border-b-0 last:pb-0 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+      <div className="flex items-start gap-2.5">
+        <Icon
+          className="mt-0.5 size-4 shrink-0 text-ring"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            {title}
+            {upcoming ? (
+              <Badge variant="outline" className="uppercase">
+                {upcoming}
+              </Badge>
+            ) : null}
+          </h3>
+          <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3">{children}</div>
+    </section>
+  );
+}
+
+function SettingsModalRow({
+  icon: Icon,
+  title,
+  description,
+  openLabel,
+  onOpen,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  openLabel: string;
+  onOpen: () => void;
+}) {
+  return (
+    <section className="grid gap-3 border-b border-border pb-6 last:border-b-0 last:pb-0 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+      <div className="flex items-start gap-2.5">
+        <Icon
+          className="mt-0.5 size-4 shrink-0 text-ring"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div>
+        <Button type="button" variant="outline" size="sm" onClick={onOpen}>
+          {openLabel}
+          <ChevronRight className="size-4" aria-hidden />
+        </Button>
+      </div>
+    </section>
+  );
 }
 
 export type ParametresViewProps = {
@@ -174,23 +279,16 @@ export function ParametresView({
   };
 
   const validateBeforeSave = (): string | null => {
-    switch (openSetting) {
-      case "entreprise":
-        if (!draftForm.companyName.trim()) {
-          return t("parametres.companyNameRequired");
-        }
-        if (!draftForm.businessActivity) {
-          return t("parametres.activityRequired");
-        }
-        return null;
-      case "expediteur-sms":
-        if (!draftForm.sender.trim()) {
-          return t("parametres.senderRequired");
-        }
-        return null;
-      default:
-        return null;
+    if (changed("companyName") && !draftForm.companyName.trim()) {
+      return t("parametres.companyNameRequired");
     }
+    if (changed("businessActivity") && !draftForm.businessActivity) {
+      return t("parametres.activityRequired");
+    }
+    if (changed("sender") && !draftForm.sender.trim()) {
+      return t("parametres.senderRequired");
+    }
+    return null;
   };
 
   const onSaveChanges = async () => {
@@ -205,7 +303,7 @@ export function ParametresView({
     try {
       await onSaveProfile(draftForm);
       setSavedForm(draftForm);
-      closeModal();
+      setOpenSetting(null);
     } catch (e) {
       setSaveError(
         e instanceof Error ? e.message : t("parametres.saveFailed")
@@ -261,17 +359,223 @@ export function ParametresView({
     "compte";
 
   const sectionCards = visibleCards.filter((c) => c.section === sectionId);
+  const inlineCards = sectionCards.filter((c) => !MODAL_SETTINGS.has(c.id));
+  const modalCards = sectionCards.filter((c) => MODAL_SETTINGS.has(c.id));
 
   const modalIcon = openCard ? (
     <openCard.icon className="h-5 w-5" strokeWidth={2.25} />
   ) : null;
 
+  const renderInlineSetting = (id: SettingId): ReactNode => {
+    switch (id) {
+      case "entreprise":
+        return (
+          <>
+            <SettingsField
+              id="param-company-name"
+              label={t("parametres.field.companyName")}
+            >
+              <Input
+                id="param-company-name"
+                className={cn(changed("companyName") && parametresDirtyInp)}
+                maxLength={COMPANY_NAME_MAX_LENGTH}
+                value={draftForm.companyName}
+                onChange={(e) => setField("companyName", e.target.value)}
+              />
+            </SettingsField>
+            <div className="grid gap-1.5">
+              <Label className={parametresFieldLbl}>
+                {t("parametres.field.businessActivity")}
+              </Label>
+              <BusinessActivitySelect
+                value={draftForm.businessActivity}
+                onChange={(activityId) =>
+                  setField("businessActivity", activityId)
+                }
+                highlighted={changed("businessActivity")}
+              />
+            </div>
+          </>
+        );
+      case "identifiants-legaux":
+        return (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <SettingsField id="param-siret" label={t("parametres.field.siret")}>
+              <Input
+                id="param-siret"
+                className={cn(changed("siret") && parametresDirtyInp)}
+                maxLength={SIRET_MAX_LENGTH}
+                value={draftForm.siret}
+                onChange={(e) => setField("siret", e.target.value)}
+              />
+            </SettingsField>
+            <SettingsField id="param-tva" label={t("parametres.field.tva")}>
+              <Input
+                id="param-tva"
+                className={cn(changed("tva") && parametresDirtyInp)}
+                maxLength={VAT_MAX_LENGTH}
+                value={draftForm.tva}
+                onChange={(e) => setField("tva", e.target.value)}
+              />
+            </SettingsField>
+          </div>
+        );
+      case "adresse-facturation":
+        return (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <SettingsField
+                id="param-address"
+                label={t("parametres.field.address")}
+              >
+                <Input
+                  id="param-address"
+                  className={cn(changed("address") && parametresDirtyInp)}
+                  maxLength={ADDRESS_MAX_LENGTH}
+                  value={draftForm.address}
+                  onChange={(e) => setField("address", e.target.value)}
+                />
+              </SettingsField>
+            </div>
+            <SettingsField id="param-zip" label={t("parametres.field.zip")}>
+              <Input
+                id="param-zip"
+                className={cn(changed("zip") && parametresDirtyInp)}
+                maxLength={ZIP_MAX_LENGTH}
+                value={draftForm.zip}
+                onChange={(e) => setField("zip", e.target.value)}
+              />
+            </SettingsField>
+            <SettingsField id="param-city" label={t("parametres.field.city")}>
+              <Input
+                id="param-city"
+                className={cn(changed("city") && parametresDirtyInp)}
+                maxLength={CITY_MAX_LENGTH}
+                value={draftForm.city}
+                onChange={(e) => setField("city", e.target.value)}
+              />
+            </SettingsField>
+            <SettingsField
+              id="param-country"
+              label={t("parametres.field.country")}
+            >
+              <Input
+                id="param-country"
+                className={cn(changed("country") && parametresDirtyInp)}
+                maxLength={COUNTRY_MAX_LENGTH}
+                value={draftForm.country}
+                onChange={(e) => setField("country", e.target.value)}
+              />
+            </SettingsField>
+          </div>
+        );
+      case "contact-facturation":
+        return (
+          <SettingsField
+            id="param-billing-contact"
+            label={t("parametres.field.billingContact")}
+          >
+            <Input
+              id="param-billing-contact"
+              className={cn(changed("billingContact") && parametresDirtyInp)}
+              maxLength={BILLING_CONTACT_MAX_LENGTH}
+              value={draftForm.billingContact}
+              onChange={(e) => setField("billingContact", e.target.value)}
+              placeholder={t("parametres.field.billingContactPlaceholder")}
+            />
+          </SettingsField>
+        );
+      case "expediteur-sms":
+        return (
+          <>
+            <SettingsField
+              id="param-sender"
+              label={t("parametres.field.sender")}
+            >
+              <Input
+                id="param-sender"
+                className={cn(changed("sender") && parametresDirtyInp)}
+                maxLength={SMS_SENDER_MAX_LENGTH}
+                value={draftForm.sender}
+                onChange={(e) => setField("sender", e.target.value)}
+                placeholder="BOULANGERIE"
+                autoComplete="off"
+              />
+            </SettingsField>
+            <p className="m-0 text-xs font-medium text-muted-foreground">
+              {t("parametres.field.senderHint")}
+            </p>
+          </>
+        );
+      case "notifications-email":
+        return (
+          <>
+            <div className="flex items-start gap-2.5">
+              <Checkbox
+                id="param-notify-invoices"
+                checked={draftForm.notifyInvoices}
+                onCheckedChange={(checked) =>
+                  setField("notifyInvoices", checked === true)
+                }
+                className="mt-0.5"
+              />
+              <Label
+                htmlFor="param-notify-invoices"
+                className="text-sm font-semibold leading-snug"
+              >
+                {t("parametres.field.notifyInvoices")}
+              </Label>
+            </div>
+            <p className="m-0 text-xs font-medium text-muted-foreground">
+              {t("parametres.field.notifyInvoicesHint")}
+            </p>
+          </>
+        );
+      case "resume-mensuel":
+        return (
+          <div className="flex items-start gap-2.5">
+            <Checkbox
+              id="param-notify-summary"
+              checked={draftForm.notifySummary}
+              onCheckedChange={(checked) =>
+                setField("notifySummary", checked === true)
+              }
+              className="mt-0.5"
+            />
+            <Label
+              htmlFor="param-notify-summary"
+              className="text-sm font-semibold leading-snug"
+            >
+              {t("parametres.field.notifySummary")}
+            </Label>
+          </div>
+        );
+      case "abonnement":
+        return (
+          <p className="m-0 text-xs font-medium text-muted-foreground">
+            {t("parametres.abonnementBody")}
+          </p>
+        );
+      case "paiement":
+        return (
+          <p className="m-0 text-xs font-medium text-muted-foreground">
+            {t("parametres.paiementBody")}
+          </p>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const sectionLabel = availableSections.find((s) => s.id === sectionId)
+    ? t(sectionTitleKey(sectionId))
+    : t("shell.settings");
+
   return (
     <>
-      <div className="flex flex-col gap-4">
-        <div
-          className="flex flex-wrap gap-2"
-          role="tablist"
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+        <nav
+          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:overflow-visible lg:border-r lg:border-border lg:px-0 lg:pr-4 lg:pb-0"
           aria-label={t("parametres.sectionsAria")}
         >
           {availableSections.map((section) => (
@@ -279,24 +583,34 @@ export function ParametresView({
               key={section.id}
               type="button"
               size="sm"
-              variant={sectionId === section.id ? "default" : "outline"}
-              role="tab"
-              aria-selected={sectionId === section.id}
+              variant={sectionId === section.id ? "secondary" : "ghost"}
+              aria-current={sectionId === section.id ? "page" : undefined}
+              className="shrink-0 justify-start lg:w-full"
               onClick={() => setActiveSection(section.id)}
             >
               {t(sectionTitleKey(section.id))}
             </Button>
           ))}
-        </div>
+        </nav>
 
-        <div
-          role="tabpanel"
-          aria-label={
-            availableSections.find((s) => s.id === sectionId)
-              ? t(sectionTitleKey(sectionId))
-              : t("shell.settings")
-          }
-        >
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <h2 className="text-base font-semibold text-foreground">
+            {sectionLabel}
+          </h2>
+
+          {profileLoading && (
+            <p className="m-0 text-sm font-semibold text-muted-foreground">
+              <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
+            </p>
+          )}
+          {saveError && (
+            <Alert variant="destructive">
+              <AlertDescription className="font-bold">
+                {saveError}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {sectionId === "compte" ? (
             <CompteSettingsPanel
               form={draftForm}
@@ -308,17 +622,53 @@ export function ParametresView({
           ) : sectionId === "apparence" ? (
             <ApparenceSettingsPanel />
           ) : (
-            <div className="grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1">
-              {sectionCards.map((card) => (
-                <SettingCard
+            <div className="flex flex-col gap-6">
+              {inlineCards.map((card) => (
+                <SettingsBlock
                   key={card.id}
+                  icon={card.icon}
                   title={t(cardTitleKey(card.id))}
                   description={t(cardDescKey(card.id))}
+                  upcoming={card.upcoming ? t("parametres.upcoming") : null}
+                >
+                  {renderInlineSetting(card.id)}
+                </SettingsBlock>
+              ))}
+              {modalCards.map((card) => (
+                <SettingsModalRow
+                  key={card.id}
                   icon={card.icon}
-                  upcoming={card.upcoming}
-                  onClick={() => setOpenSetting(card.id)}
+                  title={t(cardTitleKey(card.id))}
+                  description={t(cardDescKey(card.id))}
+                  openLabel={t("common.open")}
+                  onOpen={() => setOpenSetting(card.id)}
                 />
               ))}
+            </div>
+          )}
+
+          {dirty && (
+            <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t border-border bg-background/95 py-3 backdrop-blur">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={saving}
+                onClick={() => {
+                  setDraftForm(savedForm);
+                  setSaveError(null);
+                }}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving}
+                onClick={() => void onSaveChanges()}
+              >
+                {t("dialog.save")}
+              </Button>
             </div>
           )}
         </div>
@@ -331,199 +681,9 @@ export function ParametresView({
           description={t(cardDescKey(openCard.id))}
           icon={modalIcon}
           onClose={handleCloseModal}
-          onSave={openCard.savable ? onSaveChanges : undefined}
           saving={saving}
-          wide={
-            openSetting === "factures" ||
-            openSetting === "corbeille" ||
-            openSetting === "champs-perso" ||
-            openSetting === "adresse-facturation"
-          }
+          wide
         >
-          {profileLoading && openCard.savable && (
-            <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
-              <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
-            </p>
-          )}
-          {saveError && (
-            <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-              {saveError}
-            </p>
-          )}
-
-          {openSetting === "entreprise" && (
-            <ModalPanel>
-              <div className="grid gap-3">
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.companyName")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("companyName") &&
-                        "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={COMPANY_NAME_MAX_LENGTH}
-                    value={draftForm.companyName}
-                    onChange={(e) => setField("companyName", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.businessActivity")}
-                  </label>
-                  <BusinessActivitySelect
-                    value={draftForm.businessActivity}
-                    onChange={(id) => setField("businessActivity", id)}
-                    highlighted={changed("businessActivity")}
-                  />
-                </div>
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "identifiants-legaux" && (
-            <ModalPanel>
-              <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.siret")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("siret") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={SIRET_MAX_LENGTH}
-                    value={draftForm.siret}
-                    onChange={(e) => setField("siret", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.tva")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("tva") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={VAT_MAX_LENGTH}
-                    value={draftForm.tva}
-                    onChange={(e) => setField("tva", e.target.value)}
-                  />
-                </div>
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "adresse-facturation" && (
-            <ModalPanel>
-              <div className="grid grid-cols-2 gap-3 max-[480px]:grid-cols-1">
-                <div className="col-span-2">
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.address")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("address") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={ADDRESS_MAX_LENGTH}
-                    value={draftForm.address}
-                    onChange={(e) => setField("address", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.zip")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("zip") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={ZIP_MAX_LENGTH}
-                    value={draftForm.zip}
-                    onChange={(e) => setField("zip", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.city")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("city") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={CITY_MAX_LENGTH}
-                    value={draftForm.city}
-                    onChange={(e) => setField("city", e.target.value)}
-                  />
-                </div>
-                <div className="col-span-2 max-[480px]:col-span-1">
-                  <label className={parametresFieldLbl}>
-                    {t("parametres.field.country")}
-                  </label>
-                  <input
-                    className={cn(
-                      parametresFieldInp,
-                      changed("country") && "border-blue-400 ring-2 ring-blue-100"
-                    )}
-                    maxLength={COUNTRY_MAX_LENGTH}
-                    value={draftForm.country}
-                    onChange={(e) => setField("country", e.target.value)}
-                  />
-                </div>
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "contact-facturation" && (
-            <ModalPanel>
-              <div>
-                <label className={parametresFieldLbl}>
-                  {t("parametres.field.billingContact")}
-                </label>
-                <input
-                  className={cn(
-                    parametresFieldInp,
-                    changed("billingContact") &&
-                      "border-blue-400 ring-2 ring-blue-100"
-                  )}
-                  maxLength={BILLING_CONTACT_MAX_LENGTH}
-                  value={draftForm.billingContact}
-                  onChange={(e) => setField("billingContact", e.target.value)}
-                  placeholder={t("parametres.field.billingContactPlaceholder")}
-                />
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "abonnement" && (
-            <ModalPanel>
-              <p className="m-0 text-sm font-extrabold text-foreground">
-                {t("parametres.upcomingTitle")}
-              </p>
-              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                {t("parametres.abonnementBody")}
-              </p>
-            </ModalPanel>
-          )}
-
-          {openSetting === "paiement" && (
-            <ModalPanel>
-              <p className="m-0 text-sm font-extrabold text-foreground">
-                {t("parametres.upcomingTitle")}
-              </p>
-              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                {t("parametres.paiementBody")}
-              </p>
-            </ModalPanel>
-          )}
-
           {openSetting === "factures" && (
             <InvoicesTable
               purchases={purchases}
@@ -535,63 +695,6 @@ export function ParametresView({
               sorting={purchasesSorting}
               onSortingChange={onPurchasesSortingChange ?? (() => {})}
             />
-          )}
-
-          {openSetting === "expediteur-sms" && (
-            <ModalPanel>
-              <div>
-                <label className={parametresFieldLbl}>
-                  {t("parametres.field.sender")}
-                </label>
-                <input
-                  className={cn(
-                    parametresFieldInp,
-                    changed("sender") && "border-blue-400 ring-2 ring-blue-100"
-                  )}
-                  maxLength={SMS_SENDER_MAX_LENGTH}
-                  value={draftForm.sender}
-                  onChange={(e) => setField("sender", e.target.value)}
-                  placeholder="BOULANGERIE"
-                  autoComplete="off"
-                />
-                <p className="mt-1.5 text-xs font-bold text-slate-500">
-                  {t("parametres.field.senderHint")}
-                </p>
-              </div>
-            </ModalPanel>
-          )}
-
-          {openSetting === "notifications-email" && (
-            <ModalPanel>
-              <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <Checkbox
-                  checked={draftForm.notifyInvoices}
-                  onCheckedChange={(checked) =>
-                    setField("notifyInvoices", checked === true)
-                  }
-                  className="mt-0.5"
-                />
-                {t("parametres.field.notifyInvoices")}
-              </label>
-              <p className="m-0 mt-2 text-xs font-semibold text-muted-foreground">
-                {t("parametres.field.notifyInvoicesHint")}
-              </p>
-            </ModalPanel>
-          )}
-
-          {openSetting === "resume-mensuel" && (
-            <ModalPanel>
-              <label className="flex items-start gap-2.5 text-sm font-extrabold text-slate-600">
-                <Checkbox
-                  checked={draftForm.notifySummary}
-                  onCheckedChange={(checked) =>
-                    setField("notifySummary", checked === true)
-                  }
-                  className="mt-0.5"
-                />
-                {t("parametres.field.notifySummary")}
-              </label>
-            </ModalPanel>
           )}
 
           {openSetting === "champs-perso" &&

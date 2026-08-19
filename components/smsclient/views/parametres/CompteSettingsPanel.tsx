@@ -1,9 +1,9 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingLabel } from "@/components/ui/loading-label";
-import { parametresFieldInp } from "@/components/smsclient/views/parametres/parametresSettings";
 import { cn } from "@/lib/cn";
 import {
   PERSON_NAME_MAX_LENGTH,
@@ -140,21 +140,21 @@ export function CompteSettingsPanel({
   };
 
   return (
-    <div className="w-full max-w-[50%] min-w-[18rem] rounded-xl border border-border bg-card px-4">
+    <div className="w-full lg:grid lg:grid-cols-2 lg:gap-x-10">
       {loading ? (
-        <p className="py-4 text-sm font-semibold text-muted-foreground">
+        <p className="py-4 text-sm font-semibold text-muted-foreground lg:col-span-2">
           <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
         </p>
       ) : null}
       {saveError ? (
-        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-          {saveError}
-        </p>
+        <Alert variant="destructive" className="mb-3 lg:col-span-2">
+          <AlertDescription className="font-bold">{saveError}</AlertDescription>
+        </Alert>
       ) : null}
       {fieldError ? (
-        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-          {fieldError}
-        </p>
+        <Alert variant="destructive" className="mb-3 lg:col-span-2">
+          <AlertDescription className="font-bold">{fieldError}</AlertDescription>
+        </Alert>
       ) : null}
 
       <CompteDisplayRow
@@ -340,7 +340,7 @@ function CompteDisplayRow({
             </div>
           ) : (
             <Input
-              className={cn(parametresFieldInp, "h-9 min-w-0 flex-1 text-sm")}
+              className="h-9 min-w-0 flex-1 text-sm"
               value={draft}
               maxLength={maxLength}
               disabled={saving}

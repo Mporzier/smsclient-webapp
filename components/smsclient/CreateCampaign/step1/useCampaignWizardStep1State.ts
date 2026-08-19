@@ -51,6 +51,9 @@ export type CampaignWizardStep1Props = {
   onFetchMatchingGroupNames?: (
     search: string,
   ) => Promise<{ data: string[]; error: Error | null }>;
+  /** Quitte le wizard vers la vue Contacts puis ouvre la modale demandée. */
+  onGoToContacts?: (intent: "add" | "import") => void;
+  onGoToGroups?: () => void;
 };
 
 type RecipientTab = "manual" | "groups";
@@ -88,6 +91,8 @@ export function useCampaignWizardStep1State({
   onFetchEligibleContactIds,
   onCountMatchingGroups,
   onFetchMatchingGroupNames,
+  onGoToContacts,
+  onGoToGroups,
 }: CampaignWizardStep1Props) {
   const [tab, setTab] = useState<RecipientTab>("manual");
 
@@ -527,6 +532,8 @@ export function useCampaignWizardStep1State({
     listRowCount,
     recipientsResolving,
     expandBanner,
+    onGoToContacts,
+    onGoToGroups,
   };
 }
 

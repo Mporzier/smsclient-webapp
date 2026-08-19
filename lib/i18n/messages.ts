@@ -170,6 +170,7 @@ const fr = {
 
   "common.ok": "OK",
   "common.cancel": "Annuler",
+  "common.open": "Ouvrir",
   "common.select": "Sélectionner",
   "common.delete": "Supprimer",
   "common.edit": "Éditer",
@@ -288,9 +289,9 @@ const fr = {
   "contacts.createCampaign": "Créer une campagne",
   "contacts.import": "Importer",
   "contacts.add": "Ajouter un contact",
-  "contacts.emptyTitle": "Aucun contact pour l'instant",
+  "contacts.emptyTitle": "Aucun contact trouvé",
   "contacts.emptyBody":
-    "Cliquez sur « Ajouter un contact » pour enregistrer votre premier numéro.",
+    "Vous n'avez pas encore de contacts. Ajoutez votre premier contact ou importez votre liste de contacts pour commencer à envoyer des SMS.",
   "contacts.emptyTable": "Aucune cible disponible.",
   "contacts.loading": "Chargement de la liste des contacts…",
   "contacts.noSearchResults":
@@ -317,8 +318,9 @@ const fr = {
   "groups.deleteSelected": "Supprimer ({n})",
   "groups.createCampaign": "Créer une campagne",
   "groups.create": "Créer un groupe",
-  "groups.emptyTitle": "Aucun groupe",
-  "groups.emptyBody": "Créez votre premier segment avec « Créer un groupe ».",
+  "groups.emptyTitle": "Aucun groupe trouvé",
+  "groups.emptyBody":
+    "Vous n'avez pas encore de groupes. Créez votre premier groupe pour segmenter vos contacts et commencer à envoyer des SMS.",
   "groups.emptyTable": "Aucun groupe.",
   "groups.loading": "Chargement de la liste des groupes…",
   "groups.noSearchResults": "Aucun groupe ne correspond à votre recherche.",
@@ -1057,6 +1059,7 @@ const en: Record<MessageKey, string> = {
 
   "common.ok": "OK",
   "common.cancel": "Cancel",
+  "common.open": "Open",
   "common.select": "Select",
   "common.delete": "Delete",
   "common.edit": "Edit",
@@ -1175,9 +1178,9 @@ const en: Record<MessageKey, string> = {
   "contacts.createCampaign": "Create a campaign",
   "contacts.import": "Import",
   "contacts.add": "Add a contact",
-  "contacts.emptyTitle": "No contacts yet",
+  "contacts.emptyTitle": "No contacts found",
   "contacts.emptyBody":
-    "Click “Add a contact” to save your first number.",
+    "You don't have any contacts yet. Add your first contact or import your contact list to start sending SMS.",
   "contacts.emptyTable": "No targets available.",
   "contacts.loading": "Loading contacts list…",
   "contacts.noSearchResults": "No contacts match your search.",
@@ -1203,8 +1206,9 @@ const en: Record<MessageKey, string> = {
   "groups.deleteSelected": "Delete ({n})",
   "groups.createCampaign": "Create a campaign",
   "groups.create": "Create a group",
-  "groups.emptyTitle": "No groups yet",
-  "groups.emptyBody": "Create your first segment with “Create a group”.",
+  "groups.emptyTitle": "No groups found",
+  "groups.emptyBody":
+    "You don't have any groups yet. Create your first group to segment your contacts and start sending SMS.",
   "groups.emptyTable": "No groups.",
   "groups.loading": "Loading groups list…",
   "groups.noSearchResults": "No groups match your search.",

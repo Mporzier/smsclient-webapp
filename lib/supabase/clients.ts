@@ -245,6 +245,8 @@ export type FetchClientsPageArgs = {
   /** Compte exact (coûteux) — seulement offset 0 en pratique. */
   includeTotal?: boolean;
   sort?: ContactListSort | null;
+  /** Exclut les désabonnés (opt-out / STOP) — liste contacts principale. */
+  eligibleOnly?: boolean;
 };
 
 export async function fetchClientsPage(
@@ -264,6 +266,10 @@ export async function fetchClientsPage(
     .from("clients")
     .select(CLIENT_LIST_SELECT, includeTotal ? { count: "exact" } : undefined)
     .is("deleted_at", null);
+
+  if (args.eligibleOnly) {
+    query = query.eq("opt_in", true).eq("stop_sms", false);
+  }
 
   query = applyClientListSearch(query, args.search ?? "");
 
@@ -1143,6 +1149,27 @@ export async function resubscribeClients(
     if (error) return { error: new Error(error.message) };
   }
   return { error: null };
+}
+
+/**
+ * Soft delete par filtre serveur (sélection « tous les contacts »).
+ * Évite de rapatrier N ids avant suppression : une seule requête.
+ */
+export async function deleteClientsMatching(
+  supabase: SupabaseClient,
+  args: { search?: string; eligibleOnly: boolean },
+): Promise<{ count: number; error: Error | null }> {
+  let query = supabase
+    .from("clients")
+    .update({ deleted_at: new Date().toISOString() }, { count: "exact" })
+    .is("deleted_at", null);
+  if (args.eligibleOnly) {
+    query = query.eq("opt_in", true).eq("stop_sms", false);
+  }
+  query = applyClientListSearch(query, args.search ?? "");
+  const { count, error } = await query;
+  if (error) return { count: 0, error: new Error(error.message) };
+  return { count: typeof count === "number" ? count : 0, error: null };
 }
 
 export async function deleteClients(

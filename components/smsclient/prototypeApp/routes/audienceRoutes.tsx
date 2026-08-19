@@ -85,6 +85,7 @@ export function renderAudienceRoute(
           onAddContact={modals.openContactAdd}
           onRowClick={modals.openContactEdit}
           onDeleteContacts={actions.handleDeleteContacts}
+          onDeleteContactsMatching={actions.handleDeleteContactsMatching}
           onCreateCampaignFromContacts={(ids) =>
             wizard.openCampaignComposer({ contactIds: ids })
           }

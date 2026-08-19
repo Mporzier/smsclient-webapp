@@ -1,13 +1,21 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LoadingLabel } from "@/components/ui/loading-label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
 import { ModalPanel } from "@/components/smsclient/views/parametres/SettingCard";
-import {
-  parametresFieldInp,
-  parametresFieldLbl,
-} from "@/components/smsclient/views/parametres/parametresSettings";
+import { parametresFieldLbl } from "@/components/smsclient/views/parametres/parametresSettings";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { CUSTOM_FIELD_LABEL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
@@ -130,36 +138,39 @@ export function CustomFieldsSettingsPanel({
   return (
     <>
       <ModalPanel>
-        <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
+        <p className="m-0 mb-3 text-sm font-semibold text-muted-foreground">
           {t("customFields.intro", { n: CUSTOM_FIELD_MAX_PER_ACCOUNT })}
         </p>
 
         {(error || localError) && (
-          <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-            {localError ?? error}
-          </p>
+          <Alert variant="destructive" className="mb-3">
+            <AlertDescription className="font-bold">
+              {localError ?? error}
+            </AlertDescription>
+          </Alert>
         )}
 
         {loading ? (
-          <p className="m-0 mb-3 text-sm font-semibold text-slate-500">
+          <p className="m-0 mb-3 text-sm font-semibold text-muted-foreground">
             <LoadingLabel>{t("common.loading")}</LoadingLabel>
           </p>
         ) : (
           <ul className="m-0 mb-4 list-none space-y-2 p-0">
             {defs.length === 0 && (
-              <li className="text-sm font-semibold text-slate-500">
+              <li className="text-sm font-semibold text-muted-foreground">
                 {t("customFields.empty")}
               </li>
             )}
             {defs.map((def) => (
-              <li
-                key={def.id}
-                className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-2"
-              >
+              <li key={def.id}>
+                <Card
+                  size="sm"
+                  className="flex flex-wrap items-center gap-2 px-3 py-2"
+                >
                 {editingId === def.id ? (
                   <>
-                    <input
-                      className={parametresFieldInp}
+                    <Input
+                      className="min-w-0 flex-1"
                       maxLength={CUSTOM_FIELD_LABEL_MAX_LENGTH}
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
@@ -221,19 +232,19 @@ export function CustomFieldsSettingsPanel({
                     </Button>
                   </>
                 )}
+                </Card>
               </li>
             ))}
           </ul>
         )}
 
         <div className="grid gap-3 border-t border-border pt-3">
-          <div>
-            <label className={parametresFieldLbl} htmlFor="custom-field-new-label">
+          <div className="grid gap-1.5">
+            <Label className={parametresFieldLbl} htmlFor="custom-field-new-label">
               {t("customFields.newField")}
-            </label>
-            <input
+            </Label>
+            <Input
               id="custom-field-new-label"
-              className={parametresFieldInp}
               maxLength={CUSTOM_FIELD_LABEL_MAX_LENGTH}
               value={label}
               onChange={(e) => {
@@ -246,25 +257,29 @@ export function CustomFieldsSettingsPanel({
               aria-invalid={Boolean(labelError)}
             />
             {labelError ? (
-              <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
+              <p className="m-0 text-xs font-medium text-destructive">
                 {labelError}
               </p>
             ) : null}
           </div>
-          <div>
-            <label className={parametresFieldLbl}>{t("customFields.type")}</label>
-            <select
-              className={parametresFieldInp}
+          <div className="grid gap-1.5">
+            <Label className={parametresFieldLbl}>{t("customFields.type")}</Label>
+            <Select
               value={fieldType}
-              onChange={(e) => setFieldType(e.target.value as CustomFieldType)}
+              onValueChange={(v) => setFieldType(v as CustomFieldType)}
               disabled={busy || atCap}
             >
-              {(Object.keys(TYPE_KEYS) as CustomFieldType[]).map((type) => (
-                <option key={type} value={type}>
-                  {t(TYPE_KEYS[type])}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {(Object.keys(TYPE_KEYS) as CustomFieldType[]).map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {t(TYPE_KEYS[type])}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
             type="button"
@@ -275,7 +290,7 @@ export function CustomFieldsSettingsPanel({
             {t("customFields.add")}
           </Button>
           {atCap && (
-            <p className="m-0 text-xs font-bold text-slate-500">
+            <p className="m-0 text-xs font-bold text-muted-foreground">
               {t("customFields.atCap", { n: CUSTOM_FIELD_MAX_PER_ACCOUNT })}
             </p>
           )}
