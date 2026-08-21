@@ -684,12 +684,22 @@ export function CampaignWizard({
     onFetchMatchingGroupNames,
   };
 
+  const step1BtnCls =
+    step === 1
+      ? "h-9 w-auto max-w-[180px] flex-none rounded-[12px] px-3 text-[13px]"
+      : "min-w-0 flex-1";
+
   const wizardActions = (
-    <div className="flex w-full shrink-0 gap-2">
+    <div
+      className={cn(
+        "flex w-full shrink-0 gap-2",
+        step === 1 && "justify-between",
+      )}
+    >
       <Button
         variant="outline"
         size="lg"
-        className={cn(brandBtnCls, "min-w-0 flex-1")}
+        className={cn(brandBtnCls, step1BtnCls)}
         onClick={() => {
           if (step === 1) {
             requestWizardLeave("campagnes");
@@ -710,7 +720,7 @@ export function CampaignWizard({
       {step < 3 &&
         (step === 1 ? (
           <CampaignWizardStep1ContinueButton
-            className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
+            className={cn(brandBtnPrimaryCls, step1BtnCls)}
             onContinue={handleStep1Continue}
           />
         ) : (

@@ -429,7 +429,7 @@ export function ContactsView({
     );
     if (unsubCount === 0) return contactsLabel;
     return (
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="text-muted-foreground">
           {contactsLabel}
           <span className="mx-2.5 text-muted-foreground/50">·</span>
@@ -443,7 +443,7 @@ export function ContactsView({
           type="button"
           variant="outline"
           size="sm"
-          className="h-7 cursor-pointer border-rose-200/60 bg-rose-50/70 px-2.5 text-xs font-semibold text-rose-500/90 hover:bg-rose-50 hover:text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/25 dark:text-rose-400/80 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+          className="h-6 cursor-pointer border-rose-200/60 bg-rose-50/70 px-2.5 text-xs font-semibold text-rose-500/90 hover:bg-rose-50 hover:text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/25 dark:text-rose-400/80 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
           onClick={openUnsubModal}
         >
           {t("contacts.viewUnsubList")}

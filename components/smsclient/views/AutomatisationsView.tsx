@@ -1,9 +1,8 @@
 "use client";
 
 import { AutomationEditModal } from "@/components/smsclient/modals/AutomationEditModal";
+import { ActiveAutomationsTable } from "@/components/smsclient/views/automatisations/ActiveAutomationsTable";
 import { CatalogTab } from "@/components/smsclient/views/automatisations/CatalogTab";
-import { MesAutomatisationsTab } from "@/components/smsclient/views/automatisations/MesAutomatisationsTab";
-import { Button } from "@/components/ui/button";
 import type {
   AutomationPresetKey,
   AutomationRowData,
@@ -20,27 +19,17 @@ export type AutomatisationsViewProps = {
   onSave: (payload: AutomationSavePayload) => Promise<void>;
 };
 
-type TabId = "mes" | "catalogue";
-
 export function AutomatisationsView({
   rows,
-  contacts,
-  loading,
   error,
   onSave,
 }: AutomatisationsViewProps) {
   const [editRow, setEditRow] = useState<AutomationRowData | null>(null);
-  const [tab, setTab] = useState<TabId>("mes");
-  const [tabReady, setTabReady] = useState(false);
-  const activeCount = useMemo(
-    () => rows.filter((r) => r.enabled).length,
+
+  const enabledPresetKeys = useMemo(
+    () => new Set(rows.filter((r) => r.enabled).map((r) => r.presetKey)),
     [rows],
   );
-
-  if (!loading && !tabReady) {
-    setTabReady(true);
-    setTab(activeCount > 0 ? "mes" : "catalogue");
-  }
 
   function handleConfigureFromCatalog(presetKey: AutomationPresetKey) {
     const row = rows.find((r) => r.presetKey === presetKey);
@@ -48,45 +37,26 @@ export function AutomatisationsView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-      <div
-        className="flex flex-wrap gap-2"
-        role="tablist"
-        aria-label="Automatisations"
-      >
-        <Button
-          type="button"
-          size="sm"
-          variant={tab === "mes" ? "default" : "outline"}
-          role="tab"
-          aria-selected={tab === "mes"}
-          onClick={() => setTab("mes")}
-        >
-          Mes automatisations
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={tab === "catalogue" ? "default" : "outline"}
-          role="tab"
-          aria-selected={tab === "catalogue"}
-          onClick={() => setTab("catalogue")}
-        >
-          Catalogue
-        </Button>
-      </div>
-
-      {tab === "mes" ? (
-        <MesAutomatisationsTab
-          rows={rows}
-          contacts={contacts}
-          error={error}
-          onSave={onSave}
-          onEdit={setEditRow}
-        />
-      ) : (
-        <CatalogTab onConfigure={handleConfigureFromCatalog} />
+    <div className="flex flex-col gap-5">
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+          {error}
+          <p className="mt-1 text-xs font-semibold text-rose-800">
+            Applique la migration Supabase{" "}
+            <code className="rounded bg-rose-100 px-1">
+              20260528160000_sms_automations.sql
+            </code>{" "}
+            si la table n&apos;existe pas encore.
+          </p>
+        </div>
       )}
+
+      <ActiveAutomationsTable rows={rows} onEdit={setEditRow} />
+
+      <CatalogTab
+        enabledPresetKeys={enabledPresetKeys}
+        onConfigure={handleConfigureFromCatalog}
+      />
 
       <AutomationEditModal
         open={editRow != null}

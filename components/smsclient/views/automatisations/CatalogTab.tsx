@@ -8,7 +8,14 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { useAutomationFavorites } from "@/hooks/useAutomationFavorites";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import {
   AUTOMATION_CATALOG,
   filterCatalogAutomations,
@@ -20,10 +27,11 @@ import {
 import type { AutomationPresetKey } from "@/lib/types/automation";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateUserProfile } from "@/lib/supabase/profile";
-import { Heart, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export type CatalogTabProps = {
+  enabledPresetKeys: ReadonlySet<string>;
   onConfigure: (presetKey: AutomationPresetKey) => void;
 };
 
@@ -31,15 +39,13 @@ function CatalogSection({
   title,
   items,
   activeTag,
-  favoriteSet,
-  onToggleFavorite,
+  enabledPresetKeys,
   onConfigure,
 }: {
   title: string;
   items: CatalogAutomation[];
   activeTag: string | null;
-  favoriteSet: Set<string>;
-  onToggleFavorite: (id: string) => void;
+  enabledPresetKeys: ReadonlySet<string>;
   onConfigure: (presetKey: AutomationPresetKey) => void;
 }) {
   if (items.length === 0) return null;
@@ -48,14 +54,13 @@ function CatalogSection({
       <h2 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-muted-foreground">
         {title}
       </h2>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((auto) => (
           <CatalogAutomationCard
             key={auto.id}
             automation={auto}
             activeTag={activeTag}
-            favorited={favoriteSet.has(auto.id)}
-            onToggleFavorite={() => onToggleFavorite(auto.id)}
+            enabled={enabledPresetKeys.has(auto.id)}
             onConfigure={
               auto.id
                 ? () => onConfigure(auto.id as AutomationPresetKey)
@@ -68,27 +73,30 @@ function CatalogSection({
   );
 }
 
-export function CatalogTab({ onConfigure }: CatalogTabProps) {
+export function CatalogTab({
+  enabledPresetKeys,
+  onConfigure,
+}: CatalogTabProps) {
   const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<string | null>(null);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [activityId, setActivityId] = useState<string | null>(null);
-
-  const favorites = useAutomationFavorites(Boolean(user));
-
-  if (!authLoading && !user) {
-    if (activityId !== null) setActivityId(null);
-  }
+  const [activityLoaded, setActivityLoaded] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+    if (!user) {
+      setActivityId(null);
+      setActivityLoaded(true);
+      return;
+    }
     let cancelled = false;
     const supabase = createClient();
     void getOrCreateUserProfile(supabase, user.id, user.email ?? "").then(
       ({ data }) => {
         if (cancelled) return;
         setActivityId(data?.businessActivity?.trim() || null);
+        setActivityLoaded(true);
       },
     );
     return () => {
@@ -104,10 +112,8 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
         source: AUTOMATION_CATALOG,
         query,
         tag,
-        favoritesOnly,
-        favoriteIds: favorites.favoriteSet,
       }),
-    [query, tag, favoritesOnly, favorites.favoriteSet],
+    [query, tag],
   );
 
   const { matched, other } = useMemo(
@@ -123,11 +129,13 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
   function resetFilters() {
     setQuery("");
     setTag(null);
-    setFavoritesOnly(false);
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div id="automatisations-disponibles" className="flex flex-col gap-3">
+      <h2 className="m-0 text-sm font-black uppercase tracking-wide text-muted-foreground">
+        Automatisations disponibles
+      </h2>
       <div className="flex flex-col gap-2">
         <InputGroup
           className="max-w-xl bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
@@ -145,60 +153,39 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
         </InputGroup>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={tag === null ? "default" : "outline"}
-            className="rounded-full"
-            onClick={() => setTag(null)}
+          <Select
+            value={tag ?? "all"}
+            onValueChange={(value) => setTag(value === "all" ? null : value)}
           >
-            Tous
-          </Button>
-          {filterTags.map((t) => (
-            <Button
-              key={t}
-              type="button"
+            <SelectTrigger
               size="sm"
-              variant={tag === t ? "default" : "outline"}
-              className="rounded-full"
-              onClick={() => setTag(t)}
+              className="w-[11.5rem]"
+              aria-label="Catégorie"
             >
-              {t}
-            </Button>
-          ))}
-          <Button
-            type="button"
-            size="sm"
-            variant={favoritesOnly ? "default" : "outline"}
-            className="rounded-full"
-            aria-pressed={favoritesOnly}
-            onClick={() => setFavoritesOnly((v) => !v)}
-          >
-            <Heart
-              className={`mr-1.5 h-3.5 w-3.5 ${
-                favoritesOnly ? "fill-current" : ""
-              }`}
-              aria-hidden
-            />
-            Favoris
-          </Button>
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">Toutes les catégories</SelectItem>
+              {filterTags.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {favorites.error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
-          {favorites.error}
-          <p className="mt-1 text-xs font-semibold text-rose-800">
-            Applique la migration Supabase{" "}
-            <code className="rounded bg-rose-100 px-1">
-              20260717120000_sms_automation_favorites.sql
-            </code>{" "}
-            si la table n&apos;existe pas encore.
-          </p>
+      {!activityLoaded ? (
+        <div
+          className="flex min-h-[160px] items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <LoadingLabel>Chargement du catalogue…</LoadingLabel>
         </div>
-      )}
-
-      {empty ? (
+      ) : empty ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center">
           <p className="m-0 text-sm font-bold text-foreground">
             Aucun résultat
@@ -222,16 +209,14 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
             title="Pour mon activité"
             items={matchedSorted}
             activeTag={tag}
-            favoriteSet={favorites.favoriteSet}
-            onToggleFavorite={(id) => void favorites.toggleFavorite(id)}
+            enabledPresetKeys={enabledPresetKeys}
             onConfigure={onConfigure}
           />
           <CatalogSection
             title="Autres"
             items={otherSorted}
             activeTag={tag}
-            favoriteSet={favorites.favoriteSet}
-            onToggleFavorite={(id) => void favorites.toggleFavorite(id)}
+            enabledPresetKeys={enabledPresetKeys}
             onConfigure={onConfigure}
           />
         </>
@@ -240,8 +225,7 @@ export function CatalogTab({ onConfigure }: CatalogTabProps) {
           title="Catalogue"
           items={matchedSorted}
           activeTag={tag}
-          favoriteSet={favorites.favoriteSet}
-          onToggleFavorite={(id) => void favorites.toggleFavorite(id)}
+          enabledPresetKeys={enabledPresetKeys}
           onConfigure={onConfigure}
         />
       )}

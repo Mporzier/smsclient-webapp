@@ -56,6 +56,8 @@ type DataTableProps<T> = {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  className?: string;
+  emptyRowClassName?: string;
 };
 
 const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
@@ -105,6 +107,8 @@ export function DataTable<T>({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  className,
+  emptyRowClassName,
 }: DataTableProps<T>) {
   void _pageSize;
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
@@ -313,7 +317,10 @@ export function DataTable<T>({
   const emptyRowContent = (node: ReactNode) => (
     <td colSpan={columns.length} className="border-b border-border/60 p-0">
       <div
-        className="sticky left-0 flex items-center justify-center px-[18px] py-12 text-center text-sm font-medium text-muted-foreground"
+        className={cn(
+          "sticky left-0 flex items-center justify-center px-[18px] py-12 text-center text-sm font-medium text-muted-foreground",
+          emptyRowClassName,
+        )}
         style={viewportWidth ? { width: viewportWidth } : undefined}
       >
         {node}
@@ -350,7 +357,7 @@ export function DataTable<T>({
   }, [onLoadMore, hasMore, data.length, loading, loadingMore]);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm", className)}>
       <div
         ref={scrollRef}
         className={cn(
@@ -598,7 +605,7 @@ export function DataTable<T>({
           </div>
         ) : null}
       </div>
-      <div className="flex shrink-0 flex-col gap-2 border-t border-border px-3.5 py-3 text-sm font-medium text-muted-foreground">
+      <div className="flex min-h-9 shrink-0 items-center gap-2 border-t border-border px-3.5 py-1 text-sm font-medium text-muted-foreground">
         <span className="min-w-0">
           {loading
             ? "…"
