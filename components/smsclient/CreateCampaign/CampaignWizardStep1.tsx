@@ -1,6 +1,5 @@
 "use client";
 
-import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,9 +20,19 @@ import {
   avatarColor,
   contactInitials,
   groupColor,
-  groupTagBase,
 } from "@/lib/proto/contactDisplay";
-import { Users, Search, Contact, FolderOpen, ChevronRight, Download, Plus, UserRound } from "lucide-react";
+import {
+  Users,
+  Search,
+  Contact,
+  FolderOpen,
+  ChevronRight,
+  Download,
+  Plus,
+  UserRound,
+  CheckCheck,
+  X,
+} from "lucide-react";
 import {
   createContext,
   useContext,
@@ -35,7 +44,6 @@ import {
   contactDisplayName,
   groupChipBase,
   RecipientListSkeleton,
-  SummaryStatBubble,
 } from "./step1/step1Helpers";
 import {
   useCampaignWizardStep1State,
@@ -71,12 +79,16 @@ export function CampaignWizardStep1ContinueButton({
     groupNames: string[];
   }) => void;
 }) {
-  const { ensureSelectionReady } = useStep1Context();
+  const { ensureSelectionReady, contactsSelectedCount, groupsSelectedCount } =
+    useStep1Context();
+  const canContinue =
+    contactsSelectedCount > 0 || groupsSelectedCount > 0;
   return (
     <Button
       variant="default"
       size="lg"
       className={className}
+      disabled={!canContinue}
       onClick={() => {
         void (async () => {
           const ready = await ensureSelectionReady();
@@ -185,8 +197,8 @@ export function CampaignWizardStep1Main() {
       )}
     >
       <div className="shrink-0">
-        <h2 className="m-0 text-sm font-black leading-snug text-foreground">
-          À qui voulez-vous envoyer votre SMS ?
+        <h2 className="m-0 text-lg font-normal leading-snug text-foreground">
+          Choisissez vos destinataires
         </h2>
       </div>
 
@@ -196,8 +208,8 @@ export function CampaignWizardStep1Main() {
         aria-label="Mode de sélection des destinataires"
       >
         {[
-          ["manual", "Sélection manuelle", Contact] as const,
-          ["groups", "Groupes", FolderOpen] as const,
+          ["manual", "Contacts", Contact] as const,
+          ["groups", "Groupes de contacts", FolderOpen] as const,
         ].map(([id, label, Icon]) => (
           <button
             key={id}
@@ -228,7 +240,7 @@ export function CampaignWizardStep1Main() {
             className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
             placeholder={
               tab === "manual"
-                ? "Rechercher un contact par nom, téléphone ou groupe"
+                ? "Rechercher un prénom, nom, téléphone…"
                 : "Rechercher un groupe"
             }
             value={search}
@@ -252,24 +264,30 @@ export function CampaignWizardStep1Main() {
             onExpand={expandBanner.onExpand}
           />
         ) : null}
-        <Button
-          variant="outline"
-          size="lg"
-          className={cn(brandBtnCls, "h-8 shrink-0 px-2.5 text-[11px]")}
-          onClick={handleSelectAll}
-          disabled={!canSelectAll}
-        >
-          Tout sélectionner
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className={cn(brandBtnCls, "h-8 shrink-0 px-2.5 text-[11px]")}
-          onClick={handleClearSelection}
-          disabled={!canClearSelection}
-        >
-          Tout désélectionner
-        </Button>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={handleSelectAll}
+            disabled={!canSelectAll}
+          >
+            <CheckCheck aria-hidden />
+            Tout sélectionner
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer"
+            onClick={handleClearSelection}
+            disabled={!canClearSelection}
+          >
+            <X aria-hidden />
+            Tout désélectionner
+          </Button>
+        </div>
       </div>
 
       <div
@@ -373,28 +391,22 @@ export function CampaignWizardStep1Main() {
                     </span>
                   </span>
                   <div className="hidden min-w-0 max-w-[48%] shrink-0 flex-wrap justify-end gap-1 sm:flex">
-                    {c.groups.length === 0 ? (
-                      <span className="text-[11px] font-semibold text-muted-foreground">
-                        Non classé
-                      </span>
-                    ) : (
-                      c.groups.slice(0, 4).map((g) => {
-                        const gc = groupColor(g);
-                        return (
-                          <span
-                            key={g}
-                            className={cn(
-                              groupChipBase,
-                              gc.bg,
-                              gc.border,
-                              gc.text
-                            )}
-                          >
-                            {g}
-                          </span>
-                        );
-                      })
-                    )}
+                    {c.groups.slice(0, 4).map((g) => {
+                      const gc = groupColor(g);
+                      return (
+                        <span
+                          key={g}
+                          className={cn(
+                            groupChipBase,
+                            gc.bg,
+                            gc.border,
+                            gc.text
+                          )}
+                        >
+                          {g}
+                        </span>
+                      );
+                    })}
                     {c.groups.length > 4 && (
                       <span className="text-[11px] font-bold text-muted-foreground">
                         +{c.groups.length - 4}
@@ -519,89 +531,5 @@ export function CampaignWizardStep1Main() {
         </p>
       )}
     </div>
-  );
-}
-
-export function CampaignWizardStep1Summary() {
-  const {
-    recipients,
-    recipientMode,
-    contactsSelectedCount,
-    groupsSelectedCount,
-    selectedGroupsDisplay,
-    excludedTotal,
-    recipientsResolving,
-  } = useStep1Context();
-
-  return (
-    <aside
-      className={cn(
-        fieldBox,
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-3 shadow-none"
-      )}
-    >
-      <h3 className="m-0 shrink-0 text-xs font-black text-foreground">Résumé</h3>
-
-      <SummaryStatBubble
-        label="Contacts sélectionnés"
-        value={contactsSelectedCount}
-      />
-
-      <SummaryStatBubble
-        label="Groupes sélectionnés"
-        value={groupsSelectedCount}
-      >
-        {selectedGroupsDisplay.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {selectedGroupsDisplay.map(({ name, contactCount }) => {
-              const gc = groupColor(name);
-              return (
-                <span
-                  key={name}
-                  className={cn(
-                    groupTagBase,
-                    gc.bg,
-                    gc.border,
-                    gc.text,
-                    "inline-flex max-w-full items-center gap-1 py-0.5 text-[10px] font-bold"
-                  )}
-                >
-                  <span className="truncate">{name}</span>
-                  <span className="font-semibold opacity-80">
-                    · {contactCount}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="m-0 mt-1.5 text-[11px] font-semibold text-muted-foreground">
-            Aucun groupe sélectionné
-          </p>
-        )}
-      </SummaryStatBubble>
-
-      <SummaryStatBubble label="Exclus (non éligibles)" value={excludedTotal} />
-
-      {recipientMode === "all" && (
-        <p className="m-0 shrink-0 text-[11px] font-semibold text-foreground">
-          Tous vos contacts éligibles sont inclus.
-        </p>
-      )}
-
-      {recipientsResolving ? (
-        <p className="m-0 shrink-0 text-[11px] font-semibold text-muted-foreground">
-          Calcul des destinataires…
-        </p>
-      ) : null}
-
-      <div className="mt-auto shrink-0 pt-1">
-        <SummaryStatBubble
-          label="Destinataires finaux"
-          value={recipients}
-          highlight
-        />
-      </div>
-    </aside>
   );
 }

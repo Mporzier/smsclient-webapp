@@ -9,10 +9,33 @@ export function shouldShowExpandBanner(args: {
   /** true = encore des matchs hors page (hasMore) — bandeau avant count. */
   expandCandidate?: boolean;
   counting?: boolean;
+  /** true = count en erreur ou expiré — bandeau reste, expand possible sans total. */
+  countUnavailable?: boolean;
 }): boolean {
   if (!args.pageSelectActive) return false;
   if (args.matchTotal != null) return args.matchTotal > args.selectedCount;
-  return Boolean(args.expandCandidate || args.counting);
+  return Boolean(
+    args.expandCandidate || args.counting || args.countUnavailable,
+  );
+}
+
+/** Requête count sans réponse (verrou auth, socket morte) : pas de spinner infini. */
+const COUNT_TIMEOUT_MS = 10_000;
+
+type CountResult = { count: number; error: Error | null };
+
+async function countWithTimeout(
+  countMatch: () => Promise<CountResult>,
+): Promise<CountResult | "timeout"> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<"timeout">((resolve) => {
+    timer = setTimeout(() => resolve("timeout"), COUNT_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([countMatch(), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function isIdSet(
@@ -61,6 +84,8 @@ export type UseGmailSelectAllResult = {
   /** Compteur CTA : optimiste pendant/après expand si ids pas encore à jour. */
   displaySelectedCount: number;
   counting: boolean;
+  /** true = total inconnu (count en erreur ou expiré) — expand reste possible. */
+  countUnavailable: boolean;
   expanding: boolean;
   expandError: string | null;
   expandToMatchAll: () => Promise<string[]>;
@@ -87,6 +112,7 @@ export function useGmailSelectAll({
   const [pageSelectActive, setPageSelectActive] = useState(false);
   const [matchTotal, setMatchTotal] = useState<number | null>(null);
   const [counting, setCounting] = useState(false);
+  const [countUnavailable, setCountUnavailable] = useState(false);
   const [expanding, setExpanding] = useState(false);
   const [expandError, setExpandError] = useState<string | null>(null);
   /** Total affiché CTA juste après clic expand (avant fin fetch). */
@@ -130,6 +156,7 @@ export function useGmailSelectAll({
     setPageSelectActive(false);
     setMatchTotal(null);
     setCounting(false);
+    setCountUnavailable(false);
     setExpandError(null);
     setExpanding(false);
     setPendingDisplayTotal(null);
@@ -178,13 +205,24 @@ export function useGmailSelectAll({
     setMatchAllActive(false);
     setExpandError(null);
     setMatchTotal(null);
+    setCountUnavailable(false);
     setCounting(true);
     const gen = ++countGenRef.current;
     void (async () => {
-      const { count, error } = await countMatch();
+      const result = await countWithTimeout(countMatch);
       if (gen !== countGenRef.current) return;
       setCounting(false);
+      if (result === "timeout") {
+        setCountUnavailable(true);
+        setMatchTotal(null);
+        setExpandError(
+          "Comptage indisponible. « Tout sélectionner » marche quand même.",
+        );
+        return;
+      }
+      const { count, error } = result;
       if (error) {
+        setCountUnavailable(true);
         setExpandError(error.message);
         setMatchTotal(null);
         return;
@@ -203,6 +241,7 @@ export function useGmailSelectAll({
     setCounting(false);
     setPageSelectActive(false);
     setExpandError(null);
+    setCountUnavailable(false);
     setMatchAllActive(expandModeRef.current === "replace");
     if (expected != null && expected > 0) {
       setPendingDisplayTotal(expected);
@@ -226,6 +265,7 @@ export function useGmailSelectAll({
         setPageSelectActive(true);
         setMatchAllActive(false);
         if (expected != null) setMatchTotal(expected);
+        else setCountUnavailable(true);
         return toIdArray(selectedIdsRef.current);
       }
 
@@ -288,6 +328,7 @@ export function useGmailSelectAll({
     selectedCount,
     expandCandidate,
     counting,
+    countUnavailable,
   });
 
   return {
@@ -298,6 +339,7 @@ export function useGmailSelectAll({
     matchTotal,
     displaySelectedCount,
     counting,
+    countUnavailable,
     expanding,
     expandError,
     expandToMatchAll,

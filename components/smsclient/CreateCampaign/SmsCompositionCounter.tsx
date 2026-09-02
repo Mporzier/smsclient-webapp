@@ -2,9 +2,11 @@
 
 import { cn } from "@/lib/cn";
 import {
-  containsPrenomTag,
-  expandPrenomTag,
+  containsKnownMergeTag,
+  expandMergeTags,
+  type SmsMergeValues,
 } from "@/lib/proto/smsPersonalization";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import {
   buildEffectiveSms,
   stopSuffixBillableLength,
@@ -17,6 +19,8 @@ export function SmsCompositionCounter({
   reserveStop = false,
   billableMessage,
   estimateFirstName,
+  estimateSample,
+  customFieldDefs = [],
 }: {
   /** Corps éditable du message (sans STOP auto). */
   message: string;
@@ -25,19 +29,30 @@ export function SmsCompositionCounter({
   /** Message facturé complet (ex. variante IA avec STOP déjà inclus). */
   billableMessage?: string;
   estimateFirstName?: string;
+  estimateSample?: SmsMergeValues;
+  customFieldDefs?: readonly CustomFieldDef[];
 }) {
   const stats = useMemo(() => {
-    const bodyText =
-      containsPrenomTag(message) && estimateFirstName
-        ? expandPrenomTag(message, estimateFirstName)
-        : message;
+    const sample: SmsMergeValues | null =
+      estimateSample ??
+      (estimateFirstName
+        ? {
+            firstName: estimateFirstName,
+            lastName: "",
+            birthday: "",
+            customFields: {},
+          }
+        : null);
+
+    const expand = (raw: string) =>
+      sample && containsKnownMergeTag(raw, customFieldDefs)
+        ? expandMergeTags(raw, sample, customFieldDefs)
+        : raw;
+    const bodyText = expand(message);
 
     if (reserveStop) {
       const effective = buildEffectiveSms(message, true);
-      const effectiveText =
-        containsPrenomTag(effective) && estimateFirstName
-          ? expandPrenomTag(effective, estimateFirstName)
-          : effective;
+      const effectiveText = expand(effective);
       const bodyStats = analyzeSmsMessage(bodyText);
       const effectiveStats = analyzeSmsMessage(effectiveText);
       const stopLen = stopSuffixBillableLength(message);
@@ -54,12 +69,16 @@ export function SmsCompositionCounter({
     }
 
     const source = billableMessage ?? message;
-    const text =
-      containsPrenomTag(source) && estimateFirstName
-        ? expandPrenomTag(source, estimateFirstName)
-        : source;
+    const text = expand(source);
     return analyzeSmsMessage(text);
-  }, [message, reserveStop, billableMessage, estimateFirstName]);
+  }, [
+    message,
+    reserveStop,
+    billableMessage,
+    estimateFirstName,
+    estimateSample,
+    customFieldDefs,
+  ]);
 
   const stopReserved = reserveStop ? stopSuffixBillableLength(message) : 0;
 

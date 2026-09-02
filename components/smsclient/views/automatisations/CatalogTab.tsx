@@ -80,29 +80,26 @@ export function CatalogTab({
   const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<string | null>(null);
-  const [activityId, setActivityId] = useState<string | null>(null);
-  const [activityLoaded, setActivityLoaded] = useState(false);
+  // `null` = profil pas encore résolu ; `{ id }` = résolu (id peut être null).
+  const [activity, setActivity] = useState<{ id: string | null } | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setActivityId(null);
-      setActivityLoaded(true);
-      return;
-    }
+    if (authLoading || !user) return;
     let cancelled = false;
     const supabase = createClient();
     void getOrCreateUserProfile(supabase, user.id, user.email ?? "").then(
       ({ data }) => {
         if (cancelled) return;
-        setActivityId(data?.businessActivity?.trim() || null);
-        setActivityLoaded(true);
+        setActivity({ id: data?.businessActivity?.trim() || null });
       },
     );
     return () => {
       cancelled = true;
     };
   }, [authLoading, user]);
+
+  const activityId = user ? (activity?.id ?? null) : null;
+  const activityLoaded = !authLoading && (!user || activity !== null);
 
   const filterTags = useMemo(() => listCatalogFilterTags(), []);
 

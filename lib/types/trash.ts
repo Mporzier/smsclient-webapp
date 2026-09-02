@@ -15,3 +15,9 @@ export type DeletedGroupRow = {
   deletedLabel: string;
   expiresLabel: string;
 };
+
+/** `duplicates` = lignes laissées en corbeille (numéro / nom déjà actif). */
+export type TrashRestoreResult = {
+  restored: number;
+  duplicates: number;
+};

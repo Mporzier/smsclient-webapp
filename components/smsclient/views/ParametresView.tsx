@@ -10,6 +10,7 @@ import { LoadingLabel } from "@/components/ui/loading-label";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
 import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
+import { TRASH_RETENTION_DAYS } from "@/lib/proto/trashRetention";
 import { ApparenceSettingsPanel } from "@/components/smsclient/views/parametres/ApparenceSettingsPanel";
 import { CompteSettingsPanel } from "@/components/smsclient/views/parametres/CompteSettingsPanel";
 import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
@@ -30,9 +31,17 @@ import {
 } from "@/components/smsclient/views/parametres/parametresNav";
 import { BusinessActivitySelect } from "@/components/smsclient/views/parametres/BusinessActivitySelect";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
-import type { CustomFieldDef, CustomFieldType } from "@/lib/types/customFields";
+import {
+  CUSTOM_FIELD_MAX_PER_ACCOUNT,
+  type CustomFieldDef,
+  type CustomFieldType,
+} from "@/lib/types/customFields";
 import type { UserProfileForm } from "@/lib/types/profile";
-import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
+import type {
+  DeletedContactRow,
+  DeletedGroupRow,
+  TrashRestoreResult,
+} from "@/lib/types/trash";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import {
   ADDRESS_MAX_LENGTH,
@@ -59,6 +68,13 @@ function cardTitleKey(id: SettingId): MessageKey {
 
 function cardDescKey(id: SettingId): MessageKey {
   return `parametres.card.${id}.description` as MessageKey;
+}
+
+function cardDescVars(
+  id: SettingId,
+): Record<string, string | number> | undefined {
+  if (id === "champs-perso") return { n: CUSTOM_FIELD_MAX_PER_ACCOUNT };
+  return undefined;
 }
 
 /** Réglages assez riches pour rester en modale (tableaux, CRUD). */
@@ -181,8 +197,8 @@ export type ParametresViewProps = {
   trashGroups?: DeletedGroupRow[];
   trashLoading?: boolean;
   trashError?: string | null;
-  onRestoreTrashContacts?: (ids: string[]) => Promise<void>;
-  onRestoreTrashGroups?: (ids: string[]) => Promise<void>;
+  onRestoreTrashContacts?: (ids: string[]) => Promise<TrashRestoreResult>;
+  onRestoreTrashGroups?: (ids: string[]) => Promise<TrashRestoreResult>;
   onRefreshTrash?: () => Promise<void>;
   customFieldDefs?: CustomFieldDef[];
   customFieldsLoading?: boolean;
@@ -195,7 +211,7 @@ export type ParametresViewProps = {
     fieldId: string,
     label: string,
   ) => Promise<{ error: Error | null }>;
-  onRemoveCustomField?: (fieldId: string) => Promise<{ error: Error | null }>;
+  onRemoveCustomField?: (fieldIds: string[]) => Promise<{ error: Error | null }>;
 };
 
 export function ParametresView({
@@ -628,7 +644,7 @@ export function ParametresView({
                   key={card.id}
                   icon={card.icon}
                   title={t(cardTitleKey(card.id))}
-                  description={t(cardDescKey(card.id))}
+                  description={t(cardDescKey(card.id), cardDescVars(card.id))}
                   upcoming={card.upcoming ? t("parametres.upcoming") : null}
                 >
                   {renderInlineSetting(card.id)}
@@ -639,7 +655,7 @@ export function ParametresView({
                   key={card.id}
                   icon={card.icon}
                   title={t(cardTitleKey(card.id))}
-                  description={t(cardDescKey(card.id))}
+                  description={t(cardDescKey(card.id), cardDescVars(card.id))}
                   openLabel={t("common.open")}
                   onOpen={() => setOpenSetting(card.id)}
                 />
@@ -678,11 +694,20 @@ export function ParametresView({
         <ParametresSettingModal
           open={openSetting !== null}
           title={t(cardTitleKey(openCard.id))}
-          description={t(cardDescKey(openCard.id))}
+          description={
+            openCard.id === "corbeille"
+              ? t("trash.description", { days: TRASH_RETENTION_DAYS })
+              : t(cardDescKey(openCard.id), cardDescVars(openCard.id))
+          }
           icon={modalIcon}
           onClose={handleCloseModal}
           saving={saving}
           wide
+          bodyClassName={
+            openSetting === "corbeille" || openSetting === "champs-perso"
+              ? "flex flex-col overflow-hidden py-2"
+              : undefined
+          }
         >
           {openSetting === "factures" && (
             <InvoicesTable

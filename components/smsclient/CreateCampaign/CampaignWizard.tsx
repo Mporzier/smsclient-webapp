@@ -16,11 +16,12 @@ import {
 } from "@/lib/proto/smsUtils";
 import { isParisDateInPast } from "@/lib/proto/timezone";
 import {
-  containsPrenomTag,
+  buildEstimateMergeValues,
+  containsKnownMergeTag,
   definitiveCampaignCredits,
   ensurePrenomInMessage,
   estimateCampaignCredits,
-  expandPrenomTag,
+  expandMergeTags,
   longestFirstName,
   removePrenomTag,
   resolveEligibleCampaignRecipients,
@@ -42,18 +43,20 @@ import type { CampaignWizardProps } from "./campaignTypes";
 import {
   CampaignWizardStep1Provider,
   CampaignWizardStep1Main,
-  CampaignWizardStep1Summary,
   CampaignWizardStep1ContinueButton,
 } from "./CampaignWizardStep1";
 import { SmsMessageComposer } from "./SmsMessageComposer";
 import {
   SmsComposeApproachCards,
-  SmsComposeApproachSelectedCard,
-  getComposeApproachStepHint,
+  COMPOSE_APPROACH_PICK_INTRO,
   AI_COMPOSE_PROMPT_PLACEHOLDER,
   type SmsComposeApproach,
 } from "./SmsComposeApproachCards";
 import { SmsTemplatePicker } from "./SmsTemplatePicker";
+import { CreateSmsTemplateModal } from "@/components/smsclient/modals/CreateSmsTemplateModal";
+import { createUserSmsTemplate } from "@/lib/supabase/smsTemplates";
+import { toCampaignSmsTemplate } from "@/lib/types/smsTemplate";
+import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
 import type { CampaignSmsTemplate } from "@/lib/proto/campaignSmsTemplates";
 import {
   DEFAULT_SMS_AI_OPTIONS,
@@ -66,7 +69,6 @@ import { SmsManualComposeOptions } from "./SmsManualComposeOptions";
 import { CampaignWizardMessageSummary } from "./CampaignWizardMessageSummary";
 import {
   SmsIphonePreview,
-  SMS_IPHONE_PREVIEW_COLUMN,
   SMS_IPHONE_PREVIEW_WIDTH_COMPACT,
 } from "./SmsIphonePreview";
 import { CAMPAIGN_WIZARD_SUMMARY_COL } from "./campaignLayout";
@@ -96,7 +98,6 @@ export function CampaignWizard({
   onComposeApproachChange,
   go,
   title,
-  setTitle,
   sender,
   setSender,
   sms,
@@ -143,6 +144,7 @@ export function CampaignWizard({
   onAddContact,
   onImportContacts,
   onCreateGroup,
+  customFieldDefs = [],
 }: CampaignWizardProps) {
   const { profile } = useUserProfile();
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -182,6 +184,7 @@ export function CampaignWizard({
     loading: customSmsTemplatesLoading,
     refresh: refreshSmsTemplates,
   } = useSmsTemplates();
+  const [templateCreateOpen, setTemplateCreateOpen] = useState(false);
 
   const handleCreateSmsLink = useCallback(
     async (args: { originalUrl: string; label: string }) => {
@@ -240,30 +243,49 @@ export function CampaignWizard({
     [recipientFirstNames]
   );
 
+  const estimateSample = useMemo(
+    () => buildEstimateMergeValues(eligibleRecipients, customFieldDefs),
+    [eligibleRecipients, customFieldDefs],
+  );
+
   const manualRecipientCount = recipientMode === "numbers" ? recipients : 0;
 
   const estimatedCredits = useMemo(
-    () => estimateCampaignCredits(sms, recipients, recipientFirstNames),
-    [sms, recipients, recipientFirstNames]
+    () =>
+      estimateCampaignCredits(
+        sms,
+        recipients,
+        recipientFirstNames,
+        eligibleRecipients,
+        customFieldDefs,
+      ),
+    [sms, recipients, recipientFirstNames, eligibleRecipients, customFieldDefs]
   );
 
   const definitiveCredits = useMemo(
     () =>
-      definitiveCampaignCredits(sms, eligibleRecipients, manualRecipientCount),
-    [sms, eligibleRecipients, manualRecipientCount]
+      definitiveCampaignCredits(
+        sms,
+        eligibleRecipients,
+        manualRecipientCount,
+        customFieldDefs,
+      ),
+    [sms, eligibleRecipients, manualRecipientCount, customFieldDefs]
   );
 
   const activeCredits = step === 3 ? definitiveCredits : estimatedCredits;
   const totalCredits = activeCredits.totalCredits;
   const parts = activeCredits.parts;
-  const hasPrenomTag = containsPrenomTag(sms);
+  const hasPrenomTag = containsKnownMergeTag(sms, customFieldDefs);
 
   const billingMessage = useMemo(() => {
-    if (hasPrenomTag) {
-      return expandPrenomTag(sms, estimateLongestFirstName);
-    }
-    return sms;
-  }, [sms, hasPrenomTag, estimateLongestFirstName]);
+    if (!hasPrenomTag) return sms;
+    return expandMergeTags(
+      sms,
+      buildEstimateMergeValues(eligibleRecipients, customFieldDefs),
+      customFieldDefs,
+    );
+  }, [sms, hasPrenomTag, eligibleRecipients, customFieldDefs]);
 
   const smsStats = useMemo(
     () => analyzeSmsMessage(billingMessage),
@@ -313,19 +335,13 @@ export function CampaignWizard({
     (next: string) => {
       setSmsBody(next);
       syncEffectiveSms(next);
-      if (showAiPromptComposer) return;
-      setAiOptions((prev) => {
-        const hasTag = containsPrenomTag(next);
-        return prev.includeFirstName === hasTag
-          ? prev
-          : { ...prev, includeFirstName: hasTag };
-      });
     },
-    [syncEffectiveSms, showAiPromptComposer]
+    [syncEffectiveSms]
   );
 
   const handleComposeApproachSelect = useCallback(
     (approach: SmsComposeApproach) => {
+      if (composeApproach === approach) return;
       setComposeApproach(approach);
       setSelectedTemplateId(null);
       setSelectedLinkId(null);
@@ -344,7 +360,7 @@ export function CampaignWizard({
         syncEffectiveSms("");
       }
     },
-    [syncEffectiveSms]
+    [composeApproach, syncEffectiveSms]
   );
 
   const handleTemplateSelect = useCallback(
@@ -355,17 +371,34 @@ export function CampaignWizard({
     [applyExternalMessage]
   );
 
-  const handleResetComposeApproach = useCallback(() => {
-    setComposeApproach(null);
-    setSelectedTemplateId(null);
-    setSelectedLinkId(null);
-    setAiOptions(DEFAULT_SMS_AI_OPTIONS);
-    setAiVariants([]);
-    setAiPrompt("");
-    setSelectedAiVariant(null);
-    setAiGenerating(false);
-    setAiOptionsOpen(false);
-  }, []);
+  const handleCreateSmsTemplate = useCallback(
+    async (args: { title: string; description: string; body: string }) => {
+      if (!userId) {
+        return {
+          data: null,
+          error: "Connectez-vous pour créer un modèle.",
+        };
+      }
+      const { data, error } = await createUserSmsTemplate(
+        supabase,
+        userId,
+        args
+      );
+      if (error || !data) {
+        return { data: null, error: error?.message ?? "Création impossible." };
+      }
+      return { data, error: null };
+    },
+    [userId, supabase]
+  );
+
+  const handleSmsTemplateCreated = useCallback(
+    (row: UserSmsTemplateRow) => {
+      handleTemplateSelect(toCampaignSmsTemplate(row));
+      void refreshSmsTemplates();
+    },
+    [handleTemplateSelect, refreshSmsTemplates]
+  );
 
   const correctAndReformulateMessage = useCallback(() => {
     const corrected = (smsBody || "")
@@ -374,7 +407,8 @@ export function CampaignWizard({
       .replace(/bonjour/gi, "Bonjour")
       .replace(/sms/gi, "SMS")
       .trim();
-    const defaultBase = aiOptions.includeFirstName
+    const wantPrenom = aiOptions.selectedMergeTags.includes("prenom");
+    const defaultBase = wantPrenom
       ? `Bonjour ${SMS_PRENOM_TAG}, profitez de notre offre en boutique.`
       : "Bonjour, profitez de notre offre en boutique.";
     const base = corrected || defaultBase;
@@ -383,11 +417,11 @@ export function CampaignWizard({
       .replace("cette semaine", "en ce moment")
       .replace("dans votre boulangerie", "dans notre boutique")
       .trim();
-    const withPrenom = aiOptions.includeFirstName
+    const withPrenom = wantPrenom
       ? ensurePrenomInMessage(reformulated)
       : removePrenomTag(reformulated);
     handleSmsBodyChange(withPrenom);
-  }, [smsBody, handleSmsBodyChange, aiOptions.includeFirstName]);
+  }, [smsBody, handleSmsBodyChange, aiOptions.selectedMergeTags]);
 
   const applyLinkToSms = useCallback(
     (link: LinkRowData | null, forceShortUrl: boolean) => {
@@ -405,16 +439,10 @@ export function CampaignWizard({
   const handleAiOptionsChange = useCallback(
     (patch: Partial<SmsAiOptions>) => {
       let runOptimize = false;
-      let enablePrenom = false;
-      let disablePrenom = false;
       let disableLinkTracking = false;
 
       setAiOptions((prev) => {
         runOptimize = patch.autoOptimize === true && !prev.autoOptimize;
-        enablePrenom =
-          patch.includeFirstName === true && !prev.includeFirstName;
-        disablePrenom =
-          patch.includeFirstName === false && prev.includeFirstName;
         disableLinkTracking = patch.linkTracking === false && prev.linkTracking;
         return { ...prev, ...patch };
       });
@@ -424,8 +452,6 @@ export function CampaignWizard({
         return;
       }
 
-      if (enablePrenom) handleSmsBodyChange(ensurePrenomInMessage(smsBody));
-      if (disablePrenom) handleSmsBodyChange(removePrenomTag(smsBody));
       if (disableLinkTracking) {
         setSelectedLinkId(null);
         applyLinkToSms(null, true);
@@ -435,8 +461,6 @@ export function CampaignWizard({
     [
       composeApproach,
       correctAndReformulateMessage,
-      handleSmsBodyChange,
-      smsBody,
       applyLinkToSms,
     ]
   );
@@ -462,6 +486,7 @@ export function CampaignWizard({
         prompt,
         campaignTitle: displayTitle,
         options: aiOptions,
+        customFieldDefs,
         linkUrl:
           aiOptions.linkTracking && link ? link.shortUrl : undefined,
       });
@@ -482,6 +507,7 @@ export function CampaignWizard({
     savedLinks,
     displayTitle,
     aiOptions,
+    customFieldDefs,
     applyExternalMessage,
   ]);
 
@@ -684,22 +710,33 @@ export function CampaignWizard({
     onFetchMatchingGroupNames,
   };
 
-  const step1BtnCls =
-    step === 1
+  const compactNavBtn =
+    step < 3
       ? "h-9 w-auto max-w-[180px] flex-none rounded-[12px] px-3 text-[13px]"
       : "min-w-0 flex-1";
+
+  const summaryIphone = (
+    <div className="shrink-0">
+      <SmsIphonePreview
+        message={step === 2 ? smsBody : sms}
+        sender={displaySender}
+        width={SMS_IPHONE_PREVIEW_WIDTH_COMPACT}
+        customFieldDefs={customFieldDefs}
+      />
+    </div>
+  );
 
   const wizardActions = (
     <div
       className={cn(
         "flex w-full shrink-0 gap-2",
-        step === 1 && "justify-between",
+        step < 3 && "justify-between",
       )}
     >
       <Button
         variant="outline"
         size="lg"
-        className={cn(brandBtnCls, step1BtnCls)}
+        className={cn(brandBtnCls, compactNavBtn)}
         onClick={() => {
           if (step === 1) {
             requestWizardLeave("campagnes");
@@ -720,14 +757,15 @@ export function CampaignWizard({
       {step < 3 &&
         (step === 1 ? (
           <CampaignWizardStep1ContinueButton
-            className={cn(brandBtnPrimaryCls, step1BtnCls)}
+            className={cn(brandBtnPrimaryCls, compactNavBtn)}
             onContinue={handleStep1Continue}
           />
         ) : (
           <Button
             variant="default"
             size="lg"
-            className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
+            className={cn(brandBtnPrimaryCls, compactNavBtn)}
+            disabled={composeApproach == null}
             onClick={handleNext}
           >
             Continuer
@@ -752,28 +790,6 @@ export function CampaignWizard({
     </div>
   );
 
-  const campaignNameField = (
-    <div className={cn(fieldBox, "shrink-0 py-2.5 shadow-none")}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="text-[13px] font-black text-slate-900">
-            Nom de la campagne
-          </span>
-        </div>
-      </div>
-      <div className="mt-1.5 flex h-9 items-center rounded-xl border border-border bg-card px-3">
-        <input
-          className="w-full border-none bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
-          maxLength={80}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={defaultCampaignTitle}
-          aria-label="Nom de la campagne"
-        />
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {step === 1 ? (
@@ -794,7 +810,6 @@ export function CampaignWizard({
                   ))}
                 </div>
               )}
-              {campaignNameField}
               {stepWarnings.length > 0 && (
                 <div className="shrink-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
                   {stepWarnings.map((w, i) => (
@@ -807,8 +822,18 @@ export function CampaignWizard({
               <CampaignWizardStep1Main />
               {wizardActions}
             </div>
-            <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-              <CampaignWizardStep1Summary />
+            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-px">
+              {summaryIphone}
+              <CampaignWizardMessageSummary
+                recipients={recipients}
+                parts={parts}
+                partsMin={activeCredits.partsMin}
+                partsMax={activeCredits.partsMax}
+                totalCredits={totalCredits}
+                creditsAvailable={creditsAvailable}
+                hasEnoughCredits={hasEnoughCredits}
+                pendingSms
+              />
             </div>
           </div>
         </CampaignWizardStep1Provider>
@@ -844,37 +869,36 @@ export function CampaignWizard({
               <div
                 className={cn(
                   fieldBox,
-                  "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                  "flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden py-3 shadow-none"
                 )}
               >
                 <div className="flex shrink-0 items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="m-0 text-sm font-black leading-snug text-slate-900">
+                    <h2 className="m-0 text-lg font-normal leading-snug text-foreground">
                       Votre message
                     </h2>
-                    <p className="m-0 mt-1 text-xs font-semibold text-slate-500">
-                      {getComposeApproachStepHint(
-                        composeApproach,
-                        showTemplatePicker,
-                      )}
+                    <p className="m-0 mt-1 text-sm font-normal text-muted-foreground">
+                      {COMPOSE_APPROACH_PICK_INTRO}
                     </p>
                   </div>
-                  {composeApproach != null ? (
-                    <SmsComposeApproachSelectedCard
-                      approach={composeApproach}
-                      onChange={handleResetComposeApproach}
-                    />
-                  ) : null}
                 </div>
 
                 {composeApproach == null ? (
-                  <div className="mt-3 shrink-0">
+                  <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
                     <SmsComposeApproachCards
+                      selected={null}
                       onSelect={handleComposeApproachSelect}
                     />
                   </div>
                 ) : (
                   <>
+                    <div className="shrink-0">
+                      <SmsComposeApproachCards
+                        compact
+                        selected={composeApproach}
+                        onSelect={handleComposeApproachSelect}
+                      />
+                    </div>
                     {showTemplatePicker ? (
                       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
                         <SmsTemplatePicker
@@ -883,10 +907,12 @@ export function CampaignWizard({
                           businessActivity={profile?.businessActivity ?? ""}
                           customTemplates={customSmsTemplates}
                           customLoading={customSmsTemplatesLoading}
-                          onManageCustomTemplates={() => {
-                            void refreshSmsTemplates();
-                            go("modeles-sms");
-                          }}
+                          onCreateCustomTemplate={() =>
+                            setTemplateCreateOpen(true)
+                          }
+                          onManageCustomTemplates={() =>
+                            requestWizardLeave("modeles-sms")
+                          }
                         />
                       </div>
                     ) : null}
@@ -909,6 +935,8 @@ export function CampaignWizard({
                               hasError={stepErrors.length > 0 && !smsBody.trim()}
                               allowSpecialChars={aiOptions.allowSpecialChars}
                               estimateFirstName={estimateLongestFirstName}
+                              estimateSample={estimateSample}
+                              customFieldDefs={customFieldDefs}
                               reserveStop={reserveStopInCounter}
                               billableMessage={
                                 reserveStopInCounter ? undefined : sms
@@ -934,6 +962,7 @@ export function CampaignWizard({
                             variants={aiVariants}
                             selectedVariant={selectedAiVariant}
                             onSelectVariant={handleSelectAiVariant}
+                            customFieldDefs={customFieldDefs}
                           />
                         ) : (
                           <SmsManualComposeOptions
@@ -963,19 +992,7 @@ export function CampaignWizard({
                     {confirmError}
                   </div>
                 )}
-
-                <div
-                  className="grid min-h-0 flex-1 gap-3 overflow-hidden max-[900px]:grid-cols-1"
-                  style={{
-                    gridTemplateColumns: `${SMS_IPHONE_PREVIEW_COLUMN}px minmax(0, 1fr)`,
-                  }}
-                >
-                  <div className="flex min-h-0 shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 max-[900px]:hidden">
-                    <SmsIphonePreview message={sms} sender={displaySender} />
-                  </div>
-
-                  <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-                    <div className={fieldBox}>
+                <div className={cn(fieldBox, "min-h-0 flex-1 overflow-y-auto")}>
                       <h2 className="m-0 text-base font-black">Envoi</h2>
                       <p className="mt-2 text-sm font-bold text-slate-700">
                         {destinatairesLabel}
@@ -1117,38 +1134,34 @@ export function CampaignWizard({
                           />
                         </div>
                       </AdvancedOptionsCollapsible>
-                    </div>
-                  </div>
                 </div>
+                {wizardActions}
               </div>
             )}
           </div>
-          <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-            {step === 3 ? wizardActions : null}
-            {step === 2 && (
-              <>
-                <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2">
-                  <SmsIphonePreview
-                    message={smsBody}
-                    sender={displaySender}
-                    width={SMS_IPHONE_PREVIEW_WIDTH_COMPACT}
-                  />
-                </div>
-                <CampaignWizardMessageSummary
-                  destinatairesLabel={destinatairesLabel}
-                  parts={parts}
-                  partsMin={activeCredits.partsMin}
-                  partsMax={activeCredits.partsMax}
-                  totalCredits={totalCredits}
-                  creditsAvailable={creditsAvailable}
-                  hasEnoughCredits={hasEnoughCredits}
-                  indicative={estimatedCredits.indicative}
-                />
-              </>
-            )}
+          <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-px">
+            {summaryIphone}
+            <CampaignWizardMessageSummary
+              recipients={recipients}
+              parts={parts}
+              partsMin={activeCredits.partsMin}
+              partsMax={activeCredits.partsMax}
+              totalCredits={totalCredits}
+              creditsAvailable={creditsAvailable}
+              hasEnoughCredits={hasEnoughCredits}
+              pendingSms={false}
+            />
           </div>
         </div>
       )}
+
+      <CreateSmsTemplateModal
+        open={templateCreateOpen}
+        onClose={() => setTemplateCreateOpen(false)}
+        onCreate={handleCreateSmsTemplate}
+        onCreated={handleSmsTemplateCreated}
+        customFieldDefs={customFieldDefs}
+      />
     </div>
   );
 }

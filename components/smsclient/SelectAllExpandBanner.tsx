@@ -42,6 +42,7 @@ export function SelectAllExpandBanner({
         className,
       )}
       role="status"
+      aria-busy={counting || expanding}
     >
       <span className="min-w-0 flex-1 truncate">{prompt}</span>
       <Button
@@ -49,10 +50,10 @@ export function SelectAllExpandBanner({
         variant="outline"
         size="sm"
         className="h-6 shrink-0 px-2 text-[11px]"
-        disabled={expanding || counting}
+        disabled={expanding}
         onClick={onExpand}
       >
-        {expanding ? "…" : counting ? "…" : "Tout sélectionner"}
+        {expanding ? "…" : "Tout sélectionner"}
       </Button>
       {error ? (
         <span className="w-full text-[11px] font-semibold text-destructive">

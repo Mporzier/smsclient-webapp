@@ -13,7 +13,7 @@ export function PrototypeApp() {
       <AppShell
         route={ctx.route}
         go={ctx.wizard.guardedGo}
-        onNewCampaign={() => ctx.wizard.openCampaignComposer()}
+        onNewCampaign={() => ctx.modals.setCampaignNameOpen(true)}
         onOpenFeedback={() => ctx.modals.setFeedbackOpen(true)}
         creditsLabel={
           ctx.data.creditsState.loading ? "…" : ctx.data.creditsState.balanceLabel

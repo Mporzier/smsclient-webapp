@@ -79,13 +79,11 @@ const fr = {
   "parametres.card.contact-facturation.description":
     "Personne à contacter pour la facturation.",
   "parametres.card.abonnement.title": "Abonnement",
-  "parametres.card.abonnement.description":
-    "Formule et mode de facturation.",
+  "parametres.card.abonnement.description": "Formule et mode de facturation.",
   "parametres.card.paiement.title": "Paiement",
   "parametres.card.paiement.description": "Carte bancaire enregistrée.",
   "parametres.card.factures.title": "Factures",
-  "parametres.card.factures.description":
-    "Historique des achats de crédits.",
+  "parametres.card.factures.description": "Historique des achats de crédits.",
   "parametres.card.expediteur-sms.title": "Expéditeur SMS",
   "parametres.card.expediteur-sms.description":
     "Nom affiché aux destinataires.",
@@ -97,10 +95,10 @@ const fr = {
     "Synthèse de vos campagnes par email.",
   "parametres.card.champs-perso.title": "Champs personnalisés",
   "parametres.card.champs-perso.description":
-    "Champs date, texte ou nombre sur les contacts.",
+    "Champs date, texte ou nombre sur les contacts (max {n}).",
   "parametres.card.corbeille.title": "Corbeille",
   "parametres.card.corbeille.description":
-    "Contacts et groupes supprimés (purge auto après 30 jours).",
+    "Restaurez un contact ou un groupe supprimé, avant son effacement définitif au bout de 30 jours.",
 
   "parametres.upcoming": "Bientôt",
   "parametres.loading": "Chargement…",
@@ -136,7 +134,6 @@ const fr = {
   "parametres.paiementBody":
     "Enregistrement et modification de carte bancaire pas encore branchés.",
 
-  "compte.icon": "Icône",
   "compte.firstName": "Prénom",
   "compte.lastName": "Nom",
   "compte.email": "Email",
@@ -178,33 +175,74 @@ const fr = {
   "common.errorOccurred": "Une erreur est survenue.",
   "common.deleting": "Suppression…",
 
-  "customFields.intro":
-    "Champs date, texte ou nombre visibles sur la liste et les fiches contacts (max {n}).",
   "customFields.empty": "Aucun champ personnalisé pour l'instant.",
   "customFields.labelRequired": "Libellé requis.",
   "customFields.newLabelAria": "Nouveau libellé",
   "customFields.renameAria": "Renommer",
   "customFields.deleteAria": "Supprimer",
-  "customFields.newField": "Nouveau champ",
+  "customFields.newField": "Nom",
   "customFields.placeholder": "Ex. Date d'inscription",
   "customFields.type": "Type",
   "customFields.type.text": "Texte",
   "customFields.type.number": "Nombre",
   "customFields.type.date": "Date",
   "customFields.add": "Ajouter",
+  "customFields.create": "Créer",
+  "customFields.createTitle": "Nouveau champ personnalisé",
+  "customFields.searchPlaceholder": "Rechercher un champ…",
+  "customFields.searchAria": "Rechercher un champ personnalisé",
+  "customFields.selectAllAria": "Tout sélectionner",
+  "customFields.deleteSelected": "Supprimer ({n})",
+  "customFields.col.label": "Libellé",
+  "customFields.col.type": "Type",
+  "customFields.footerOne": "1 champ",
+  "customFields.footerMany": "{n} champs",
+  "customFields.noSearchResults": "Aucun résultat pour cette recherche.",
   "customFields.atCap": "Limite de {n} champs atteinte.",
   "customFields.deleteTitle": "Supprimer « {label} » ?",
   "customFields.deleteTitleFallback": "Supprimer ce champ ?",
-  "customFields.deleteDesc":
-    "Les valeurs de ce champ sur les contacts seront perdues.",
+  "customFields.deleteTitleMany": "Supprimer {n} champs personnalisés ?",
+  "customFields.deleteBody":
+    "Les informations renseignées pour ce champ sur tous vos contacts seront effacées.",
+  "customFields.deleteBodyMany":
+    "Les informations renseignées pour ces champs sur tous vos contacts seront effacées.",
+  "customFields.deleteIrreversible":
+    "Action définitive : ces données ne pourront pas être restaurées.",
+  "customFields.deleteConfirm": "Supprimer définitivement",
 
   "trash.title": "Éléments supprimés",
   "trash.description":
-    "Les contacts et groupes que vous supprimez sont retirés de vos listes mais conservés ici pendant {days} jours. Sélectionnez-les puis cliquez sur Restaurer pour les récupérer. Passé ce délai, suppression définitive automatique.",
+    "Restaurez vos contacts et groupes supprimés pendant {days} jours.",
   "trash.restoring": "Restauration…",
+  "trash.restore": "Restaurer",
   "trash.restoreSelected": "Restaurer la sélection ({n})",
   "trash.restoreFailed": "Restauration impossible.",
+  "trash.restoreConfirmContact": "Restaurer 1 contact ?",
+  "trash.restoreConfirmContacts": "Restaurer {n} contacts ?",
+  "trash.restoreConfirmGroup": "Restaurer 1 groupe ?",
+  "trash.restoreConfirmGroups": "Restaurer {n} groupes ?",
+  "trash.restoreConfirmDesc": "Ils reviendront dans vos listes.",
+  "trash.restoreLoadingDesc":
+    "Restauration en cours, ne fermez pas la fenêtre.",
+  "trash.restoreDoneTitle": "Restauration terminée",
+  "trash.restoreSummaryDesc": "Voici le bilan de cette restauration.",
+  "trash.restoredContact": "1 contact restauré.",
+  "trash.restoredContacts": "{n} contacts restaurés.",
+  "trash.restoredGroup": "1 groupe restauré.",
+  "trash.restoredGroups": "{n} groupes restaurés.",
+  "trash.duplicateContact": "1 contact non restauré (doublon)",
+  "trash.duplicateContacts": "{n} contacts non restaurés (doublons)",
+  "trash.duplicateGroup": "1 groupe non restauré (doublon)",
+  "trash.duplicateGroups": "{n} groupes non restaurés (doublons)",
+  "trash.duplicateContactsHint":
+    "Un contact actif utilise déjà ce numéro. Ils restent dans la corbeille.",
+  "trash.duplicateGroupsHint":
+    "Un groupe actif porte déjà ce nom. Ils restent dans la corbeille.",
   "trash.empty": "Aucun contact ni groupe supprimé pour le moment.",
+  "trash.searchContacts": "Rechercher un contact…",
+  "trash.searchGroups": "Rechercher un groupe…",
+  "trash.searchAria": "Rechercher dans la corbeille",
+  "trash.noSearchResults": "Aucun résultat pour cette recherche.",
   "trash.contactsTitle": "Contacts supprimés",
   "trash.contactsEmpty": "Aucun contact dans la corbeille.",
   "trash.groupsTitle": "Groupes supprimés",
@@ -222,12 +260,10 @@ const fr = {
   "dashboard.creditsRemaining": "Crédits restants",
   "dashboard.recharge": "Recharger",
   "dashboard.didYouKnow": "Le saviez-vous ?",
-  "dashboard.stopHint":
-    "Vos SMS marketing doivent inclure la mention STOP.",
+  "dashboard.stopHint": "Vos SMS marketing doivent inclure la mention STOP.",
   "dashboard.learnMore": "En savoir plus",
   "dashboard.needHelp": "Besoin d'aide ?",
-  "dashboard.helpDesc":
-    "Notre centre d'aide vous accompagne à chaque étape.",
+  "dashboard.helpDesc": "Notre centre d'aide vous accompagne à chaque étape.",
   "dashboard.helpCenter": "Centre d'aide",
   "dashboard.welcome": "Bienvenue {name} ! 👋",
   "dashboard.welcomeSubtitle":
@@ -294,8 +330,7 @@ const fr = {
     "Vous n'avez pas encore de contacts. Ajoutez votre premier contact ou importez votre liste de contacts pour commencer à envoyer des SMS.",
   "contacts.emptyTable": "Aucune cible disponible.",
   "contacts.loading": "Chargement de la liste des contacts…",
-  "contacts.noSearchResults":
-    "Aucun contact ne correspond à votre recherche.",
+  "contacts.noSearchResults": "Aucun contact ne correspond à votre recherche.",
   "contacts.col.firstName": "Prénom",
   "contacts.col.lastName": "Nom",
   "contacts.col.phone": "Téléphone",
@@ -354,6 +389,22 @@ const fr = {
   "campaigns.status.cancelled": "Annulée",
   "campaigns.footerOne": "1 campagne",
   "campaigns.footerMany": "{n} campagnes",
+  "campaigns.details.title": "Détails de campagne",
+  "campaigns.details.created": "Date de création",
+  "campaigns.details.mode": "Mode",
+  "campaigns.details.modeSched": "Programmé",
+  "campaigns.details.modeNow": "Immédiat",
+  "campaigns.details.sender": "Expéditeur",
+  "campaigns.details.message": "Message",
+  "campaigns.details.targeted": "Destinataires ciblés",
+  "campaigns.details.noContacts": "Pas de détail individuel disponible.",
+  "campaigns.details.sectionDetail": "Détail",
+  "campaigns.details.sectionList": "Destinataires",
+  "campaigns.details.resend": "Renvoyer",
+  "campaigns.nameModal.title": "Nouvelle campagne",
+  "campaigns.nameModal.label": "Nom de votre campagne :",
+  "campaigns.nameModal.defaultName": "Campagne du {date}",
+  "campaigns.nameModal.continue": "Continuer",
 
   "links.searchPlaceholder": "Rechercher un lien…",
   "links.searchAria": "Rechercher un lien",
@@ -383,6 +434,7 @@ const fr = {
   "links.footerOne": "1 lien",
   "links.footerMany": "{n} liens",
 
+  "templates.create": "Créer un modèle",
   "templates.createTitle": "Créer un modèle",
   "templates.createSubtitle":
     "Réutilisez-le lors de la rédaction d'une campagne SMS.",
@@ -393,7 +445,7 @@ const fr = {
   "templates.field.descriptionPlaceholder": "Offre de rentrée",
   "templates.field.body": "Message SMS *",
   "templates.field.bodyPlaceholder":
-    "Bonjour ⟦prénom⟧, profitez de -20 % cette semaine en boutique !",
+    "Bonjour [Prénom], profitez de -20 % cette semaine en boutique !",
   "templates.titleRequired":
     "Le titre est obligatoire ({min} caractères minimum).",
   "templates.bodyRequired": "Le message SMS ne peut pas être vide.",
@@ -404,12 +456,13 @@ const fr = {
   "templates.createdToast": "Modèle SMS créé",
   "templates.deletedToast": "Modèle supprimé",
   "templates.deleteTitle": "Supprimer ce modèle ?",
-  "templates.deleteDesc":
-    "Le modèle « {title} » sera supprimé définitivement.",
+  "templates.deleteDesc": "Le modèle « {title} » sera supprimé définitivement.",
   "templates.searchPlaceholder": "Rechercher un modèle…",
+  "templates.searchAria": "Rechercher un modèle",
+  "templates.actionsAria": "Actions pour {name}",
   "templates.emptyTitle": "Aucun modèle personnalisé",
   "templates.emptyBody":
-    "Créez votre premier modèle ci-dessus pour le retrouver dans le wizard campagne.",
+    "Créez votre premier modèle pour le retrouver dans le wizard campagne.",
   "templates.emptyTable": "Aucun modèle.",
   "templates.loading": "Chargement de la liste des modèles…",
   "templates.noSearchResults": "Aucun résultat pour cette recherche.",
@@ -553,8 +606,7 @@ const fr = {
   "qr.wheel.subtitlePh": "Tentez votre chance après inscription",
   "qr.wheel.options": "Options",
   "qr.wheel.smsPrize": "SMS de gain",
-  "qr.wheel.smsPrizeDesc":
-    "Envoie automatiquement le gain par SMS au client.",
+  "qr.wheel.smsPrizeDesc": "Envoie automatiquement le gain par SMS au client.",
   "qr.wheel.allowRepeat": "Participations multiples",
   "qr.wheel.allowRepeatDesc": "Autorise le même numéro à rejouer.",
   "qr.wheel.segments": "Cases de la roue",
@@ -591,8 +643,7 @@ const fr = {
   "qr.wheel.defaultScreen": "Bravo ! Vous avez gagné une récompense.",
   "qr.wheel.defaultSms":
     "Félicitations {prenom} ! Présentez ce SMS en boutique.",
-  "qr.wheel.loseScreen":
-    "Pas de chance cette fois… Retentez votre chance !",
+  "qr.wheel.loseScreen": "Pas de chance cette fois… Retentez votre chance !",
   "qr.wheel.previewEmpty":
     "Ajoutez au moins une récompense pour prévisualiser la roue.",
   "qr.wheel.spin": "Tourner la roue !",
@@ -707,8 +758,7 @@ const fr = {
     "Mettez à jour les infos profil et préférences d'envoi.",
   "guide.parametres.b2":
     "Définissez des champs perso pour enrichir vos contacts.",
-  "guide.parametres.b3":
-    "Restaurez ou purgez les éléments en corbeille.",
+  "guide.parametres.b3": "Restaurez ou purgez les éléments en corbeille.",
 
   "guide.qr-boutique.eyebrow": "QR code boutique",
   "guide.qr-boutique.title": "Collecter des contacts via QR",
@@ -716,10 +766,8 @@ const fr = {
     "Créez une roue ou une page QR pour faire s'inscrire vos clients en magasin.",
   "guide.qr-boutique.b1":
     "Personnalisez l'apparence et le message de bienvenue.",
-  "guide.qr-boutique.b2":
-    "Les inscriptions alimentent votre liste contacts.",
-  "guide.qr-boutique.b3":
-    "Suivez les performances côté statistiques.",
+  "guide.qr-boutique.b2": "Les inscriptions alimentent votre liste contacts.",
+  "guide.qr-boutique.b3": "Suivez les performances côté statistiques.",
   "guide.qr-boutique.primary": "Voir les stats QR",
 
   "guide.reglementations-sms.eyebrow": "Réglementations",
@@ -741,18 +789,15 @@ const fr = {
   "guide.nouvelle-campagne.b1": "Choisissez contacts ou groupes abonnés.",
   "guide.nouvelle-campagne.b2":
     "Rédigez le SMS et vérifiez le coût en crédits.",
-  "guide.nouvelle-campagne.b3":
-    "Envoyez tout de suite ou programmez l'envoi.",
+  "guide.nouvelle-campagne.b3": "Envoyez tout de suite ou programmez l'envoi.",
   "guide.nouvelle-campagne.primary": "Voir les campagnes",
 
   "guide.acheter-credits.eyebrow": "Crédits",
   "guide.acheter-credits.title": "Recharger votre solde SMS",
   "guide.acheter-credits.desc":
     "Achetez des crédits pour continuer à envoyer des campagnes et automatisations.",
-  "guide.acheter-credits.b1":
-    "1 crédit ≈ 1 SMS standard (selon encodage).",
-  "guide.acheter-credits.b2":
-    "Le solde apparaît dans la barre du haut.",
+  "guide.acheter-credits.b1": "1 crédit ≈ 1 SMS standard (selon encodage).",
+  "guide.acheter-credits.b2": "Le solde apparaît dans la barre du haut.",
   "guide.acheter-credits.b3":
     "Contactez le support pour une facturation entreprise.",
 
@@ -760,11 +805,9 @@ const fr = {
   "guide.aide.title": "Trouver de l'aide rapidement",
   "guide.aide.desc":
     "Guides, FAQ et contact support pour résoudre vos questions sur smsclient.",
-  "guide.aide.b1":
-    "Parcourez les articles de la base de connaissance.",
+  "guide.aide.b1": "Parcourez les articles de la base de connaissance.",
   "guide.aide.b2": "Ouvrez le widget FAQ si disponible.",
-  "guide.aide.b3":
-    "Écrivez à support@smsclient.fr en cas de blocage.",
+  "guide.aide.b3": "Écrivez à support@smsclient.fr en cas de blocage.",
 
   "regs.title": "Réglementation SMS",
   "regs.subtitle":
@@ -856,8 +899,7 @@ const fr = {
   "import.stats.existingMany": "{n} contacts déjà enregistrés",
   "import.stats.fileDupeOne": "{n} contact en doublon dans le fichier",
   "import.stats.fileDupeMany": "{n} contacts en doublon dans le fichier",
-  "import.err.noHeaders":
-    "Le fichier ne contient pas d'en-têtes de colonnes.",
+  "import.err.noHeaders": "Le fichier ne contient pas d'en-têtes de colonnes.",
   "import.err.parse":
     "Impossible d'analyser ce fichier. Vérifiez l'encodage (UTF-8 recommandé).",
   "import.err.csvOnly":
@@ -979,20 +1021,18 @@ const en: Record<MessageKey, string> = {
   "parametres.card.factures.title": "Invoices",
   "parametres.card.factures.description": "Credit purchase history.",
   "parametres.card.expediteur-sms.title": "SMS sender",
-  "parametres.card.expediteur-sms.description":
-    "Name shown to recipients.",
+  "parametres.card.expediteur-sms.description": "Name shown to recipients.",
   "parametres.card.notifications-email.title": "Alerts and tips",
   "parametres.card.notifications-email.description":
     "Important info and tips by email.",
   "parametres.card.resume-mensuel.title": "Monthly summary",
-  "parametres.card.resume-mensuel.description":
-    "Campaign summary by email.",
+  "parametres.card.resume-mensuel.description": "Campaign summary by email.",
   "parametres.card.champs-perso.title": "Custom fields",
   "parametres.card.champs-perso.description":
-    "Date, text, or number fields on contacts.",
+    "Date, text, or number fields on contacts (max {n}).",
   "parametres.card.corbeille.title": "Trash",
   "parametres.card.corbeille.description":
-    "Deleted contacts and groups (auto-purge after 30 days).",
+    "Restore a deleted contact or group before it is permanently erased after 30 days.",
 
   "parametres.upcoming": "Soon",
   "parametres.loading": "Loading…",
@@ -1022,10 +1062,8 @@ const en: Record<MessageKey, string> = {
   "parametres.upcomingTitle": "Coming soon",
   "parametres.abonnementBody":
     "Pay-as-you-go: you only pay for SMS credits used. Subscription management will be wired later.",
-  "parametres.paiementBody":
-    "Saving and updating bank cards is not wired yet.",
+  "parametres.paiementBody": "Saving and updating bank cards is not wired yet.",
 
-  "compte.icon": "Avatar",
   "compte.firstName": "First name",
   "compte.lastName": "Last name",
   "compte.email": "Email",
@@ -1067,33 +1105,73 @@ const en: Record<MessageKey, string> = {
   "common.errorOccurred": "Something went wrong.",
   "common.deleting": "Deleting…",
 
-  "customFields.intro":
-    "Date, text, or number fields shown on the contact list and contact forms (max {n}).",
   "customFields.empty": "No custom fields yet.",
   "customFields.labelRequired": "Label is required.",
   "customFields.newLabelAria": "New label",
   "customFields.renameAria": "Rename",
   "customFields.deleteAria": "Delete",
-  "customFields.newField": "New field",
+  "customFields.newField": "Name",
   "customFields.placeholder": "e.g. Signup date",
   "customFields.type": "Type",
   "customFields.type.text": "Text",
   "customFields.type.number": "Number",
   "customFields.type.date": "Date",
   "customFields.add": "Add",
+  "customFields.create": "Create",
+  "customFields.createTitle": "New custom field",
+  "customFields.searchPlaceholder": "Search a field…",
+  "customFields.searchAria": "Search a custom field",
+  "customFields.selectAllAria": "Select all",
+  "customFields.deleteSelected": "Delete ({n})",
+  "customFields.col.label": "Label",
+  "customFields.col.type": "Type",
+  "customFields.footerOne": "1 field",
+  "customFields.footerMany": "{n} fields",
+  "customFields.noSearchResults": "No results for this search.",
   "customFields.atCap": "Limit of {n} fields reached.",
   "customFields.deleteTitle": "Delete “{label}”?",
   "customFields.deleteTitleFallback": "Delete this field?",
-  "customFields.deleteDesc":
-    "Values for this field on contacts will be lost.",
+  "customFields.deleteTitleMany": "Delete {n} custom fields?",
+  "customFields.deleteBody":
+    "The information entered for this field on all your contacts will be erased.",
+  "customFields.deleteBodyMany":
+    "The information entered for these fields on all your contacts will be erased.",
+  "customFields.deleteIrreversible":
+    "This cannot be undone. These values cannot be restored.",
+  "customFields.deleteConfirm": "Delete permanently",
 
   "trash.title": "Deleted items",
   "trash.description":
-    "Contacts and groups you delete are removed from your lists but kept here for {days} days. Select them, then click Restore to get them back. After that, they are permanently deleted automatically.",
+    "Restore your deleted contacts and groups for {days} days.",
   "trash.restoring": "Restoring…",
+  "trash.restore": "Restore",
   "trash.restoreSelected": "Restore selection ({n})",
   "trash.restoreFailed": "Could not restore.",
+  "trash.restoreConfirmContact": "Restore 1 contact?",
+  "trash.restoreConfirmContacts": "Restore {n} contacts?",
+  "trash.restoreConfirmGroup": "Restore 1 group?",
+  "trash.restoreConfirmGroups": "Restore {n} groups?",
+  "trash.restoreConfirmDesc": "They will go back to your lists.",
+  "trash.restoreLoadingDesc": "Restoring, do not close this window.",
+  "trash.restoreDoneTitle": "Restore complete",
+  "trash.restoreSummaryDesc": "Here is the result of this restore.",
+  "trash.restoredContact": "1 contact restored.",
+  "trash.restoredContacts": "{n} contacts restored.",
+  "trash.restoredGroup": "1 group restored.",
+  "trash.restoredGroups": "{n} groups restored.",
+  "trash.duplicateContact": "1 contact not restored (duplicate)",
+  "trash.duplicateContacts": "{n} contacts not restored (duplicates)",
+  "trash.duplicateGroup": "1 group not restored (duplicate)",
+  "trash.duplicateGroups": "{n} groups not restored (duplicates)",
+  "trash.duplicateContactsHint":
+    "An active contact already uses that number. They stay in the trash.",
+  "trash.duplicateGroupsHint":
+    "An active group already has that name. They stay in the trash.",
   "trash.empty": "No deleted contacts or groups yet.",
+  "trash.searchContacts": "Search a contact…",
+  "trash.searchGroups": "Search a group…",
+  "trash.searchAria": "Search the trash",
+  "trash.noSearchResults": "No results for this search.",
   "trash.contactsTitle": "Deleted contacts",
   "trash.contactsEmpty": "No contacts in the trash.",
   "trash.groupsTitle": "Deleted groups",
@@ -1111,16 +1189,13 @@ const en: Record<MessageKey, string> = {
   "dashboard.creditsRemaining": "Credits remaining",
   "dashboard.recharge": "Top up",
   "dashboard.didYouKnow": "Did you know?",
-  "dashboard.stopHint":
-    "Your marketing SMS must include the STOP mention.",
+  "dashboard.stopHint": "Your marketing SMS must include the STOP mention.",
   "dashboard.learnMore": "Learn more",
   "dashboard.needHelp": "Need help?",
-  "dashboard.helpDesc":
-    "Our help center guides you at every step.",
+  "dashboard.helpDesc": "Our help center guides you at every step.",
   "dashboard.helpCenter": "Help center",
   "dashboard.welcome": "Welcome {name}! 👋",
-  "dashboard.welcomeSubtitle":
-    "Follow these steps to send your first SMS.",
+  "dashboard.welcomeSubtitle": "Follow these steps to send your first SMS.",
   "dashboard.hello": "Hello {name}! 👋",
   "dashboard.helloSubtitle": "Here’s an overview of your activity.",
   "dashboard.greetingFallback": "there",
@@ -1153,8 +1228,7 @@ const en: Record<MessageKey, string> = {
   "dashboard.viewGroups": "View groups",
   "dashboard.viewStats": "View stats",
   "dashboard.noticeStop": "Marketing SMS: STOP mention required",
-  "dashboard.noticeConsent":
-    "Contact consent and STOP mention are required.",
+  "dashboard.noticeConsent": "Contact consent and STOP mention are required.",
   "dashboard.regulation": "Regulations",
   "dashboard.activity.campaignSent": "Campaign sent",
   "dashboard.activity.contactsAdded": "Contacts added",
@@ -1242,6 +1316,22 @@ const en: Record<MessageKey, string> = {
   "campaigns.status.cancelled": "Cancelled",
   "campaigns.footerOne": "1 campaign",
   "campaigns.footerMany": "{n} campaigns",
+  "campaigns.details.title": "Campaign details",
+  "campaigns.details.created": "Created",
+  "campaigns.details.mode": "Mode",
+  "campaigns.details.modeSched": "Scheduled",
+  "campaigns.details.modeNow": "Immediate",
+  "campaigns.details.sender": "Sender",
+  "campaigns.details.message": "Message",
+  "campaigns.details.targeted": "Targeted recipients",
+  "campaigns.details.noContacts": "No individual recipient details available.",
+  "campaigns.details.sectionDetail": "Detail",
+  "campaigns.details.sectionList": "Recipients",
+  "campaigns.details.resend": "Resend",
+  "campaigns.nameModal.title": "New campaign",
+  "campaigns.nameModal.label": "Your campaign name:",
+  "campaigns.nameModal.defaultName": "Campaign of {date}",
+  "campaigns.nameModal.continue": "Continue",
 
   "links.searchPlaceholder": "Search a link…",
   "links.searchAria": "Search a link",
@@ -1271,9 +1361,9 @@ const en: Record<MessageKey, string> = {
   "links.footerOne": "1 link",
   "links.footerMany": "{n} links",
 
+  "templates.create": "Create a template",
   "templates.createTitle": "Create a template",
-  "templates.createSubtitle":
-    "Reuse it when writing an SMS campaign.",
+  "templates.createSubtitle": "Reuse it when writing an SMS campaign.",
   "templates.field.title": "Title *",
   "templates.field.titleCount": "{current}/{max} (min. {min})",
   "templates.field.titlePlaceholder": "Summer promo",
@@ -1281,9 +1371,8 @@ const en: Record<MessageKey, string> = {
   "templates.field.descriptionPlaceholder": "Back-to-school offer",
   "templates.field.body": "SMS message *",
   "templates.field.bodyPlaceholder":
-    "Hi ⟦first name⟧, enjoy -20% this week in store!",
-  "templates.titleRequired":
-    "Title is required ({min} characters minimum).",
+    "Hi [Prénom], enjoy -20% this week in store!",
+  "templates.titleRequired": "Title is required ({min} characters minimum).",
   "templates.bodyRequired": "SMS message cannot be empty.",
   "templates.loginRequired": "Sign in to create a template.",
   "templates.createFailed": "Could not create.",
@@ -1292,12 +1381,13 @@ const en: Record<MessageKey, string> = {
   "templates.createdToast": "SMS template created",
   "templates.deletedToast": "Template deleted",
   "templates.deleteTitle": "Delete this template?",
-  "templates.deleteDesc":
-    "Template “{title}” will be permanently deleted.",
+  "templates.deleteDesc": "Template “{title}” will be permanently deleted.",
   "templates.searchPlaceholder": "Search a template…",
+  "templates.searchAria": "Search a template",
+  "templates.actionsAria": "Actions for {name}",
   "templates.emptyTitle": "No custom templates",
   "templates.emptyBody":
-    "Create your first template above to use it in the campaign wizard.",
+    "Create your first template to reuse it in the campaign wizard.",
   "templates.emptyTable": "No templates.",
   "templates.loading": "Loading templates list…",
   "templates.noSearchResults": "No results for this search.",
@@ -1407,12 +1497,10 @@ const en: Record<MessageKey, string> = {
   "qr.mode.welcome.desc":
     "Send a personalized SMS right after the customer signs up.",
   "qr.mode.wheel.title": "Rewards wheel",
-  "qr.mode.wheel.desc":
-    "Spin the wheel after sign-up to send rewards by SMS.",
+  "qr.mode.wheel.desc": "Spin the wheel after sign-up to send rewards by SMS.",
   "qr.configure": "Configure",
   "qr.preview": "Preview",
-  "qr.noneActive":
-    "No option active: only the contact sign-up is saved.",
+  "qr.noneActive": "No option active: only the contact sign-up is saved.",
   "qr.statsTitle": "Statistics",
   "qr.statsSince": "since creation",
   "qr.stats.total": "Total sign-ups",
@@ -1423,13 +1511,10 @@ const en: Record<MessageKey, string> = {
     "Data collected via this form is secured and used only for your customer relationship.",
   "qr.complianceUnsub": "Customers can unsubscribe at any time.",
   "qr.complianceMore": "Learn more",
-  "qr.modal.welcome.desc":
-    "Customize the message sent after sign-up.",
-  "qr.modal.welcome.placeholder":
-    "Hello first name, thanks for signing up…",
+  "qr.modal.welcome.desc": "Customize the message sent after sign-up.",
+  "qr.modal.welcome.placeholder": "Hello first name, thanks for signing up…",
   "qr.modal.preview.title": "Preview the wheel",
-  "qr.modal.preview.desc":
-    "Preview as customers will see it after sign-up.",
+  "qr.modal.preview.desc": "Preview as customers will see it after sign-up.",
   "qr.modal.wheel.title": "Configure the wheel",
   "qr.modal.wheel.desc":
     "Set the slices, their odds (100% total), and the messages sent to customers.",
@@ -1446,8 +1531,7 @@ const en: Record<MessageKey, string> = {
   "qr.wheel.allowRepeat": "Multiple plays",
   "qr.wheel.allowRepeatDesc": "Allow the same number to play again.",
   "qr.wheel.segments": "Wheel slices",
-  "qr.wheel.segmentsHint":
-    "Define each slice, its type, and its odds.",
+  "qr.wheel.segmentsHint": "Define each slice, its type, and its odds.",
   "qr.wheel.randomColors": "Random colors",
   "qr.wheel.chanceTitle": "Odds distribution",
   "qr.wheel.chanceHint": "All slices must add up to 100%.",
@@ -1466,23 +1550,18 @@ const en: Record<MessageKey, string> = {
   "qr.wheel.screenLosePh": "E.g. No luck this time…",
   "qr.wheel.screenWinPh": "E.g. Congrats! You won…",
   "qr.wheel.smsMsg": "SMS sent to the customer",
-  "qr.wheel.smsPh":
-    "E.g. Congrats {prenom}! Show this SMS in store.",
+  "qr.wheel.smsPh": "E.g. Congrats {prenom}! Show this SMS in store.",
   "qr.wheel.addSeg": "Add a slice",
   "qr.wheel.errEmpty": "Add at least one slice on the wheel.",
-  "qr.wheel.errWeight":
-    "Odds must add up to 100%. Currently: {n}%.",
+  "qr.wheel.errWeight": "Odds must add up to 100%. Currently: {n}%.",
   "qr.wheel.errLabel": "Every slice needs a label.",
   "qr.wheel.errSave": "Could not save.",
   "qr.wheel.saveWheel": "Save the wheel",
   "qr.wheel.defaultLabel": "New reward",
   "qr.wheel.defaultScreen": "Congrats! You won a reward.",
-  "qr.wheel.defaultSms":
-    "Congrats {prenom}! Show this SMS in store.",
-  "qr.wheel.loseScreen":
-    "No luck this time… Try again!",
-  "qr.wheel.previewEmpty":
-    "Add at least one reward to preview the wheel.",
+  "qr.wheel.defaultSms": "Congrats {prenom}! Show this SMS in store.",
+  "qr.wheel.loseScreen": "No luck this time… Try again!",
+  "qr.wheel.previewEmpty": "Add at least one reward to preview the wheel.",
   "qr.wheel.spin": "Spin the wheel!",
   "qr.wheel.replay": "Play again",
 
@@ -1521,24 +1600,20 @@ const en: Record<MessageKey, string> = {
   "guide.groupes.title": "Organize contacts into groups",
   "guide.groupes.desc":
     "Groups segment your base so you can target campaigns and automations precisely.",
-  "guide.groupes.b1":
-    "A group gathers contacts that share a profile or need.",
+  "guide.groupes.b1": "A group gathers contacts that share a profile or need.",
   "guide.groupes.b2":
     "The “Last campaign” column shows the last send targeting that group.",
-  "guide.groupes.b3":
-    "Select several groups to create a targeted campaign.",
+  "guide.groupes.b3": "Select several groups to create a targeted campaign.",
   "guide.groupes.primary": "Create a group",
 
   "guide.campagnes.eyebrow": "Campaigns",
   "guide.campagnes.title": "Track your SMS campaigns",
   "guide.campagnes.desc":
     "This list tracks every send: drafts, scheduled, sent, or failed.",
-  "guide.campagnes.b1":
-    "Status: draft, scheduled, sent, failed, or cancelled.",
+  "guide.campagnes.b1": "Status: draft, scheduled, sent, failed, or cancelled.",
   "guide.campagnes.b2":
     "Recipients and estimated credits are visible before and after sending.",
-  "guide.campagnes.b3":
-    "Click a row to open campaign details.",
+  "guide.campagnes.b3": "Click a row to open campaign details.",
   "guide.campagnes.primary": "New campaign",
 
   "guide.statistiques.eyebrow": "Statistics",
@@ -1549,8 +1624,7 @@ const en: Record<MessageKey, string> = {
     "KPIs summarize SMS sent, delivery rate, QR sign-ups, STOP, and credits used.",
   "guide.statistiques.b2":
     "The chart breaks down sends, failures, and scheduled items by day.",
-  "guide.statistiques.b3":
-    "Filter the period to compare campaigns over time.",
+  "guide.statistiques.b3": "Filter the period to compare campaigns over time.",
 
   "guide.automatisations.eyebrow": "Automations",
   "guide.automatisations.title": "Automate recurring sends",
@@ -1569,45 +1643,34 @@ const en: Record<MessageKey, string> = {
     "Create short URLs for campaigns and measure clicks from this list.",
   "guide.liens.b1":
     "Each link maps an original URL to a short smsclient.fr address.",
-  "guide.liens.b2":
-    "The “Clicks” column counts opens after the SMS is sent.",
-  "guide.liens.b3":
-    "Copy the short link to insert into marketing messages.",
+  "guide.liens.b2": "The “Clicks” column counts opens after the SMS is sent.",
+  "guide.liens.b3": "Copy the short link to insert into marketing messages.",
   "guide.liens.primary": "Create a link",
 
   "guide.modeles-sms.eyebrow": "SMS templates",
   "guide.modeles-sms.title": "Most popular SMS templates",
   "guide.modeles-sms.desc":
     "Save time with ready-made copy: promos, reminders, thanks, and follow-ups.",
-  "guide.modeles-sms.b1":
-    "Save custom templates to reuse in campaigns.",
-  "guide.modeles-sms.b2":
-    "Title, description, and body can be edited anytime.",
-  "guide.modeles-sms.b3":
-    "Get inspiration from the most used examples.",
+  "guide.modeles-sms.b1": "Save custom templates to reuse in campaigns.",
+  "guide.modeles-sms.b2": "Title, description, and body can be edited anytime.",
+  "guide.modeles-sms.b3": "Get inspiration from the most used examples.",
   "guide.modeles-sms.primary": "Browse templates",
 
   "guide.parametres.eyebrow": "Settings",
   "guide.parametres.title": "Configure your account",
   "guide.parametres.desc":
     "Manage profile, custom fields, trash, and account options.",
-  "guide.parametres.b1":
-    "Update profile info and sending preferences.",
-  "guide.parametres.b2":
-    "Define custom fields to enrich contacts.",
-  "guide.parametres.b3":
-    "Restore or purge items in the trash.",
+  "guide.parametres.b1": "Update profile info and sending preferences.",
+  "guide.parametres.b2": "Define custom fields to enrich contacts.",
+  "guide.parametres.b3": "Restore or purge items in the trash.",
 
   "guide.qr-boutique.eyebrow": "Store QR code",
   "guide.qr-boutique.title": "Collect contacts via QR",
   "guide.qr-boutique.desc":
     "Create a wheel or QR page so customers can sign up in store.",
-  "guide.qr-boutique.b1":
-    "Customize appearance and the welcome message.",
-  "guide.qr-boutique.b2":
-    "Sign-ups feed your contact list.",
-  "guide.qr-boutique.b3":
-    "Track performance in statistics.",
+  "guide.qr-boutique.b1": "Customize appearance and the welcome message.",
+  "guide.qr-boutique.b2": "Sign-ups feed your contact list.",
+  "guide.qr-boutique.b3": "Track performance in statistics.",
   "guide.qr-boutique.primary": "View QR stats",
 
   "guide.reglementations-sms.eyebrow": "Regulations",
@@ -1618,20 +1681,16 @@ const en: Record<MessageKey, string> = {
     "Every marketing SMS must allow unsubscribe (STOP).",
   "guide.reglementations-sms.b2":
     "Only send to subscribed, consenting contacts.",
-  "guide.reglementations-sms.b3":
-    "See the help center for regulatory detail.",
+  "guide.reglementations-sms.b3": "See the help center for regulatory detail.",
   "guide.reglementations-sms.primary": "Help center",
 
   "guide.nouvelle-campagne.eyebrow": "New campaign",
   "guide.nouvelle-campagne.title": "Create and send a campaign",
   "guide.nouvelle-campagne.desc":
     "3-step wizard: recipients, message, then confirm and send.",
-  "guide.nouvelle-campagne.b1":
-    "Choose subscribed contacts or groups.",
-  "guide.nouvelle-campagne.b2":
-    "Write the SMS and check the credit cost.",
-  "guide.nouvelle-campagne.b3":
-    "Send now or schedule the send.",
+  "guide.nouvelle-campagne.b1": "Choose subscribed contacts or groups.",
+  "guide.nouvelle-campagne.b2": "Write the SMS and check the credit cost.",
+  "guide.nouvelle-campagne.b3": "Send now or schedule the send.",
   "guide.nouvelle-campagne.primary": "View campaigns",
 
   "guide.acheter-credits.eyebrow": "Credits",
@@ -1640,20 +1699,16 @@ const en: Record<MessageKey, string> = {
     "Buy credits to keep sending campaigns and automations.",
   "guide.acheter-credits.b1":
     "1 credit ≈ 1 standard SMS (depends on encoding).",
-  "guide.acheter-credits.b2":
-    "Balance appears in the top bar.",
-  "guide.acheter-credits.b3":
-    "Contact support for business billing.",
+  "guide.acheter-credits.b2": "Balance appears in the top bar.",
+  "guide.acheter-credits.b3": "Contact support for business billing.",
 
   "guide.aide.eyebrow": "Help center",
   "guide.aide.title": "Get help fast",
   "guide.aide.desc":
     "Guides, FAQ, and support contact for smsclient questions.",
-  "guide.aide.b1":
-    "Browse knowledge base articles.",
+  "guide.aide.b1": "Browse knowledge base articles.",
   "guide.aide.b2": "Open the FAQ widget when available.",
-  "guide.aide.b3":
-    "Email support@smsclient.fr if you are stuck.",
+  "guide.aide.b3": "Email support@smsclient.fr if you are stuck.",
 
   "regs.title": "SMS regulations",
   "regs.subtitle":
@@ -1695,8 +1750,7 @@ const en: Record<MessageKey, string> = {
   "contact.modal.mobileBadge": "FR mobile",
   "contact.modal.birthday": "Birthday",
   "contact.modal.optional": "Optional",
-  "contact.modal.notesPh":
-    "Optional — context, preferences, useful notes…",
+  "contact.modal.notesPh": "Optional — context, preferences, useful notes…",
   "contact.modal.groupsSelectedOne": "{n} selected",
   "contact.modal.groupsSelectedMany": "{n} selected",
   "contact.modal.noGroups": "No groups — create one below.",

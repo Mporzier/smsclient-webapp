@@ -187,11 +187,12 @@ export function DataTable<T>({
       .join(",");
     if (!userResizedRef.current) {
       const prevAvail = lastAvailRef.current;
-      // Ignore ~scrollbar gutter flicker when lazyload adds rows.
+      // L'apparition de la scrollbar verticale (lazyload) doit relancer la
+      // répartition, sinon les colonnes dépassent ou laissent du blanc.
       if (
         fillKeyRef.current === colsKey &&
         prevAvail > 0 &&
-        Math.abs(avail - prevAvail) <= 20
+        avail === prevAvail
       ) {
         return;
       }
@@ -304,7 +305,7 @@ export function DataTable<T>({
   // Largeur visible du scroller : garde le message vide centré même quand les
   // colonnes (champs perso) rendent le tableau plus large que l'écran.
   const [viewportWidth, setViewportWidth] = useState(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const update = () => setViewportWidth(el.clientWidth);
@@ -361,7 +362,7 @@ export function DataTable<T>({
       <div
         ref={scrollRef}
         className={cn(
-          "min-h-0 w-full flex-1 overflow-y-auto [scrollbar-gutter:stable]",
+          "min-h-0 w-full flex-1 overflow-y-auto",
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
@@ -379,21 +380,31 @@ export function DataTable<T>({
         <table
           className="table-fixed border-separate border-spacing-0 text-sm"
           style={{
-            width: totalSize,
-            minWidth: totalSize,
+            width: "100%",
+            // Jamais plus étroit que le conteneur, sinon blanc à droite quand la
+            // somme des colonnes est inférieure à la largeur disponible.
+            minWidth: Math.max(totalSize, viewportWidth),
           }}
         >
           <colgroup>
-            {table.getVisibleLeafColumns().map((column) => (
-              <col
-                key={column.id}
-                style={{
-                  width: column.getSize(),
-                  minWidth: column.getSize(),
-                  maxWidth: column.getSize(),
-                }}
-              />
-            ))}
+            {table.getVisibleLeafColumns().map((column) => {
+              // Colonnes utilitaires : largeur figée. Les autres peuvent absorber
+              // le reliquat (scrollbar globale) sinon blanc à droite de la liste.
+              const isFixed =
+                column.id === "select" ||
+                column.id === "actions" ||
+                column.id === "avatar";
+              return (
+                <col
+                  key={column.id}
+                  style={{
+                    width: column.getSize(),
+                    minWidth: column.getSize(),
+                    maxWidth: isFixed ? column.getSize() : undefined,
+                  }}
+                />
+              );
+            })}
           </colgroup>
           <thead className="sticky top-0 z-10">
             <tr>

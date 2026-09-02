@@ -7,21 +7,21 @@ import {
   Link2,
   Smile,
   Sparkles,
-  UserRound,
   Wand2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { MergeTagKey } from "@/lib/proto/smsPersonalization";
 
 export type SmsAiOptions = {
   autoOptimize: boolean;
-  includeFirstName: boolean;
+  selectedMergeTags: MergeTagKey[];
   allowSpecialChars: boolean;
   linkTracking: boolean;
 };
 
 export const DEFAULT_SMS_AI_OPTIONS: SmsAiOptions = {
   autoOptimize: true,
-  includeFirstName: false,
+  selectedMergeTags: [],
   allowSpecialChars: false,
   linkTracking: false,
 };
@@ -42,8 +42,10 @@ type SmsAiOptionCardsProps = {
   embedded?: boolean;
 };
 
+type BooleanAiOption = "autoOptimize" | "allowSpecialChars" | "linkTracking";
+
 type CardDef = {
-  key: keyof SmsAiOptions;
+  key: BooleanAiOption;
   title: string;
   description: string;
   icon: LucideIcon;
@@ -56,12 +58,6 @@ const CARDS: CardDef[] = [
     description:
       "Nous optimisons votre message pour réduire le nombre de crédits SMS utilisés.",
     icon: Wand2,
-  },
-  {
-    key: "includeFirstName",
-    title: "Inclure le prénom",
-    description: "Personnalise le SMS avec le prénom de chaque destinataire.",
-    icon: UserRound,
   },
   {
     key: "allowSpecialChars",

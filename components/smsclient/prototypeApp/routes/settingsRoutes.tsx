@@ -117,7 +117,7 @@ export function renderSettingsRoute(
           customFieldsError={customFieldsState.error}
           onCreateCustomField={customFieldsState.createDef}
           onRenameCustomField={customFieldsState.renameDef}
-          onRemoveCustomField={customFieldsState.removeDef}
+          onRemoveCustomField={customFieldsState.removeDefs}
         />
       );
     case "acheter-credits":
@@ -153,6 +153,7 @@ export function renderSettingsRoute(
       return (
         <CampaignWizard
           {...wizard.campaignWizardProps}
+          customFieldDefs={customFieldsState.defs}
           onAddContact={modals.openContactAdd}
           onImportContacts={() => modals.setImportContactsOpen(true)}
           onCreateGroup={() => modals.setGroupModalOpen(true)}

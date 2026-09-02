@@ -394,9 +394,10 @@ export function useCampaignWizard({
 
   const openCampaignComposerInternal = useCallback(
     (preset?: CampaignComposerPreset) => {
-      let recipientMode: "manual" | "lists" = "manual";
+      let recipientMode: "manual" | "lists" | "numbers" = "manual";
       let contactIds: string[] = [];
       let groupNames: string[] = [];
+      let manualNumbers = "";
 
       if (typeof preset === "string") {
         const name = preset.trim();
@@ -407,43 +408,57 @@ export function useCampaignWizard({
       } else if (preset?.groupNames?.length) {
         recipientMode = "lists";
         groupNames = preset.groupNames;
+      } else if (preset?.manualNumbers?.trim()) {
+        recipientMode = "numbers";
+        manualNumbers = preset.manualNumbers;
       } else if (preset?.contactIds?.length) {
         recipientMode = "manual";
         contactIds = preset.contactIds;
       }
 
-      const nextTitle = defaultCampaignTitle();
+      const presetObject = typeof preset === "string" ? undefined : preset;
+      const nextTitle = presetObject?.title?.trim() || defaultCampaignTitle();
+      const nextSender = presetObject?.sender?.trim() || smsSender;
+      const nextSms = presetObject?.sms ?? "";
+      const nextSendMode = presetObject?.sendMode ?? "now";
+      const nextStep = presetObject?.step ?? 1;
+      const nextApproach: SmsComposeApproach | null = nextSms.trim()
+        ? "manual"
+        : null;
       const nextScheduleAt = plusTenMinutesLocalValue();
 
       setCampaignRecipientMode(recipientMode);
       setCampaignTitle(nextTitle);
-      setCampaignSender(smsSender);
-      setSmsBody("");
-      setSendMode("now");
+      setCampaignSender(nextSender);
+      setSmsBody(nextSms);
+      setSendMode(nextSendMode);
       setScheduledAt(nextScheduleAt);
       setAiOpen(false);
       setCampaignSelectedContactIds(contactIds);
       setCampaignExcludedContactIds([]);
       setCampaignSelectedGroupNames(groupNames);
-      setCampaignManualNumbers("");
-      setCampaignComposeApproach(null);
-      setCampaignWizardStep(1);
-      setStoredCampaignWizardStep(1);
+      setCampaignManualNumbers(manualNumbers);
+      setCampaignComposeApproach(nextApproach);
+      setCampaignWizardStep(nextStep);
+      setStoredCampaignWizardStep(nextStep);
       clearListSearches();
 
+      /** Étape imposée par le preset : ne pas la faire retomber par le guard. */
+      if (nextStep > 1) wizardGuardRanRef.current = true;
+
       setInitialWizardSnapshot({
-        step: 1,
+        step: nextStep,
         title: nextTitle,
-        sender: smsSender,
-        sms: "",
-        sendMode: "now",
+        sender: nextSender,
+        sms: nextSms,
+        sendMode: nextSendMode,
         scheduleAt: nextScheduleAt,
         recipientMode,
-        manualNumbers: "",
+        manualNumbers,
         selectedContactIds: contactIds,
         selectedGroupNames: groupNames,
         excludedContactIds: [],
-        composeApproach: null,
+        composeApproach: nextApproach,
       });
 
       go("nouvelle-campagne");

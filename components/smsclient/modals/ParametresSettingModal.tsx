@@ -15,6 +15,7 @@ type ParametresSettingModalProps = {
   saving?: boolean;
   saveLabel?: string;
   wide?: boolean;
+  bodyClassName?: string;
   children: ReactNode;
 };
 

@@ -1,31 +1,40 @@
 "use client";
 
-import { SearchBar } from "@/components/smsclient/Shell";
 import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
-import { brandBtnPrimaryCls } from "@/components/smsclient/modals/modalChrome";
-import { CellTruncate, PlusIcon } from "@/components/smsclient/ui";
+import { CreateSmsTemplateModal } from "@/components/smsclient/modals/CreateSmsTemplateModal";
+import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { MODELE_SMS_COL } from "@/components/smsclient/listColumnSizes";
-import { fieldBox } from "@/components/smsclient/flowFieldStyles";
-import { cn } from "@/lib/cn";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { useI18n } from "@/lib/i18n";
 import {
   createUserSmsTemplate,
   deleteUserSmsTemplate,
 } from "@/lib/supabase/smsTemplates";
-import {
-  isValidSmsTemplateBody,
-  isValidSmsTemplateTitle,
-  SMS_TEMPLATE_BODY_MAX_LENGTH,
-  SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH,
-  SMS_TEMPLATE_TITLE_MAX_LENGTH,
-  SMS_TEMPLATE_TITLE_MIN_LENGTH,
-  type UserSmsTemplateRow,
-} from "@/lib/types/smsTemplate";
+import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { LayoutTemplate, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { LayoutTemplate, MoreHorizontal, Plus, Search } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import type {
   ColumnDef,
@@ -48,6 +57,7 @@ type ModelesSmsViewProps = {
   supabase: SupabaseClient;
   userId: string | undefined;
   onRefresh: () => Promise<void>;
+  customFieldDefs?: CustomFieldDef[];
 };
 
 export function ModelesSmsView({
@@ -65,25 +75,13 @@ export function ModelesSmsView({
   supabase,
   userId,
   onRefresh,
+  customFieldDefs = [],
 }: ModelesSmsViewProps) {
   const { t } = useI18n();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [body, setBody] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [titleError, setTitleError] = useState<string | null>(null);
-  const [bodyError, setBodyError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserSmsTemplateRow | null>(
     null,
   );
-
-  useEffect(() => {
-    document.body.style.overflow = deleteTarget ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [deleteTarget]);
 
   const showBigEmpty =
     !loading && !error && rows.length === 0 && searchQuery.trim() === "";
@@ -97,48 +95,31 @@ export function ModelesSmsView({
     [footerN, t],
   );
 
-  const handleCreate = useCallback(async () => {
-    let hasFieldError = false;
-    if (!isValidSmsTemplateTitle(title)) {
-      setTitleError(
-        t("templates.titleRequired", { min: SMS_TEMPLATE_TITLE_MIN_LENGTH }),
+  const handleCreate = useCallback(
+    async (args: { title: string; description: string; body: string }) => {
+      if (!userId) {
+        return { data: null, error: t("templates.loginRequired") };
+      }
+      const { data, error: createError } = await createUserSmsTemplate(
+        supabase,
+        userId,
+        args,
       );
-      hasFieldError = true;
-    } else {
-      setTitleError(null);
-    }
-    if (!isValidSmsTemplateBody(body)) {
-      setBodyError(t("templates.bodyRequired"));
-      hasFieldError = true;
-    } else {
-      setBodyError(null);
-    }
-    if (hasFieldError) return;
+      if (createError || !data) {
+        return {
+          data: null,
+          error: createError?.message ?? t("templates.createFailed"),
+        };
+      }
+      return { data, error: null };
+    },
+    [userId, supabase, t],
+  );
 
-    if (!userId) {
-      setSaveError(t("templates.loginRequired"));
-      return;
-    }
-    setCreating(true);
-    setSaveError(null);
-    const { data, error: createError } = await createUserSmsTemplate(
-      supabase,
-      userId,
-      { title, description, body },
-    );
-    setCreating(false);
-    if (createError || !data) {
-      setSaveError(createError?.message ?? t("templates.createFailed"));
-      return;
-    }
-    setTitle("");
-    setDescription("");
-    setBody("");
-    setTitleError(null);
-    setBodyError(null);
+  const handleCreated = useCallback(async () => {
     await onRefresh();
     toast(t("templates.createdToast"));
-  }, [title, description, body, userId, supabase, onRefresh, t]);
+  }, [onRefresh, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget || !userId) return;
@@ -196,18 +177,34 @@ export function ModelesSmsView({
         minSize: MODELE_SMS_COL.actions,
         maxSize: MODELE_SMS_COL.actions,
         enableResizing: false,
+        header: () => null,
         cell: ({ row }) => (
-          <button
-            type="button"
-            aria-label={t("common.delete")}
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteTarget(row.original);
-            }}
-            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
+          <div className="flex items-center justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-7 rounded-full text-muted-foreground"
+                  aria-label={t("templates.actionsAria", {
+                    name: row.original.title,
+                  })}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="size-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => setDeleteTarget(row.original)}
+                >
+                  {t("common.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ),
       },
     ],
@@ -219,168 +216,88 @@ export function ModelesSmsView({
     : "";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className={cn(fieldBox, "shrink-0 py-4")}>
-        <div className="mb-3 flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-ring/20 bg-accent text-ring">
-            <LayoutTemplate className="h-4 w-4" aria-hidden />
-          </span>
-          <div>
-            <h2 className="m-0 text-sm font-black text-foreground">
-              {t("templates.createTitle")}
-            </h2>
-            <p className="m-0 text-xs font-semibold text-muted-foreground">
-              {t("templates.createSubtitle")}
-            </p>
-          </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <InputGroup
+          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          role="search"
+        >
+          <InputGroupAddon align="inline-start">
+            <Search aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
+            placeholder={t("templates.searchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label={t("templates.searchAria")}
+          />
+        </InputGroup>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="default"
+            size="lg"
+            className="rounded-full"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus aria-hidden />
+            {t("templates.create")}
+          </Button>
         </div>
+      </div>
 
-        <div className="grid gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="min-w-0">
-              <label
-                htmlFor="modeles-create-title"
-                className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-bold text-foreground"
-              >
-                <span>{t("templates.field.title")}</span>
-                <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-                  {t("templates.field.titleCount", {
-                    current: title.trim().length,
-                    max: SMS_TEMPLATE_TITLE_MAX_LENGTH,
-                    min: SMS_TEMPLATE_TITLE_MIN_LENGTH,
-                  })}
-                </span>
-              </label>
-              <input
-                id="modeles-create-title"
-                type="text"
-                maxLength={SMS_TEMPLATE_TITLE_MAX_LENGTH}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-border focus:ring-0"
-                placeholder={t("templates.field.titlePlaceholder")}
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  if (titleError) setTitleError(null);
-                  if (saveError) setSaveError(null);
-                }}
-                aria-invalid={Boolean(titleError)}
-              />
-              {titleError ? (
-                <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
-                  {titleError}
-                </p>
-              ) : null}
-            </div>
-            <div className="min-w-0">
-              <label
-                htmlFor="modeles-create-description"
-                className="mb-1.5 block text-xs font-bold text-foreground"
-              >
-                {t("templates.field.description")}
-              </label>
-              <input
-                id="modeles-create-description"
-                type="text"
-                maxLength={SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH}
-                className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-border focus:ring-0"
-                placeholder={t("templates.field.descriptionPlaceholder")}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  if (saveError) setSaveError(null);
-                }}
-              />
-            </div>
-          </div>
-          <div className="min-w-0">
-            <label
-              htmlFor="modeles-create-body"
-              className="mb-1.5 block text-xs font-bold text-foreground"
-            >
-              {t("templates.field.body")}
-            </label>
-            <textarea
-              id="modeles-create-body"
-              rows={4}
-              maxLength={SMS_TEMPLATE_BODY_MAX_LENGTH}
-              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold leading-relaxed text-foreground outline-none focus:border-border focus:ring-0"
-              placeholder={t("templates.field.bodyPlaceholder")}
-              value={body}
-              onChange={(e) => {
-                setBody(e.target.value);
-                if (bodyError) setBodyError(null);
-                if (saveError) setSaveError(null);
-              }}
-              aria-invalid={Boolean(bodyError)}
-            />
-            {bodyError ? (
-              <p className="m-0 mt-1.5 text-xs font-medium text-destructive">
-                {bodyError}
-              </p>
-            ) : null}
-          </div>
-          {saveError ? (
-            <p className="m-0 text-xs font-medium text-destructive">{saveError}</p>
-          ) : null}
-          <div className="flex justify-end">
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+          {error}
+        </div>
+      ) : null}
+
+      {showBigEmpty ? (
+        <Empty className="min-h-[280px] p-0 md:p-0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LayoutTemplate aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>{t("templates.emptyTitle")}</EmptyTitle>
+            <EmptyDescription>{t("templates.emptyBody")}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
             <Button
               variant="default"
-              size="lg"
-              className={cn(brandBtnPrimaryCls, "h-10 px-4")}
-              onClick={() => void handleCreate()}
-              disabled={creating}
+              className="rounded-full"
+              onClick={() => setCreateOpen(true)}
             >
-              {!creating ? <PlusIcon /> : null}
-              {creating ? t("templates.creating") : t("templates.createAction")}
+              <Plus aria-hidden />
+              {t("templates.create")}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <SearchBar
-          placeholder={t("templates.searchPlaceholder")}
-          value={searchQuery}
-          onChange={onSearchChange}
+          </EmptyContent>
+        </Empty>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={onLoadMore}
+          globalFilter={searchQuery}
+          loadingMessage={t("templates.loading")}
+          emptyMessage={t("templates.emptyTable")}
+          searchNoResultsMessage={t("templates.noSearchResults")}
+          footer={footerLabel}
+          clipHorizontalOverflow
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          manualSorting
         />
+      )}
 
-        {error ? (
-          <p className="m-0 text-sm font-bold text-rose-700">{error}</p>
-        ) : null}
-
-        {showBigEmpty ? (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
-            <LayoutTemplate
-              className="mb-3 h-10 w-10 text-muted-foreground/50"
-              aria-hidden
-            />
-            <p className="m-0 text-sm font-extrabold text-foreground">
-              {t("templates.emptyTitle")}
-            </p>
-            <p className="m-0 mt-1 max-w-sm text-xs font-semibold text-muted-foreground">
-              {t("templates.emptyBody")}
-            </p>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={rows}
-            loading={loading}
-            loadingMore={loadingMore}
-            hasMore={hasMore}
-            onLoadMore={onLoadMore}
-            globalFilter={searchQuery}
-            loadingMessage={t("templates.loading")}
-            emptyMessage={t("templates.emptyTable")}
-            searchNoResultsMessage={t("templates.noSearchResults")}
-            footer={footerLabel}
-            clipHorizontalOverflow
-            sorting={sorting}
-            onSortingChange={onSortingChange}
-            manualSorting
-          />
-        )}
-      </div>
+      <CreateSmsTemplateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+        onCreated={() => void handleCreated()}
+        customFieldDefs={customFieldDefs}
+      />
 
       <ConfirmDeleteModal
         open={deleteTarget !== null}

@@ -4,7 +4,6 @@ import {
   type CustomFieldDef,
   type CustomFieldType,
 } from "@/lib/types/customFields";
-import { POSTGREST_PAGE } from "@/lib/supabase/postgrestChunk";
 
 type DefRow = {
   id: string;
@@ -153,56 +152,27 @@ export async function swapCustomFieldDefOrder(
 }
 
 /**
- * Supprime la définition et retire la clé des `custom_fields` de tous les clients du compte.
+ * Supprime les définitions et retire les clés JSONB `clients.custom_fields`
+ * en une transaction SQL (RPC) — pas de PATCH par contact.
  */
+export async function deleteCustomFieldDefs(
+  supabase: SupabaseClient,
+  fieldIds: string[],
+): Promise<{ error: Error | null }> {
+  if (fieldIds.length === 0) return { error: null };
+  const { error } = await supabase.rpc("delete_contact_custom_field_defs", {
+    p_ids: fieldIds,
+  });
+  if (error) {
+    return { error: new Error(error.message) };
+  }
+  return { error: null };
+}
+
 export async function deleteCustomFieldDef(
   supabase: SupabaseClient,
-  userId: string,
+  _userId: string,
   fieldId: string,
 ): Promise<{ error: Error | null }> {
-  const { error: delErr } = await supabase
-    .from("contact_custom_field_defs")
-    .delete()
-    .eq("id", fieldId)
-    .eq("user_id", userId);
-
-  if (delErr) {
-    return { error: new Error(delErr.message) };
-  }
-
-  for (let from = 0; ; from += POSTGREST_PAGE) {
-    const { data: clients, error: fetchErr } = await supabase
-      .from("clients")
-      .select("id,custom_fields")
-      .eq("user_id", userId)
-      .order("id", { ascending: true })
-      .range(from, from + POSTGREST_PAGE - 1);
-
-    if (fetchErr) {
-      return { error: new Error(fetchErr.message) };
-    }
-
-    const page = clients ?? [];
-    for (const raw of page) {
-      const row = raw as {
-        id: string;
-        custom_fields: Record<string, unknown> | null;
-      };
-      const cf = row.custom_fields ?? {};
-      if (!(fieldId in cf)) continue;
-      const next = { ...cf };
-      delete next[fieldId];
-      const { error: upErr } = await supabase
-        .from("clients")
-        .update({ custom_fields: next })
-        .eq("id", row.id)
-        .eq("user_id", userId);
-      if (upErr) {
-        return { error: new Error(upErr.message) };
-      }
-    }
-    if (page.length < POSTGREST_PAGE) break;
-  }
-
-  return { error: null };
+  return deleteCustomFieldDefs(supabase, [fieldId]);
 }

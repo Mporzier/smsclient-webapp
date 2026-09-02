@@ -29,6 +29,7 @@ export function usePrototypeModals(
   const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
   const [campaignDetailsRow, setCampaignDetailsRow] =
     useState<CampaignRowData | null>(null);
+  const [campaignNameOpen, setCampaignNameOpen] = useState(false);
 
   const [cmFirst, setCmFirst] = useState("");
   const [cmLast, setCmLast] = useState("");
@@ -61,7 +62,8 @@ export function usePrototypeModals(
       groupQuickFromContactOpen ||
       groupEditOpen ||
       contactModalOpen ||
-      importContactsOpen;
+      importContactsOpen ||
+      campaignNameOpen;
     document.body.style.overflow = anyModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
@@ -72,6 +74,7 @@ export function usePrototypeModals(
     groupEditOpen,
     contactModalOpen,
     importContactsOpen,
+    campaignNameOpen,
   ]);
 
   useEffect(() => {
@@ -140,6 +143,8 @@ export function usePrototypeModals(
     setCampaignDetailsOpen,
     campaignDetailsRow,
     setCampaignDetailsRow,
+    campaignNameOpen,
+    setCampaignNameOpen,
     cmFirst,
     setCmFirst,
     cmLast,

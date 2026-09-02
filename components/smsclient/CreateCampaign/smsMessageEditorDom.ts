@@ -1,14 +1,5 @@
-import {
-  normalizePrenomTokens,
-  SMS_PRENOM_TAG,
-} from "@/lib/proto/smsPersonalization";
+import { normalizePrenomTokens, SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 import { smsPrenomBubbleClass } from "./smsPrenomTagStyles";
-
-const PRENOM_TOKEN_SPLIT_RE =
-  /(⟦prénom⟧|\{PRENOM\}|\{prenom\}|\{\{prenom\}\})/gi;
-
-const PRENOM_TOKEN_PART_RE =
-  /^(⟦prénom⟧|\{PRENOM\}|\{prenom\}|\{\{prenom\}\})$/i;
 
 export const SMS_PRENOM_CHIP_ATTR = "data-sms-prenom";
 const PRENOM_CHIP_LABEL = "Prénom";
@@ -128,15 +119,11 @@ export function renderSmsEditorValue(root: HTMLElement, value: string) {
   const normalized = normalizePrenomTokens(value);
   if (!normalized) return;
 
-  const parts = normalized.split(PRENOM_TOKEN_SPLIT_RE);
-  for (const part of parts) {
-    if (!part) continue;
-    if (PRENOM_TOKEN_PART_RE.test(part)) {
-      root.appendChild(createPrenomChipElement());
-      continue;
-    }
-    root.appendChild(document.createTextNode(part));
-  }
+  const lines = normalized.split("\n");
+  lines.forEach((line, i) => {
+    if (line) root.appendChild(document.createTextNode(line));
+    if (i < lines.length - 1) root.appendChild(document.createElement("br"));
+  });
 }
 
 export function repairPrenomChips(root: HTMLElement) {
@@ -249,17 +236,5 @@ export function selectAllEditorContents(root: HTMLElement) {
 }
 
 export function insertPrenomAtSelection(root: HTMLElement) {
-  root.focus();
-  const range = getActiveRange(root);
-  const chip = createPrenomChipElement();
-
-  if (!range) {
-    root.appendChild(chip);
-    placeCaretAfter(chip);
-    return;
-  }
-
-  range.deleteContents();
-  range.insertNode(chip);
-  placeCaretAfter(chip);
+  insertTextAtSelection(root, SMS_PRENOM_TAG);
 }

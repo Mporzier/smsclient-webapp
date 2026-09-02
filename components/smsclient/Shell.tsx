@@ -353,7 +353,9 @@ export function AppShell({
                 {t(routeTitleKey(route))}
               </h1>
               {isCampaignWizard && campaignWizardStep != null && (
-                <CampaignWizardStepper current={campaignWizardStep} compact />
+                <div className="flex min-w-0 flex-1 justify-center px-4">
+                  <CampaignWizardStepper current={campaignWizardStep} compact />
+                </div>
               )}
             </div>
             <div className="flex items-center gap-2">

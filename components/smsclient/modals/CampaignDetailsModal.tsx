@@ -4,68 +4,103 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
-import { Users } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  brandBtnCls,
+  BadgeDraft,
+  BadgeFailed,
+  BadgeScheduled,
+  BadgeSent,
+} from "@/components/smsclient/ui";
+import { cn } from "@/lib/cn";
+import { useI18n, type MessageKey } from "@/lib/i18n";
+import { groupColor, groupTagBase } from "@/lib/proto/contactDisplay";
+import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
+import { useState } from "react";
+import { Megaphone, Send, Users } from "lucide-react";
+import {
   dialogContentZCls,
   dialogOverlayCls,
   formDialogContentCls,
+  modalIconCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
-import { FormDialogHeader } from "./FormDialogHeader";
 
-const GROUP_COLORS: { bg: string; border: string; text: string }[] = [
-  { bg: "bg-indigo-50", border: "border-indigo-100", text: "text-indigo-700" },
-  { bg: "bg-emerald-50", border: "border-emerald-100", text: "text-emerald-700" },
-  { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-700" },
-  { bg: "bg-rose-50", border: "border-rose-100", text: "text-rose-700" },
-  { bg: "bg-sky-50", border: "border-sky-100", text: "text-sky-700" },
-  { bg: "bg-violet-50", border: "border-violet-100", text: "text-violet-700" },
-  { bg: "bg-orange-50", border: "border-orange-100", text: "text-orange-700" },
-  { bg: "bg-cyan-50", border: "border-cyan-100", text: "text-cyan-700" },
-  { bg: "bg-fuchsia-50", border: "border-fuchsia-100", text: "text-fuchsia-700" },
-  { bg: "bg-lime-50", border: "border-lime-100", text: "text-lime-700" },
-];
+const fieldLabelCls = "text-xs font-semibold text-foreground";
 
-function groupColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  }
-  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
-}
+const STATUS_KEYS: Record<SmsCampaignStatus, MessageKey> = {
+  sent: "campaigns.status.sent",
+  scheduled: "campaigns.status.scheduled",
+  draft: "campaigns.status.draft",
+  failed: "campaigns.status.failed",
+  cancelled: "campaigns.status.cancelled",
+};
 
-function campaignStatusLabel(status: SmsCampaignStatus): string {
+function StatusBadge({ status }: { status: SmsCampaignStatus }) {
+  const { t } = useI18n();
+  const label = t(STATUS_KEYS[status]);
   switch (status) {
     case "sent":
-      return "Envoyée";
+      return <BadgeSent>{label}</BadgeSent>;
     case "scheduled":
-      return "Programmée";
+      return <BadgeScheduled>{label}</BadgeScheduled>;
     case "draft":
-      return "Brouillon";
+      return <BadgeDraft>{label}</BadgeDraft>;
     case "failed":
-      return "Échec";
     case "cancelled":
-      return "Annulée";
+      return <BadgeFailed>{label}</BadgeFailed>;
     default:
-      return status;
+      return <BadgeDraft>—</BadgeDraft>;
   }
+}
+
+function DetailField({
+  id,
+  label,
+  value,
+}: {
+  id: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className={fieldLabelCls} htmlFor={id}>
+        {label}
+      </Label>
+      <p id={id} className="text-sm text-foreground">
+        {value}
+      </p>
+    </div>
+  );
 }
 
 type CampaignDetailsModalProps = {
   open: boolean;
   campaign: CampaignRowData | null;
   onClose: () => void;
+  onResend?: (campaign: CampaignRowData) => void;
 };
 
 export function CampaignDetailsModal({
   open,
   campaign,
   onClose,
+  onResend,
 }: CampaignDetailsModalProps) {
+  const { t } = useI18n();
+  const campaignId = campaign?.id ?? null;
+  const [section, setSection] = useState<"detail" | "recipients">("detail");
+  const [prevId, setPrevId] = useState(campaignId);
+  if (campaignId !== prevId) {
+    setPrevId(campaignId);
+    setSection("detail");
+  }
+
   const hasContacts =
     campaign?.targetContacts && campaign.targetContacts.length > 0;
   const hasGroups =
@@ -83,139 +118,178 @@ export function CampaignDetailsModal({
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
-          "h-[min(88dvh,820px)] max-h-[min(88dvh,820px)] sm:max-w-[860px]",
+          "h-[min(86dvh,760px)] max-h-[min(86dvh,760px)] rounded-xl shadow-lg sm:max-w-[640px]",
           dialogContentZCls
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
       >
         {campaign && (
           <>
-            <FormDialogHeader
-              className="bg-card px-[18px] py-4"
-              title="Détails de campagne"
-              titleClassName="text-lg font-black"
-              description="Consultation uniquement (lecture seule)"
-              descriptionClassName="font-bold"
-            />
-
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-muted/50 p-[18px]">
-              <div className="shrink-0 rounded-2xl border border-border bg-card p-4 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <div className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/90">
-                  Campagne
-                </div>
-                <div className="mt-1.5 text-lg font-black text-foreground">
-                  {campaign.name}
-                </div>
-                <div className="mt-1.5 text-sm font-semibold text-muted-foreground">
-                  Statut : <strong>{campaignStatusLabel(campaign.status)}</strong>
-                </div>
+            <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
+              <div className={modalIconCls("sm")} aria-hidden>
+                <Megaphone />
               </div>
+              <DialogTitle className="min-w-0 flex-1 truncate pr-8 text-base font-semibold leading-snug tracking-tight">
+                {t("campaigns.details.title")}
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  –{" "}
+                </span>
+                <span className="font-normal">{campaign.name}</span>
+              </DialogTitle>
+            </DialogHeader>
 
-              <div className="grid shrink-0 grid-cols-2 gap-3 max-[900px]:grid-cols-1">
-                <div className="rounded-2xl border border-border bg-card p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                  <div className="text-xs font-bold text-muted-foreground">
-                    Date de création
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.createdLabel}
-                  </div>
-                  <div className="mt-2.5 text-xs font-bold text-muted-foreground">
-                    Envoi
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.sendLabel}
-                  </div>
-                  <div className="mt-2.5 text-xs font-bold text-muted-foreground">
-                    Mode
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.sendMode === "sched" ? "Programmé" : "Immédiat"}
-                  </div>
-                </div>
+            <div
+              role="tablist"
+              aria-label={t("campaigns.details.title")}
+              className="flex shrink-0 gap-1 px-6 pt-3"
+            >
+              <Button
+                type="button"
+                size="sm"
+                role="tab"
+                aria-selected={section === "detail"}
+                variant={section === "detail" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setSection("detail")}
+              >
+                {t("campaigns.details.sectionDetail")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                role="tab"
+                aria-selected={section === "recipients"}
+                variant={section === "recipients" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setSection("recipients")}
+              >
+                {t("campaigns.details.sectionList")}
+              </Button>
+            </div>
 
-                <div className="rounded-2xl border border-border bg-card p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                  <div className="text-xs font-bold text-muted-foreground">
-                    Expéditeur
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.sender?.trim() || "—"}
-                  </div>
-                  <div className="mt-2.5 text-xs font-bold text-muted-foreground">
-                    Destinataires
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.recipients}
-                  </div>
-                  <div className="mt-2.5 text-xs font-bold text-muted-foreground">
-                    Crédits estimés
-                  </div>
-                  <div className="mt-1 text-sm font-black text-foreground">
-                    {campaign.creditsLabel}
-                  </div>
-                </div>
-              </div>
-
-              <div className="shrink-0 rounded-2xl border border-border bg-card p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                <div className="text-xs font-bold text-muted-foreground">Message</div>
-                <div className="mt-1.5 whitespace-pre-wrap rounded-xl border border-border bg-muted/50 p-2.5 text-sm font-semibold text-foreground/90">
-                  {campaign.body?.trim() || "—"}
-                </div>
-              </div>
-
-              {(hasContacts || hasGroups) && (
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-                  <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3.5 py-2.5">
-                    <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
-                    <span className="text-xs font-black text-foreground/80">
-                      Destinataires ciblés
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+              {section === "detail" ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className={fieldLabelCls}>
+                      {t("campaigns.col.status")}
                     </span>
-                    {hasGroups && (
-                      <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                        {campaign.targetGroups!.map((g) => {
-                          const c = groupColor(g);
-                          return (
-                            <span
-                              key={g}
-                              className={cn(
-                                "inline-flex items-center rounded-[10px] border px-2.5 py-1 text-[12px] font-bold",
-                                c.bg,
-                                c.border,
-                                c.text
-                              )}
-                            >
-                              {g}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <StatusBadge status={campaign.status} />
                   </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <DetailField
+                      id="campaign-detail-created"
+                      label={t("campaigns.details.created")}
+                      value={campaign.createdLabel}
+                    />
+                    <DetailField
+                      id="campaign-detail-send"
+                      label={t("campaigns.col.send")}
+                      value={campaign.sendLabel}
+                    />
+                    <DetailField
+                      id="campaign-detail-mode"
+                      label={t("campaigns.details.mode")}
+                      value={
+                        campaign.sendMode === "sched"
+                          ? t("campaigns.details.modeSched")
+                          : t("campaigns.details.modeNow")
+                      }
+                    />
+                    <DetailField
+                      id="campaign-detail-sender"
+                      label={t("campaigns.details.sender")}
+                      value={campaign.sender?.trim() || "—"}
+                    />
+                    <DetailField
+                      id="campaign-detail-recipients"
+                      label={t("campaigns.col.recipients")}
+                      value={String(campaign.recipients)}
+                    />
+                    <DetailField
+                      id="campaign-detail-credits"
+                      label={t("campaigns.col.credits")}
+                      value={campaign.creditsLabel}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label
+                      className={fieldLabelCls}
+                      htmlFor="campaign-detail-message"
+                    >
+                      {t("campaigns.details.message")}
+                    </Label>
+                    <Textarea
+                      id="campaign-detail-message"
+                      readOnly
+                      value={campaign.body?.trim() || "—"}
+                      className="min-h-[88px] resize-none bg-muted/40 focus-visible:ring-0"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Users
+                      className="h-4 w-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    <span className={fieldLabelCls}>
+                      {t("campaigns.details.targeted")}
+                    </span>
+                  </div>
+                  {hasGroups && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {campaign.targetGroups!.map((g) => {
+                        const c = groupColor(g);
+                        return (
+                          <span
+                            key={g}
+                            className={cn(
+                              groupTagBase,
+                              c.bg,
+                              c.border,
+                              c.text
+                            )}
+                          >
+                            {g}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {hasContacts ? (
-                    <div className="min-h-0 flex-1 overflow-auto">
-                      <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
-                        <thead className="sticky top-0 z-[1] bg-muted/50">
+                    <div className="overflow-hidden rounded-lg border border-border">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-muted/50">
                           <tr>
-                            <th className="border-b border-border px-3 py-2 font-extrabold text-foreground/80">
-                              Prénom
+                            <th className="px-3 py-2 font-medium text-muted-foreground">
+                              {t("contacts.col.firstName")}
                             </th>
-                            <th className="border-b border-border px-3 py-2 font-extrabold text-foreground/80">
-                              Nom
+                            <th className="px-3 py-2 font-medium text-muted-foreground">
+                              {t("contacts.col.lastName")}
                             </th>
-                            <th className="border-b border-border px-3 py-2 font-extrabold text-foreground/80">
-                              Téléphone
+                            <th className="px-3 py-2 font-medium text-muted-foreground">
+                              {t("contacts.col.phone")}
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           {campaign.targetContacts!.map((c, i) => (
-                            <tr key={i} className="border-b border-border/50">
-                              <td className="px-3 py-2 font-semibold text-foreground">
+                            <tr
+                              key={`${c.phone}-${i}`}
+                              className="border-t border-border"
+                            >
+                              <td className="px-3 py-2 text-foreground">
                                 {c.firstName || "—"}
                               </td>
-                              <td className="px-3 py-2 font-semibold text-foreground">
+                              <td className="px-3 py-2 text-foreground">
                                 {c.lastName || "—"}
                               </td>
-                              <td className="px-3 py-2 font-semibold text-muted-foreground">
+                              <td className="px-3 py-2 text-muted-foreground">
                                 {c.phone}
                               </td>
                             </tr>
@@ -224,25 +298,37 @@ export function CampaignDetailsModal({
                       </table>
                     </div>
                   ) : (
-                    <div className="flex min-h-[60px] items-center justify-center px-3 py-4 text-sm font-semibold text-muted-foreground">
-                      Pas de détail individuel disponible.
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t("campaigns.details.noContacts")}
+                    </p>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="flex shrink-0 justify-end border-t border-border bg-card px-[18px] py-3">
+            <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-between gap-2 rounded-b-xl p-2.5 px-4 sm:justify-between">
+              {onResend ? (
+                <Button
+                  type="button"
+                  variant="default"
+                  className="cursor-pointer"
+                  onClick={() => onResend(campaign)}
+                >
+                  <Send className="h-4 w-4" aria-hidden />
+                  {t("campaigns.details.resend")}
+                </Button>
+              ) : (
+                <span />
+              )}
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className={brandBtnCls}
+                className="cursor-pointer"
                 onClick={onClose}
               >
-                Fermer
+                {t("dialog.close")}
               </Button>
-            </div>
+            </DialogFooter>
           </>
         )}
       </DialogContent>

@@ -21,6 +21,7 @@ Read skill `smsclient-map` first (+ `wiki/conventions-ui.md` si modale / tel / D
 | campagnes     | `CampagnesView.tsx`, `useCampaigns.ts`, `lib/supabase/campaigns.ts`                                |
 | wizard        | `CampaignWizard.tsx` (offset), `useCampaignWizard.ts`, `campaignTypes.ts`                          |
 | qr            | `QrCodeView.tsx`, `useQrWheel.ts`, `lib/supabase/qrWheel.ts`                                       |
+| modeles       | `ModelesSmsView.tsx`, `modals/CreateSmsTemplateModal.tsx`, `useSmsTemplates.ts`, `lib/supabase/smsTemplates.ts` |
 | paramètres    | `ParametresView.tsx`, `useTrashItems.ts`, `lib/supabase/profile.ts`                                |
 | shell         | `Shell.tsx` (offset), `lib/proto/routes.ts`                                                        |
 | auth          | `AuthGate.tsx`, `lib/supabase/client.ts`, `lib/auth/authErrors.ts`                                 |

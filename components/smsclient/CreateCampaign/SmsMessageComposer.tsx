@@ -1,15 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { UserRound, Smile } from "lucide-react";
+import { Smile } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { SmsCompositionCounter } from "./SmsCompositionCounter";
 import { SmsEmojiPicker } from "./SmsEmojiPicker";
+import { SmsMergeTagMenu } from "./SmsMergeTagMenu";
 import {
   SmsRichMessageEditor,
   type SmsRichMessageEditorHandle,
 } from "./SmsRichMessageEditor";
-import { smsPrenomChipClass } from "./smsPrenomTagStyles";
+import type { CustomFieldDef } from "@/lib/types/customFields";
+import type { SmsMergeValues } from "@/lib/proto/smsPersonalization";
 
 export function SmsMessageComposer({
   value,
@@ -21,6 +23,8 @@ export function SmsMessageComposer({
   reserveStop = false,
   billableMessage,
   compact = false,
+  customFieldDefs = [],
+  estimateSample,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -31,6 +35,8 @@ export function SmsMessageComposer({
   reserveStop?: boolean;
   billableMessage?: string;
   compact?: boolean;
+  customFieldDefs?: readonly CustomFieldDef[];
+  estimateSample?: SmsMergeValues;
 }) {
   const [emojisOpen, setEmojisOpen] = useState(false);
   const emojiBtnRef = useRef<HTMLButtonElement>(null);
@@ -43,8 +49,8 @@ export function SmsMessageComposer({
     [],
   );
 
-  const insertPrenomTag = useCallback(() => {
-    editorRef.current?.insertPrenom();
+  const insertMergeToken = useCallback((token: string) => {
+    editorRef.current?.insertText(token);
   }, []);
 
   return (
@@ -97,18 +103,10 @@ export function SmsMessageComposer({
               <Smile className="h-4 w-4" aria-hidden />
             </button>
 
-            <button
-              type="button"
-              onClick={insertPrenomTag}
-              className={cn(
-                smsPrenomChipClass,
-                "h-8 cursor-pointer px-2 transition-colors hover:border-[#2f6fed]/40 hover:bg-[#dfe9ff]",
-              )}
-              title="Insérer la balise prénom du destinataire"
-            >
-              <UserRound className="mr-1 h-3 w-3 shrink-0" aria-hidden />
-              Prénom
-            </button>
+            <SmsMergeTagMenu
+              defs={customFieldDefs}
+              onInsert={insertMergeToken}
+            />
           </div>
 
           <SmsCompositionCounter
@@ -116,6 +114,8 @@ export function SmsMessageComposer({
             reserveStop={reserveStop}
             billableMessage={billableMessage}
             estimateFirstName={estimateFirstName}
+            estimateSample={estimateSample}
+            customFieldDefs={customFieldDefs}
           />
         </div>
 

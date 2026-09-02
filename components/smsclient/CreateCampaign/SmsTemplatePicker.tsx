@@ -21,6 +21,7 @@ type SmsTemplatePickerProps = {
   customTemplates?: UserSmsTemplateRow[];
   customLoading?: boolean;
   onManageCustomTemplates?: () => void;
+  onCreateCustomTemplate?: () => void;
 };
 
 function TemplateCard({
@@ -72,12 +73,14 @@ export function SmsTemplatePicker({
   customTemplates = [],
   customLoading = false,
   onManageCustomTemplates,
+  onCreateCustomTemplate,
 }: SmsTemplatePickerProps) {
   const readyTemplates = getCampaignSmsTemplatesForActivity(businessActivity);
   const sectorLabel = businessActivity
     ? businessActivityLabel(businessActivity)
     : businessActivityLabel("autre");
   const personalTemplates = customTemplates.map(toCampaignSmsTemplate);
+  const handleCreate = onCreateCustomTemplate ?? onManageCustomTemplates;
 
   return (
     <div className="space-y-5">
@@ -138,12 +141,12 @@ export function SmsTemplatePicker({
               Aucun modèle personnalisé
             </p>
             <p className="m-0 mt-1 text-[11px] font-semibold text-slate-500">
-              Créez-en depuis la section Modèles SMS.
+              Créez votre premier modèle sans quitter la campagne.
             </p>
-            {onManageCustomTemplates ? (
+            {handleCreate ? (
               <button
                 type="button"
-                onClick={onManageCustomTemplates}
+                onClick={handleCreate}
                 className="mt-3 cursor-pointer text-[11px] font-black text-[#2f6fed] underline-offset-2 hover:underline"
               >
                 Créer un modèle

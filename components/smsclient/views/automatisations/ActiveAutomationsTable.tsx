@@ -80,7 +80,7 @@ export function ActiveAutomationsTable({
       {
         accessorKey: "name",
         header: "Automatisation",
-        size: 180,
+        size: 220,
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="font-semibold text-foreground">
             {getValue<string>()}
@@ -90,7 +90,7 @@ export function ActiveAutomationsTable({
       {
         id: "trigger",
         header: "Déclenchement",
-        size: 260,
+        size: 300,
         accessorFn: (row) => triggerLabel(row),
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-muted-foreground">
@@ -101,7 +101,7 @@ export function ActiveAutomationsTable({
       {
         id: "activity",
         header: "Activité",
-        size: 140,
+        size: 150,
         accessorFn: (row) => activityLabel(row),
         cell: ({ getValue }) => (
           <span className="text-sm font-semibold text-foreground">
@@ -112,7 +112,7 @@ export function ActiveAutomationsTable({
       {
         id: "status",
         header: "Statut",
-        size: 110,
+        size: 120,
         cell: () => (
           <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
             Active
@@ -122,7 +122,7 @@ export function ActiveAutomationsTable({
       {
         id: "lastActivity",
         header: "Dernière activité",
-        size: 150,
+        size: 170,
         cell: () => (
           <span className="text-sm text-muted-foreground">—</span>
         ),

@@ -7,6 +7,8 @@ import {
   SmsAiOptionCards,
   type SmsAiOptions,
 } from "@/components/smsclient/CreateCampaign/SmsAiOptionCards";
+import { SmsMergeTagChecklist } from "@/components/smsclient/CreateCampaign/SmsMergeTagMenu";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { LinkRowData } from "@/lib/types/link";
 import { stripStopMention } from "@/lib/proto/smsStopMention";
 import { Spinner } from "@/components/ui/spinner";
@@ -32,6 +34,7 @@ type SmsAiComposePanelProps = {
   variants: string[];
   selectedVariant: string | null;
   onSelectVariant: (variant: string) => void;
+  customFieldDefs?: CustomFieldDef[];
 };
 
 export function SmsAiComposePanel({
@@ -49,6 +52,7 @@ export function SmsAiComposePanel({
   variants,
   selectedVariant,
   onSelectVariant,
+  customFieldDefs = [],
 }: SmsAiComposePanelProps) {
   const hasVariants = variants.length > 0;
 
@@ -109,6 +113,14 @@ export function SmsAiComposePanel({
             onSelectLink={onSelectLink}
             onCreateLink={onCreateLink}
             composeDisabled={generating}
+          />
+          <SmsMergeTagChecklist
+            className="mt-3 border-t border-slate-200 pt-3"
+            defs={customFieldDefs}
+            selected={options.selectedMergeTags}
+            onChange={(selectedMergeTags) =>
+              onOptionsChange({ selectedMergeTags })
+            }
           />
         </div>
       ) : null}

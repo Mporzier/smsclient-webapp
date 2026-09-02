@@ -26,14 +26,14 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
   const handleRestoreTrashContacts = useCallback(
     async (ids: string[]) => {
       if (!user?.id) throw new Error("Vous devez être connecté.");
-      const { restored, error } = await restoreClients(supabase, user.id, ids);
+      const { restored, duplicates, error } = await restoreClients(
+        supabase,
+        user.id,
+        ids,
+      );
       if (error) throw error;
       contactsState.refresh();
-      toast(
-        `${restored} contact${restored > 1 ? "s" : ""} restauré${
-          restored > 1 ? "s" : ""
-        }.`
-      );
+      return { restored, duplicates };
     },
     [supabase, user, contactsState]
   );
@@ -41,14 +41,14 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
   const handleRestoreTrashGroups = useCallback(
     async (ids: string[]) => {
       if (!user?.id) throw new Error("Vous devez être connecté.");
-      const { restored, error } = await restoreGroups(supabase, user.id, ids);
+      const { restored, duplicates, error } = await restoreGroups(
+        supabase,
+        user.id,
+        ids,
+      );
       if (error) throw error;
       groupsState.refresh();
-      toast(
-        `${restored} groupe${restored > 1 ? "s" : ""} restauré${
-          restored > 1 ? "s" : ""
-        }.`
-      );
+      return { restored, duplicates };
     },
     [supabase, user, groupsState]
   );

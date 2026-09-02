@@ -1,6 +1,7 @@
 "use client";
 
 export { CampaignDetailsModal } from "./CampaignDetailsModal";
+export { CampaignNameModal } from "./CampaignNameModal";
 export { ContactCreateModal } from "./ContactCreateModal";
 export {
   GroupModal,

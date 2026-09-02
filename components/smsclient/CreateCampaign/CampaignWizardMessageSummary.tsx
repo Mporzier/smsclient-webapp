@@ -1,97 +1,88 @@
 "use client";
 
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { formatInt, formatSmsPartsPerContact } from "@/lib/proto/smsUtils";
-import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 
-function SummaryRow({
+function SummaryCard({
   label,
   value,
-  highlight,
 }: {
   label: string;
   value: string;
-  highlight?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border px-2.5 py-2",
-        highlight
-          ? "border-[#2f6fed]/30 bg-[#eef4ff]"
-          : "border-slate-200 bg-slate-50",
-      )}
-    >
-      <div className="flex flex-col gap-0.5">
-        <span
-          className={cn(
-            "text-[11px] font-extrabold",
-            highlight ? "text-[#1f3b77]" : "text-slate-600",
-          )}
-        >
-          {label}
-        </span>
-        <span
-          className={cn(
-            "text-sm font-black tabular-nums",
-            highlight ? "text-[#1f3b77]" : "text-slate-900",
-          )}
-        >
+    <Card size="sm" className="gap-0 py-0 shadow-none">
+      <CardHeader className="px-3 py-2.5">
+        <CardDescription className="text-xs">{label}</CardDescription>
+        <CardTitle className="text-sm font-semibold tabular-nums">
           {value}
-        </span>
-      </div>
-    </div>
+        </CardTitle>
+      </CardHeader>
+    </Card>
   );
 }
 
 export function CampaignWizardMessageSummary({
-  destinatairesLabel,
+  recipients,
   parts,
   partsMin,
   partsMax,
   totalCredits,
   creditsAvailable,
   hasEnoughCredits,
-  indicative = false,
+  pendingSms = false,
 }: {
-  destinatairesLabel: string;
+  recipients: number;
   parts: number;
   partsMin?: number;
   partsMax?: number;
   totalCredits: number;
   creditsAvailable: number;
   hasEnoughCredits: boolean;
-  indicative?: boolean;
+  pendingSms?: boolean;
 }) {
-  const creditsLabel = `${formatInt(totalCredits)} crédit${
-    totalCredits !== 1 ? "s" : ""
-  }${indicative ? " (indicatif)" : ""}`;
+  const destinatairesLabel =
+    recipients === 1
+      ? "1 contact valide"
+      : `${formatInt(recipients)} contacts valides`;
 
-  const smsPerContactLabel = formatSmsPartsPerContact(parts, partsMin, partsMax);
+  const smsPerContactLabel = pendingSms
+    ? "En attente"
+    : formatSmsPartsPerContact(parts, partsMin, partsMax);
+
+  const creditsCostLabel = pendingSms
+    ? "Calculer à l'étape suivante"
+    : `${formatInt(totalCredits)} crédit${totalCredits !== 1 ? "s" : ""}`;
+
+  const creditsAvailableLabel = `${formatInt(creditsAvailable)} crédit${
+    creditsAvailable !== 1 ? "s" : ""
+  }`;
 
   return (
-    <aside className={cn(fieldBox, "flex shrink-0 flex-col gap-1.5 py-2")}>
-      <h3 className="m-0 shrink-0 text-xs font-black text-slate-900">Résumé</h3>
+    <aside className="flex shrink-0 flex-col gap-2">
+      <h3 className="m-0 shrink-0 text-xs font-medium text-muted-foreground">
+        Résumé
+      </h3>
 
-      <SummaryRow label="Destinataires" value={destinatairesLabel} />
+      <div className="flex flex-col gap-2">
+        <SummaryCard label="Destinataires" value={destinatairesLabel} />
+        <SummaryCard label="SMS par contact" value={smsPerContactLabel} />
+        <SummaryCard label="Coût en crédits total" value={creditsCostLabel} />
+        <SummaryCard label="Crédits disponibles" value={creditsAvailableLabel} />
+      </div>
 
-      <SummaryRow label="SMS par contact" value={smsPerContactLabel} />
-
-      <SummaryRow
-        label={indicative ? "Coût estimé" : "Coût total"}
-        value={creditsLabel}
-        highlight
-      />
-
-      <SummaryRow
-        label="Solde disponible"
-        value={`${formatInt(creditsAvailable)} crédit${
-          creditsAvailable !== 1 ? "s" : ""
-        }`}
-      />
-
-      {!hasEnoughCredits && totalCredits > 0 && (
-        <p className="m-0 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10px] font-extrabold leading-snug text-rose-800">
+      {!pendingSms && !hasEnoughCredits && totalCredits > 0 && (
+        <p
+          className={cn(
+            "m-0 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10px] font-medium leading-snug text-rose-800"
+          )}
+        >
           Crédits insuffisants pour cette campagne.
         </p>
       )}

@@ -19,8 +19,8 @@ export function CampaignWizardStepper({
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center gap-0.5",
-        compact ? "overflow-x-auto" : "gap-1",
+        "flex min-w-0 items-center gap-1.5",
+        compact ? "overflow-x-auto" : "gap-2",
       )}
       aria-label="Étapes de création de campagne"
     >
@@ -29,27 +29,27 @@ export function CampaignWizardStepper({
         const active = s.id === current;
         const Icon = s.icon;
         return (
-          <div key={s.id} className="flex shrink-0 items-center gap-0.5">
+          <div key={s.id} className="flex shrink-0 items-center gap-1.5">
             {idx > 0 && (
               <div
                 className={cn(
                   "h-px transition-colors",
                   compact ? "w-3" : "w-6",
-                  done ? "bg-[#2f6fed]" : "bg-slate-200",
+                  done ? "bg-primary" : "bg-border",
                 )}
               />
             )}
             <div
               className={cn(
-                "flex items-center gap-1 rounded-full font-bold transition-colors",
+                "flex items-center gap-1 rounded-full font-semibold transition-colors",
                 compact
                   ? "px-2 py-1 text-[11px]"
                   : "gap-1.5 px-3 py-1.5 text-xs",
                 active
-                  ? "bg-[#eef4ff] text-[#1f3b77]"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : done
                     ? "bg-emerald-50 text-emerald-700"
-                    : "bg-slate-100 text-slate-400",
+                    : "bg-muted text-muted-foreground",
               )}
             >
               {done ? (

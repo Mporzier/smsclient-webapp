@@ -9,11 +9,9 @@ import {
   PERSON_NAME_MAX_LENGTH,
   PHONE_DISPLAY_MAX_LENGTH,
 } from "@/lib/forms/fieldLimits";
-import { contactInitials } from "@/lib/proto/contactDisplay";
 import type { ProfileLanguage, UserProfileForm } from "@/lib/types/profile";
 import { useI18n } from "@/lib/i18n";
 import {
-  Check,
   Mail,
   Pencil,
   Phone,
@@ -24,11 +22,11 @@ import { useState, type ReactNode } from "react";
 
 const rowCls =
   "grid min-h-[3.25rem] grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 border-b border-border py-2 last:border-b-0 max-[480px]:grid-cols-[5.5rem_minmax(0,1fr)]";
-const labelCls = "text-sm font-extrabold text-foreground";
+const labelCls = "text-sm font-medium text-muted-foreground";
 const valueClusterCls =
   "flex min-w-0 w-full items-center gap-1.5";
 const valueTextCls =
-  "min-w-0 flex-1 truncate text-left text-sm font-bold text-foreground";
+  "min-w-0 flex-1 truncate text-left text-sm font-normal text-foreground";
 const valueIconCls = "h-4 w-4 shrink-0";
 
 type EditableKey = "firstName" | "lastName" | "phone" | "language";
@@ -92,11 +90,6 @@ export function CompteSettingsPanel({
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const initials = contactInitials({
-    firstName: form.firstName,
-    lastName: form.lastName,
-  });
-
   const languageLabel = (lang: ProfileLanguage) =>
     lang === "en" ? t("compte.lang.en") : t("compte.lang.fr");
 
@@ -140,35 +133,23 @@ export function CompteSettingsPanel({
   };
 
   return (
-    <div className="w-full lg:grid lg:grid-cols-2 lg:gap-x-10">
+    <div className="w-full max-w-md">
       {loading ? (
-        <p className="py-4 text-sm font-semibold text-muted-foreground lg:col-span-2">
+        <p className="py-4 text-sm font-normal text-muted-foreground">
           <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
         </p>
       ) : null}
       {saveError ? (
-        <Alert variant="destructive" className="mb-3 lg:col-span-2">
-          <AlertDescription className="font-bold">{saveError}</AlertDescription>
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>{saveError}</AlertDescription>
         </Alert>
       ) : null}
       {fieldError ? (
-        <Alert variant="destructive" className="mb-3 lg:col-span-2">
-          <AlertDescription className="font-bold">{fieldError}</AlertDescription>
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>{fieldError}</AlertDescription>
         </Alert>
       ) : null}
 
-      <CompteDisplayRow
-        label={t("compte.icon")}
-        leading={
-          <span
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ring text-sm font-black text-white"
-            aria-hidden
-          >
-            {initials}
-          </span>
-        }
-        hideDisplay
-      />
       <CompteDisplayRow
         label={t("compte.firstName")}
         leading={
@@ -189,8 +170,6 @@ export function CompteSettingsPanel({
         onEdit={() => openEdit("firstName")}
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
-        editAria={t("compte.edit")}
-        saveAria={t("dialog.save")}
       />
       <CompteDisplayRow
         label={t("compte.lastName")}
@@ -212,8 +191,6 @@ export function CompteSettingsPanel({
         onEdit={() => openEdit("lastName")}
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
-        editAria={t("compte.edit")}
-        saveAria={t("dialog.save")}
       />
       <CompteDisplayRow
         label={t("compte.email")}
@@ -246,8 +223,6 @@ export function CompteSettingsPanel({
         onEdit={() => openEdit("phone")}
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
-        editAria={t("compte.edit")}
-        saveAria={t("dialog.save")}
       />
       <CompteDisplayRow
         label={t("compte.language")}
@@ -266,8 +241,6 @@ export function CompteSettingsPanel({
         onEdit={() => openEdit("language")}
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
-        editAria={t("compte.edit")}
-        saveAria={t("dialog.save")}
       />
     </div>
   );
@@ -277,7 +250,6 @@ function CompteDisplayRow({
   label,
   leading,
   display = "",
-  hideDisplay = false,
   editing = false,
   draft = "",
   onDraftChange,
@@ -290,13 +262,10 @@ function CompteDisplayRow({
   onEdit,
   onSubmit,
   onCancel,
-  editAria,
-  saveAria,
 }: {
   label: string;
   leading: ReactNode;
   display?: string;
-  hideDisplay?: boolean;
   editing?: boolean;
   draft?: string;
   onDraftChange?: (v: string) => void;
@@ -309,15 +278,14 @@ function CompteDisplayRow({
   onEdit?: () => void;
   onSubmit?: () => void;
   onCancel?: () => void;
-  editAria?: string;
-  saveAria?: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className={rowCls}>
       <span className={labelCls}>{label}</span>
       <div className={valueClusterCls}>
         {leading}
-        {hideDisplay ? null : editing ? (
+        {editing ? (
           languageMode && languageOptions ? (
             <div className="flex min-w-0 flex-1 gap-1">
               {languageOptions.map((opt) => {
@@ -364,23 +332,32 @@ function CompteDisplayRow({
         )}
         {onEdit ? (
           editing ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              disabled={disabled || saving}
-              aria-label={saveAria}
-              onClick={onSubmit}
-            >
-              <Check aria-hidden />
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={disabled || saving}
+                onClick={onSubmit}
+              >
+                {t("common.ok")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={disabled || saving}
+                onClick={onCancel}
+              >
+                {t("common.cancel")}
+              </Button>
+            </div>
           ) : (
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
               disabled={disabled}
-              aria-label={editAria}
+              aria-label={t("compte.edit")}
               onClick={onEdit}
             >
               <Pencil aria-hidden />

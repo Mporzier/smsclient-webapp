@@ -98,9 +98,9 @@ export const SmsRichMessageEditor = forwardRef<
       data-placeholder={placeholder}
       className={cn(
         "sms-rich-editor block min-h-28 w-full overflow-y-auto border-none bg-transparent px-3.5 pt-3.5",
-        "cursor-text text-sm font-extrabold leading-relaxed text-slate-900 outline-none",
-        "empty:before:pointer-events-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]",
-        "[:empty]:before:font-semibold",
+        "cursor-text text-sm font-semibold leading-relaxed text-slate-900 outline-none",
+        "empty:before:pointer-events-none empty:before:content-[attr(data-placeholder)]",
+        "empty:before:font-normal empty:before:leading-relaxed empty:before:text-slate-400/75",
         className,
       )}
       onMouseDown={(e) => {

@@ -11,7 +11,7 @@ export type CustomFieldDef = {
 /** Clés = id de définition ; valeurs toujours string normalisée. */
 export type CustomFieldValues = Record<string, string>;
 
-export const CUSTOM_FIELD_MAX_PER_ACCOUNT = 15;
+export const CUSTOM_FIELD_MAX_PER_ACCOUNT = 20;
 
 export const CUSTOM_FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   text: "Texte",

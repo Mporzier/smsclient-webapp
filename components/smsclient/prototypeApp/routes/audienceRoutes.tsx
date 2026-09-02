@@ -58,7 +58,7 @@ export function renderAudienceRoute(
           contacts={contactsState.rows}
           contactsLoading={contactsState.loading}
           campaignsLoading={campaignsState.loading}
-          onNewCampaign={() => wizard.openCampaignComposer()}
+          onNewCampaign={() => modals.setCampaignNameOpen(true)}
           onGo={wizard.guardedGo}
         />
       );
@@ -165,7 +165,7 @@ export function renderAudienceRoute(
           sorting={campaignsState.sorting}
           onSortingChange={campaignsState.setSorting}
           error={campaignsState.error}
-          onNewCampaign={() => wizard.openCampaignComposer()}
+          onNewCampaign={() => modals.setCampaignNameOpen(true)}
           onOpenDetails={(row) => {
             modals.setCampaignDetailsRow(row);
             modals.setCampaignDetailsOpen(true);

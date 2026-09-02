@@ -1,5 +1,5 @@
-import { SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 import { appendStopMention, hasStopMention } from "@/lib/proto/smsStopMention";
+import { SMS_NOM_TAG, SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 
 export function buildDefaultCampaignTitle(): string {
   const d = new Date().toLocaleDateString("fr-FR");
@@ -11,33 +11,38 @@ export function generateAiVariants(args: {
   offer: string;
   duration: string;
   tone: string;
-  includeFirstName?: boolean;
+  mergeTokens?: string[];
 }): string[] {
   const objective = args.objective.trim() || "offre boutique";
   const offer = args.offer.trim() || "une offre exclusive";
   const duration = args.duration.trim() || "48h";
   const tone = args.tone.trim().toLowerCase();
-  const includeFirstName = args.includeFirstName !== false;
+  const tokens = (args.mergeTokens ?? []).filter(Boolean);
 
-  const opener = includeFirstName
-    ? tone === "premium"
-      ? `Bonjour ${SMS_PRENOM_TAG},`
-      : tone === "urgent"
-        ? `${SMS_PRENOM_TAG},`
-        : `Hello ${SMS_PRENOM_TAG},`
-    : tone === "premium"
-      ? "Bonjour,"
-      : tone === "urgent"
-        ? ""
-        : "Hello,";
+  const greetBits = tokens.filter(
+    (t) => t === SMS_PRENOM_TAG || t === SMS_NOM_TAG,
+  );
+  const extra = tokens.filter((t) => t !== SMS_PRENOM_TAG && t !== SMS_NOM_TAG);
+
+  const opener =
+    greetBits.length > 0
+      ? tone === "urgent"
+        ? `${greetBits.join(" ")},`
+        : `Bonjour ${greetBits.join(" ")},`
+      : tone === "premium"
+        ? "Bonjour,"
+        : tone === "urgent"
+          ? ""
+          : "Hello,";
 
   const greet = opener ? `${opener} ` : "";
+  const extraBit = extra.length ? ` ${extra.join(" ")}` : "";
 
   return [
-    `${greet}${objective} : ${offer}. Valable ${duration}.`,
-    `${greet}profite de ${offer} pour ${objective}. Fin de l'offre dans ${duration}.`,
-    `${objective} ${offer} pendant ${duration}. Passe en boutique avec ce SMS !`,
-  ].map((x) => x.slice(0, 320));
+    `${greet}${objective} : ${offer}.${extraBit} Valable ${duration}.`,
+    `${greet}profite de ${offer} pour ${objective}.${extraBit} Fin de l'offre dans ${duration}.`,
+    `${objective} ${offer} pendant ${duration}.${extraBit} Passe en boutique avec ce SMS !`,
+  ].map((x) => x.replace(/\s+/g, " ").trim().slice(0, 320));
 }
 
 export function normalizeUrl(url: string): string {

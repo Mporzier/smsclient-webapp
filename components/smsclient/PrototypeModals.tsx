@@ -2,6 +2,7 @@
 
 export {
   CampaignDetailsModal,
+  CampaignNameModal,
   ConfirmDeleteModal,
   ConfirmUnsubscribeModal,
   ContactCreateModal,

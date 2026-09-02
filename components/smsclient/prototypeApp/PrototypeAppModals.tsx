@@ -5,6 +5,7 @@ import { CampaignWizardLeaveConfirmModal } from "@/components/smsclient/modals/C
 import { SoumettreAvisModal } from "@/components/smsclient/modals/SoumettreAvisModal";
 import {
   CampaignDetailsModal,
+  CampaignNameModal,
   ConfirmDeleteModal,
   ContactCreateModal,
   GroupModal,
@@ -147,6 +148,31 @@ export function PrototypeAppModals({ ctx }: Props) {
         onClose={() => {
           modals.setCampaignDetailsOpen(false);
           modals.setCampaignDetailsRow(null);
+        }}
+        onResend={(campaign) => {
+          modals.setCampaignDetailsOpen(false);
+          modals.setCampaignDetailsRow(null);
+          wizard.openCampaignComposer({
+            groupNames: campaign.targetGroups?.length
+              ? campaign.targetGroups
+              : undefined,
+            manualNumbers: campaign.targetGroups?.length
+              ? undefined
+              : campaign.targetContacts?.map((c) => c.phone).join("\n"),
+            title: campaign.name,
+            sender: campaign.sender,
+            sms: campaign.body,
+            step: 3,
+          });
+        }}
+      />
+
+      <CampaignNameModal
+        open={modals.campaignNameOpen}
+        onClose={() => modals.setCampaignNameOpen(false)}
+        onConfirm={(name) => {
+          modals.setCampaignNameOpen(false);
+          wizard.openCampaignComposer({ title: name });
         }}
       />
 

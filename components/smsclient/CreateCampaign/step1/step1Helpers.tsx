@@ -3,8 +3,6 @@ import { groupTagBase } from "@/lib/proto/contactDisplay";
 import { formatContactGroups, type ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import { cn } from "@/lib/cn";
-import { formatInt } from "@/lib/proto/smsUtils";
-import type { ReactNode } from "react";
 
 export function digitsOnly(s: string): string {
   return s.replace(/\D/g, "");
@@ -91,49 +89,6 @@ export function contactDisplayName(c: ContactRowData): string {
   const last = c.lastName.trim();
   if (first || last) return [first, last].filter(Boolean).join(" ");
   return c.name.trim() || "—";
-}
-
-export function SummaryStatBubble({
-  label,
-  value,
-  highlight,
-  children,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-  children?: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-xl border px-3 py-2.5",
-        highlight
-          ? "border-ring/30 bg-accent"
-          : "border-border bg-muted/50"
-      )}
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <span
-          className={cn(
-            "text-xs font-extrabold",
-            highlight ? "text-foreground" : "text-muted-foreground"
-          )}
-        >
-          {label}
-        </span>
-        <span
-          className={cn(
-            "text-lg font-black tabular-nums",
-            highlight ? "text-foreground" : "text-foreground"
-          )}
-        >
-          {formatInt(value)}
-        </span>
-      </div>
-      {children}
-    </div>
-  );
 }
 
 export function RecipientListSkeleton({ rows = 6 }: { rows?: number }) {

@@ -34,6 +34,7 @@ export function renderContentRoute(
     smsTemplatesState,
     automationsState,
     unsubscribedContacts,
+    customFieldsState,
   } = data;
 
   switch (r) {
@@ -108,6 +109,7 @@ export function renderContentRoute(
           supabase={smsTemplatesState.supabase}
           userId={smsTemplatesState.userId}
           onRefresh={smsTemplatesState.refresh}
+          customFieldDefs={customFieldsState.defs}
         />
       );
     case "reglementations-sms":

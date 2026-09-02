@@ -1,6 +1,10 @@
 import { e164ToFrDisplay } from "@/lib/proto/smsUtils";
 import { trashPurgeAtIso } from "@/lib/proto/trashRetention";
-import type { DeletedContactRow, DeletedGroupRow } from "@/lib/types/trash";
+import type {
+  DeletedContactRow,
+  DeletedGroupRow,
+  TrashRestoreResult,
+} from "@/lib/types/trash";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   POSTGREST_IN_CHUNK,
@@ -8,8 +12,10 @@ import {
   chunkList,
 } from "@/lib/supabase/postgrestChunk";
 
+let deletedFrFormatter: Intl.DateTimeFormat | null = null;
+
 function formatDeletedFr(iso: string): string {
-  return new Date(iso).toLocaleString("fr-FR", {
+  deletedFrFormatter ??= new Intl.DateTimeFormat("fr-FR", {
     timeZone: "Europe/Paris",
     day: "2-digit",
     month: "2-digit",
@@ -17,6 +23,7 @@ function formatDeletedFr(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+  return deletedFrFormatter.format(new Date(iso));
 }
 
 function trashLabels(deletedAt: string): {
@@ -104,6 +111,7 @@ export async function fetchDeletedGroups(
           .from("client_group_members")
           .select("group_id, clients!inner(deleted_at)")
           .in("group_id", idChunk)
+          .is("clients.deleted_at", null)
           .order("group_id", { ascending: true })
           .order("client_id", { ascending: true })
           .range(from, from + POSTGREST_PAGE - 1);
@@ -114,13 +122,6 @@ export async function fetchDeletedGroups(
 
         const page = members ?? [];
         for (const row of page) {
-          const client = row.clients as
-            | { deleted_at: string | null }
-            | { deleted_at: string | null }[];
-          const deletedAt = Array.isArray(client)
-            ? client[0]?.deleted_at
-            : client?.deleted_at;
-          if (deletedAt) continue;
           const gid = row.group_id as string;
           counts.set(gid, (counts.get(gid) ?? 0) + 1);
         }
@@ -141,51 +142,60 @@ export async function fetchDeletedGroups(
   };
 }
 
-export async function restoreClients(
+/** Code Postgres unique_violation — numéro / nom déjà pris par une ligne active. */
+const UNIQUE_VIOLATION = "23505";
+
+type RestoreOutcome = TrashRestoreResult & { error: Error | null };
+
+/**
+ * Restaure ligne par ligne après un conflit d'unicité sur le lot : sinon un
+ * seul doublon bloquerait toute la sélection.
+ */
+async function restoreOneByOne(
   supabase: SupabaseClient,
+  table: "clients" | "client_groups",
   userId: string,
   ids: string[],
-): Promise<{ restored: number; error: Error | null }> {
-  if (ids.length === 0) return { restored: 0, error: null };
-
+): Promise<RestoreOutcome> {
   let restored = 0;
-  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+  let duplicates = 0;
+
+  for (const id of ids) {
     const { data, error } = await supabase
-      .from("clients")
+      .from(table)
       .update({ deleted_at: null })
       .eq("user_id", userId)
-      .in("id", batch)
+      .eq("id", id)
       .not("deleted_at", "is", null)
       .select("id");
 
     if (error) {
-      if (error.code === "23505") {
-        return {
-          restored: 0,
-          error: new Error(
-            "Impossible de restaurer : un contact actif utilise déjà ce numéro.",
-          ),
-        };
+      if (error.code === UNIQUE_VIOLATION) {
+        duplicates += 1;
+        continue;
       }
-      return { restored: 0, error: new Error(error.message) };
+      return { restored, duplicates, error: new Error(error.message) };
     }
     restored += data?.length ?? 0;
   }
 
-  return { restored, error: null };
+  return { restored, duplicates, error: null };
 }
 
-export async function restoreGroups(
+async function restoreRows(
   supabase: SupabaseClient,
+  table: "clients" | "client_groups",
   userId: string,
   ids: string[],
-): Promise<{ restored: number; error: Error | null }> {
-  if (ids.length === 0) return { restored: 0, error: null };
+): Promise<RestoreOutcome> {
+  if (ids.length === 0) return { restored: 0, duplicates: 0, error: null };
 
   let restored = 0;
+  let duplicates = 0;
+
   for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
     const { data, error } = await supabase
-      .from("client_groups")
+      .from(table)
       .update({ deleted_at: null })
       .eq("user_id", userId)
       .in("id", batch)
@@ -193,18 +203,35 @@ export async function restoreGroups(
       .select("id");
 
     if (error) {
-      if (error.code === "23505") {
-        return {
-          restored: 0,
-          error: new Error(
-            "Impossible de restaurer : un groupe actif porte déjà ce nom.",
-          ),
-        };
+      if (error.code === UNIQUE_VIOLATION) {
+        const fallback = await restoreOneByOne(supabase, table, userId, batch);
+        restored += fallback.restored;
+        duplicates += fallback.duplicates;
+        if (fallback.error) {
+          return { restored, duplicates, error: fallback.error };
+        }
+        continue;
       }
-      return { restored: 0, error: new Error(error.message) };
+      return { restored, duplicates, error: new Error(error.message) };
     }
     restored += data?.length ?? 0;
   }
 
-  return { restored, error: null };
+  return { restored, duplicates, error: null };
+}
+
+export function restoreClients(
+  supabase: SupabaseClient,
+  userId: string,
+  ids: string[],
+): Promise<RestoreOutcome> {
+  return restoreRows(supabase, "clients", userId, ids);
+}
+
+export function restoreGroups(
+  supabase: SupabaseClient,
+  userId: string,
+  ids: string[],
+): Promise<RestoreOutcome> {
+  return restoreRows(supabase, "client_groups", userId, ids);
 }

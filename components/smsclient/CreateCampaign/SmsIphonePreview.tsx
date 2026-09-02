@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { previewSmsMessage } from "@/lib/proto/smsPersonalization";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import { useState } from "react";
 
 const IPHONE_MOCKUP_CLASS =
@@ -32,6 +33,7 @@ type SmsIphonePreviewProps = {
   footerLabel?: string;
   width?: number;
   showTitle?: boolean;
+  customFieldDefs?: CustomFieldDef[];
 };
 
 function IphoneStatusBar({ time, compact }: { time: string; compact?: boolean }) {
@@ -168,6 +170,7 @@ export function SmsIphonePreview({
   footerLabel,
   width = SMS_IPHONE_PREVIEW_WIDTH,
   showTitle = true,
+  customFieldDefs = [],
 }: SmsIphonePreviewProps) {
   const [time] = useState(() => formatStatusTime(new Date()));
   const compact = width <= SMS_IPHONE_PREVIEW_WIDTH_COMPACT + 8;
@@ -176,7 +179,7 @@ export function SmsIphonePreview({
   const isEmpty = !trimmed;
   const displayMessage = isEmpty
     ? "Votre message apparaîtra ici…"
-    : previewSmsMessage(trimmed);
+    : previewSmsMessage(trimmed, customFieldDefs);
 
   return (
     <div className="flex min-h-0 flex-col">

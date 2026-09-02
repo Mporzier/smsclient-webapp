@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SmsComposeApproach } from "./SmsComposeApproachCards";
 
 export type CampaignWizardProps = {
@@ -75,4 +76,5 @@ export type CampaignWizardProps = {
   onAddContact?: () => void;
   onImportContacts?: () => void;
   onCreateGroup?: () => void;
+  customFieldDefs?: CustomFieldDef[];
 };

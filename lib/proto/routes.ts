@@ -52,9 +52,9 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   "acheter-credits": "Acheter des crédits",
 };
 
-/** Nav item highlight: which sidebar key is “active” */
+/** Nav item highlight: which sidebar key is “active”. Wizard = aucun item actif. */
 export function navOverrideForRoute(route: AppRoute): string {
-  if (isCampaignWizardRoute(route)) return "campagnes";
+  if (isCampaignWizardRoute(route)) return "";
   return route;
 }
 

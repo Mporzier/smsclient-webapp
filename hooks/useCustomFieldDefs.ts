@@ -4,7 +4,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import {
   createCustomFieldDef,
-  deleteCustomFieldDef,
+  deleteCustomFieldDefs,
   fetchCustomFieldDefs,
   swapCustomFieldDefOrder,
   updateCustomFieldDef,
@@ -72,14 +72,19 @@ export function useCustomFieldDefs() {
     [userId, supabase, refresh],
   );
 
-  const removeDef = useCallback(
-    async (fieldId: string) => {
+  const removeDefs = useCallback(
+    async (fieldIds: string[]) => {
       if (!userId) return { error: new Error("Non authentifié.") };
-      const { error: err } = await deleteCustomFieldDef(supabase, userId, fieldId);
+      const { error: err } = await deleteCustomFieldDefs(supabase, fieldIds);
       if (!err) await refresh();
       return { error: err };
     },
     [userId, supabase, refresh],
+  );
+
+  const removeDef = useCallback(
+    async (fieldId: string) => removeDefs([fieldId]),
+    [removeDefs],
   );
 
   const moveDef = useCallback(
@@ -113,6 +118,7 @@ export function useCustomFieldDefs() {
     createDef,
     renameDef,
     removeDef,
+    removeDefs,
     moveDef,
     supabase,
     userId,
