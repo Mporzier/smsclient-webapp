@@ -154,7 +154,7 @@ export function SoumettreAvisModal({
               setMessage(e.target.value.slice(0, MAX_LENGTH));
               setSubmitError(null);
             }}
-            placeholder="Décrivez votre avis, votre idée, ou le problème rencontré…"
+            placeholder="Ex. L’import CSV ignore les doublons…"
             rows={6}
             aria-label="Votre avis"
             className="min-h-[140px] resize-none pb-7"

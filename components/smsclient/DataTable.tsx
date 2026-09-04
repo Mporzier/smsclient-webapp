@@ -296,6 +296,10 @@ export function DataTable<T>({
   const { rows: tableRows } = table.getRowModel();
   const totalSize = table.getTotalSize();
 
+  // Loader plein cadre seulement quand rien à montrer. Refetch (search, tri,
+  // refresh après mutation) garde les lignes en place.
+  const showLoader = loading && data.length === 0;
+
   const isEmpty = !loading && data.length === 0 && globalFilter.trim() === "";
   const isSearchEmpty =
     !loading &&
@@ -366,7 +370,7 @@ export function DataTable<T>({
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
-        {loading ? (
+        {showLoader ? (
           <div
             className="flex min-h-[240px] w-full flex-1 items-center justify-center px-[18px] py-12 text-sm font-medium text-muted-foreground"
             role="status"
@@ -376,9 +380,13 @@ export function DataTable<T>({
             <LoadingLabel>{loadingMessage}</LoadingLabel>
           </div>
         ) : null}
-        {!loading ? (
+        {!showLoader ? (
         <table
-          className="table-fixed border-separate border-spacing-0 text-sm"
+          aria-busy={loading}
+          className={cn(
+            "table-fixed border-separate border-spacing-0 text-sm transition-opacity",
+            loading && "opacity-60",
+          )}
           style={{
             width: "100%",
             // Jamais plus étroit que le conteneur, sinon blanc à droite quand la
@@ -408,9 +416,13 @@ export function DataTable<T>({
           </colgroup>
           <thead className="sticky top-0 z-10">
             <tr>
-              {table.getHeaderGroups()[0].headers.map((header) => {
+              {table.getHeaderGroups()[0].headers.map((header, index, headers) => {
                 const isSelectCol = header.column.id === "select";
                 const isActionsCol = header.column.id === "actions";
+                // La colonne actions sticky pose déjà un liseré à gauche : le
+                // trait de la poignée de resize ferait doublon.
+                const nextIsActions =
+                  headers[index + 1]?.column.id === "actions";
                 const canSort = header.column.getCanSort();
                 const sorted = header.column.getIsSorted();
                 const ariaSort =
@@ -517,7 +529,10 @@ export function DataTable<T>({
                           "absolute top-0 right-0 z-30 h-full w-1.5 cursor-col-resize touch-none select-none",
                           "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-muted-foreground/45",
                           "hover:after:bg-primary",
-                          header.column.getIsResizing() && "after:bg-primary"
+                          header.column.getIsResizing() && "after:bg-primary",
+                          nextIsActions &&
+                            !header.column.getIsResizing() &&
+                            "after:bg-transparent hover:after:bg-primary"
                         )}
                       />
                     ) : null}
@@ -602,7 +617,7 @@ export function DataTable<T>({
           </tbody>
         </table>
         ) : null}
-        {!loading && onLoadMore && hasMore ? (
+        {!showLoader && onLoadMore && hasMore ? (
           <div
             ref={sentinelRef}
             className="flex h-10 items-center justify-center text-xs text-muted-foreground"
@@ -618,7 +633,7 @@ export function DataTable<T>({
       </div>
       <div className="flex min-h-9 shrink-0 items-center gap-2 border-t border-border px-3.5 py-1 text-sm font-medium text-muted-foreground">
         <span className="min-w-0">
-          {loading
+          {showLoader
             ? "…"
             : footer ??
               `${data.length} élément${data.length > 1 ? "s" : ""}`}

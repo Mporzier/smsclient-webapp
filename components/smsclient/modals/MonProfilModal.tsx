@@ -176,7 +176,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                   setDraft((prev) => ({ ...prev, firstName: e.target.value }));
                   if (firstNameError) setFirstNameError(null);
                 }}
-                placeholder="Ex : Patrick"
+                placeholder="Ex. Patrick"
               />
               {firstNameError ? (
                 <p className="mt-1.5 text-xs font-medium text-destructive">
@@ -196,7 +196,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, lastName: e.target.value }))
                 }
-                placeholder="Ex : Azevedo"
+                placeholder="Ex. Azevedo"
               />
             </div>
             <div className="col-span-2 max-[480px]:col-span-1">
@@ -211,7 +211,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, email: e.target.value }))
                 }
-                placeholder="email@domaine.fr"
+                placeholder="Ex. email@domaine.fr"
               />
             </div>
             <div className="col-span-2 max-[480px]:col-span-1">
@@ -226,7 +226,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, phone: e.target.value }))
                 }
-                placeholder="06 00 00 00 00"
+                placeholder="Ex. 06 00 00 00 00"
               />
             </div>
           </div>

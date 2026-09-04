@@ -48,9 +48,12 @@ export function usePrototypeApp() {
     onContactsLoadMore: data.contactsState.loadMore,
     contactsSearchQuery: data.contactsState.searchInput,
     onContactsSearchChange: data.contactsState.setSearchInput,
+    contactsTotalCount: data.contactsState.totalCount,
+    groupsTotalCount: data.groupsState.totalCount,
     creditsBalance: data.creditsState.balance,
     supabase: data.supabase,
     userId: data.user?.id,
+    customFieldDefs: data.customFieldsState.defs,
     onCampaignSaved,
   });
 

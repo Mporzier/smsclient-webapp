@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import { Star } from "lucide-react";
 
 export type SmsComposeApproach = "manual" | "ai" | "template";
 
@@ -45,7 +46,7 @@ export const COMPOSE_APPROACH_PICK_INTRO =
   "Choisissez comment rédiger votre SMS.";
 
 export const AI_COMPOSE_PROMPT_PLACEHOLDER =
-  "Rédigez un SMS pour partager ma promotion de 30 % de réduction sur tout le magasin.";
+  "Ex. Rédigez un SMS pour partager ma promotion de 30 % de réduction sur tout le magasin.";
 
 export function getComposeApproachStepHint(
   composeApproach: SmsComposeApproach | null,
@@ -93,7 +94,10 @@ export function SmsComposeApproachCards({
             className={cn(
               "relative cursor-pointer rounded-xl border bg-card text-left ring-1 transition-colors",
               compact
-                ? "flex min-h-11 items-center gap-2 px-2.5 py-2"
+                ? cn(
+                    "flex min-h-11 items-center gap-2 px-2.5 py-2",
+                    option.recommended && "pr-6"
+                  )
                 : "flex aspect-square flex-col items-center justify-center p-4 text-center",
               isSelected
                 ? "border-primary bg-accent ring-primary"
@@ -105,8 +109,15 @@ export function SmsComposeApproachCards({
                 className="absolute top-2 right-2"
                 variant={isSelected ? "default" : "secondary"}
               >
+                <Star className="size-3 fill-current" aria-hidden />
                 Recommandé
               </Badge>
+            ) : null}
+            {option.recommended && compact ? (
+              <Star
+                className="absolute top-1.5 right-1.5 size-3 shrink-0 fill-current text-primary"
+                aria-hidden
+              />
             ) : null}
             <span
               className={cn(

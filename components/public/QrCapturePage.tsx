@@ -277,7 +277,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 onChange={(e) =>
                   setFirstName(sanitizePersonName(e.target.value))
                 }
-                placeholder="Ex : Patrick"
+                placeholder="Ex. Patrick"
               />
             </div>
             <div>
@@ -291,7 +291,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                 onChange={(e) =>
                   setLastName(sanitizePersonName(e.target.value))
                 }
-                placeholder="Ex : Dupont"
+                placeholder="Ex. Dupont"
               />
             </div>
             <div>
@@ -317,7 +317,7 @@ export function QrCapturePage({ slug }: QrCapturePageProps) {
                   input.setSelectionRange(nextCaret, nextCaret);
                   setPhone(formatted);
                 }}
-                placeholder="06 12 34 56 78"
+                placeholder="Ex. 06 12 34 56 78"
               />
             </div>
             <div>

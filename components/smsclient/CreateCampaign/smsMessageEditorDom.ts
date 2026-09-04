@@ -126,6 +126,19 @@ export function renderSmsEditorValue(root: HTMLElement, value: string) {
   });
 }
 
+/**
+ * Les navigateurs laissent un `<br>` témoin quand l'éditeur est vidé à la main :
+ * il compte pour un saut de ligne et empêche le placeholder `:empty` de revenir.
+ */
+export function clearFillerBreaks(root: HTMLElement) {
+  const isFiller = (node: Node) =>
+    (node instanceof HTMLElement && node.tagName === "BR") ||
+    (node.nodeType === Node.TEXT_NODE && !node.textContent);
+  if (root.childNodes.length === 0) return;
+  if (!Array.from(root.childNodes).every(isFiller)) return;
+  root.replaceChildren();
+}
+
 export function repairPrenomChips(root: HTMLElement) {
   root.querySelectorAll(`[${SMS_PRENOM_CHIP_ATTR}]`).forEach((chip) => {
     if (chip.textContent !== PRENOM_CHIP_LABEL) {

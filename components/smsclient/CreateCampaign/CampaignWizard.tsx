@@ -44,6 +44,7 @@ import {
   CampaignWizardStep1Provider,
   CampaignWizardStep1Main,
   CampaignWizardStep1ContinueButton,
+  CampaignWizardStep1MessageSummary,
 } from "./CampaignWizardStep1";
 import { SmsMessageComposer } from "./SmsMessageComposer";
 import {
@@ -120,14 +121,19 @@ export function CampaignWizard({
   onContactsLoadMore,
   contactsSearchQuery = "",
   onContactsSearchChange,
+  contactsTotalCount = null,
+  groupsTotalCount = null,
   recipientMode,
   setRecipientMode,
   selectedGroupNames,
   setSelectedGroupNames,
   selectedContactIds,
   setSelectedContactIds,
+  setSelectedContactIdsFromGmail,
   excludedContactIds,
   setExcludedContactIds,
+  eligibleAudienceFilter = null,
+  eligibleAudienceCount = null,
   recipientExcludedStop,
   recipientExcludedInvalid,
   recipientCount,
@@ -135,6 +141,8 @@ export function CampaignWizard({
   groupMemberIdsByName = {},
   resolvedContacts = [],
   recipientsResolving = false,
+  mergeFillCounts,
+  mergeFillStatus,
   onCountEligibleContacts,
   onFetchEligibleContactIds,
   onCountMatchingGroups,
@@ -262,16 +270,24 @@ export function CampaignWizard({
     [sms, recipients, recipientFirstNames, eligibleRecipients, customFieldDefs]
   );
 
-  const definitiveCredits = useMemo(
-    () =>
-      definitiveCampaignCredits(
-        sms,
-        eligibleRecipients,
-        manualRecipientCount,
-        customFieldDefs,
-      ),
-    [sms, eligibleRecipients, manualRecipientCount, customFieldDefs]
-  );
+  const definitiveCredits = useMemo(() => {
+    if (step !== 3 || eligibleRecipients.length === 0) {
+      return estimatedCredits;
+    }
+    return definitiveCampaignCredits(
+      sms,
+      eligibleRecipients,
+      manualRecipientCount,
+      customFieldDefs,
+    );
+  }, [
+    step,
+    sms,
+    eligibleRecipients,
+    manualRecipientCount,
+    customFieldDefs,
+    estimatedCredits,
+  ]);
 
   const activeCredits = step === 3 ? definitiveCredits : estimatedCredits;
   const totalCredits = activeCredits.totalCredits;
@@ -626,6 +642,8 @@ export function CampaignWizard({
       );
     if (recipients === 0)
       errors.push("Aucun destinataire éligible sélectionné.");
+    if (recipientsResolving)
+      errors.push("Chargement des destinataires en cours…");
     if (!sms.trim()) errors.push("Le message SMS est vide.");
     setStepErrors(errors);
     return errors.length === 0;
@@ -636,6 +654,7 @@ export function CampaignWizard({
     totalCredits,
     creditsAvailable,
     recipients,
+    recipientsResolving,
     sms,
   ]);
 
@@ -684,14 +703,19 @@ export function CampaignWizard({
     onContactsLoadMore,
     contactsSearchQuery,
     onContactsSearchChange,
+    contactsTotalCount,
+    groupsTotalCount,
     recipientMode,
     setRecipientMode,
     selectedGroupNames,
     setSelectedGroupNames,
     selectedContactIds,
     setSelectedContactIds,
+    setSelectedContactIdsFromGmail,
     excludedContactIds,
     setExcludedContactIds,
+    eligibleAudienceFilter,
+    eligibleAudienceCount,
     recipientExcludedStop,
     recipientExcludedInvalid,
     recipientCount,
@@ -777,12 +801,14 @@ export function CampaignWizard({
           variant="default"
           size="lg"
           className={cn(brandBtnPrimaryCls, "min-w-0 flex-1")}
-          disabled={confirmLoading}
+          disabled={confirmLoading || recipientsResolving}
           onClick={handleConfirmWithValidation}
         >
           {confirmLoading
             ? "Envoi…"
-            : sendMode === "sched"
+            : recipientsResolving
+              ? "Chargement…"
+              : sendMode === "sched"
             ? "Programmer l\u0027envoi"
             : "Confirmer l\u0027envoi"}
         </Button>
@@ -792,12 +818,12 @@ export function CampaignWizard({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {step === 1 ? (
-        <CampaignWizardStep1Provider {...step1Props}>
+      <CampaignWizardStep1Provider {...step1Props}>
+        {step === 1 ? (
           <div
             className={cn(
               "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden",
-              CAMPAIGN_WIZARD_SUMMARY_COL
+              CAMPAIGN_WIZARD_SUMMARY_COL,
             )}
           >
             <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
@@ -824,8 +850,7 @@ export function CampaignWizard({
             </div>
             <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-px">
               {summaryIphone}
-              <CampaignWizardMessageSummary
-                recipients={recipients}
+              <CampaignWizardStep1MessageSummary
                 parts={parts}
                 partsMin={activeCredits.partsMin}
                 partsMax={activeCredits.partsMax}
@@ -836,14 +861,13 @@ export function CampaignWizard({
               />
             </div>
           </div>
-        </CampaignWizardStep1Provider>
-      ) : (
-        <div
-          className={cn(
-            "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden",
-            CAMPAIGN_WIZARD_SUMMARY_COL
-          )}
-        >
+        ) : (
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden",
+              CAMPAIGN_WIZARD_SUMMARY_COL,
+            )}
+          >
           <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
             {stepErrors.length > 0 && (
               <div className="shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
@@ -933,7 +957,6 @@ export function CampaignWizard({
                               value={smsBody}
                               onChange={handleSmsBodyChange}
                               hasError={stepErrors.length > 0 && !smsBody.trim()}
-                              allowSpecialChars={aiOptions.allowSpecialChars}
                               estimateFirstName={estimateLongestFirstName}
                               estimateSample={estimateSample}
                               customFieldDefs={customFieldDefs}
@@ -941,7 +964,9 @@ export function CampaignWizard({
                               billableMessage={
                                 reserveStopInCounter ? undefined : sms
                               }
-                              placeholder="Écrivez votre SMS ici…"
+                              placeholder="Ex. Bonjour [Prénom], -20 % cette semaine en boutique."
+                              mergeFillCounts={mergeFillCounts}
+                              mergeFillStatus={mergeFillStatus}
                             />
                           </>
                         )}
@@ -963,6 +988,8 @@ export function CampaignWizard({
                             selectedVariant={selectedAiVariant}
                             onSelectVariant={handleSelectAiVariant}
                             customFieldDefs={customFieldDefs}
+                            mergeFillCounts={mergeFillCounts}
+                            mergeFillStatus={mergeFillStatus}
                           />
                         ) : (
                           <SmsManualComposeOptions
@@ -1010,6 +1037,11 @@ export function CampaignWizard({
                           Coût calculé selon le prénom de chaque destinataire.
                         </p>
                       ) : null}
+                      {recipientsResolving ? (
+                        <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
+                          Calcul des crédits définitifs…
+                        </p>
+                      ) : null}
                       {!hasEnoughCredits && (
                         <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-extrabold text-rose-800">
                           Crédits insuffisants — rechargez votre compte avant
@@ -1021,6 +1053,31 @@ export function CampaignWizard({
                           Aucun destinataire éligible sélectionné.
                         </p>
                       )}
+
+                      <label className={cn(fieldLabel, "mt-3")}>
+                        <span>Expéditeur SMS</span>
+                        <span className="text-xs text-slate-500">
+                          {sanitizeSender(sender).length}/11
+                        </span>
+                      </label>
+                      <div
+                        className={cn(
+                          innerInput,
+                          stepErrors.length > 0 &&
+                            !sanitizeSender(sender).trim() &&
+                            "border-rose-300 ring-2 ring-rose-100"
+                        )}
+                      >
+                        <input
+                          className={innerInp}
+                          maxLength={11}
+                          value={sender}
+                          onChange={(e) =>
+                            setSender(sanitizeSender(e.target.value).slice(0, 11))
+                          }
+                          placeholder="Ex. BOULANGERIE"
+                        />
+                      </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
@@ -1111,28 +1168,6 @@ export function CampaignWizard({
                             </strong>
                           </div>
                         </div>
-                        <label className={fieldLabel}>
-                          <span>Expéditeur SMS</span>
-                          <span className="text-xs text-slate-500">
-                            {sanitizeSender(sender).length}/11
-                          </span>
-                        </label>
-                        <div
-                          className={cn(
-                            innerInput,
-                            stepErrors.length > 0 &&
-                              !sanitizeSender(sender).trim() &&
-                              "border-rose-300 ring-2 ring-rose-100"
-                          )}
-                        >
-                          <input
-                            className={innerInp}
-                            maxLength={11}
-                            value={sender}
-                            onChange={(e) => setSender(e.target.value)}
-                            placeholder="BOULANGERIE"
-                          />
-                        </div>
                       </AdvancedOptionsCollapsible>
                 </div>
                 {wizardActions}
@@ -1153,7 +1188,8 @@ export function CampaignWizard({
             />
           </div>
         </div>
-      )}
+        )}
+      </CampaignWizardStep1Provider>
 
       <CreateSmsTemplateModal
         open={templateCreateOpen}

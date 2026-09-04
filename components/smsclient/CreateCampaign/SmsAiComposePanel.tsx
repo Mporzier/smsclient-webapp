@@ -9,6 +9,7 @@ import {
 } from "@/components/smsclient/CreateCampaign/SmsAiOptionCards";
 import { SmsMergeTagChecklist } from "@/components/smsclient/CreateCampaign/SmsMergeTagMenu";
 import type { CustomFieldDef } from "@/lib/types/customFields";
+import type { MergeFillCounts, MergeFillStatus } from "@/lib/proto/smsMergeFill";
 import type { LinkRowData } from "@/lib/types/link";
 import { stripStopMention } from "@/lib/proto/smsStopMention";
 import { Spinner } from "@/components/ui/spinner";
@@ -35,6 +36,8 @@ type SmsAiComposePanelProps = {
   selectedVariant: string | null;
   onSelectVariant: (variant: string) => void;
   customFieldDefs?: CustomFieldDef[];
+  mergeFillCounts?: MergeFillCounts;
+  mergeFillStatus?: MergeFillStatus;
 };
 
 export function SmsAiComposePanel({
@@ -53,6 +56,8 @@ export function SmsAiComposePanel({
   selectedVariant,
   onSelectVariant,
   customFieldDefs = [],
+  mergeFillCounts,
+  mergeFillStatus,
 }: SmsAiComposePanelProps) {
   const hasVariants = variants.length > 0;
 
@@ -121,6 +126,8 @@ export function SmsAiComposePanel({
             onChange={(selectedMergeTags) =>
               onOptionsChange({ selectedMergeTags })
             }
+            fillCounts={mergeFillCounts}
+            fillStatus={mergeFillStatus}
           />
         </div>
       ) : null}

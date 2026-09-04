@@ -107,7 +107,7 @@ export function CampaignNameModal({
               className={modalFieldCls}
               maxLength={CAMPAIGN_NAME_MAX_LENGTH}
               value={name}
-              placeholder={defaultName}
+              placeholder={`Ex. ${defaultName}`}
               onChange={(e) => {
                 setName(e.target.value);
               }}

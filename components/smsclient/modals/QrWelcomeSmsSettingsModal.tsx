@@ -19,6 +19,7 @@ import {
   brandBtnPrimaryCls,
   dialogContentZCls,
   dialogOverlayCls,
+  dialogPopoverZCls,
   formDialogContentCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
@@ -107,6 +108,7 @@ export function QrWelcomeSmsSettingsModal({
             onChange={setLocalTemplate}
             placeholder={t("qr.modal.welcome.placeholder")}
             estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
+            popoverClassName={dialogPopoverZCls}
           />
         </div>
 

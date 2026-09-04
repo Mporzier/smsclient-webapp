@@ -17,6 +17,8 @@ export const dialogOverlayStackedCls =
   "z-[10000] bg-foreground/45 backdrop-blur-[2px]";
 export const dialogContentZCls = "z-[9999]";
 export const dialogContentStackedZCls = "z-[10001]";
+/** Popovers portalisés (emoji, tags) ouverts depuis une Dialog — sinon rendus dessous. */
+export const dialogPopoverZCls = "z-[10002]";
 
 /** Shell Dialog formulaire (header / body scroll / footer). */
 export const formDialogContentCls =

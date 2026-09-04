@@ -17,6 +17,7 @@ import {
   chunkList,
   paginateRange,
 } from "@/lib/supabase/postgrestChunk";
+import { listClientIdsRpc } from "@/lib/supabase/campaignAudience";
 import { applyClientListSearch } from "@/lib/supabase/clientSearch";
 
 export type ClientRecord = {
@@ -340,25 +341,10 @@ export async function fetchClientIds(
   supabase: SupabaseClient,
   args: { search?: string; eligibleOnly: boolean },
 ): Promise<{ data: string[]; error: Error | null }> {
-  const { data, error } = await paginateRange<{ id: string }>(
-    async (from, to) => {
-      let query = supabase
-        .from("clients")
-        .select("id")
-        .is("deleted_at", null);
-      if (args.eligibleOnly) {
-        query = query.eq("opt_in", true).eq("stop_sms", false);
-      }
-      query = applyClientListSearch(query, args.search ?? "");
-      const res = await query.order("id", { ascending: true }).range(from, to);
-      return { data: (res.data as { id: string }[] | null) ?? null, error: res.error };
-    },
-  );
-  if (error) return { data: [], error };
-  return {
-    data: data.map((row) => row.id).filter(Boolean),
-    error: null,
-  };
+  return listClientIdsRpc(supabase, {
+    search: args.search,
+    eligibleOnly: args.eligibleOnly,
+  });
 }
 
 /** Résumé léger pour pickers (modale groupe) — pages lazy + search serveur. */
@@ -473,30 +459,46 @@ export async function fetchGroupMemberClientIds(
   };
 }
 
+const FETCH_CLIENTS_BY_IDS_CONCURRENCY = 6;
+
+async function fetchClientsByIdsChunk(
+  supabase: SupabaseClient,
+  chunk: string[],
+): Promise<{ data: ContactRowData[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("clients")
+    .select(CLIENT_LIST_SELECT)
+    .in("id", chunk)
+    .is("deleted_at", null);
+  if (error) {
+    return { data: [], error: new Error(error.message) };
+  }
+  const page = (data ?? []) as ClientRecordWithMemberships[];
+  const rows: ContactRowData[] = [];
+  for (const raw of page) {
+    rows.push(
+      clientRecordToRow(raw, groupsFromMembershipEmbed(raw.client_group_members)),
+    );
+  }
+  return { data: rows, error: null };
+}
+
 /** Contacts complets par IDs (wizard campagne — indépendant du lazyload liste). */
 export async function fetchClientsByIds(
   supabase: SupabaseClient,
   clientIds: string[],
 ): Promise<{ data: ContactRowData[]; error: Error | null }> {
   if (clientIds.length === 0) return { data: [], error: null };
+  const chunks = chunkList(clientIds, POSTGREST_IN_CHUNK);
   const out: ContactRowData[] = [];
-  for (const chunk of chunkList(clientIds, POSTGREST_IN_CHUNK)) {
-    const { data, error } = await supabase
-      .from("clients")
-      .select(CLIENT_LIST_SELECT)
-      .in("id", chunk)
-      .is("deleted_at", null);
-    if (error) {
-      return { data: [], error: new Error(error.message) };
-    }
-    const page = (data ?? []) as ClientRecordWithMemberships[];
-    for (const raw of page) {
-      out.push(
-        clientRecordToRow(
-          raw,
-          groupsFromMembershipEmbed(raw.client_group_members),
-        ),
-      );
+  for (let i = 0; i < chunks.length; i += FETCH_CLIENTS_BY_IDS_CONCURRENCY) {
+    const batch = chunks.slice(i, i + FETCH_CLIENTS_BY_IDS_CONCURRENCY);
+    const pages = await Promise.all(
+      batch.map((chunk) => fetchClientsByIdsChunk(supabase, chunk)),
+    );
+    for (const page of pages) {
+      if (page.error) return { data: [], error: page.error };
+      out.push(...page.data);
     }
   }
   return { data: out, error: null };

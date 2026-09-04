@@ -2,6 +2,7 @@
 
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { buildCampaignRecipientIdSet } from "@/lib/proto/smsPersonalization";
+import type { CampaignEligibleAudienceFilter } from "@/lib/proto/campaignAudience";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
@@ -25,14 +26,22 @@ export type CampaignWizardStep1Props = {
   onContactsLoadMore?: () => void;
   contactsSearchQuery?: string;
   onContactsSearchChange?: (value: string) => void;
+  contactsTotalCount?: number | null;
+  groupsTotalCount?: number | null;
   recipientMode: "manual" | "lists" | "all" | "numbers";
   setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
   selectedGroupNames: string[];
   setSelectedGroupNames: React.Dispatch<React.SetStateAction<string[]>>;
   selectedContactIds: string[];
   setSelectedContactIds: React.Dispatch<React.SetStateAction<string[]>>;
+  /** Gmail expand — ne vide pas le filtre audience serveur. */
+  setSelectedContactIdsFromGmail?: React.Dispatch<
+    React.SetStateAction<string[]>
+  >;
   excludedContactIds: string[];
   setExcludedContactIds: React.Dispatch<React.SetStateAction<string[]>>;
+  eligibleAudienceFilter?: CampaignEligibleAudienceFilter | null;
+  eligibleAudienceCount?: number | null;
   recipientExcludedStop: number;
   recipientExcludedInvalid: number;
   recipientCount: number;
@@ -73,14 +82,19 @@ export function useCampaignWizardStep1State({
   onContactsLoadMore,
   contactsSearchQuery = "",
   onContactsSearchChange,
+  contactsTotalCount = null,
+  groupsTotalCount = null,
   recipientMode,
   setRecipientMode,
   selectedGroupNames,
   setSelectedGroupNames,
   selectedContactIds,
   setSelectedContactIds,
+  setSelectedContactIdsFromGmail,
   excludedContactIds,
   setExcludedContactIds,
+  eligibleAudienceFilter = null,
+  eligibleAudienceCount = null,
   recipientExcludedStop,
   recipientExcludedInvalid,
   recipientCount,
@@ -163,9 +177,17 @@ export function useCampaignWizardStep1State({
     (c: ContactRowData) => {
       if (c.stopSms || !c.optIn) return false;
       if (recipientMode === "all") return true;
+      if (eligibleAudienceFilter) {
+        return !excludedContactIds.includes(c.id);
+      }
       return effectiveSelectedIds.has(c.id);
     },
-    [recipientMode, effectiveSelectedIds]
+    [
+      recipientMode,
+      eligibleAudienceFilter,
+      excludedContactIds,
+      effectiveSelectedIds,
+    ],
   );
 
   const selectedGroupsDisplay = useMemo(
@@ -183,6 +205,17 @@ export function useCampaignWizardStep1State({
 
   const toggleContact = useCallback(
     (id: string) => {
+      if (eligibleAudienceFilter) {
+        const checked = !excludedContactIds.includes(id);
+        setExcludedContactIds((prev) =>
+          checked ? [...prev, id] : prev.filter((x) => x !== id),
+        );
+        setRecipientMode(
+          selectedGroupNames.length > 0 ? "lists" : "manual",
+        );
+        return;
+      }
+
       if (recipientMode === "all") {
         const allEligible = contacts
           .filter((c) => c.optIn && !c.stopSms)
@@ -254,6 +287,7 @@ export function useCampaignWizardStep1State({
       setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
     },
     [
+      eligibleAudienceFilter,
       recipientMode,
       contacts,
       selectedGroupNames,
@@ -265,7 +299,7 @@ export function useCampaignWizardStep1State({
       setSelectedContactIds,
       setSelectedGroupNames,
       setExcludedContactIds,
-    ]
+    ],
   );
 
   const toggleGroup = useCallback(
@@ -321,21 +355,23 @@ export function useCampaignWizardStep1State({
 
   const setContactIdsFromGmail = useCallback(
     (ids: string[]) => {
-      setSelectedContactIds(ids);
+      (setSelectedContactIdsFromGmail ?? setSelectedContactIds)(ids);
       setExcludedContactIds([]);
       setRecipientMode(
         selectedGroupNames.length > 0
           ? "lists"
-          : ids.length > 0
+          : ids.length > 0 || eligibleAudienceFilter
             ? "manual"
             : "manual",
       );
     },
     [
+      setSelectedContactIdsFromGmail,
       setSelectedContactIds,
       setExcludedContactIds,
       setRecipientMode,
       selectedGroupNames.length,
+      eligibleAudienceFilter,
     ],
   );
 
@@ -355,6 +391,7 @@ export function useCampaignWizardStep1State({
 
   const {
     selectLoaded: selectContactsLoaded,
+    deselectLoaded: deselectContactsLoaded,
     clearSelection: clearContactsSelection,
     showExpandBanner: showContactsExpandBanner,
     matchTotal: contactsMatchTotal,
@@ -364,6 +401,7 @@ export function useCampaignWizardStep1State({
     expandError: contactsExpandError,
     expandToMatchAll: expandContactsSelection,
     ensureSelectionReady: ensureContactsSelectionReady,
+    allLoadedSelected: allLoadedContactsSelected,
   } = useGmailSelectAll({
     search: contactsSearchQuery,
     loadedIds: contactLoadedIds,
@@ -371,7 +409,11 @@ export function useCampaignWizardStep1State({
     setSelectedIds: setContactIdsFromGmail,
     countMatch: countEligibleContacts,
     fetchAllIds: fetchEligibleContactIds,
-    expandCandidate: contactsHasMore,
+    expandCandidate:
+      contactsHasMore ||
+      (typeof contactsTotalCount === "number" &&
+        contactsTotalCount > contactLoadedIds.length),
+    listMatchTotal: contactsTotalCount,
   });
 
   const groupLoadedNames = useMemo(
@@ -409,6 +451,7 @@ export function useCampaignWizardStep1State({
 
   const {
     selectLoaded: selectGroupsLoaded,
+    deselectLoaded: deselectGroupsLoaded,
     clearSelection: clearGroupsSelection,
     showExpandBanner: showGroupsExpandBanner,
     matchTotal: groupsMatchTotal,
@@ -425,30 +468,151 @@ export function useCampaignWizardStep1State({
     setSelectedIds: setGroupNamesFromGmail,
     countMatch: countGroupsMatch,
     fetchAllIds: fetchGroupNamesMatch,
-    expandCandidate: groupsHasMore,
+    expandCandidate:
+      groupsHasMore ||
+      (typeof groupsTotalCount === "number" &&
+        groupsTotalCount > groupLoadedNames.length),
+    listMatchTotal: groupsTotalCount,
   });
 
   const contactsSelectedCount = useMemo(() => {
+    if (eligibleAudienceFilter && eligibleAudienceCount != null) {
+      return Math.max(0, eligibleAudienceCount - excludedContactIds.length);
+    }
     if (recipientMode === "all") {
       return contacts.filter((c) => c.optIn && !c.stopSms).length;
     }
     return Math.max(contactsDisplaySelectedCount, effectiveSelectedIds.size);
   }, [
+    eligibleAudienceFilter,
+    eligibleAudienceCount,
+    excludedContactIds.length,
     recipientMode,
     contacts,
     effectiveSelectedIds,
     contactsDisplaySelectedCount,
   ]);
 
+  const allLoadedContactsSelectedResolved = useMemo(() => {
+    if (eligibleAudienceFilter) {
+      return (
+        selectableFilteredContacts.length > 0 &&
+        selectableFilteredContacts.every(
+          (c) => !excludedContactIds.includes(c.id),
+        )
+      );
+    }
+    return allLoadedContactsSelected;
+  }, [
+    eligibleAudienceFilter,
+    selectableFilteredContacts,
+    excludedContactIds,
+    allLoadedContactsSelected,
+  ]);
+
+  const summaryRecipientCount = useMemo(
+    () =>
+      Math.max(
+        effectiveSelectedIds.size,
+        contactsSelectedCount,
+        groupsDisplaySelectedCount,
+      ),
+    [
+      effectiveSelectedIds.size,
+      contactsSelectedCount,
+      groupsDisplaySelectedCount,
+    ],
+  );
+
+  const listSelectionCount =
+    tab === "manual" ? contactsSelectedCount : groupsDisplaySelectedCount;
+
   const handleSelectAll = useCallback(() => {
     if (tab === "manual") selectContactsLoaded();
     else selectGroupsLoaded();
   }, [tab, selectContactsLoaded, selectGroupsLoaded]);
 
+  const allLoadedGroupsSelected = useMemo(
+    () =>
+      filteredGroups.length > 0 &&
+      filteredGroups.every((g) => selectedGroupNames.includes(g.name)),
+    [filteredGroups, selectedGroupNames],
+  );
+
+  const toggleAllLoadedContacts = useCallback(() => {
+    const allSelected = eligibleAudienceFilter
+      ? allLoadedContactsSelectedResolved
+      : allLoadedContactsSelected;
+
+    if (allSelected) {
+      const clearEntireSelection =
+        eligibleAudienceFilter ||
+        contactsSelectedCount > selectableFilteredContacts.length;
+      if (clearEntireSelection) {
+        setSelectedContactIds([]);
+        setExcludedContactIds([]);
+        clearContactsSelection();
+      } else {
+        deselectContactsLoaded();
+      }
+      return;
+    }
+
+    if (eligibleAudienceFilter) {
+      setExcludedContactIds((prev) =>
+        prev.filter(
+          (id) => !selectableFilteredContacts.some((c) => c.id === id),
+        ),
+      );
+      return;
+    }
+    selectContactsLoaded();
+  }, [
+    eligibleAudienceFilter,
+    allLoadedContactsSelectedResolved,
+    allLoadedContactsSelected,
+    contactsSelectedCount,
+    selectableFilteredContacts,
+    setSelectedContactIds,
+    setExcludedContactIds,
+    clearContactsSelection,
+    deselectContactsLoaded,
+    selectContactsLoaded,
+  ]);
+
+  const toggleAllLoadedGroups = useCallback(() => {
+    if (allLoadedGroupsSelected) {
+      deselectGroupsLoaded();
+      return;
+    }
+    selectGroupsLoaded();
+  }, [allLoadedGroupsSelected, deselectGroupsLoaded, selectGroupsLoaded]);
+
+  const contactsPagePartiallySelected = eligibleAudienceFilter
+    ? !allLoadedContactsSelectedResolved &&
+      selectableFilteredContacts.some((c) =>
+        excludedContactIds.includes(c.id),
+      )
+    : !allLoadedContactsSelected &&
+      selectableFilteredContacts.some((c) =>
+        selectedContactIds.includes(c.id),
+      );
+
   const handleClearSelection = useCallback(() => {
-    if (tab === "manual") clearContactsSelection();
-    else clearGroupsSelection();
-  }, [tab, clearContactsSelection, clearGroupsSelection]);
+    if (tab === "manual") {
+      setSelectedContactIds([]);
+      setExcludedContactIds([]);
+      clearContactsSelection();
+      return;
+    }
+    clearGroupsSelection();
+  }, [
+    tab,
+    setSelectedContactIds,
+    setExcludedContactIds,
+    clearContactsSelection,
+    clearGroupsSelection,
+  ]);
 
   const ensureSelectionReady = useCallback(async () => {
     const [contactIds, groupNames] = await Promise.all([
@@ -465,7 +629,7 @@ export function useCampaignWizardStep1State({
 
   const canClearSelection =
     tab === "manual"
-      ? contactsDisplaySelectedCount > 0
+      ? contactsSelectedCount > 0
       : groupsDisplaySelectedCount > 0;
 
   const expandBanner =
@@ -511,6 +675,7 @@ export function useCampaignWizardStep1State({
     recipientExcludedInvalid,
     filteredContacts,
     filteredGroups,
+    selectableFilteredContacts,
     isContactChecked,
     toggleContact,
     toggleGroup,
@@ -518,12 +683,19 @@ export function useCampaignWizardStep1State({
     canClearSelection,
     handleSelectAll,
     handleClearSelection,
+    allLoadedContactsSelected: allLoadedContactsSelectedResolved,
+    allLoadedGroupsSelected,
+    contactsPagePartiallySelected,
+    toggleAllLoadedContacts,
+    toggleAllLoadedGroups,
     ensureSelectionReady,
     recipientMode,
     selectedGroupNames,
     recipients,
     contactsSelectedCount,
     groupsSelectedCount: groupsDisplaySelectedCount,
+    summaryRecipientCount,
+    listSelectionCount,
     selectedGroupsDisplay,
     excludedTotal,
     listHasMore,
@@ -531,6 +703,7 @@ export function useCampaignWizardStep1State({
     onListLoadMore,
     listRowCount,
     recipientsResolving,
+    selectionPreparing: contactsExpanding || groupsExpanding,
     expandBanner,
     onGoToContacts,
     onGoToGroups,

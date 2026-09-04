@@ -50,6 +50,7 @@ import {
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
 import {
+  groupFormSnapshotsEqual,
   hasStackedOpenDialog,
   sortedStringArraysEqual,
   type GroupFormSnapshot,
@@ -123,7 +124,7 @@ const fieldShell =
   "rounded-xl border border-border bg-card p-2.5 shadow-[0_8px_18px_rgba(15,23,42,0.06)]";
 
 const inpText =
-  "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal";
+  "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground/40 placeholder:font-normal";
 
 const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
 const fieldLabelCls = "text-xs font-medium text-foreground";
@@ -980,7 +981,15 @@ export function GroupModal(props: GroupModalProps) {
         )
       : null;
 
-  const canDismissMain = !saving && !stackedDialogOpen && !saveConfirmOpen;
+  // Création : pas de baseline, tout contenu saisi compte. Édition : baseline
+  // posée une fois les membres chargés.
+  const formDirty = isCreate
+    ? Boolean(name.trim() || description.trim() || selectedIds.length > 0)
+    : formBaseline !== null &&
+      !groupFormSnapshotsEqual({ name, description, selectedIds }, formBaseline);
+
+  const canDismissMain =
+    !saving && !stackedDialogOpen && !saveConfirmOpen && !formDirty;
 
   return (
     <>
@@ -988,7 +997,7 @@ export function GroupModal(props: GroupModalProps) {
         open={dialogOpen}
         onOpenChange={(next) => {
           if (!next) {
-            if (!canDismissMain || hasStackedOpenDialog()) return;
+            if (saving || stackedDialogOpen || saveConfirmOpen || hasStackedOpenDialog()) return;
             onClose();
           }
         }}
@@ -1011,7 +1020,7 @@ export function GroupModal(props: GroupModalProps) {
             ) {
               return;
             }
-            if (saving) e.preventDefault();
+            if (!canDismissMain) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             if (
@@ -1021,7 +1030,7 @@ export function GroupModal(props: GroupModalProps) {
             ) {
               return;
             }
-            if (saving) e.preventDefault();
+            if (!canDismissMain) e.preventDefault();
           }}
         >
           <FormDialogHeader
@@ -1069,7 +1078,7 @@ export function GroupModal(props: GroupModalProps) {
                       setNameError(null);
                       setError(null);
                     }}
-                    placeholder="Ex : Clients VIP"
+                    placeholder="Ex. Clients VIP"
                   />
                 </div>
                 {nameError ? (
@@ -1092,12 +1101,12 @@ export function GroupModal(props: GroupModalProps) {
                 </label>
                 <div className={cn(innerTextareaSm, "mt-1.5")}>
                   <textarea
-                    className="min-h-[52px] w-full resize-none border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal"
+                    className="min-h-[52px] w-full resize-none border-none bg-transparent text-[13px] font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground/40 placeholder:font-normal"
                     maxLength={120}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
-                    placeholder="Optionnel — contexte ou critères du groupe…"
+                    placeholder="Ex. Clients VIP, relance juin"
                   />
                 </div>
               </div>

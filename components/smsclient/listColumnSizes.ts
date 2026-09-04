@@ -59,11 +59,13 @@ export const LINK_COL = {
 } as const;
 
 export const MODELE_SMS_COL = {
+  select: 40,
   created: 130,
   title: 140,
   description: 160,
   body: 280,
-  actions: 48,
+  /** Menu … sticky droite — même largeur que select */
+  actions: 40,
 } as const;
 
 export type ColumnWidthWeight = {

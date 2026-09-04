@@ -84,6 +84,23 @@ export function smsLinkFormSnapshotsEqual(
   return a.originalUrl === b.originalUrl && a.label === b.label;
 }
 
+export type SmsTemplateFormSnapshot = {
+  title: string;
+  description: string;
+  body: string;
+};
+
+export function smsTemplateFormSnapshotsEqual(
+  a: SmsTemplateFormSnapshot,
+  b: SmsTemplateFormSnapshot,
+): boolean {
+  return (
+    a.title === b.title &&
+    a.description === b.description &&
+    a.body === b.body
+  );
+}
+
 /**
  * Ferme la modale au clic sur l’overlay uniquement si autorisé.
  */

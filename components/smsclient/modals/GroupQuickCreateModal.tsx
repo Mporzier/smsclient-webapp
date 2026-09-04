@@ -21,6 +21,11 @@ import {
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
+import {
+  groupQuickFormSnapshotsEqual,
+  hasStackedOpenDialog,
+  useModalFormDirty,
+} from "./modalFormGuard";
 
 export type GroupQuickCreateModalProps = {
   open: boolean;
@@ -59,6 +64,13 @@ export function GroupQuickCreateModal({
     }
   }
 
+  const isDirty = useModalFormDirty(
+    open,
+    { name, description: desc },
+    groupQuickFormSnapshotsEqual,
+  );
+  const canDismiss = !saving && !isDirty;
+
   const handleClose = useCallback(() => {
     if (saving) return;
     setNameError(null);
@@ -96,7 +108,7 @@ export function GroupQuickCreateModal({
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          if (saving) return;
+          if (saving || hasStackedOpenDialog()) return;
           handleClose();
         }
       }}
@@ -111,10 +123,12 @@ export function GroupQuickCreateModal({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (!canDismiss) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (!canDismiss) e.preventDefault();
         }}
       >
         <FormDialogHeader
@@ -151,7 +165,7 @@ export function GroupQuickCreateModal({
                 setNameError(null);
                 setSaveError(null);
               }}
-              placeholder="Ex : Clients VIP"
+              placeholder="Ex. Clients VIP"
             />
             {nameError ? (
               <p
@@ -177,7 +191,7 @@ export function GroupQuickCreateModal({
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               rows={3}
-              placeholder="Optionnel — contexte ou critères du groupe…"
+              placeholder="Ex. Clients VIP, relance juin"
             />
           </div>
         </div>

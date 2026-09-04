@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -32,28 +34,35 @@ export function SelectAllExpandBanner({
         ? "Sélectionner tous les résultats de la recherche ?"
         : `Sélectionner tous les ${entityLabel} du compte ?`
       : hasSearch
-        ? `Sélectionner les ${matchTotal} résultats de la recherche ?`
-        : `Sélectionner les ${matchTotal} ${entityLabel} du compte ?`;
+      ? `Sélectionner les ${matchTotal} résultats de la recherche ?`
+      : `Sélectionner les ${matchTotal} ${entityLabel} du compte ?`;
 
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-1 flex-wrap items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground",
-        className,
+        "flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground",
+        className
       )}
       role="status"
       aria-busy={counting || expanding}
     >
-      <span className="min-w-0 flex-1 truncate">{prompt}</span>
+      <span className="min-w-0 flex-1 truncate" title={prompt}>
+        {prompt}
+      </span>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="h-6 shrink-0 px-2 text-[11px]"
+        className="h-6 w-6 shrink-0 p-0"
         disabled={expanding}
+        aria-label="Tout sélectionner"
         onClick={onExpand}
       >
-        {expanding ? "…" : "Tout sélectionner"}
+        {expanding ? (
+          <span aria-hidden>…</span>
+        ) : (
+          <Check className="h-3.5 w-3.5" aria-hidden />
+        )}
       </Button>
       {error ? (
         <span className="w-full text-[11px] font-semibold text-destructive">

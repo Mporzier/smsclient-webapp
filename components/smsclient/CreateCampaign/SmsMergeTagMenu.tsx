@@ -21,6 +21,12 @@ import {
   SYSTEM_MERGE_LABELS,
   type MergeTagKey,
 } from "@/lib/proto/smsPersonalization";
+import {
+  filledCountForMergeKey,
+  formatMergeFillSuffix,
+  type MergeFillCounts,
+  type MergeFillStatus,
+} from "@/lib/proto/smsMergeFill";
 import { Tag } from "lucide-react";
 
 export type MergeTagChoice = {
@@ -62,12 +68,46 @@ export function listMergeTagKeys(
   }));
 }
 
+function MergeFillHint({
+  itemKey,
+  fillCounts,
+  fillStatus,
+}: {
+  itemKey: MergeTagKey;
+  fillCounts?: MergeFillCounts;
+  fillStatus?: MergeFillStatus;
+}) {
+  if (!fillStatus || fillStatus === "error") return null;
+  if (fillStatus === "na") {
+    return <span className="text-[11px] leading-tight text-muted-foreground">—</span>;
+  }
+  if (fillStatus === "loading") {
+    return <span className="text-[11px] leading-tight text-muted-foreground">…</span>;
+  }
+  if (!fillCounts || fillCounts.total <= 0) return null;
+  const suffix = formatMergeFillSuffix(
+    filledCountForMergeKey(fillCounts, itemKey),
+    fillCounts.total,
+  );
+  if (!suffix) return null;
+  return (
+    <span className="text-[11px] leading-tight text-muted-foreground">{suffix}</span>
+  );
+}
+
 export function SmsMergeTagMenu({
   defs = [],
   onInsert,
+  contentClassName,
+  fillCounts,
+  fillStatus,
 }: {
   defs?: readonly CustomFieldDef[];
   onInsert: (token: string) => void;
+  /** Menu portalisé en z-50 : à surcharger dans une Dialog (z plus haut). */
+  contentClassName?: string;
+  fillCounts?: MergeFillCounts;
+  fillStatus?: MergeFillStatus;
 }) {
   const items = listMergeTagKeys(defs).filter((i) => i.token);
 
@@ -84,7 +124,10 @@ export function SmsMergeTagMenu({
           Insérer une info du contact
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-80 max-w-96">
+      <DropdownMenuContent
+        align="start"
+        className={cn("min-w-80 max-w-96", contentClassName)}
+      >
         <div className="sticky top-0 z-10 -mx-1 -mt-1 bg-popover px-1 pt-1">
           <DropdownMenuLabel className="py-0.5 text-[11px] leading-snug font-medium">
             Remplacée par la valeur de chaque contact à l’envoi.
@@ -102,6 +145,16 @@ export function SmsMergeTagMenu({
             </span>
             <span className="text-[11px] leading-tight text-muted-foreground">
               Ex. « {item.example} »
+              {fillStatus ? (
+                <>
+                  {" "}
+                  <MergeFillHint
+                    itemKey={item.key}
+                    fillCounts={fillCounts}
+                    fillStatus={fillStatus}
+                  />
+                </>
+              ) : null}
             </span>
           </DropdownMenuItem>
         ))}
@@ -115,11 +168,15 @@ export function SmsMergeTagChecklist({
   selected,
   onChange,
   className,
+  fillCounts,
+  fillStatus,
 }: {
   defs?: readonly CustomFieldDef[];
   selected: readonly MergeTagKey[];
   onChange: (next: MergeTagKey[]) => void;
   className?: string;
+  fillCounts?: MergeFillCounts;
+  fillStatus?: MergeFillStatus;
 }) {
   const items = listMergeTagKeys(defs).filter((i) => i.token);
   const selectedSet = new Set(selected);
@@ -154,7 +211,18 @@ export function SmsMergeTagChecklist({
               >
                 {item.label}{" "}
                 <span className="font-normal text-muted-foreground">
-                  (ex. {item.example})
+                  (ex. {item.example}
+                  {fillStatus ? (
+                    <>
+                      {" · "}
+                      <MergeFillHint
+                        itemKey={item.key}
+                        fillCounts={fillCounts}
+                        fillStatus={fillStatus}
+                      />
+                    </>
+                  ) : null}
+                  )
                 </span>
               </label>
             </li>

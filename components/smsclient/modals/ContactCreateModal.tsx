@@ -51,7 +51,11 @@ import {
   modalIconCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
-import { hasStackedOpenDialog } from "./modalFormGuard";
+import {
+  contactFormSnapshotsEqual,
+  hasStackedOpenDialog,
+  useModalFormDirty,
+} from "./modalFormGuard";
 
 export type ContactCreateModalProps = {
   open: boolean;
@@ -171,6 +175,21 @@ export function ContactCreateModal({
     },
     [],
   );
+
+  const isDirty = useModalFormDirty(
+    open,
+    {
+      first,
+      last,
+      phone,
+      birthday,
+      notes,
+      groups,
+      customFields: draftCustomFields,
+    },
+    contactFormSnapshotsEqual,
+  );
+  const canDismiss = !saving && !isDirty;
 
   const handleClose = useCallback(() => {
     setSaveError(null);
@@ -324,11 +343,11 @@ export function ContactCreateModal({
           onPointerDownOutside={(e) => {
             // Confirm empilée : ne pas preventDefault (sinon elle ne se ferme pas).
             if (hasStackedOpenDialog()) return;
-            if (saving) e.preventDefault();
+            if (!canDismiss) e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             if (hasStackedOpenDialog()) return;
-            if (saving) e.preventDefault();
+            if (!canDismiss) e.preventDefault();
           }}
         >
           <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
@@ -444,7 +463,7 @@ export function ContactCreateModal({
                   inputMode="numeric"
                   autoComplete="tel-national"
                   enterKeyHint="done"
-                  placeholder="06 12 34 56 78"
+                  placeholder="Ex. 06 12 34 56 78"
                   maxLength={PHONE_DISPLAY_MAX_LENGTH}
                   className={cn(modalFieldCls, "pl-8")}
                   value={phone}
@@ -495,7 +514,7 @@ export function ContactCreateModal({
               <textarea
                 id="contact-create-notes"
                 className={cn(
-                  "min-h-[72px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground",
+                  "min-h-[72px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm font-normal leading-snug text-foreground outline-none placeholder:text-muted-foreground/40",
                   modalFieldCls
                 )}
                 maxLength={CONTACT_NOTES_MAX_LENGTH}

@@ -16,6 +16,8 @@ import { fieldBox } from "@/components/smsclient/flowFieldStyles";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
+import { formatInt } from "@/lib/proto/smsUtils";
+import { CampaignWizardMessageSummary } from "./CampaignWizardMessageSummary";
 import {
   avatarColor,
   contactInitials,
@@ -38,6 +40,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  startTransition,
   type ReactNode,
 } from "react";
 import {
@@ -69,6 +72,38 @@ export function useCampaignWizardStep1() {
   return useStep1Context();
 }
 
+export function CampaignWizardStep1MessageSummary({
+  parts,
+  partsMin,
+  partsMax,
+  totalCredits,
+  creditsAvailable,
+  hasEnoughCredits,
+  pendingSms = false,
+}: {
+  parts: number;
+  partsMin?: number;
+  partsMax?: number;
+  totalCredits: number;
+  creditsAvailable: number;
+  hasEnoughCredits: boolean;
+  pendingSms?: boolean;
+}) {
+  const { summaryRecipientCount } = useStep1Context();
+  return (
+    <CampaignWizardMessageSummary
+      recipients={summaryRecipientCount}
+      parts={parts}
+      partsMin={partsMin}
+      partsMax={partsMax}
+      totalCredits={totalCredits}
+      creditsAvailable={creditsAvailable}
+      hasEnoughCredits={hasEnoughCredits}
+      pendingSms={pendingSms}
+    />
+  );
+}
+
 export function CampaignWizardStep1ContinueButton({
   className,
   onContinue,
@@ -79,7 +114,7 @@ export function CampaignWizardStep1ContinueButton({
     groupNames: string[];
   }) => void;
 }) {
-  const { ensureSelectionReady, contactsSelectedCount, groupsSelectedCount } =
+  const { ensureSelectionReady, contactsSelectedCount, groupsSelectedCount, selectionPreparing } =
     useStep1Context();
   const canContinue =
     contactsSelectedCount > 0 || groupsSelectedCount > 0;
@@ -88,16 +123,29 @@ export function CampaignWizardStep1ContinueButton({
       variant="default"
       size="lg"
       className={className}
-      disabled={!canContinue}
+      disabled={!canContinue || selectionPreparing}
       onClick={() => {
         void (async () => {
           const ready = await ensureSelectionReady();
-          onContinue(ready);
+          startTransition(() => {
+            onContinue(ready);
+          });
         })();
       }}
     >
-      Continuer
-      <ChevronRight className="h-4 w-4" />
+      {selectionPreparing ? (
+        <LoadingLabel
+          className="text-[13px]"
+          spinnerClassName="size-3.5 text-current"
+        >
+          Chargement
+        </LoadingLabel>
+      ) : (
+        <>
+          Continuer
+          <ChevronRight className="h-4 w-4" />
+        </>
+      )}
     </Button>
   );
 }
@@ -124,6 +172,7 @@ export function CampaignWizardStep1Main() {
     recipientExcludedInvalid,
     filteredContacts,
     filteredGroups,
+    selectableFilteredContacts,
     isContactChecked,
     toggleContact,
     toggleGroup,
@@ -131,6 +180,11 @@ export function CampaignWizardStep1Main() {
     canClearSelection,
     handleSelectAll,
     handleClearSelection,
+    allLoadedContactsSelected,
+    allLoadedGroupsSelected,
+    contactsPagePartiallySelected,
+    toggleAllLoadedContacts,
+    toggleAllLoadedGroups,
     recipientMode,
     selectedGroupNames,
     listHasMore,
@@ -140,8 +194,18 @@ export function CampaignWizardStep1Main() {
     expandBanner,
     onGoToContacts,
     onGoToGroups,
+    listSelectionCount,
   } = useStep1Context();
   const { t } = useI18n();
+
+  const listSelectionLabel =
+    tab === "manual"
+      ? `${formatInt(listSelectionCount)} contact${
+          listSelectionCount !== 1 ? "s" : ""
+        } sélectionné${listSelectionCount !== 1 ? "s" : ""}`
+      : `${formatInt(listSelectionCount)} groupe${
+          listSelectionCount !== 1 ? "s" : ""
+        } sélectionné${listSelectionCount !== 1 ? "s" : ""}`;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -232,12 +296,12 @@ export function CampaignWizardStep1Main() {
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <div
-          className="flex h-9 min-w-0 max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5"
+          className="flex h-9 min-w-0 max-w-sm flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5"
           role="search"
         >
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <input
-            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 border-none bg-transparent text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground/40"
             placeholder={
               tab === "manual"
                 ? "Rechercher un prénom, nom, téléphone…"
@@ -269,7 +333,7 @@ export function CampaignWizardStep1Main() {
             type="button"
             variant="outline"
             size="sm"
-            className="cursor-pointer"
+            className="cursor-pointer px-2.5"
             onClick={handleSelectAll}
             disabled={!canSelectAll}
           >
@@ -280,7 +344,7 @@ export function CampaignWizardStep1Main() {
             type="button"
             variant="ghost"
             size="sm"
-            className="cursor-pointer"
+            className="cursor-pointer px-2.5"
             onClick={handleClearSelection}
             disabled={!canClearSelection}
           >
@@ -337,6 +401,25 @@ export function CampaignWizardStep1Main() {
             )
           ) : (
             <>
+              {selectableFilteredContacts.length > 0 ? (
+                <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-card px-3 py-2">
+                  <Checkbox
+                    checked={
+                      allLoadedContactsSelected
+                        ? true
+                        : contactsPagePartiallySelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    disabled={recipientMode === "all"}
+                    onCheckedChange={toggleAllLoadedContacts}
+                    aria-label="Tout sélectionner les contacts affichés"
+                  />
+                  <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                    {listSelectionLabel}
+                  </span>
+                </div>
+              ) : null}
               {filteredContacts.map((c) => {
               const isUnsubscribed = c.stopSms || !c.optIn;
               const checked = isContactChecked(c);
@@ -463,6 +546,18 @@ export function CampaignWizardStep1Main() {
           )
         ) : (
           <>
+            {filteredGroups.length > 0 ? (
+              <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-card px-3 py-2">
+                <Checkbox
+                  checked={allLoadedGroupsSelected}
+                  onCheckedChange={toggleAllLoadedGroups}
+                  aria-label="Tout sélectionner les groupes affichés"
+                />
+                <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                  {listSelectionLabel}
+                </span>
+              </div>
+            ) : null}
             {filteredGroups.map((g) => {
             const checked = selectedGroupNames.includes(g.name);
             const gc = groupColor(g.name);

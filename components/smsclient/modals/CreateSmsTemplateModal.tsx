@@ -9,39 +9,55 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SmsMergeTagMenu } from "@/components/smsclient/CreateCampaign/SmsMergeTagMenu";
+import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
+import { SMS_PRENOM_PREVIEW_SAMPLE } from "@/lib/proto/smsPersonalization";
 import {
   isValidSmsTemplateBody,
   isValidSmsTemplateTitle,
-  SMS_TEMPLATE_BODY_MAX_LENGTH,
   SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH,
   SMS_TEMPLATE_TITLE_MAX_LENGTH,
   SMS_TEMPLATE_TITLE_MIN_LENGTH,
   type UserSmsTemplateRow,
 } from "@/lib/types/smsTemplate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
-import { LayoutTemplate } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { LayoutTemplate, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
 import { FormDialogHeader } from "./FormDialogHeader";
 import {
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
+  dialogPopoverZCls,
   formDialogContentCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
-import { hasStackedOpenDialog } from "./modalFormGuard";
+import {
+  hasStackedOpenDialog,
+  smsTemplateFormSnapshotsEqual,
+  useModalFormDirty,
+} from "./modalFormGuard";
+
+type TemplateSaveArgs = {
+  title: string;
+  description: string;
+  body: string;
+};
 
 type CreateSmsTemplateModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreate: (args: {
-    title: string;
-    description: string;
-    body: string;
-  }) => Promise<{ data: UserSmsTemplateRow | null; error: string | null }>;
+  onCreate: (
+    args: TemplateSaveArgs,
+  ) => Promise<{ data: UserSmsTemplateRow | null; error: string | null }>;
   onCreated?: (row: UserSmsTemplateRow) => void;
+  /** Ligne à éditer — omit / null = création. */
+  editRow?: UserSmsTemplateRow | null;
+  onUpdate?: (
+    id: string,
+    args: TemplateSaveArgs,
+  ) => Promise<{ data: UserSmsTemplateRow | null; error: string | null }>;
+  onDelete?: () => void;
   customFieldDefs?: readonly CustomFieldDef[];
 };
 
@@ -56,9 +72,13 @@ export function CreateSmsTemplateModal({
   onClose,
   onCreate,
   onCreated,
+  editRow = null,
+  onUpdate,
+  onDelete,
   customFieldDefs = [],
 }: CreateSmsTemplateModalProps) {
   const { t } = useI18n();
+  const isEdit = Boolean(editRow);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
@@ -66,15 +86,17 @@ export function CreateSmsTemplateModal({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
+  const editId = editRow?.id ?? null;
   const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
+  const [prevEditId, setPrevEditId] = useState(editId);
+  if (open !== prevOpen || editId !== prevEditId) {
     setPrevOpen(open);
+    setPrevEditId(editId);
     if (open) {
-      setTitle("");
-      setDescription("");
-      setBody("");
+      setTitle(editRow?.title ?? "");
+      setDescription(editRow?.description ?? "");
+      setBody(editRow?.body ?? "");
       setTitleError(null);
       setBodyError(null);
       setSaveError(null);
@@ -82,26 +104,12 @@ export function CreateSmsTemplateModal({
     }
   }
 
-  const insertBodyToken = useCallback((token: string) => {
-    const el = bodyRef.current;
-    if (!el) {
-      setBody((prev) => `${prev}${token}`.slice(0, SMS_TEMPLATE_BODY_MAX_LENGTH));
-      return;
-    }
-    const start = el.selectionStart ?? body.length;
-    const end = el.selectionEnd ?? start;
-    const next = `${body.slice(0, start)}${token}${body.slice(end)}`.slice(
-      0,
-      SMS_TEMPLATE_BODY_MAX_LENGTH,
-    );
-    setBody(next);
-    setBodyError(null);
-    requestAnimationFrame(() => {
-      const caret = Math.min(start + token.length, next.length);
-      el.focus();
-      el.setSelectionRange(caret, caret);
-    });
-  }, [body]);
+  const isDirty = useModalFormDirty(
+    open,
+    { title, description, body },
+    smsTemplateFormSnapshotsEqual,
+  );
+  const canDismiss = !saving && !isDirty;
 
   const handleClose = useCallback(() => {
     if (saving) return;
@@ -131,19 +139,33 @@ export function CreateSmsTemplateModal({
 
     setSaving(true);
     setSaveError(null);
-    const { data, error: createError } = await onCreate({
-      title,
-      description,
-      body,
-    });
+    const payload = { title, description, body };
+    const { data, error: saveErr } =
+      isEdit && editRow && onUpdate
+        ? await onUpdate(editRow.id, payload)
+        : await onCreate(payload);
     setSaving(false);
-    if (createError || !data) {
-      setSaveError(createError ?? t("templates.createFailed"));
+    if (saveErr || !data) {
+      setSaveError(
+        saveErr ??
+          (isEdit ? t("templates.updateFailed") : t("templates.createFailed")),
+      );
       return;
     }
     onCreated?.(data);
     onClose();
-  }, [title, description, body, onCreate, onCreated, onClose, t]);
+  }, [
+    title,
+    description,
+    body,
+    isEdit,
+    editRow,
+    onUpdate,
+    onCreate,
+    onCreated,
+    onClose,
+    t,
+  ]);
 
   return (
     <Dialog
@@ -166,17 +188,19 @@ export function CreateSmsTemplateModal({
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving) e.preventDefault();
+          if (!canDismiss) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving) e.preventDefault();
+          if (!canDismiss) e.preventDefault();
         }}
       >
         <FormDialogHeader
           icon={<LayoutTemplate />}
-          title={t("templates.createTitle")}
-          description={t("templates.createSubtitle")}
+          title={t(isEdit ? "templates.editTitle" : "templates.createTitle")}
+          description={t(
+            isEdit ? "templates.editSubtitle" : "templates.createSubtitle",
+          )}
         />
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
@@ -185,13 +209,12 @@ export function CreateSmsTemplateModal({
               className="flex justify-between gap-2"
               htmlFor="create-sms-template-title"
             >
-              <span className={fieldLabelCls}>{t("templates.field.title")}</span>
+              <span className={fieldLabelCls}>
+                {t("templates.field.title")}{" "}
+                <span className="text-destructive">*</span>
+              </span>
               <span className={fieldMetaCls}>
-                {t("templates.field.titleCount", {
-                  current: title.trim().length,
-                  max: SMS_TEMPLATE_TITLE_MAX_LENGTH,
-                  min: SMS_TEMPLATE_TITLE_MIN_LENGTH,
-                })}
+                {title.length}/{SMS_TEMPLATE_TITLE_MAX_LENGTH}
               </span>
             </Label>
             <Input
@@ -234,11 +257,11 @@ export function CreateSmsTemplateModal({
                 {description.length}/{SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH}
               </span>
             </Label>
-            <Input
+            <Textarea
               id="create-sms-template-description"
-              type="text"
+              rows={2}
               maxLength={SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH}
-              className={modalFieldCls}
+              className={cn(modalFieldCls, "min-h-[4.5rem] resize-none")}
               placeholder={t("templates.field.descriptionPlaceholder")}
               value={description}
               onChange={(e) => {
@@ -250,39 +273,23 @@ export function CreateSmsTemplateModal({
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <Label
-                className="flex min-w-0 flex-1 items-baseline justify-between gap-2"
-                htmlFor="create-sms-template-body"
-              >
-                <span className={fieldLabelCls}>{t("templates.field.body")}</span>
-                <span className={fieldMetaCls}>
-                  {body.length}/{SMS_TEMPLATE_BODY_MAX_LENGTH}
-                </span>
-              </Label>
-              <SmsMergeTagMenu
-                defs={customFieldDefs}
-                onInsert={insertBodyToken}
-              />
-            </div>
-            <Textarea
-              id="create-sms-template-body"
-              ref={bodyRef}
-              rows={5}
-              maxLength={SMS_TEMPLATE_BODY_MAX_LENGTH}
-              className={cn(modalFieldCls, "min-h-[120px] resize-y")}
-              placeholder={t("templates.field.bodyPlaceholder")}
+            <span className={cn(fieldLabelCls, "block")}>
+              {t("templates.field.body")}{" "}
+              <span className="text-destructive">*</span>
+            </span>
+            <SmsMessageComposer
               value={body}
-              aria-invalid={Boolean(bodyError)}
-              aria-describedby={
-                bodyError ? "create-sms-template-body-err" : undefined
-              }
-              onChange={(e) => {
-                setBody(e.target.value);
+              onChange={(next) => {
+                setBody(next);
                 setBodyError(null);
                 setSaveError(null);
               }}
-              disabled={saving}
+              placeholder={t("templates.field.bodyPlaceholder")}
+              hasError={Boolean(bodyError)}
+              estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
+              customFieldDefs={customFieldDefs}
+              reserveStop
+              popoverClassName={dialogPopoverZCls}
             />
             {bodyError ? (
               <p
@@ -301,25 +308,46 @@ export function CreateSmsTemplateModal({
           </div>
         ) : null}
 
-        <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-end gap-2 rounded-b-xl p-2.5 px-4 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={saving}
-            onClick={handleClose}
-            className="cursor-pointer"
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            disabled={saving}
-            onClick={() => void handleSubmit()}
-            className="cursor-pointer"
-          >
-            {saving ? t("templates.creating") : t("templates.createAction")}
-          </Button>
+        <DialogFooter
+          className={cn(
+            "mx-0 mb-0 shrink-0 flex-row flex-wrap items-center gap-2 rounded-b-xl p-2.5 px-4",
+            isEdit && onDelete ? "justify-between sm:justify-between" : "justify-end sm:justify-end",
+          )}
+        >
+          {isEdit && onDelete ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={onDelete}
+              className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              {t("common.delete")}
+            </Button>
+          ) : null}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={handleClose}
+              className="cursor-pointer"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              disabled={saving}
+              onClick={() => void handleSubmit()}
+              className="cursor-pointer"
+            >
+              {saving
+                ? t(isEdit ? "templates.saving" : "templates.creating")
+                : t(isEdit ? "templates.saveAction" : "templates.createAction")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

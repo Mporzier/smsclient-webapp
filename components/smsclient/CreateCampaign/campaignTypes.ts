@@ -1,8 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { CampaignEligibleAudienceFilter } from "@/lib/proto/campaignAudience";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SmsComposeApproach } from "./SmsComposeApproachCards";
+import type { MergeFillCounts, MergeFillStatus } from "@/lib/proto/smsMergeFill";
 
 export type CampaignWizardProps = {
   step: 1 | 2 | 3;
@@ -37,6 +39,8 @@ export type CampaignWizardProps = {
   onContactsLoadMore?: () => void;
   contactsSearchQuery?: string;
   onContactsSearchChange?: (value: string) => void;
+  contactsTotalCount?: number | null;
+  groupsTotalCount?: number | null;
   recipientMode: "manual" | "lists" | "all" | "numbers";
   setRecipientMode: (v: "manual" | "lists" | "all" | "numbers") => void;
   manualNumbers: string;
@@ -45,8 +49,11 @@ export type CampaignWizardProps = {
   setSelectedGroupNames: Dispatch<SetStateAction<string[]>>;
   selectedContactIds: string[];
   setSelectedContactIds: Dispatch<SetStateAction<string[]>>;
+  setSelectedContactIdsFromGmail?: Dispatch<SetStateAction<string[]>>;
   excludedContactIds: string[];
   setExcludedContactIds: Dispatch<SetStateAction<string[]>>;
+  eligibleAudienceFilter?: CampaignEligibleAudienceFilter | null;
+  eligibleAudienceCount?: number | null;
   recipientSelectedRaw: number;
   recipientExcludedStop: number;
   recipientExcludedInvalid: number;
@@ -58,6 +65,8 @@ export type CampaignWizardProps = {
   /** Contacts destinataires résolus (hors lazy list). */
   resolvedContacts?: ContactRowData[];
   recipientsResolving?: boolean;
+  mergeFillCounts?: MergeFillCounts;
+  mergeFillStatus?: MergeFillStatus;
   onCountEligibleContacts?: (
     search: string,
   ) => Promise<{ count: number; error: Error | null }>;

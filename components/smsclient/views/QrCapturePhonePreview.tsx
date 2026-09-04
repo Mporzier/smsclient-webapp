@@ -196,7 +196,7 @@ function PreviewField({
             : "border-slate-200 bg-white text-slate-400",
         )}
       >
-        {filled ? placeholder.replace("Ex : ", "") : placeholder}
+        {filled ? placeholder.replace(/^(Ex\.|Ex\s*:)\s+/, "") : placeholder}
       </div>
     </div>
   );
@@ -224,8 +224,8 @@ function SignupScreen({
         Laissez vos coordonnées pour recevoir les actus par SMS.
       </p>
       <div className="mt-1.5 space-y-1">
-        <PreviewField label="Prénom *" placeholder="Ex : Marie" filled />
-        <PreviewField label="Téléphone *" placeholder="06 12 34 56 78" filled />
+        <PreviewField label="Prénom *" placeholder="Ex. Marie" filled />
+        <PreviewField label="Téléphone *" placeholder="Ex. 06 12 34 56 78" filled />
         <div className="rounded-md border border-slate-200 bg-slate-50 px-1 py-0.5">
           <div className="flex items-start gap-1">
             <span className="mt-0.5 grid h-2 w-2 shrink-0 place-items-center rounded border border-[#2f6fed] bg-[#2f6fed] text-[5px] font-bold text-white">

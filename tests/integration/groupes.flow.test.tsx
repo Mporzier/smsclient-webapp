@@ -61,11 +61,11 @@ describe("Groupes — flows (intégration, mocks)", () => {
 
     await user.click(screen.getByRole("button", { name: "Créer un groupe" }));
     await user.type(
-      screen.getByPlaceholderText("Ex : Clients VIP"),
+      screen.getByPlaceholderText("Ex. Clients VIP"),
       "Segment E2E",
     );
     await user.type(
-      screen.getByPlaceholderText(/Optionnel — contexte/),
+      screen.getByPlaceholderText(/Ex\. Clients VIP, relance juin/),
       "Créé en test",
     );
     await user.click(screen.getByRole("button", { name: "Créer le groupe" }));
@@ -108,7 +108,9 @@ describe("Groupes — flows (intégration, mocks)", () => {
 
     await user.click(screen.getByText("Clients VIP"));
     const dialog = screen.getByRole("dialog", { name: "Modifier le groupe" });
-    const description = within(dialog).getByPlaceholderText(/Optionnel — contexte/);
+    const description = within(dialog).getByPlaceholderText(
+      /Ex\. Clients VIP, relance juin/,
+    );
     await user.clear(description);
     await user.type(description, "Après modification");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -131,7 +133,7 @@ describe("Groupes — flows (intégration, mocks)", () => {
 
     await user.click(screen.getByRole("button", { name: "Créer un groupe" }));
     await user.type(
-      screen.getByPlaceholderText("Ex : Clients VIP"),
+      screen.getByPlaceholderText("Ex. Clients VIP"),
       "VIP",
     );
 

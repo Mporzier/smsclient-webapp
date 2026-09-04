@@ -62,11 +62,17 @@ export type UseGmailSelectAllArgs = {
   selectedIds: ReadonlySet<string> | readonly string[];
   setSelectedIds: (ids: string[]) => void;
   countMatch: () => Promise<{ count: number; error: Error | null }>;
-  fetchAllIds: () => Promise<{ data: string[]; error: Error | null }>;
+  fetchAllIds: () => Promise<{
+    data: string[];
+    error: Error | null;
+    usedServerFilter?: boolean;
+  }>;
   clearOnSearchChange?: boolean;
   selectLoadedMode?: "replace" | "merge";
   expandMode?: "replace" | "merge";
   expandCandidate?: boolean;
+  /** Total match connu (liste paginée) — évite flicker bandeau avant count RPC. */
+  listMatchTotal?: number | null;
 };
 
 function toIdArray(
@@ -95,7 +101,21 @@ export type UseGmailSelectAllResult = {
   matchAllActive: boolean;
   /** À appeler dès qu'une case est cochée/décochée à la main. */
   exitMatchAll: () => void;
+  /** Toutes les lignes chargées sont cochées. */
+  allLoadedSelected: boolean;
 };
+
+function loadedIdsAllSelected(
+  loadedIds: readonly string[],
+  selectedIds: ReadonlySet<string> | readonly string[],
+): boolean {
+  if (loadedIds.length === 0) return false;
+  if (isIdSet(selectedIds)) {
+    return loadedIds.every((id) => selectedIds.has(id));
+  }
+  const set = new Set(selectedIds);
+  return loadedIds.every((id) => set.has(id));
+}
 
 export function useGmailSelectAll({
   search,
@@ -108,6 +128,7 @@ export function useGmailSelectAll({
   selectLoadedMode = "replace",
   expandMode = "replace",
   expandCandidate = false,
+  listMatchTotal = null,
 }: UseGmailSelectAllArgs): UseGmailSelectAllResult {
   const [pageSelectActive, setPageSelectActive] = useState(false);
   const [matchTotal, setMatchTotal] = useState<number | null>(null);
@@ -126,11 +147,13 @@ export function useGmailSelectAll({
   const skipFirstSearchEffect = useRef(true);
   const selectedIdsRef = useRef(selectedIds);
   const expandCandidateRef = useRef(expandCandidate);
+  const listMatchTotalRef = useRef(listMatchTotal);
   const fetchAllIdsRef = useRef(fetchAllIds);
   const matchTotalRef = useRef(matchTotal);
   const expandPromiseRef = useRef<Promise<string[]> | null>(null);
   const expandGenRef = useRef(0);
   const expandModeRef = useRef(expandMode);
+  const matchAllActiveRef = useRef(matchAllActive);
 
   useEffect(() => {
     selectedIdsRef.current = selectedIds;
@@ -139,6 +162,14 @@ export function useGmailSelectAll({
   useEffect(() => {
     expandCandidateRef.current = expandCandidate;
   }, [expandCandidate]);
+
+  useEffect(() => {
+    matchAllActiveRef.current = matchAllActive;
+  }, [matchAllActive]);
+
+  useEffect(() => {
+    listMatchTotalRef.current = listMatchTotal;
+  }, [listMatchTotal]);
 
   useEffect(() => {
     fetchAllIdsRef.current = fetchAllIds;
@@ -204,9 +235,13 @@ export function useGmailSelectAll({
     setPageSelectActive(true);
     setMatchAllActive(false);
     setExpandError(null);
-    setMatchTotal(null);
+    setExpanding(false);
+    expandGenRef.current += 1;
+    expandPromiseRef.current = null;
+    const seedTotal = listMatchTotalRef.current;
+    setMatchTotal(typeof seedTotal === "number" ? seedTotal : null);
     setCountUnavailable(false);
-    setCounting(true);
+    setCounting(typeof seedTotal !== "number");
     const gen = ++countGenRef.current;
     void (async () => {
       const result = await countWithTimeout(countMatch);
@@ -228,7 +263,12 @@ export function useGmailSelectAll({
         return;
       }
       setMatchTotal(count);
-      if (count <= loadedIds.length && !expandCandidateRef.current) {
+      const listTotal = listMatchTotalRef.current;
+      const stillExpandable =
+        expandCandidateRef.current ||
+        count > loadedIds.length ||
+        (typeof listTotal === "number" && listTotal > loadedIds.length);
+      if (!stillExpandable && count <= loadedIds.length) {
         setPageSelectActive(false);
       }
     })();
@@ -254,39 +294,50 @@ export function useGmailSelectAll({
     const run = async (): Promise<string[]> => {
       const gen = ++expandGenRef.current;
       setExpanding(true);
-      const { data, error } = await fetchAllIdsRef.current();
-      // Expand annulé (clear / delete global / nouvelle recherche) : on jette.
-      if (gen !== expandGenRef.current) return data;
-      setExpanding(false);
+      try {
+        const result = await fetchAllIdsRef.current();
+        const { data, error, usedServerFilter } = result;
+        if (gen !== expandGenRef.current) return data;
 
-      if (error && data.length === 0) {
-        setExpandError(error.message);
-        setPendingDisplayTotal(null);
-        setPageSelectActive(true);
-        setMatchAllActive(false);
-        if (expected != null) setMatchTotal(expected);
-        else setCountUnavailable(true);
-        return toIdArray(selectedIdsRef.current);
-      }
+        if (error && data.length === 0) {
+          setExpandError(error.message);
+          setPendingDisplayTotal(null);
+          setPageSelectActive(true);
+          setMatchAllActive(false);
+          if (expected != null) setMatchTotal(expected);
+          else setCountUnavailable(true);
+          return toIdArray(selectedIdsRef.current);
+        }
 
-      let nextIds: string[];
-      if (expandModeRef.current === "merge") {
-        const next = new Set(toIdArray(selectedIdsRef.current));
-        for (const id of data) next.add(id);
-        nextIds = Array.from(next);
-      } else {
-        nextIds = data;
-      }
-      setSelectedIds(nextIds);
+        let nextIds: string[];
+        if (expandModeRef.current === "merge") {
+          const next = new Set(toIdArray(selectedIdsRef.current));
+          for (const id of data) next.add(id);
+          nextIds = Array.from(next);
+        } else {
+          nextIds = data;
+        }
+        if (!usedServerFilter) {
+          setSelectedIds(nextIds);
+        }
 
-      if (expected != null && data.length < expected) {
-        setExpandError(
-          `Sélection incomplète (${data.length}/${expected}). Réessaie.`,
-        );
-      } else {
-        setMatchTotal(null);
+        if (usedServerFilter) {
+          setMatchTotal(null);
+          setPendingDisplayTotal(null);
+        } else if (expected != null && data.length < expected) {
+          setExpandError(
+            `Sélection incomplète (${data.length}/${expected}). Réessaie.`,
+          );
+        } else {
+          setMatchTotal(null);
+          setPendingDisplayTotal(null);
+        }
+        return nextIds;
+      } finally {
+        if (gen === expandGenRef.current) {
+          setExpanding(false);
+        }
       }
-      return nextIds;
     };
 
     const promise = run();
@@ -304,12 +355,15 @@ export function useGmailSelectAll({
     if (expandPromiseRef.current) {
       return expandPromiseRef.current;
     }
-    const pending = pendingDisplayTotal;
     const current = toIdArray(selectedIdsRef.current);
-    if (pending != null && current.length < pending) {
-      return expandToMatchAll();
+    if (matchAllActiveRef.current) {
+      return current;
     }
-    return current;
+    const pending = pendingDisplayTotal;
+    if (pending == null || current.length >= pending) {
+      return current;
+    }
+    return expandToMatchAll();
   }, [pendingDisplayTotal, expandToMatchAll]);
 
   const exitMatchAll = useCallback(() => {
@@ -317,19 +371,17 @@ export function useGmailSelectAll({
   }, []);
 
   const selectedCount = selectedCountOf(selectedIds);
-  // Optimiste tant que les ids n’ont pas rattrapé le total expand (pas d’effect setState).
+  const allLoadedSelected = loadedIdsAllSelected(loadedIds, selectedIds);
+  // Page select = offre d’étendre au-delà de la page courante (pas le total sélectionné).
+  const showExpandBanner =
+    pageSelectActive &&
+    (matchTotal != null
+      ? matchTotal > loadedIds.length
+      : Boolean(expandCandidate || counting || countUnavailable));
   const displaySelectedCount =
     pendingDisplayTotal != null && selectedCount < pendingDisplayTotal
       ? pendingDisplayTotal
       : selectedCount;
-  const showExpandBanner = shouldShowExpandBanner({
-    pageSelectActive,
-    matchTotal,
-    selectedCount,
-    expandCandidate,
-    counting,
-    countUnavailable,
-  });
 
   return {
     selectLoaded,
@@ -346,5 +398,6 @@ export function useGmailSelectAll({
     ensureSelectionReady,
     matchAllActive,
     exitMatchAll,
+    allLoadedSelected,
   };
 }

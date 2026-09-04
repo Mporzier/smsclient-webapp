@@ -31,6 +31,8 @@ import {
 } from "./modalChrome";
 import {
   hasStackedOpenDialog,
+  smsLinkFormSnapshotsEqual,
+  useModalFormDirty,
 } from "./modalFormGuard";
 
 type CreateSmsLinkModalProps = {
@@ -75,6 +77,13 @@ export function CreateSmsLinkModal({
       setSaving(false);
     }
   }
+
+  const isDirty = useModalFormDirty(
+    open,
+    { originalUrl, label },
+    smsLinkFormSnapshotsEqual,
+  );
+  const canDismiss = !saving && !isDirty;
 
   const handleClose = useCallback(() => {
     if (saving) return;
@@ -140,11 +149,11 @@ export function CreateSmsLinkModal({
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving) e.preventDefault();
+          if (!canDismiss) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
           if (hasStackedOpenDialog()) return;
-          if (saving) e.preventDefault();
+          if (!canDismiss) e.preventDefault();
         }}
       >
         <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
@@ -166,7 +175,7 @@ export function CreateSmsLinkModal({
               type="url"
               className={modalFieldCls}
               maxLength={URL_MAX_LENGTH}
-              placeholder="www.votre-site.fr/promo"
+              placeholder="Ex. www.votre-site.fr/promo"
               value={originalUrl}
               aria-invalid={Boolean(urlError)}
               aria-describedby={urlError ? "create-sms-link-url-err" : undefined}
@@ -206,7 +215,7 @@ export function CreateSmsLinkModal({
               minLength={SMS_LINK_LABEL_MIN_LENGTH}
               maxLength={SMS_LINK_LABEL_MAX_LENGTH}
               className={modalFieldCls}
-              placeholder="Promo été"
+              placeholder="Ex. Promo été"
               value={label}
               aria-invalid={Boolean(labelError)}
               aria-describedby={

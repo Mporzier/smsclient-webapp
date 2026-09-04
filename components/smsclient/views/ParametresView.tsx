@@ -514,7 +514,7 @@ export function ParametresView({
                 maxLength={SMS_SENDER_MAX_LENGTH}
                 value={draftForm.sender}
                 onChange={(e) => setField("sender", e.target.value)}
-                placeholder="BOULANGERIE"
+                placeholder="Ex. BOULANGERIE"
                 autoComplete="off"
               />
             </SettingsField>

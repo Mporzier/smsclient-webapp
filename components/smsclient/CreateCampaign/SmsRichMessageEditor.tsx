@@ -9,6 +9,7 @@ import {
   useRef,
 } from "react";
 import {
+  clearFillerBreaks,
   handlePrenomChipKeyDown,
   insertPrenomAtSelection,
   insertTextAtSelection,
@@ -46,6 +47,7 @@ export const SmsRichMessageEditor = forwardRef<
   const emitChange = useCallback(() => {
     const root = editorRef.current;
     if (!root) return;
+    clearFillerBreaks(root);
     repairPrenomChips(root);
     let next = serializeSmsEditor(root);
     if (next.length > SMS_BODY_HARD_MAX_LENGTH) {
@@ -100,7 +102,7 @@ export const SmsRichMessageEditor = forwardRef<
         "sms-rich-editor block min-h-28 w-full overflow-y-auto border-none bg-transparent px-3.5 pt-3.5",
         "cursor-text text-sm font-semibold leading-relaxed text-slate-900 outline-none",
         "empty:before:pointer-events-none empty:before:content-[attr(data-placeholder)]",
-        "empty:before:font-normal empty:before:leading-relaxed empty:before:text-slate-400/75",
+        "empty:before:font-normal empty:before:leading-relaxed empty:before:text-muted-foreground/40",
         className,
       )}
       onMouseDown={(e) => {

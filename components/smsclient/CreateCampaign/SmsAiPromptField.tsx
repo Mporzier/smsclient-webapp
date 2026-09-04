@@ -38,7 +38,7 @@ export function SmsAiPromptField({
           className={cn(
             "block min-h-28 w-full resize-none border-none bg-transparent px-3.5 py-3.5",
             "text-sm font-semibold leading-relaxed text-slate-900 outline-none",
-            "placeholder:font-normal placeholder:leading-relaxed placeholder:text-slate-400/75",
+            "placeholder:font-normal placeholder:leading-relaxed placeholder:text-muted-foreground/40",
             disabled && "cursor-not-allowed opacity-60",
           )}
         />

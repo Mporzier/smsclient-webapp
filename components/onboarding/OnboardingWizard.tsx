@@ -246,7 +246,7 @@ export function OnboardingWizard() {
                 maxLength={PHONE_DISPLAY_MAX_LENGTH}
                 value={form.phone}
                 onChange={(e) => setField("phone", e.target.value)}
-                placeholder="06 12 34 56 78"
+                placeholder="Ex. 06 12 34 56 78"
               />
             </div>
           </div>

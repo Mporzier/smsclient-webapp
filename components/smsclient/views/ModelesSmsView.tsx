@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { MODELE_SMS_COL } from "@/components/smsclient/listColumnSizes";
+import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
   EmptyContent,
@@ -25,15 +27,19 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { useI18n } from "@/lib/i18n";
 import {
+  countMatchingSmsTemplates,
   createUserSmsTemplate,
-  deleteUserSmsTemplate,
+  deleteUserSmsTemplates,
+  fetchMatchingSmsTemplateIds,
+  updateUserSmsTemplate,
 } from "@/lib/supabase/smsTemplates";
 import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { LayoutTemplate, MoreHorizontal, Plus, Search } from "lucide-react";
+import { LayoutTemplate, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import type {
@@ -78,10 +84,59 @@ export function ModelesSmsView({
   customFieldDefs = [],
 }: ModelesSmsViewProps) {
   const { t } = useI18n();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<UserSmsTemplateRow | null>(
-    null,
-  );
+  const [formOpen, setFormOpen] = useState(false);
+  const [modalRow, setModalRow] = useState<UserSmsTemplateRow | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    ids: string[];
+  } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const loadedIds = useMemo(() => rows.map((r) => r.id), [rows]);
+
+  const setSelectedIdsList = useCallback((ids: string[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const countMatch = useCallback(async () => {
+    if (!userId) return { count: loadedIds.length, error: null };
+    return countMatchingSmsTemplates(supabase, userId, {
+      search: searchQuery,
+    });
+  }, [userId, supabase, searchQuery, loadedIds.length]);
+
+  const fetchAllIds = useCallback(async () => {
+    if (!userId) {
+      return { data: loadedIds, error: null };
+    }
+    return fetchMatchingSmsTemplateIds(supabase, userId, {
+      search: searchQuery,
+    });
+  }, [userId, supabase, searchQuery, loadedIds]);
+
+  const {
+    selectLoaded,
+    clearSelection,
+    showExpandBanner,
+    matchTotal,
+    displaySelectedCount,
+    counting,
+    expanding,
+    expandError,
+    expandToMatchAll,
+    ensureSelectionReady,
+  } = useGmailSelectAll({
+    search: searchQuery,
+    loadedIds,
+    selectedIds,
+    setSelectedIds: setSelectedIdsList,
+    countMatch,
+    fetchAllIds,
+    expandCandidate:
+      hasMore ||
+      (typeof totalCount === "number" && totalCount > loadedIds.length),
+  });
+
+  const hasSelection = displaySelectedCount > 0;
 
   const showBigEmpty =
     !loading && !error && rows.length === 0 && searchQuery.trim() === "";
@@ -116,25 +171,89 @@ export function ModelesSmsView({
     [userId, supabase, t],
   );
 
-  const handleCreated = useCallback(async () => {
+  const handleUpdate = useCallback(
+    async (
+      id: string,
+      args: { title: string; description: string; body: string },
+    ) => {
+      if (!userId) {
+        return { data: null, error: t("templates.loginRequired") };
+      }
+      const { data, error: updateError } = await updateUserSmsTemplate(
+        supabase,
+        userId,
+        id,
+        args,
+      );
+      if (updateError || !data) {
+        return {
+          data: null,
+          error: updateError?.message ?? t("templates.updateFailed"),
+        };
+      }
+      return { data, error: null };
+    },
+    [userId, supabase, t],
+  );
+
+  const handleSaved = useCallback(async () => {
+    const wasEdit = Boolean(modalRow);
     await onRefresh();
-    toast(t("templates.createdToast"));
-  }, [onRefresh, t]);
+    toast(wasEdit ? t("templates.updatedToast") : t("templates.createdToast"));
+  }, [modalRow, onRefresh, t]);
 
   const handleConfirmDelete = useCallback(async () => {
-    if (!deleteTarget || !userId) return;
-    const { error: delError } = await deleteUserSmsTemplate(
+    if (!pendingDelete || !userId) return;
+    const { error: delError } = await deleteUserSmsTemplates(
       supabase,
       userId,
-      deleteTarget.id,
+      pendingDelete.ids,
     );
     if (delError) throw delError;
-    setDeleteTarget(null);
+    const n = pendingDelete.ids.length;
+    setPendingDelete(null);
+    setFormOpen(false);
+    setModalRow(null);
+    clearSelection();
     await onRefresh();
-    toast(t("templates.deletedToast"));
-  }, [deleteTarget, userId, supabase, onRefresh, t]);
+    toast(
+      n > 1
+        ? t("templates.deletedManyToast", { n })
+        : t("templates.deletedToast"),
+    );
+  }, [pendingDelete, userId, supabase, onRefresh, t, clearSelection]);
 
-  const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
+  const allLoadedSelected =
+    rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allLoadedSelected) {
+      clearSelection();
+      return;
+    }
+    selectLoaded();
+  }, [allLoadedSelected, clearSelection, selectLoaded]);
+
+  const openCreate = useCallback(() => {
+    setModalRow(null);
+    setFormOpen(true);
+  }, []);
+
+  const openEdit = useCallback((row: UserSmsTemplateRow) => {
+    setModalRow(row);
+    setFormOpen(true);
+  }, []);
+
+  const dataColumns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
@@ -171,6 +290,47 @@ export function ModelesSmsView({
           </CellTruncate>
         ),
       },
+    ],
+    [t],
+  );
+
+  const columns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        size: MODELE_SMS_COL.select,
+        minSize: MODELE_SMS_COL.select,
+        maxSize: MODELE_SMS_COL.select,
+        enableResizing: false,
+        header: () => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                allLoadedSelected
+                  ? true
+                  : selectedIds.size > 0
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={() => toggleAll()}
+              aria-label={t("templates.selectAllAria")}
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={selectedIds.has(row.original.id)}
+              onCheckedChange={() => toggleSelect(row.original.id)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={t("templates.selectOneAria", {
+                name: row.original.title,
+              })}
+            />
+          </div>
+        ),
+      },
+      ...dataColumns,
       {
         id: "actions",
         size: MODELE_SMS_COL.actions,
@@ -196,9 +356,14 @@ export function ModelesSmsView({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onSelect={() => openEdit(row.original)}>
+                  {t("common.edit")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => setDeleteTarget(row.original)}
+                  onSelect={() =>
+                    setPendingDelete({ ids: [row.original.id] })
+                  }
                 >
                   {t("common.delete")}
                 </DropdownMenuItem>
@@ -208,18 +373,32 @@ export function ModelesSmsView({
         ),
       },
     ],
-    [t],
+    [
+      selectedIds,
+      allLoadedSelected,
+      toggleAll,
+      toggleSelect,
+      openEdit,
+      dataColumns,
+      t,
+    ],
   );
 
-  const deleteDescription = deleteTarget
-    ? t("templates.deleteDesc", { title: deleteTarget.title })
-    : "";
+  const deleteCount = pendingDelete?.ids.length ?? 0;
+  const deleteTitle =
+    deleteCount > 1
+      ? t("templates.deleteManyTitle", { n: deleteCount })
+      : t("templates.deleteTitle", { n: deleteCount || 1 });
+  const deleteDescription =
+    deleteCount > 1
+      ? t("templates.deleteManyDesc")
+      : t("templates.deleteDesc");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <InputGroup
-          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
           role="search"
         >
           <InputGroupAddon align="inline-start">
@@ -232,16 +411,47 @@ export function ModelesSmsView({
             aria-label={t("templates.searchAria")}
           />
         </InputGroup>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="default"
-            size="lg"
-            className="rounded-full"
-            onClick={() => setCreateOpen(true)}
-          >
-            <Plus aria-hidden />
-            {t("templates.create")}
-          </Button>
+        {showExpandBanner ? (
+          <SelectAllExpandBanner
+            matchTotal={matchTotal}
+            hasSearch={searchQuery.trim().length > 0}
+            entityLabel="modèles"
+            counting={counting}
+            expanding={expanding}
+            error={expandError}
+            onExpand={() => void expandToMatchAll()}
+          />
+        ) : (
+          <div className="min-w-0 flex-1" aria-hidden />
+        )}
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+          {hasSelection ? (
+            <Button
+              variant="destructive"
+              size="lg"
+              className="rounded-full"
+              onClick={() => {
+                void (async () => {
+                  const ids = await ensureSelectionReady();
+                  if (ids.length === 0) return;
+                  setPendingDelete({ ids });
+                })();
+              }}
+            >
+              <Trash2 aria-hidden />
+              {t("templates.deleteSelected", { n: displaySelectedCount })}
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="lg"
+              className="rounded-full"
+              onClick={openCreate}
+            >
+              <Plus aria-hidden />
+              {t("templates.create")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -249,6 +459,12 @@ export function ModelesSmsView({
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
           {error}
         </div>
+      ) : null}
+
+      {expandError && !showExpandBanner ? (
+        <p className="m-0 text-xs font-semibold text-destructive">
+          {expandError}
+        </p>
       ) : null}
 
       {showBigEmpty ? (
@@ -264,7 +480,7 @@ export function ModelesSmsView({
             <Button
               variant="default"
               className="rounded-full"
-              onClick={() => setCreateOpen(true)}
+              onClick={openCreate}
             >
               <Plus aria-hidden />
               {t("templates.create")}
@@ -288,23 +504,35 @@ export function ModelesSmsView({
           sorting={sorting}
           onSortingChange={onSortingChange}
           manualSorting
+          onRowClick={openEdit}
         />
       )}
 
       <CreateSmsTemplateModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        open={formOpen}
+        editRow={modalRow}
+        onClose={() => {
+          setFormOpen(false);
+          setModalRow(null);
+        }}
         onCreate={handleCreate}
-        onCreated={() => void handleCreated()}
+        onUpdate={handleUpdate}
+        onCreated={() => void handleSaved()}
+        onDelete={
+          modalRow
+            ? () => setPendingDelete({ ids: [modalRow.id] })
+            : undefined
+        }
         customFieldDefs={customFieldDefs}
       />
 
       <ConfirmDeleteModal
-        open={deleteTarget !== null}
-        title={t("templates.deleteTitle")}
+        open={pendingDelete !== null}
+        stacked={formOpen && pendingDelete !== null}
+        title={deleteTitle}
         description={deleteDescription}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => setPendingDelete(null)}
       />
     </div>
   );
