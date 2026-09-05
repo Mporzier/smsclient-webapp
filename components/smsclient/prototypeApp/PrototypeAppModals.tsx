@@ -7,6 +7,7 @@ import {
   CampaignDetailsModal,
   CampaignNameModal,
   ConfirmDeleteModal,
+  ConfirmGroupDeleteModal,
   ContactCreateModal,
   GroupModal,
   GroupQuickCreateModal,
@@ -201,6 +202,18 @@ export function PrototypeAppModals({ ctx }: Props) {
         }
         onConfirm={modals.confirmDeleteAction ?? (async () => {})}
         onCancel={() => modals.setConfirmDeleteOpen(false)}
+      />
+
+      <ConfirmGroupDeleteModal
+        open={modals.confirmGroupDeleteOpen}
+        count={modals.confirmGroupDeleteCount}
+        fromEdit={modals.confirmGroupDeleteFromEdit}
+        stacked={
+          modals.confirmGroupDeleteOpen &&
+          (modals.groupEditOpen || modals.contactModalOpen)
+        }
+        onConfirm={modals.confirmGroupDeleteAction ?? (async () => {})}
+        onCancel={() => modals.setConfirmGroupDeleteOpen(false)}
       />
 
       <CampaignWizardLeaveConfirmModal

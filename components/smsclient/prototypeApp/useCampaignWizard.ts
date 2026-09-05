@@ -178,10 +178,42 @@ export function useCampaignWizard({
     const ids: string[] = [];
     for (const name of campaignSelectedGroupNames) {
       const members = groupMemberIdsByName[name];
-      if (members) ids.push(...members);
+      if (members != null) ids.push(...members);
     }
     return ids;
   }, [campaignSelectedGroupNames, groupMemberIdsByName]);
+
+  const listsRecipientCountEstimate = useMemo(() => {
+    if (campaignRecipientMode !== "lists") return null;
+    const ids = new Set(campaignSelectedContactIds);
+    let pendingEstimate = 0;
+
+    for (const name of campaignSelectedGroupNames) {
+      const members = groupMemberIdsByName[name];
+      const row = groupRows.find(
+        (g) => g.name.trim().toLowerCase() === name.trim().toLowerCase(),
+      );
+      if (members != null) {
+        if (members.length > 0) {
+          for (const id of members) ids.add(id);
+        } else if ((row?.contactCount ?? 0) > 0) {
+          pendingEstimate += row?.contactCount ?? 0;
+        }
+        continue;
+      }
+      pendingEstimate += row?.contactCount ?? 0;
+    }
+
+    for (const id of campaignExcludedContactIds) ids.delete(id);
+    return ids.size + pendingEstimate;
+  }, [
+    campaignRecipientMode,
+    campaignSelectedContactIds,
+    campaignSelectedGroupNames,
+    groupMemberIdsByName,
+    groupRows,
+    campaignExcludedContactIds,
+  ]);
 
   const recipientIdSet = useMemo(
     () =>
@@ -203,13 +235,27 @@ export function useCampaignWizard({
     ]
   );
 
+  const effectiveEligibleAudience = useMemo((): CampaignEligibleAudienceFilter | null => {
+    if (!campaignEligibleAudience) return null;
+    if (campaignEligibleAudience.search !== contactsSearchQuery) return null;
+    if (campaignSelectedGroupNames.length > 0) return null;
+    return campaignEligibleAudience;
+  }, [
+    campaignEligibleAudience,
+    contactsSearchQuery,
+    campaignSelectedGroupNames.length,
+  ]);
+
+  const effectiveEligibleAudienceCount =
+    effectiveEligibleAudience != null ? campaignEligibleAudienceCount : null;
+
   const recipientIdsKey = useMemo(() => {
-    if (campaignEligibleAudience) {
-      return `audience\0${campaignEligibleAudience.search}\0${[...campaignExcludedContactIds].sort().join("\0")}`;
+    if (effectiveEligibleAudience) {
+      return `audience\0${effectiveEligibleAudience.search}\0${[...campaignExcludedContactIds].sort().join("\0")}`;
     }
     return Array.from(recipientIdSet).sort().join("\0");
   }, [
-    campaignEligibleAudience,
+    effectiveEligibleAudience,
     campaignExcludedContactIds,
     recipientIdSet,
   ]);
@@ -235,7 +281,6 @@ export function useCampaignWizard({
         return;
       }
 
-      setRecipientsResolving(true);
       const next: Record<string, string[]> = {};
       for (const name of campaignSelectedGroupNames) {
         const cached = groupMemberCacheRef.current[name];
@@ -300,7 +345,9 @@ export function useCampaignWizard({
         (name) => groupMemberIdsByName[name] == null,
       );
       if (groupsPending) {
-        setRecipientsResolving(true);
+        if (campaignWizardStep >= 3) {
+          setRecipientsResolving(true);
+        }
         return;
       }
 
@@ -315,9 +362,9 @@ export function useCampaignWizard({
 
       setRecipientsResolving(true);
 
-      if (campaignEligibleAudience) {
+      if (effectiveEligibleAudience) {
         const { data, error } = await fetchClientsForCampaignRpc(supabase, {
-          search: campaignEligibleAudience.search,
+          search: effectiveEligibleAudience.search,
           eligibleOnly: true,
           allEligible: true,
           excludeIds: campaignExcludedContactIds,
@@ -380,7 +427,8 @@ export function useCampaignWizard({
   }, [
     contactsResolveKey,
     campaignSelectedGroupNames,
-    campaignEligibleAudience,
+    campaignWizardStep,
+    effectiveEligibleAudience,
     campaignExcludedContactIds,
     groupMemberIdsByName,
     supabase,
@@ -400,8 +448,8 @@ export function useCampaignWizard({
     if (campaignRecipientMode === "numbers" || campaignWizardStep < 2) {
       return null;
     }
-    if (campaignEligibleAudience) {
-      return `audience\0${campaignEligibleAudience.search}\0${excludeIdsKey}\0${customFieldIdsKey}`;
+    if (effectiveEligibleAudience) {
+      return `audience\0${effectiveEligibleAudience.search}\0${excludeIdsKey}\0${customFieldIdsKey}`;
     }
     if (campaignRecipientMode === "all") {
       return `all\0${excludeIdsKey}\0${customFieldIdsKey}`;
@@ -410,7 +458,7 @@ export function useCampaignWizard({
   }, [
     campaignRecipientMode,
     campaignWizardStep,
-    campaignEligibleAudience,
+    effectiveEligibleAudience,
     excludeIdsKey,
     customFieldIdsKey,
     recipientIdsKey,
@@ -450,7 +498,7 @@ export function useCampaignWizard({
           customIds,
           allEligible: true,
           excludeIds,
-          search: campaignEligibleAudience?.search ?? "",
+          search: effectiveEligibleAudience?.search ?? "",
         });
         if (cancelled || gen !== mergeFillGenRef.current) return;
         if (error) {
@@ -513,7 +561,7 @@ export function useCampaignWizard({
   }, [
     mergeFillRequestKey,
     campaignRecipientMode,
-    campaignEligibleAudience,
+    effectiveEligibleAudience,
     campaignSelectedGroupNames,
     customFieldIdsKey,
     excludeIdsKey,
@@ -562,12 +610,12 @@ export function useCampaignWizard({
       return campaignManualNumberStats.eligible;
     }
     if (
-      campaignEligibleAudience &&
-      campaignEligibleAudienceCount != null
+      effectiveEligibleAudience &&
+      effectiveEligibleAudienceCount != null
     ) {
       return Math.max(
         0,
-        campaignEligibleAudienceCount - campaignExcludedContactIds.length,
+        effectiveEligibleAudienceCount - campaignExcludedContactIds.length,
       );
     }
     const idCount = recipientIdSet.size;
@@ -577,16 +625,20 @@ export function useCampaignWizard({
     if (resolvedComplete) {
       return resolvedEligibleCount;
     }
+    if (campaignRecipientMode === "lists" && listsRecipientCountEstimate != null) {
+      return Math.max(listsRecipientCountEstimate, idCount);
+    }
     return idCount;
   }, [
     campaignRecipientMode,
     campaignManualNumberStats,
-    campaignEligibleAudience,
-    campaignEligibleAudienceCount,
+    effectiveEligibleAudience,
+    effectiveEligibleAudienceCount,
     campaignExcludedContactIds.length,
     campaignSelectedContacts.length,
     recipientIdSet,
     resolvedEligibleCount,
+    listsRecipientCountEstimate,
   ]);
 
   const campaignRecipientSelectedRaw = useMemo(() => {
@@ -594,10 +646,10 @@ export function useCampaignWizard({
       return campaignManualNumberStats.raw;
     }
     if (
-      campaignEligibleAudience &&
-      campaignEligibleAudienceCount != null
+      effectiveEligibleAudience &&
+      effectiveEligibleAudienceCount != null
     ) {
-      return campaignEligibleAudienceCount;
+      return effectiveEligibleAudienceCount;
     }
     const idCount = recipientIdSet.size;
     const resolvedComplete =
@@ -610,6 +662,8 @@ export function useCampaignWizard({
   }, [
     campaignRecipientMode,
     campaignManualNumberStats,
+    effectiveEligibleAudience,
+    effectiveEligibleAudienceCount,
     campaignSelectedContacts.length,
     recipientIdSet,
   ]);
@@ -638,8 +692,8 @@ export function useCampaignWizard({
   }, [clearListSearches]);
 
   const setCampaignSelectedContactIdsFromGmail = useCallback(
-    (ids: string[]) => {
-      setCampaignSelectedContactIds(ids);
+    (value: SetStateAction<string[]>) => {
+      setCampaignSelectedContactIds(value);
     },
     [],
   );
@@ -675,23 +729,6 @@ export function useCampaignWizard({
     },
     [supabase, campaignSelectedGroupNames.length],
   );
-
-  useEffect(() => {
-    if (
-      campaignEligibleAudience &&
-      campaignEligibleAudience.search !== contactsSearchQuery
-    ) {
-      setCampaignEligibleAudience(null);
-      setCampaignEligibleAudienceCount(null);
-    }
-  }, [contactsSearchQuery, campaignEligibleAudience]);
-
-  useEffect(() => {
-    if (campaignSelectedGroupNames.length > 0 && campaignEligibleAudience) {
-      setCampaignEligibleAudience(null);
-      setCampaignEligibleAudienceCount(null);
-    }
-  }, [campaignSelectedGroupNames.length, campaignEligibleAudience]);
 
   const buildCurrentWizardSnapshot = useCallback(
     (): CampaignWizardFormSnapshot => ({
@@ -1015,8 +1052,8 @@ export function useCampaignWizard({
     setSelectedContactIdsFromGmail: setCampaignSelectedContactIdsFromGmail,
     excludedContactIds: campaignExcludedContactIds,
     setExcludedContactIds: setCampaignExcludedContactIds,
-    eligibleAudienceFilter: campaignEligibleAudience,
-    eligibleAudienceCount: campaignEligibleAudienceCount,
+    eligibleAudienceFilter: effectiveEligibleAudience,
+    eligibleAudienceCount: effectiveEligibleAudienceCount,
     recipientSelectedRaw: campaignRecipientSelectedRaw,
     recipientExcludedStop: campaignExcludedStop,
     recipientExcludedInvalid: campaignExcludedInvalid,

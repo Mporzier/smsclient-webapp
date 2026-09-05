@@ -2,10 +2,10 @@
 
 import { GroupesView } from "@/components/smsclient/views/GroupesView";
 import { GroupModal } from "@/components/smsclient/modals/GroupModal";
-import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import { ConfirmGroupDeleteModal } from "@/components/smsclient/modals/ConfirmGroupDeleteModal";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
-import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import {
   contactToGroupModalRow,
@@ -27,6 +27,7 @@ export function GroupesFlowHarness({
   const [contacts, setContacts] = useState<ContactRowData[]>(initialContacts);
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<GroupRowData | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -137,6 +138,8 @@ export function GroupesFlowHarness({
         onSearchChange={setSearchQuery}
         sorting={sorting}
         onSortingChange={setSorting}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={setColumnFilters}
         onCreateGroup={() => setCreateOpen(true)}
         onEditGroup={setEditGroup}
         onDeleteGroups={onDeleteGroups}
@@ -169,10 +172,9 @@ export function GroupesFlowHarness({
         }
       />
 
-      <ConfirmDeleteModal
+      <ConfirmGroupDeleteModal
         open={confirmOpen}
-        title={`Supprimer ${n} groupe${n > 1 ? "s" : ""} ?`}
-        description="Le groupe sera retiré de vos listes."
+        count={n}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);

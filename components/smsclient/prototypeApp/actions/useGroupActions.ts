@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  addClientsToGroupByName,
   replaceGroupMembers,
 } from "@/lib/supabase/clients";
 import {
+  createClientGroupWithMembers,
   deleteGroups,
-  insertClientGroup,
   updateClientGroup,
 } from "@/lib/supabase/groups";
 import { useCallback } from "react";
@@ -18,10 +17,10 @@ export function useGroupActions({ data, modals }: ActionsContext) {
   const {
     contactModalOpen,
     groupEditRow,
-    setConfirmDeleteOpen,
+    setConfirmGroupDeleteOpen,
     setGroupEditOpen,
     setGroupEditRow,
-    openConfirmDelete,
+    openConfirmGroupDelete,
     setCmGroups,
   } = modals;
 
@@ -39,59 +38,44 @@ export function useGroupActions({ data, modals }: ActionsContext) {
   const handleDeleteGroups = useCallback(
     (ids: string[]) => {
       const n = ids.length;
-      openConfirmDelete(
-        `Supprimer ${n} groupe${n > 1 ? "s" : ""} ?`,
-        `${
-          n > 1 ? "Les groupes sélectionnés seront" : "Le groupe sera"
-        } retiré${
-          n > 1 ? "s" : ""
-        } de vos listes. Les contacts ne sont pas supprimés. Restauration possible dans Paramètres → Éléments supprimés.`,
-        async () => {
-          const { error } = await deleteGroups(supabase, ids);
-          if (error) throw error;
-          setConfirmDeleteOpen(false);
-          groupsState.refresh();
-          void trashState.refresh();
-          toast(
-            `${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`
-          );
-        }
-      );
+      openConfirmGroupDelete(n, async () => {
+        const { error } = await deleteGroups(supabase, ids);
+        if (error) throw error;
+        setConfirmGroupDeleteOpen(false);
+        groupsState.refresh();
+        void trashState.refresh();
+        toast(`${n} groupe${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}.`);
+      });
     },
     [
-      openConfirmDelete,
+      openConfirmGroupDelete,
       supabase,
       groupsState,
       trashState,
-      setConfirmDeleteOpen,
+      setConfirmGroupDeleteOpen,
     ]
   );
 
   const handleDeleteGroupFromModal = useCallback(() => {
     if (!groupEditRow) return;
     const id = groupEditRow.id;
-    const groupName = groupEditRow.name;
-    openConfirmDelete(
-      "Supprimer ce groupe ?",
-      `Le groupe « ${groupName} » sera retiré de vos listes. Les contacts ne sont pas supprimés. Vous pourrez le restaurer dans Paramètres → Éléments supprimés.`,
-      async () => {
-        const { error } = await deleteGroups(supabase, [id]);
-        if (error) throw error;
-        setConfirmDeleteOpen(false);
-        setGroupEditOpen(false);
-        setGroupEditRow(null);
-        groupsState.refresh();
-        void trashState.refresh();
-        toast("Groupe supprimé.");
-      }
-    );
+    openConfirmGroupDelete(1, async () => {
+      const { error } = await deleteGroups(supabase, [id]);
+      if (error) throw error;
+      setConfirmGroupDeleteOpen(false);
+      setGroupEditOpen(false);
+      setGroupEditRow(null);
+      groupsState.refresh();
+      void trashState.refresh();
+      toast("Groupe supprimé.");
+    }, true);
   }, [
     groupEditRow,
-    openConfirmDelete,
+    openConfirmGroupDelete,
     supabase,
     groupsState,
     trashState,
-    setConfirmDeleteOpen,
+    setConfirmGroupDeleteOpen,
     setGroupEditOpen,
     setGroupEditRow,
   ]);
@@ -102,19 +86,15 @@ export function useGroupActions({ data, modals }: ActionsContext) {
         throw new Error("Vous devez être connecté pour créer un groupe.");
       }
       const trimmed = name.trim();
-      const { error } = await insertClientGroup(supabase, user.id, name, desc);
+      const { error } = await createClientGroupWithMembers(
+        supabase,
+        trimmed,
+        desc,
+        selectedContactIds,
+      );
       if (error) throw error;
-      if (selectedContactIds.length > 0) {
-        const assign = await addClientsToGroupByName(
-          supabase,
-          user.id,
-          selectedContactIds,
-          trimmed
-        );
-        if (assign.error) throw assign.error;
-      }
-      await groupsState.refresh();
-      await contactsState.refresh();
+      void groupsState.refresh();
+      void contactsState.refresh({ silent: true });
       if (contactModalOpen) {
         preselectGroupOnContactForm(trimmed);
       }
@@ -142,14 +122,14 @@ export function useGroupActions({ data, modals }: ActionsContext) {
         throw new Error("Vous devez être connecté pour créer un groupe.");
       }
       const trimmed = name.trim();
-      const { error } = await insertClientGroup(
+      const { error } = await createClientGroupWithMembers(
         supabase,
-        user.id,
         trimmed,
-        desc
+        desc,
+        [],
       );
       if (error) throw error;
-      await groupsState.refresh();
+      void groupsState.refresh();
       preselectGroupOnContactForm(trimmed);
       toast("Groupe créé");
     },
@@ -178,8 +158,8 @@ export function useGroupActions({ data, modals }: ActionsContext) {
         payload.selectedContactIds
       );
       if (memErr) throw memErr;
-      await groupsState.refresh();
-      await contactsState.refresh();
+      void groupsState.refresh();
+      void contactsState.refresh({ silent: true });
       toast("Groupe modifié");
     },
     [user, supabase, groupsState, contactsState]

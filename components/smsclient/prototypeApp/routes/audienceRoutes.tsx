@@ -9,11 +9,13 @@ import {
 import {
   countClientIds,
   fetchClientIds,
+  fetchDistinctClientSources,
 } from "@/lib/supabase/clients";
 import {
   countMatchingGroups,
   fetchMatchingGroups,
 } from "@/lib/supabase/groups";
+import { customFieldTypesFromDefs } from "@/lib/proto/listFilterUi";
 import type { AppRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
 import type { PrototypeAppContext } from "../usePrototypeApp";
@@ -75,6 +77,24 @@ export function renderAudienceRoute(
           onSearchChange={contactsState.setSearchInput}
           sorting={contactsState.sorting}
           onSortingChange={contactsState.setSorting}
+          columnFilters={contactsState.columnFilters}
+          onColumnFiltersChange={contactsState.setColumnFilters}
+          setCustomFieldFilterTypes={contactsState.setCustomFieldFilterTypes}
+          loadFilterFacets={async () => {
+            const [sources, groupsRes] = await Promise.all([
+              fetchDistinctClientSources(supabase),
+              user?.id
+                ? fetchMatchingGroups(supabase, user.id, {})
+                : Promise.resolve({ data: [], error: null }),
+            ]);
+            return {
+              sources,
+              groups: groupsRes.data.map((g) => ({
+                id: g.id,
+                name: g.name,
+              })),
+            };
+          }}
           error={contactsState.error}
           customFieldDefs={customFieldsState.defs}
           unsubscribedContacts={data.unsubscribedContacts}
@@ -90,11 +110,25 @@ export function renderAudienceRoute(
             wizard.openCampaignComposer({ contactIds: ids })
           }
           onResubscribeContacts={actions.handleResubscribeContacts}
-          onCountSelectableMatches={(search) =>
-            countClientIds(supabase, { search, eligibleOnly: true })
+          onCountSelectableMatches={(search, filters) =>
+            countClientIds(supabase, {
+              search,
+              eligibleOnly: true,
+              filters,
+              customFieldTypes: customFieldTypesFromDefs(
+                customFieldsState.defs,
+              ),
+            })
           }
-          onFetchSelectableMatchIds={(search) =>
-            fetchClientIds(supabase, { search, eligibleOnly: true })
+          onFetchSelectableMatchIds={(search, filters) =>
+            fetchClientIds(supabase, {
+              search,
+              eligibleOnly: true,
+              filters,
+              customFieldTypes: customFieldTypesFromDefs(
+                customFieldsState.defs,
+              ),
+            })
           }
         />
       );
@@ -111,6 +145,8 @@ export function renderAudienceRoute(
           onSearchChange={groupsState.setSearchInput}
           sorting={groupsState.sorting}
           onSortingChange={groupsState.setSorting}
+          columnFilters={groupsState.columnFilters}
+          onColumnFiltersChange={groupsState.setColumnFilters}
           error={groupsState.error}
           onCreateGroup={() => modals.setGroupModalOpen(true)}
           onEditGroup={modals.openGroupEdit}
@@ -122,7 +158,10 @@ export function renderAudienceRoute(
               const { data: matched, error } = await fetchMatchingGroups(
                 supabase,
                 user.id,
-                { search: groupsState.searchInput },
+                {
+                  search: groupsState.searchInput,
+                  filters: groupsState.columnFilters,
+                },
               );
               const names = error
                 ? groupsState.rows
@@ -134,17 +173,17 @@ export function renderAudienceRoute(
               wizard.openCampaignComposer({ groupNames: names });
             })();
           }}
-          onCountSelectableMatches={(search) =>
+          onCountSelectableMatches={(search, filters) =>
             user?.id
-              ? countMatchingGroups(supabase, user.id, { search })
+              ? countMatchingGroups(supabase, user.id, { search, filters })
               : Promise.resolve({ count: 0, error: null })
           }
-          onFetchSelectableMatchIds={async (search) => {
+          onFetchSelectableMatchIds={async (search, filters) => {
             if (!user?.id) return { data: [], error: null };
             const { data: matched, error } = await fetchMatchingGroups(
               supabase,
               user.id,
-              { search },
+              { search, filters },
             );
             if (error) return { data: [], error };
             return { data: matched.map((g) => g.id), error: null };

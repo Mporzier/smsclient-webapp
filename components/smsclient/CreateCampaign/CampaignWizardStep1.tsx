@@ -33,7 +33,7 @@ import {
   Plus,
   UserRound,
   CheckCheck,
-  X,
+  Eraser,
 } from "lucide-react";
 import {
   createContext,
@@ -89,10 +89,10 @@ export function CampaignWizardStep1MessageSummary({
   hasEnoughCredits: boolean;
   pendingSms?: boolean;
 }) {
-  const { summaryRecipientCount } = useStep1Context();
+  const { recipients } = useStep1Context();
   return (
     <CampaignWizardMessageSummary
-      recipients={summaryRecipientCount}
+      recipients={recipients}
       parts={parts}
       partsMin={partsMin}
       partsMax={partsMax}
@@ -348,8 +348,8 @@ export function CampaignWizardStep1Main() {
             onClick={handleClearSelection}
             disabled={!canClearSelection}
           >
-            <X aria-hidden />
-            Tout désélectionner
+            <Eraser aria-hidden />
+            Effacer la sélection
           </Button>
         </div>
       </div>

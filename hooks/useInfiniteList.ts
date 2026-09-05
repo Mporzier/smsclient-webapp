@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { listFiltersKey, type ListColumnFilter } from "@/lib/proto/listFilters";
 import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
 
 export type PageResult<T> = {
@@ -22,6 +23,7 @@ type FetchPageFn<T> = (args: {
   limit: number;
   search: string;
   sort: ListSort | null;
+  filters?: ListColumnFilter[];
 }) => Promise<PageResult<T>>;
 
 type UseInfiniteListOptions<T> = {
@@ -32,6 +34,7 @@ type UseInfiniteListOptions<T> = {
   pageSize?: number;
   /** Active server sort — change resets list like search. */
   sort?: ListSort | null;
+  filters?: ListColumnFilter[];
 };
 
 /**
@@ -44,6 +47,7 @@ export function useInfiniteList<T extends { id: string }>({
   searchDebounceMs = 300,
   pageSize = LIST_PAGE_SIZE,
   sort = null,
+  filters = [],
 }: UseInfiniteListOptions<T>) {
   const [rows, setRows] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,10 +63,13 @@ export function useInfiniteList<T extends { id: string }>({
   const inflightRef = useRef(0);
   const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
   const sortRef = useRef(sort);
+  const filtersKey = listFiltersKey(filters);
+  const filtersRef = useRef(filters);
 
   useEffect(() => {
     fetchPageRef.current = fetchPage;
     sortRef.current = sort;
+    filtersRef.current = filters;
   });
 
   useEffect(() => {
@@ -99,6 +106,7 @@ export function useInfiniteList<T extends { id: string }>({
           limit: pageSize,
           search,
           sort: sortRef.current ?? null,
+          filters: filtersRef.current ?? [],
         })
         .then((res) => {
           if (cancelled || reqId !== inflightRef.current) return;
@@ -121,7 +129,7 @@ export function useInfiniteList<T extends { id: string }>({
     return () => {
       cancelled = true;
     };
-  }, [enabled, search, pageSize, reloadKey, sortKey]);
+  }, [enabled, search, pageSize, reloadKey, sortKey, filtersKey]);
 
   const loadMore = useCallback(async () => {
     if (!enabled || loading || loadingMore || !hasMore) return;
@@ -133,6 +141,7 @@ export function useInfiniteList<T extends { id: string }>({
       limit: pageSize,
       search,
       sort: sortRef.current ?? null,
+      filters: filtersRef.current ?? [],
     });
     if (reqId !== inflightRef.current) {
       setLoadingMore(false);
@@ -173,6 +182,7 @@ export function useInfiniteList<T extends { id: string }>({
       limit: pageSize,
       search,
       sort: sortRef.current ?? null,
+      filters: filtersRef.current ?? [],
     });
     if (reqId !== inflightRef.current) return;
     if (res.error) {

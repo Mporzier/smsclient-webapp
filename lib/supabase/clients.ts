@@ -5,20 +5,27 @@ import {
 } from "@/lib/proto/smsUtils";
 import { formatParisCalendarDate } from "@/lib/proto/timezone";
 import type { ContactRowData } from "@/lib/types/contact";
-import type { CustomFieldValues } from "@/lib/types/customFields";
+import type { CustomFieldType, CustomFieldValues } from "@/lib/types/customFields";
 import {
   contactSortToOrders,
   type ContactListSort,
 } from "@/lib/proto/contactSort";
+import { normalizeListFilters, type ListColumnFilter } from "@/lib/proto/listFilters";
 import {
   POSTGREST_IN_CHUNK,
   POSTGREST_INSERT_CHUNK,
+  POSTGREST_PAGE,
   LIST_PAGE_SIZE,
   chunkList,
   paginateRange,
 } from "@/lib/supabase/postgrestChunk";
 import { listClientIdsRpc } from "@/lib/supabase/campaignAudience";
 import { applyClientListSearch } from "@/lib/supabase/clientSearch";
+import { applyClientListFilters } from "@/lib/supabase/clientListFilters";
+import {
+  attachFilterQueryAsync,
+  type FilterQuery,
+} from "@/lib/supabase/listFilterSql";
 
 export type ClientRecord = {
   id: string;
@@ -248,7 +255,26 @@ export type FetchClientsPageArgs = {
   sort?: ContactListSort | null;
   /** Exclut les désabonnés (opt-out / STOP) — liste contacts principale. */
   eligibleOnly?: boolean;
+  filters?: ListColumnFilter[];
+  customFieldTypes?: Record<string, CustomFieldType>;
 };
+
+type ClientListFilterArgs = {
+  filters?: ListColumnFilter[];
+  customFieldTypes?: Record<string, CustomFieldType>;
+  eligibleOnly?: boolean;
+};
+
+function applyClientsFilters(
+  supabase: SupabaseClient,
+  args: ClientListFilterArgs,
+): (query: FilterQuery) => ReturnType<typeof applyClientListFilters> {
+  return (query) =>
+    applyClientListFilters(supabase, query, args.filters ?? [], {
+      customFieldTypes: args.customFieldTypes,
+      eligibleOnly: args.eligibleOnly ?? false,
+    });
+}
 
 export async function fetchClientsPage(
   supabase: SupabaseClient,
@@ -273,6 +299,8 @@ export async function fetchClientsPage(
   }
 
   query = applyClientListSearch(query, args.search ?? "");
+  query = (await attachFilterQueryAsync(query, applyClientsFilters(supabase, args)))
+    .query;
 
   for (const o of contactSortToOrders(args.sort)) {
     query = query.order(o.column, {
@@ -322,7 +350,12 @@ export async function fetchClientsPage(
 
 export async function countClientIds(
   supabase: SupabaseClient,
-  args: { search?: string; eligibleOnly: boolean },
+  args: {
+    search?: string;
+    eligibleOnly: boolean;
+    filters?: ListColumnFilter[];
+    customFieldTypes?: Record<string, CustomFieldType>;
+  },
 ): Promise<{ count: number; error: Error | null }> {
   let query = supabase
     .from("clients")
@@ -332,6 +365,8 @@ export async function countClientIds(
     query = query.eq("opt_in", true).eq("stop_sms", false);
   }
   query = applyClientListSearch(query, args.search ?? "");
+  query = (await attachFilterQueryAsync(query, applyClientsFilters(supabase, args)))
+    .query;
   const { count, error } = await query;
   if (error) return { count: 0, error: new Error(error.message) };
   return { count: typeof count === "number" ? count : 0, error: null };
@@ -339,12 +374,60 @@ export async function countClientIds(
 
 export async function fetchClientIds(
   supabase: SupabaseClient,
-  args: { search?: string; eligibleOnly: boolean },
+  args: {
+    search?: string;
+    eligibleOnly: boolean;
+    filters?: ListColumnFilter[];
+    customFieldTypes?: Record<string, CustomFieldType>;
+  },
 ): Promise<{ data: string[]; error: Error | null }> {
-  return listClientIdsRpc(supabase, {
-    search: args.search,
-    eligibleOnly: args.eligibleOnly,
-  });
+  if (normalizeListFilters(args.filters ?? []).length === 0) {
+    return listClientIdsRpc(supabase, {
+      search: args.search,
+      eligibleOnly: args.eligibleOnly,
+    });
+  }
+
+  const { data, error } = await paginateRange<{ id: string }>(
+    async (from, to) => {
+      let query = supabase.from("clients").select("id").is("deleted_at", null);
+      if (args.eligibleOnly) {
+        query = query.eq("opt_in", true).eq("stop_sms", false);
+      }
+      query = applyClientListSearch(query, args.search ?? "");
+      query = (await attachFilterQueryAsync(query, applyClientsFilters(supabase, args)))
+    .query;
+      const res = await query.order("id", { ascending: true }).range(from, to);
+      return {
+        data: (res.data as { id: string }[] | null) ?? null,
+        error: res.error,
+      };
+    },
+  );
+  if (error) return { data: [], error };
+  return { data: data.map((row) => row.id), error: null };
+}
+
+export async function fetchDistinctClientSources(
+  supabase: SupabaseClient,
+): Promise<string[]> {
+  const { data, error } = await paginateRange<{ source: string }>(
+    async (from, to) => {
+      const res = await supabase
+        .from("clients")
+        .select("source")
+        .is("deleted_at", null)
+        .order("source", { ascending: true })
+        .range(from, to);
+      return {
+        data: (res.data as { source: string }[] | null) ?? null,
+        error: res.error,
+      };
+    },
+    POSTGREST_PAGE,
+  );
+  if (error) return [];
+  return [...new Set(data.map((row) => row.source).filter(Boolean))];
 }
 
 /** Résumé léger pour pickers (modale groupe) — pages lazy + search serveur. */
@@ -438,23 +521,12 @@ export async function fetchGroupMemberClientIds(
   supabase: SupabaseClient,
   groupId: string,
 ): Promise<{ data: string[]; error: Error | null }> {
-  const { data, error } = await paginateRange<{ client_id: string }>(
-    async (from, to) => {
-      const res = await supabase
-        .from("client_group_members")
-        .select("client_id")
-        .eq("group_id", groupId)
-        .order("client_id", { ascending: true })
-        .range(from, to);
-      return {
-        data: (res.data as { client_id: string }[] | null) ?? null,
-        error: res.error,
-      };
-    },
-  );
-  if (error) return { data: [], error };
+  const { data, error } = await supabase.rpc("list_group_member_ids", {
+    p_group_id: groupId,
+  });
+  if (error) return { data: [], error: new Error(error.message) };
   return {
-    data: data.map((row) => row.client_id).filter(Boolean),
+    data: Array.isArray(data) ? (data as string[]).filter(Boolean) : [],
     error: null,
   };
 }
@@ -754,22 +826,12 @@ export async function addClientsToGroupByName(
     };
   }
   const uniqueClientIds = [...new Set(clientIds)];
-  for (const idChunk of chunkList(uniqueClientIds, POSTGREST_INSERT_CHUNK)) {
-    const rows = idChunk.map((client_id) => ({
-      client_id,
-      group_id: g.id,
-    }));
-    const { error } = await supabase.from("client_group_members").insert(rows);
-    if (error && error.code !== "23505") {
-      for (const client_id of idChunk) {
-        const { error: oneErr } = await supabase
-          .from("client_group_members")
-          .insert({ client_id, group_id: g.id });
-        if (oneErr && oneErr.code !== "23505") {
-          return { error: new Error(oneErr.message) };
-        }
-      }
-    }
+  const { error } = await supabase.rpc("add_group_members", {
+    p_group_id: g.id,
+    p_client_ids: uniqueClientIds,
+  });
+  if (error) {
+    return { error: new Error(error.message) };
   }
   return { error: null };
 }
@@ -780,49 +842,17 @@ export async function addClientsToGroupByName(
  */
 export async function replaceGroupMembers(
   supabase: SupabaseClient,
-  userId: string,
+  _userId: string,
   groupId: string,
   clientIds: string[],
 ): Promise<{ error: Error | null }> {
-  const { data: g, error: findErr } = await supabase
-    .from("client_groups")
-    .select("id")
-    .eq("id", groupId)
-    .eq("user_id", userId)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (findErr) {
-    return { error: new Error(findErr.message) };
-  }
-  if (!g) {
-    return { error: new Error("Groupe introuvable.") };
-  }
-
-  const { error: delErr } = await supabase
-    .from("client_group_members")
-    .delete()
-    .eq("group_id", groupId);
-  if (delErr) {
-    return { error: new Error(delErr.message) };
-  }
-
   const uniqueClientIds = [...new Set(clientIds)];
-  if (uniqueClientIds.length === 0) {
-    return { error: null };
-  }
-
-  for (const idChunk of chunkList(uniqueClientIds, POSTGREST_INSERT_CHUNK)) {
-    const rows = idChunk.map((client_id) => ({
-      client_id,
-      group_id: groupId,
-    }));
-    const { error: insErr } = await supabase
-      .from("client_group_members")
-      .insert(rows);
-    if (insErr) {
-      return { error: new Error(insErr.message) };
-    }
+  const { error } = await supabase.rpc("set_group_members", {
+    p_group_id: groupId,
+    p_client_ids: uniqueClientIds,
+  });
+  if (error) {
+    return { error: new Error(error.message) };
   }
   return { error: null };
 }
@@ -1159,7 +1189,12 @@ export async function resubscribeClients(
  */
 export async function deleteClientsMatching(
   supabase: SupabaseClient,
-  args: { search?: string; eligibleOnly: boolean },
+  args: {
+    search?: string;
+    eligibleOnly: boolean;
+    filters?: ListColumnFilter[];
+    customFieldTypes?: Record<string, CustomFieldType>;
+  },
 ): Promise<{ count: number; error: Error | null }> {
   let query = supabase
     .from("clients")
@@ -1169,6 +1204,8 @@ export async function deleteClientsMatching(
     query = query.eq("opt_in", true).eq("stop_sms", false);
   }
   query = applyClientListSearch(query, args.search ?? "");
+  query = (await attachFilterQueryAsync(query, applyClientsFilters(supabase, args)))
+    .query;
   const { count, error } = await query;
   if (error) return { count: 0, error: new Error(error.message) };
   return { count: typeof count === "number" ? count : 0, error: null };

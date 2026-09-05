@@ -6,7 +6,7 @@ import { fetchGroupsPage } from "@/lib/supabase/groups";
 import type { GroupRowData } from "@/lib/types/group";
 import type { ListSort } from "@/lib/proto/listSort";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
-import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 
 export function useGroups() {
@@ -18,6 +18,7 @@ export function useGroups() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "contactCount", desc: true },
   ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const sort: ListSort | null = sorting[0]
     ? { id: sorting[0].id, desc: !!sorting[0].desc }
     : null;
@@ -28,11 +29,13 @@ export function useGroups() {
       limit,
       search,
       sort: pageSort,
+      filters,
     }: {
       offset: number;
       limit: number;
       search: string;
       sort: ListSort | null;
+      filters?: ColumnFiltersState;
     }) => {
       if (!userId) {
         return { data: [], hasMore: false, error: null };
@@ -43,12 +46,18 @@ export function useGroups() {
         search,
         sort: pageSort,
         includeTotal: offset === 0,
+        filters,
       });
     },
     [supabase, userId],
   );
 
-  const list = useInfiniteList<GroupRowData>({ enabled, fetchPage, sort });
+  const list = useInfiniteList<GroupRowData>({
+    enabled,
+    fetchPage,
+    sort,
+    filters: columnFilters,
+  });
 
   return {
     rows: list.rows,
@@ -63,5 +72,7 @@ export function useGroups() {
     refresh: list.refresh,
     sorting,
     setSorting,
+    columnFilters,
+    setColumnFilters,
   };
 }

@@ -46,6 +46,14 @@ export function usePrototypeModals(
     (() => Promise<void>) | null
   >(null);
 
+  const [confirmGroupDeleteOpen, setConfirmGroupDeleteOpen] = useState(false);
+  const [confirmGroupDeleteCount, setConfirmGroupDeleteCount] = useState(1);
+  const [confirmGroupDeleteFromEdit, setConfirmGroupDeleteFromEdit] =
+    useState(false);
+  const [confirmGroupDeleteAction, setConfirmGroupDeleteAction] = useState<
+    (() => Promise<void>) | null
+  >(null);
+
   const [statsPeriod, setStatsPeriod] = useState<StatsPeriodPreset>("month");
   const [statsOpen, setStatsOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState(statsDefaults.from);
@@ -89,6 +97,20 @@ export function usePrototypeModals(
       setConfirmDeleteDesc(desc);
       setConfirmDeleteAction(() => action);
       setConfirmDeleteOpen(true);
+    },
+    []
+  );
+
+  const openConfirmGroupDelete = useCallback(
+    (
+      count: number,
+      action: () => Promise<void>,
+      fromEdit = false,
+    ) => {
+      setConfirmGroupDeleteCount(count);
+      setConfirmGroupDeleteFromEdit(fromEdit);
+      setConfirmGroupDeleteAction(() => action);
+      setConfirmGroupDeleteOpen(true);
     },
     []
   );
@@ -164,6 +186,11 @@ export function usePrototypeModals(
     confirmDeleteTitle,
     confirmDeleteDesc,
     confirmDeleteAction,
+    confirmGroupDeleteOpen,
+    setConfirmGroupDeleteOpen,
+    confirmGroupDeleteCount,
+    confirmGroupDeleteFromEdit,
+    confirmGroupDeleteAction,
     statsPeriod,
     setStatsPeriod,
     statsOpen,
@@ -181,6 +208,7 @@ export function usePrototypeModals(
     feedbackOpen,
     setFeedbackOpen,
     openConfirmDelete,
+    openConfirmGroupDelete,
     openContactAdd,
     openContactEdit,
     openGroupEdit,

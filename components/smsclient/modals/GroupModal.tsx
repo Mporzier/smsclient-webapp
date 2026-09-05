@@ -334,74 +334,71 @@ function GroupModalContactsPanel({
 
   return (
     <div className={contactsPanelShell}>
-      <div className="flex h-[52px] shrink-0 items-center gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-end gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="flex min-h-8 items-center gap-1.5">
             <span className={labelIconBadgeCls} aria-hidden>
               <UserRound className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
             <h3 className={cn("m-0", sectionTitleCls)}>Contacts du groupe</h3>
           </div>
-          <p className={cn("mt-0.5 truncate", hintTextCls)}>
-            Cochez les contacts à rattacher à ce groupe.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <div
-          className={cn(
-            innerInputSm,
-            "h-9 min-w-0 max-w-xs flex-1 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
-          )}
-        >
-          <Search
-            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-          <input
-            className={cn(inpText, "min-w-0 flex-1")}
-            placeholder="Filtrer par nom, téléphone, groupe…"
-            value={contactQuery}
-            maxLength={SEARCH_QUERY_MAX_LENGTH}
-            onChange={(e) => onContactQueryChange(e.target.value)}
-            aria-label="Filtrer les contacts"
-          />
-        </div>
-        {showExpandBanner ? (
-          <SelectAllExpandBanner
-            matchTotal={matchTotal}
-            hasSearch={contactQuery.trim().length > 0}
-            entityLabel="contacts"
-            counting={countingSelection}
-            expanding={expandingSelection}
-            error={expandError}
-            onExpand={() => onExpandSelection?.()}
-          />
-        ) : null}
-        <div className="ml-auto flex shrink-0 gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className={compactBtnCls}
-            onClick={selectAllFiltered}
-            disabled={contactsLoading || filteredContacts.length === 0}
+          <div
+            className={cn(
+              innerInputSm,
+              "h-9 min-w-0 gap-2 px-2.5 shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
+            )}
           >
-            <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            Tout sélectionner
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className={compactBtnCls}
-            onClick={clearSelection}
-            disabled={clearDisabled}
-          >
-            <Eraser className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            Effacer la sélection
-          </Button>
+            <Search
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <input
+              className={cn(inpText, "min-w-0 flex-1")}
+              placeholder="Filtrer par nom, téléphone, groupe…"
+              value={contactQuery}
+              maxLength={SEARCH_QUERY_MAX_LENGTH}
+              onChange={(e) => onContactQueryChange(e.target.value)}
+              aria-label="Filtrer les contacts"
+            />
+          </div>
+        </div>
+        <div className="flex w-max shrink-0 flex-col gap-2">
+          {showExpandBanner ? (
+            <SelectAllExpandBanner
+              className="w-0 min-w-full flex-none"
+              matchTotal={matchTotal}
+              hasSearch={contactQuery.trim().length > 0}
+              entityLabel="contacts"
+              counting={countingSelection}
+              expanding={expandingSelection}
+              error={expandError}
+              onExpand={() => onExpandSelection?.()}
+            />
+          ) : null}
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className={compactBtnCls}
+              onClick={selectAllFiltered}
+              disabled={contactsLoading || filteredContacts.length === 0}
+            >
+              <CheckCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              Tout sélectionner
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className={compactBtnCls}
+              onClick={clearSelection}
+              disabled={clearDisabled}
+            >
+              <Eraser className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              Effacer la sélection
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -786,6 +783,7 @@ export function GroupModal(props: GroupModalProps) {
       contactsHasMore ||
       (typeof contactsTotalCount === "number" &&
         contactsTotalCount > loadedIds.length),
+    listMatchTotal: contactsTotalCount,
   });
 
   const toggleContact = useCallback((id: string) => {

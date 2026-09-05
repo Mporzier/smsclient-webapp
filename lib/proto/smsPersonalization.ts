@@ -82,6 +82,7 @@ function tidyMergeGaps(text: string): string {
     .replace(/^,\s*/g, "")
     .replace(/\s+,/g, ",")
     .replace(/\(\s*\)/g, "")
+    .replace(/\s+([.,;:!?])/g, "$1")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -310,9 +311,9 @@ export function buildCampaignRecipientIdSet(args: {
     for (const id of selectedContactIds) ids.add(id);
   } else if (recipientMode === "lists") {
     for (const id of selectedContactIds) ids.add(id);
-    if (resolvedGroupMemberIds) {
+    if (resolvedGroupMemberIds != null && resolvedGroupMemberIds.length > 0) {
       for (const id of resolvedGroupMemberIds) ids.add(id);
-    } else if (selectedGroupNames.length > 0) {
+    } else if (resolvedGroupMemberIds == null && selectedGroupNames.length > 0) {
       const wanted = new Set(
         selectedGroupNames.map((x) => x.trim().toLowerCase()),
       );

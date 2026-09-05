@@ -4,6 +4,9 @@ import {
   groupSortToOrders,
   type ListSort,
 } from "@/lib/proto/listSort";
+import { type ListColumnFilter } from "@/lib/proto/listFilters";
+import { applyGroupListFilters } from "@/lib/supabase/groupListFilters";
+import { attachFilterQuery } from "@/lib/supabase/listFilterSql";
 import {
   LIST_PAGE_SIZE,
   POSTGREST_IN_CHUNK,
@@ -80,6 +83,7 @@ export async function fetchGroupsPage(
     search?: string;
     includeTotal?: boolean;
     sort?: ListSort | null;
+    filters?: ListColumnFilter[];
   },
 ): Promise<{
   data: GroupRowData[];
@@ -100,6 +104,9 @@ export async function fetchGroupsPage(
     .is("deleted_at", null);
 
   query = applyGroupListSearch(query, args.search ?? "");
+  query = attachFilterQuery(query, (q) =>
+    applyGroupListFilters(q, args.filters ?? []),
+  );
 
   for (const o of groupSortToOrders(args.sort)) {
     query = query.order(o.column, {
@@ -150,7 +157,7 @@ export async function fetchGroupsPage(
 export async function countMatchingGroups(
   supabase: SupabaseClient,
   userId: string,
-  args: { search?: string } = {},
+  args: { search?: string; filters?: ListColumnFilter[] } = {},
 ): Promise<{ count: number; error: Error | null }> {
   let query = supabase
     .from("client_groups")
@@ -158,6 +165,9 @@ export async function countMatchingGroups(
     .eq("user_id", userId)
     .is("deleted_at", null);
   query = applyGroupListSearch(query, args.search ?? "");
+  query = attachFilterQuery(query, (q) =>
+    applyGroupListFilters(q, args.filters ?? []),
+  );
   const { count, error } = await query;
   if (error) return { count: 0, error: new Error(error.message) };
   return { count: typeof count === "number" ? count : 0, error: null };
@@ -166,7 +176,7 @@ export async function countMatchingGroups(
 export async function fetchMatchingGroups(
   supabase: SupabaseClient,
   userId: string,
-  args: { search?: string } = {},
+  args: { search?: string; filters?: ListColumnFilter[] } = {},
 ): Promise<{ data: { id: string; name: string }[]; error: Error | null }> {
   return paginateRange<{ id: string; name: string }>(async (from, to) => {
     let query = supabase
@@ -175,6 +185,9 @@ export async function fetchMatchingGroups(
       .eq("user_id", userId)
       .is("deleted_at", null);
     query = applyGroupListSearch(query, args.search ?? "");
+    query = attachFilterQuery(query, (q) =>
+      applyGroupListFilters(q, args.filters ?? []),
+    );
     const res = await query.order("id", { ascending: true }).range(from, to);
     return {
       data: (res.data as { id: string; name: string }[] | null) ?? null,
@@ -236,6 +249,47 @@ export async function updateClientGroup(
     return { error: new Error(error.message) };
   }
   return { error: null };
+}
+
+export async function createClientGroupWithMembers(
+  supabase: SupabaseClient,
+  name: string,
+  description: string,
+  clientIds: string[],
+): Promise<{ groupId: string | null; error: Error | null }> {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return {
+      groupId: null,
+      error: new Error("Le nom du groupe est obligatoire."),
+    };
+  }
+
+  const uniqueClientIds = [...new Set(clientIds)];
+  const { data, error } = await supabase.rpc(
+    "create_client_group_with_members",
+    {
+      p_name: trimmed,
+      p_description: description.trim(),
+      p_client_ids: uniqueClientIds,
+    },
+  );
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        groupId: null,
+        error: new Error("Un groupe avec ce nom existe déjà."),
+      };
+    }
+    return { groupId: null, error: new Error(error.message) };
+  }
+
+  const groupId = typeof data === "string" ? data : null;
+  if (!groupId) {
+    return { groupId: null, error: new Error("Insertion sans identifiant.") };
+  }
+  return { groupId, error: null };
 }
 
 export async function deleteGroups(

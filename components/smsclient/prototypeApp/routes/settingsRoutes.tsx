@@ -179,6 +179,8 @@ export function renderDefaultRoute(ctx: PrototypeAppContext): ReactNode {
       onSearchChange={contactsState.setSearchInput}
       sorting={contactsState.sorting}
       onSortingChange={contactsState.setSorting}
+      columnFilters={contactsState.columnFilters}
+      onColumnFiltersChange={contactsState.setColumnFilters}
       error={contactsState.error}
       customFieldDefs={customFieldsState.defs}
       onImport={() => modals.setImportContactsOpen(true)}

@@ -8,10 +8,11 @@ import {
 } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { ContactListSort } from "@/lib/proto/contactSort";
+import type { CustomFieldType } from "@/lib/types/customFields";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isContactsRealtimeRefreshPaused } from "@/lib/proto/contactsRefreshGate";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
-import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type UnsubscribedContactSummary = {
@@ -30,6 +31,14 @@ export function useContacts(withUnsubscribed = true) {
   const enabled = !authLoading && Boolean(userId);
 
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const customFieldTypesRef = useRef<Record<string, CustomFieldType>>({});
+  const setCustomFieldFilterTypes = useCallback(
+    (types: Record<string, CustomFieldType>) => {
+      customFieldTypesRef.current = types;
+    },
+    [],
+  );
   const sort: ContactListSort | null = sorting[0]
     ? { id: sorting[0].id, desc: !!sorting[0].desc }
     : null;
@@ -40,11 +49,13 @@ export function useContacts(withUnsubscribed = true) {
       limit,
       search,
       sort: pageSort,
+      filters,
     }: {
       offset: number;
       limit: number;
       search: string;
       sort: ContactListSort | null;
+      filters?: ColumnFiltersState;
     }) => {
       const res = await fetchClientsPage(supabase, {
         offset,
@@ -53,6 +64,8 @@ export function useContacts(withUnsubscribed = true) {
         sort: pageSort,
         includeTotal: offset === 0,
         eligibleOnly: true,
+        filters,
+        customFieldTypes: customFieldTypesRef.current,
       });
       return {
         data: res.data,
@@ -79,6 +92,7 @@ export function useContacts(withUnsubscribed = true) {
     enabled,
     fetchPage,
     sort,
+    filters: columnFilters,
   });
 
   const [unsubscribedContacts, setUnsubscribedContacts] = useState<
@@ -191,5 +205,8 @@ export function useContacts(withUnsubscribed = true) {
     loadUnsubscribed,
     sorting,
     setSorting,
+    columnFilters,
+    setColumnFilters,
+    setCustomFieldFilterTypes,
   };
 }

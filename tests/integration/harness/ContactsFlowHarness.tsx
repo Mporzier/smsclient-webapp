@@ -8,7 +8,7 @@ import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
 import type { ContactGroupOption } from "@/lib/types/group";
 import { formatFrPhoneInput } from "@/lib/proto/smsUtils";
-import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { nextMockId } from "../helpers/mockData";
 
@@ -33,6 +33,7 @@ export function ContactsFlowHarness({
   const [rows, setRows] = useState<ContactRowData[]>(initialRows);
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editRow, setEditRow] = useState<ContactRowData | null>(null);
@@ -156,6 +157,8 @@ export function ContactsFlowHarness({
         onSearchChange={setSearchQuery}
         sorting={sorting}
         onSortingChange={setSorting}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={setColumnFilters}
         onImport={() => {}}
         onAddContact={openAdd}
         onRowClick={openEdit}

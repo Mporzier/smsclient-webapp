@@ -6,6 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ColumnFiltersState,
   type ColumnSizingState,
   type Row,
   type SortingState,
@@ -53,6 +54,11 @@ type DataTableProps<T> = {
    * Utile liste Contacts (tris multi-colonnes d’affilée).
    */
   manualSorting?: boolean;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: (updater: SetStateAction<ColumnFiltersState>) => void;
+  manualFiltering?: boolean;
+  hasActiveFilters?: boolean;
+  renderColumnFilter?: (columnId: string) => ReactNode;
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
@@ -61,6 +67,7 @@ type DataTableProps<T> = {
 };
 
 const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
+const NO_FILTER_IDS = NO_SORT_IDS;
 
 function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
   if (col.id) return col.id;
@@ -77,10 +84,12 @@ function withColumnDefaults<T>(
     const id = columnId(col);
     const noResize = id === "select" || id === "actions";
     const noSort = id != null && NO_SORT_IDS.has(id);
+    const noFilter = id != null && NO_FILTER_IDS.has(id);
     return {
       ...col,
       enableResizing: noResize ? false : (col.enableResizing ?? true),
       enableSorting: noSort ? false : (col.enableSorting ?? true),
+      enableColumnFilter: noFilter ? false : (col.enableColumnFilter ?? true),
       minSize: col.minSize ?? (noResize ? 36 : 64),
       /** Plafond resize manuel (évite colonnes trop larges). */
       maxSize: col.maxSize ?? 600,
@@ -104,6 +113,11 @@ export function DataTable<T>({
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
   manualSorting = false,
+  columnFilters: columnFiltersProp,
+  onColumnFiltersChange: onColumnFiltersChangeProp,
+  manualFiltering = false,
+  hasActiveFilters = false,
+  renderColumnFilter,
   hasMore = false,
   loadingMore = false,
   onLoadMore,
@@ -113,6 +127,9 @@ export function DataTable<T>({
   void _pageSize;
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const sorting = sortingProp ?? internalSorting;
+  const [internalColumnFilters, setInternalColumnFilters] =
+    useState<ColumnFiltersState>([]);
+  const columnFilters = columnFiltersProp ?? internalColumnFilters;
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -255,13 +272,25 @@ export function DataTable<T>({
     [onSortingChangeProp]
   );
 
+  const handleColumnFiltersChange = useCallback(
+    (updater: SetStateAction<ColumnFiltersState>) => {
+      if (onColumnFiltersChangeProp) {
+        onColumnFiltersChangeProp(updater);
+      } else {
+        setInternalColumnFilters(updater);
+      }
+    },
+    [onColumnFiltersChangeProp],
+  );
+
   // TanStack Table returns unstable function identities — React Compiler skips this hook on purpose.
   // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable
   const table = useReactTable({
     data,
     columns: sizedColumns,
-    state: { sorting, columnSizing },
+    state: { sorting, columnSizing, columnFilters },
     onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnSizingChange: handleColumnSizingChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -272,6 +301,7 @@ export function DataTable<T>({
     /** Évite 1er clic en desc sur dates / colonnes à sortUndefined. */
     sortDescFirst: false,
     manualSorting,
+    manualFiltering,
     getRowId: (row, index) => {
       if (
         row &&
@@ -300,11 +330,15 @@ export function DataTable<T>({
   // refresh après mutation) garde les lignes en place.
   const showLoader = loading && data.length === 0;
 
-  const isEmpty = !loading && data.length === 0 && globalFilter.trim() === "";
+  const isEmpty =
+    !loading &&
+    data.length === 0 &&
+    globalFilter.trim() === "" &&
+    !hasActiveFilters;
   const isSearchEmpty =
     !loading &&
     data.length === 0 &&
-    globalFilter.trim() !== "";
+    (globalFilter.trim() !== "" || hasActiveFilters);
 
   // Largeur visible du scroller : garde le message vide centré même quand les
   // colonnes (champs perso) rendent le tableau plus large que l'écran.
@@ -423,6 +457,8 @@ export function DataTable<T>({
                 // trait de la poignée de resize ferait doublon.
                 const nextIsActions =
                   headers[index + 1]?.column.id === "actions";
+                const canFilter =
+                  header.column.getCanFilter() && renderColumnFilter != null;
                 const canSort = header.column.getCanSort();
                 const sorted = header.column.getIsSorted();
                 const ariaSort =
@@ -462,45 +498,54 @@ export function DataTable<T>({
                     }
                   >
                     {header.isPlaceholder ? null : canSort ? (
-                      <button
-                        type="button"
-                        className={cn(
-                          "-mx-3 -my-2 inline-flex w-[calc(100%+1.5rem)] min-w-0 cursor-pointer select-none items-center gap-1.5 px-3 py-2 text-left",
-                          "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
-                        )}
-                        onClick={() => {
-                          const columnId = header.column.id;
-                          // Toggle explicite : nouvelle colonne → asc ; déjà active → inverse.
-                          handleSortingChange((prev) => {
-                            const current = prev.find((s) => s.id === columnId);
-                            if (!current) return [{ id: columnId, desc: false }];
-                            return [{ id: columnId, desc: !current.desc }];
-                          });
-                        }}
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
+                      <div className="inline-flex min-w-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          className={cn(
+                            "-mx-3 -my-2 inline-flex min-w-0 flex-1 cursor-pointer select-none items-center gap-1.5 px-3 py-2 text-left",
+                            "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
                           )}
-                        </span>
-                        {sorted === "asc" ? (
-                          <ArrowUp
-                            className="h-3.5 w-3.5 shrink-0 text-foreground"
-                            aria-hidden
-                          />
-                        ) : sorted === "desc" ? (
-                          <ArrowDown
-                            className="h-3.5 w-3.5 shrink-0 text-foreground"
-                            aria-hidden
-                          />
-                        ) : (
-                          <ArrowUpDown
-                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70"
-                            aria-hidden
-                          />
-                        )}
-                      </button>
+                          onClick={() => {
+                            const columnId = header.column.id;
+                            handleSortingChange((prev) => {
+                              const current = prev.find((s) => s.id === columnId);
+                              if (!current) return [{ id: columnId, desc: false }];
+                              return [{ id: columnId, desc: !current.desc }];
+                            });
+                          }}
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </span>
+                          {sorted === "asc" ? (
+                            <ArrowUp
+                              className="h-3.5 w-3.5 shrink-0 text-foreground"
+                              aria-hidden
+                            />
+                          ) : sorted === "desc" ? (
+                            <ArrowDown
+                              className="h-3.5 w-3.5 shrink-0 text-foreground"
+                              aria-hidden
+                            />
+                          ) : (
+                            <ArrowUpDown
+                              className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70"
+                              aria-hidden
+                            />
+                          )}
+                        </button>
+                        {canFilter ? (
+                          <span
+                            className="shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {renderColumnFilter!(header.column.id)}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : (
                       flexRender(
                         header.column.columnDef.header,

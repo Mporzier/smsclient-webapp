@@ -9,11 +9,20 @@ import {
   type ContactFormSubmitPayload,
 } from "@/lib/supabase/clients";
 import { useCallback } from "react";
+import type { ColumnFiltersState } from "@tanstack/react-table";
 import { toast } from "@/components/ui/sonner";
+import { customFieldTypesFromDefs } from "@/lib/proto/listFilterUi";
 import type { ActionsContext } from "./types";
 
 export function useContactActions({ data, modals }: ActionsContext) {
-  const { user, supabase, contactsState, groupsState, trashState } = data;
+  const {
+    user,
+    supabase,
+    contactsState,
+    groupsState,
+    trashState,
+    customFieldsState,
+  } = data;
   const {
     contactEditRow,
     contactModalMode,
@@ -75,17 +84,19 @@ export function useContactActions({ data, modals }: ActionsContext) {
 
   /** Sélection « tous les contacts » : delete par filtre, sans rapatrier les ids. */
   const handleDeleteContactsMatching = useCallback(
-    (search: string, countHint: number) => {
+    (search: string, countHint: number, filters?: ColumnFiltersState) => {
       confirmContactDelete(countHint, async () => {
         const { count, error } = await deleteClientsMatching(supabase, {
           search,
           eligibleOnly: true,
+          filters,
+          customFieldTypes: customFieldTypesFromDefs(customFieldsState.defs),
         });
         if (error) throw error;
         return count;
       });
     },
-    [confirmContactDelete, supabase]
+    [confirmContactDelete, supabase, customFieldsState.defs],
   );
 
   const handleDeleteContactFromModal = useCallback(() => {

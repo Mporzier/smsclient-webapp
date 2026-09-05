@@ -510,20 +510,6 @@ export function useCampaignWizardStep1State({
     allLoadedContactsSelected,
   ]);
 
-  const summaryRecipientCount = useMemo(
-    () =>
-      Math.max(
-        effectiveSelectedIds.size,
-        contactsSelectedCount,
-        groupsDisplaySelectedCount,
-      ),
-    [
-      effectiveSelectedIds.size,
-      contactsSelectedCount,
-      groupsDisplaySelectedCount,
-    ],
-  );
-
   const listSelectionCount =
     tab === "manual" ? contactsSelectedCount : groupsDisplaySelectedCount;
 
@@ -694,7 +680,6 @@ export function useCampaignWizardStep1State({
     recipients,
     contactsSelectedCount,
     groupsSelectedCount: groupsDisplaySelectedCount,
-    summaryRecipientCount,
     listSelectionCount,
     selectedGroupsDisplay,
     excludedTotal,

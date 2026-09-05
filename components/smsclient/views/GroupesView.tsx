@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
+import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
 import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +30,8 @@ import {
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
 import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { listFiltersKey, normalizeListFilters } from "@/lib/proto/listFilters";
+import { groupColumnFilterKind } from "@/lib/proto/listFilterUi";
 import { groupColor } from "@/lib/proto/contactDisplay";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
@@ -41,6 +45,7 @@ import {
 } from "lucide-react";
 import type {
   ColumnDef,
+  ColumnFiltersState,
   OnChangeFn,
   SortingState,
 } from "@tanstack/react-table";
@@ -122,16 +127,20 @@ type GroupesProps = {
   onSearchChange: (value: string) => void;
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
+  columnFilters: ColumnFiltersState;
+  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
   error: string | null;
   onCreateGroup: () => void;
   onEditGroup: (row: GroupRowData) => void;
   onDeleteGroups: (ids: string[]) => void;
   onCreateCampaignFromGroups: (ids: string[]) => void;
   onCountSelectableMatches?: (
-    search: string
+    search: string,
+    filters?: ColumnFiltersState,
   ) => Promise<{ count: number; error: Error | null }>;
   onFetchSelectableMatchIds?: (
-    search: string
+    search: string,
+    filters?: ColumnFiltersState,
   ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
@@ -146,6 +155,8 @@ export function GroupesView({
   onSearchChange,
   sorting,
   onSortingChange,
+  columnFilters,
+  onColumnFiltersChange: setColumnFilters,
   error,
   onCreateGroup,
   onEditGroup,
@@ -157,6 +168,24 @@ export function GroupesView({
   const { t } = useI18n();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  const filterLabels = useMemo(
+    () => ({
+      name: t("groups.col.name"),
+      description: t("groups.col.description"),
+      contactCount: t("groups.col.contacts"),
+      lastCampaignLabel: t("groups.col.lastCampaign"),
+      createdLabel: t("groups.col.created"),
+    }),
+    [t],
+  );
+
+  const selectAllScopeKey = useMemo(
+    () => `${searchQuery}::${listFiltersKey(columnFilters)}`,
+    [searchQuery, columnFilters],
+  );
+
+  const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
+
   const loadedIds = useMemo(() => rows.map((r) => r.id), [rows]);
 
   const setSelectedIdsList = useCallback((ids: string[]) => {
@@ -166,15 +195,15 @@ export function GroupesView({
   const countMatch = useCallback(async () => {
     if (!onCountSelectableMatches)
       return { count: loadedIds.length, error: null };
-    return onCountSelectableMatches(searchQuery);
-  }, [onCountSelectableMatches, searchQuery, loadedIds.length]);
+    return onCountSelectableMatches(searchQuery, columnFilters);
+  }, [onCountSelectableMatches, searchQuery, columnFilters, loadedIds.length]);
 
   const fetchAllIds = useCallback(async () => {
     if (!onFetchSelectableMatchIds) {
       return { data: loadedIds, error: null };
     }
-    return onFetchSelectableMatchIds(searchQuery);
-  }, [onFetchSelectableMatchIds, searchQuery, loadedIds]);
+    return onFetchSelectableMatchIds(searchQuery, columnFilters);
+  }, [onFetchSelectableMatchIds, searchQuery, columnFilters, loadedIds]);
 
   const {
     selectLoaded,
@@ -188,7 +217,7 @@ export function GroupesView({
     expandToMatchAll,
     ensureSelectionReady,
   } = useGmailSelectAll({
-    search: searchQuery,
+    search: selectAllScopeKey,
     loadedIds,
     selectedIds,
     setSelectedIds: setSelectedIdsList,
@@ -253,6 +282,31 @@ export function GroupesView({
     }
     selectLoaded();
   }, [allLoadedSelected, clearSelection, selectLoaded]);
+
+  const renderColumnFilter = useCallback(
+    (columnId: string) => {
+      const kind = groupColumnFilterKind(columnId);
+      if (!kind) return null;
+      return (
+        <DataTableColumnFilter
+          columnId={columnId}
+          columnLabel={filterLabels[columnId as keyof typeof filterLabels] ?? columnId}
+          kind={kind}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+        />
+      );
+    },
+    [
+      clearSelection,
+      columnFilters,
+      filterLabels,
+      setColumnFilters,
+    ],
+  );
 
   const selectColumns: ColumnDef<GroupRowData, unknown>[] = useMemo(
     () => [
@@ -363,7 +417,9 @@ export function GroupesView({
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
-            hasSearch={searchQuery.trim().length > 0}
+            hasSearch={
+              searchQuery.trim().length > 0 || hasActiveFilters
+            }
             entityLabel="groupes"
             counting={counting}
             expanding={expanding}
@@ -433,6 +489,19 @@ export function GroupesView({
         </p>
       ) : null}
 
+      <ListFilterChips
+        filters={columnFilters}
+        labels={filterLabels}
+        onClearId={(id) => {
+          clearSelection();
+          setColumnFilters((prev) => prev.filter((f) => f.id !== id));
+        }}
+        onClearAll={() => {
+          clearSelection();
+          setColumnFilters([]);
+        }}
+      />
+
       <DataTable
         columns={selectColumns}
         data={rows}
@@ -449,6 +518,14 @@ export function GroupesView({
         sorting={sorting}
         onSortingChange={onSortingChange}
         manualSorting
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          clearSelection();
+          setColumnFilters(updater);
+        }}
+        manualFiltering
+        hasActiveFilters={hasActiveFilters}
+        renderColumnFilter={renderColumnFilter}
       />
     </div>
   );

@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/smsclient/DataTable";
+import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
+import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
 import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import {
@@ -37,6 +39,11 @@ import { avatarColor, contactInitials } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
 import { compareIsoTimestampsStable } from "@/lib/proto/compareIso";
+import {
+  contactColumnFilterKind,
+  customFieldTypesFromDefs,
+} from "@/lib/proto/listFilterUi";
+import { listFiltersKey, normalizeListFilters } from "@/lib/proto/listFilters";
 import { formatCustomFieldDisplay } from "@/lib/customFields/validate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -52,6 +59,7 @@ import {
 } from "lucide-react";
 import type {
   ColumnDef,
+  ColumnFiltersState,
   OnChangeFn,
   SortingState,
 } from "@tanstack/react-table";
@@ -67,6 +75,15 @@ type ContactsProps = {
   onSearchChange: (value: string) => void;
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
+  columnFilters: ColumnFiltersState;
+  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
+  setCustomFieldFilterTypes?: (
+    types: Record<string, CustomFieldDef["fieldType"]>,
+  ) => void;
+  loadFilterFacets?: () => Promise<{
+    sources: string[];
+    groups: { id: string; name: string }[];
+  }>;
   error: string | null;
   customFieldDefs?: CustomFieldDef[];
   unsubscribedContacts?: UnsubscribedContactRow[];
@@ -81,14 +98,20 @@ type ContactsProps = {
     countHint?: number,
   ) => void;
   /** Suppression par filtre serveur quand toute la recherche est sélectionnée. */
-  onDeleteContactsMatching?: (search: string, countHint: number) => void;
+  onDeleteContactsMatching?: (
+    search: string,
+    countHint: number,
+    filters?: ColumnFiltersState,
+  ) => void;
   onCreateCampaignFromContacts: (ids: string[]) => void;
   onResubscribeContacts?: (ids: string[]) => Promise<void>;
   onCountSelectableMatches?: (
-    search: string
+    search: string,
+    filters?: ColumnFiltersState,
   ) => Promise<{ count: number; error: Error | null }>;
   onFetchSelectableMatchIds?: (
-    search: string
+    search: string,
+    filters?: ColumnFiltersState,
   ) => Promise<{ data: string[]; error: Error | null }>;
 };
 
@@ -185,12 +208,6 @@ function buildContactColumns(
       cell: ({ getValue }) => (
         <ContactGroupsCell groups={getValue<string[]>() ?? []} />
       ),
-      filterFn: (row, _columnId, filterValue: string) => {
-        if (!filterValue) return true;
-        return row.original.groups.some((g) =>
-          g.toLowerCase().includes(filterValue.toLowerCase())
-        );
-      },
     },
     {
       id: "notes",
@@ -299,6 +316,10 @@ export function ContactsView({
   onSearchChange,
   sorting,
   onSortingChange,
+  columnFilters,
+  onColumnFiltersChange: setColumnFilters,
+  setCustomFieldFilterTypes,
+  loadFilterFacets,
   error,
   customFieldDefs = [],
   unsubscribedContacts = [],
@@ -318,6 +339,52 @@ export function ContactsView({
   const { t } = useI18n();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
+  const [sourceOptions, setSourceOptions] = useState<string[]>([]);
+  const [groupOptions, setGroupOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+
+  useEffect(() => {
+    setCustomFieldFilterTypes?.(customFieldTypesFromDefs(customFieldDefs));
+  }, [customFieldDefs, setCustomFieldFilterTypes]);
+
+  useEffect(() => {
+    if (!loadFilterFacets) return;
+    let cancelled = false;
+    void loadFilterFacets().then((facets) => {
+      if (cancelled) return;
+      setSourceOptions(facets.sources);
+      setGroupOptions(facets.groups);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadFilterFacets]);
+
+  const filterLabels = useMemo(() => {
+    const labels: Record<string, string> = {
+      firstName: t("contacts.col.firstName"),
+      lastName: t("contacts.col.lastName"),
+      phone: t("contacts.col.phone"),
+      groups: t("contacts.col.groups"),
+      notes: t("contacts.col.notes"),
+      lastSms: t("contacts.col.lastSms"),
+      lastSmsBody: t("listFilter.lastSms.body"),
+      source: t("contacts.col.source"),
+      created: t("contacts.col.created"),
+    };
+    for (const def of customFieldDefs) {
+      labels[`custom_${def.id}`] = def.label;
+    }
+    return labels;
+  }, [customFieldDefs, t]);
+
+  const selectAllScopeKey = useMemo(
+    () => `${searchQuery}::${listFiltersKey(columnFilters)}`,
+    [searchQuery, columnFilters],
+  );
+
+  const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
 
   const eligibleRows = useMemo(
     () => rows.filter((r) => isCampaignEligibleContact(r)),
@@ -336,15 +403,15 @@ export function ContactsView({
   const countMatch = useCallback(async () => {
     if (!onCountSelectableMatches)
       return { count: loadedIds.length, error: null };
-    return onCountSelectableMatches(searchQuery);
-  }, [onCountSelectableMatches, searchQuery, loadedIds.length]);
+    return onCountSelectableMatches(searchQuery, columnFilters);
+  }, [onCountSelectableMatches, searchQuery, columnFilters, loadedIds.length]);
 
   const fetchAllIds = useCallback(async () => {
     if (!onFetchSelectableMatchIds) {
       return { data: loadedIds, error: null };
     }
-    return onFetchSelectableMatchIds(searchQuery);
-  }, [onFetchSelectableMatchIds, searchQuery, loadedIds]);
+    return onFetchSelectableMatchIds(searchQuery, columnFilters);
+  }, [onFetchSelectableMatchIds, searchQuery, columnFilters, loadedIds]);
 
   const {
     selectLoaded,
@@ -360,7 +427,7 @@ export function ContactsView({
     matchAllActive,
     exitMatchAll,
   } = useGmailSelectAll({
-    search: searchQuery,
+    search: selectAllScopeKey,
     loadedIds,
     selectedIds,
     setSelectedIds: setSelectedIdsList,
@@ -472,6 +539,36 @@ export function ContactsView({
     }
     selectLoaded();
   }, [allLoadedSelected, clearSelection, selectLoaded]);
+
+  const renderColumnFilter = useCallback(
+    (columnId: string) => {
+      const kind = contactColumnFilterKind(columnId, customFieldDefs);
+      if (!kind) return null;
+      return (
+        <DataTableColumnFilter
+          columnId={columnId}
+          columnLabel={filterLabels[columnId] ?? columnId}
+          kind={kind}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+          sourceOptions={sourceOptions}
+          groupOptions={groupOptions}
+        />
+      );
+    },
+    [
+      clearSelection,
+      columnFilters,
+      customFieldDefs,
+      filterLabels,
+      groupOptions,
+      setColumnFilters,
+      sourceOptions,
+    ],
+  );
 
   const columns = useMemo(
     () => buildContactColumns(customFieldDefs, t),
@@ -587,7 +684,9 @@ export function ContactsView({
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
-            hasSearch={searchQuery.trim().length > 0}
+            hasSearch={
+              searchQuery.trim().length > 0 || hasActiveFilters
+            }
             entityLabel="contacts éligibles"
             counting={counting}
             expanding={expanding}
@@ -606,7 +705,11 @@ export function ContactsView({
                 className="rounded-full"
                 onClick={() => {
                   if (matchAllActive && onDeleteContactsMatching) {
-                    onDeleteContactsMatching(searchQuery, displaySelectedCount);
+                    onDeleteContactsMatching(
+                      searchQuery,
+                      displaySelectedCount,
+                      columnFilters,
+                    );
                     clearSelection();
                     return;
                   }
@@ -667,6 +770,19 @@ export function ContactsView({
         </p>
       ) : null}
 
+      <ListFilterChips
+        filters={columnFilters}
+        labels={filterLabels}
+        onClearId={(id) => {
+          clearSelection();
+          setColumnFilters((prev) => prev.filter((f) => f.id !== id));
+        }}
+        onClearAll={() => {
+          clearSelection();
+          setColumnFilters([]);
+        }}
+      />
+
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
           {error}
@@ -690,6 +806,14 @@ export function ContactsView({
         sorting={sorting}
         onSortingChange={onSortingChange}
         manualSorting
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          clearSelection();
+          setColumnFilters(updater);
+        }}
+        manualFiltering
+        hasActiveFilters={hasActiveFilters}
+        renderColumnFilter={renderColumnFilter}
       />
 
 

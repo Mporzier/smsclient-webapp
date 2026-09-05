@@ -112,11 +112,17 @@ describe("useGmailSelectAll", () => {
     });
     expect(result.current.matchTotal).toBe(100);
 
+    let expandPromise!: Promise<string[]>;
     await act(async () => {
-      const p = result.current.expandToMatchAll();
-      expect(result.current.displaySelectedCount).toBe(100);
-      resolveFetch({ data: Array.from({ length: 100 }, (_, i) => `id-${i}`), error: null });
-      await p;
+      expandPromise = result.current.expandToMatchAll();
+    });
+    expect(result.current.displaySelectedCount).toBe(100);
+    await act(async () => {
+      resolveFetch({
+        data: Array.from({ length: 100 }, (_, i) => `id-${i}`),
+        error: null,
+      });
+      await expandPromise;
     });
     rerender({
       selectedIds: Array.from({ length: 100 }, (_, i) => `id-${i}`),
