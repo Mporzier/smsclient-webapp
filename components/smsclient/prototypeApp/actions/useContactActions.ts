@@ -26,41 +26,37 @@ export function useContactActions({ data, modals }: ActionsContext) {
   const {
     contactEditRow,
     contactModalMode,
-    setConfirmDeleteOpen,
+    setConfirmContactDeleteOpen,
     setContactModalOpen,
-    openConfirmDelete,
+    openConfirmContactDelete,
   } = modals;
 
   const confirmContactDelete = useCallback(
-    (n: number, run: () => Promise<number>) => {
-      openConfirmDelete(
-        `Supprimer ${n} contact${n > 1 ? "s" : ""} ?`,
-        `${
-          n > 1 ? "Les contacts sélectionnés seront" : "Le contact sera"
-        } retiré${n > 1 ? "s" : ""} de vos listes. Vous pourrez ${
-          n > 1 ? "les" : "le"
-        } restaurer dans Paramètres → Éléments supprimés.`,
+    (n: number, run: () => Promise<number>, fromEdit = false) => {
+      openConfirmContactDelete(
+        n,
         async () => {
           const deleted = await run();
-          setConfirmDeleteOpen(false);
+          setConfirmContactDeleteOpen(false);
           contactsState.refresh();
           groupsState.refresh();
           void trashState.refresh();
           toast(
             `${deleted} contact${deleted > 1 ? "s" : ""} supprimé${
               deleted > 1 ? "s" : ""
-            }.`
+            }.`,
           );
-        }
+        },
+        fromEdit,
       );
     },
     [
-      openConfirmDelete,
+      openConfirmContactDelete,
       contactsState,
       groupsState,
       trashState,
-      setConfirmDeleteOpen,
-    ]
+      setConfirmContactDeleteOpen,
+    ],
   );
 
   const handleDeleteContacts = useCallback(
@@ -101,9 +97,23 @@ export function useContactActions({ data, modals }: ActionsContext) {
 
   const handleDeleteContactFromModal = useCallback(() => {
     if (!contactEditRow) return;
-    setContactModalOpen(false);
-    handleDeleteContacts([contactEditRow.id]);
-  }, [contactEditRow, handleDeleteContacts, setContactModalOpen]);
+    const id = contactEditRow.id;
+    confirmContactDelete(
+      1,
+      async () => {
+        const { error } = await deleteClients(supabase, [id]);
+        if (error) throw error;
+        setContactModalOpen(false);
+        return 1;
+      },
+      true,
+    );
+  }, [
+    contactEditRow,
+    confirmContactDelete,
+    supabase,
+    setContactModalOpen,
+  ]);
 
   const handleUnsubscribeContact = useCallback(async () => {
     if (!user?.id || !contactEditRow) {

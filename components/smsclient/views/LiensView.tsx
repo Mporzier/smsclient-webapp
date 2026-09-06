@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import { ConfirmLinkDeleteModal } from "@/components/smsclient/modals/ConfirmLinkDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
 import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
@@ -235,13 +235,6 @@ export function LiensView({
     [copyToClipboard, t],
   );
 
-  const deleteDescription = deleteTarget
-    ? t("links.deleteDesc", {
-        shortUrl: deleteTarget.shortUrl,
-        originalUrl: deleteTarget.originalUrl,
-      })
-    : "";
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -321,10 +314,10 @@ export function LiensView({
         onCreated={() => void handleCreated()}
       />
 
-      <ConfirmDeleteModal
+      <ConfirmLinkDeleteModal
         open={deleteTarget !== null}
-        title={t("links.deleteTitle")}
-        description={deleteDescription}
+        shortUrl={deleteTarget?.shortUrl ?? ""}
+        originalUrl={deleteTarget?.originalUrl ?? ""}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}
       />

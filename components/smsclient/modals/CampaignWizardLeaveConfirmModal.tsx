@@ -5,17 +5,20 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle } from "lucide-react";
+import { SaveOff, TriangleAlert } from "lucide-react";
 import {
-  dialogContentStackedZCls,
-  dialogOverlayStackedCls,
-} from "@/components/smsclient/modals/modalChrome";
+  ConfirmDialogHeader,
+  ConfirmInfoCard,
+  confirmAlertContentCls,
+  confirmCardAmberIconCls,
+  confirmDialogMediaBaseCls,
+} from "@/components/smsclient/modals/ConfirmInfoCard";
+import { cn } from "@/lib/utils";
+import { dialogOverlayStackedCls } from "@/components/smsclient/modals/modalChrome";
+
+const leaveWarnSurfaceCls = "bg-amber-100 dark:bg-amber-500/20";
 
 type CampaignWizardLeaveConfirmModalProps = {
   open: boolean;
@@ -37,27 +40,32 @@ export function CampaignWizardLeaveConfirmModal({
     >
       <AlertDialogContent
         overlayClassName={dialogOverlayStackedCls}
-        className={dialogContentStackedZCls}
+        className={confirmAlertContentCls(true)}
         onOutsideDismiss={onStay}
       >
-        <AlertDialogHeader>
-          <AlertDialogMedia className="bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
-            <AlertTriangle aria-hidden />
-          </AlertDialogMedia>
-          <AlertDialogTitle>Quitter la création de campagne ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Vous avez commencé à remplir le formulaire (destinataires, message,
-            etc.). Si vous quittez maintenant, ces modifications seront perdues.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+        <ConfirmDialogHeader
+          title="Quitter la création de campagne ?"
+          media={<TriangleAlert aria-hidden />}
+          mediaClassName={cn(
+            confirmDialogMediaBaseCls,
+            leaveWarnSurfaceCls,
+            "rounded-full text-amber-700 dark:text-amber-400"
+          )}
+        >
+          <ConfirmInfoCard
+            icon={SaveOff}
+            iconClassName={confirmCardAmberIconCls}
+            className={leaveWarnSurfaceCls}
+            title="Modifications perdues"
+          >
+            Vous avez commencé à remplir le formulaire. Si vous quittez
+            maintenant, vos modifications seront perdues.
+          </ConfirmInfoCard>
+        </ConfirmDialogHeader>
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onStay}>Rester</AlertDialogCancel>
-          <AlertDialogAction
-            variant="default"
-            className="bg-amber-600 text-white hover:bg-amber-700 hover:text-white"
-            onClick={onLeave}
-          >
+          <AlertDialogAction variant="destructive" onClick={onLeave}>
             Quitter sans enregistrer
           </AlertDialogAction>
         </AlertDialogFooter>

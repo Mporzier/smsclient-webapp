@@ -7,13 +7,13 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  ConfirmDialogHeader,
+  confirmAlertContentCls,
+} from "@/components/smsclient/modals/ConfirmInfoCard";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
@@ -40,8 +40,6 @@ import {
   Users,
 } from "lucide-react";
 import {
-  brandBtnPrimaryCls,
-  dialogContentStackedZCls,
   dialogContentZCls,
   dialogOverlayCls,
   dialogOverlayStackedCls,
@@ -126,7 +124,6 @@ const fieldShell =
 const inpText =
   "w-full border-none bg-transparent text-[13px] font-normal text-foreground outline-none placeholder:text-muted-foreground/40 placeholder:font-normal";
 
-const modalTitleCls = "text-base font-semibold tracking-tight text-foreground";
 const fieldLabelCls = "text-xs font-medium text-foreground";
 const fieldMetaCls = "text-[11px] font-normal text-muted-foreground";
 const sectionTitleCls = "text-s font-extrabold text-foreground";
@@ -143,7 +140,6 @@ const tableCellCls =
 const compactBtnCls = "!h-8 !min-h-8 !gap-1.5 !px-2.5 !text-xs !font-medium";
 const listCheckboxCls =
   "size-3.5 shrink-0 overflow-hidden cursor-pointer [&_svg]:size-2.5";
-const footerBtnCls = "!h-9 !text-xs !font-medium";
 
 function buildSaveContactsConfirmCopy(
   selectedIds: string[],
@@ -198,16 +194,15 @@ function GroupContactSelectionConfirm({
     >
       <AlertDialogContent
         overlayClassName={dialogOverlayStackedCls}
-        className={dialogContentStackedZCls}
+        className={confirmAlertContentCls(true)}
         onOutsideDismiss={onCancel}
       >
-        <AlertDialogHeader>
-          <AlertDialogMedia className={labelIconBadgeCls}>
-            <UserRound strokeWidth={2} aria-hidden />
-          </AlertDialogMedia>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
+        <ConfirmDialogHeader
+          title={title}
+          media={<UserRound strokeWidth={2} aria-hidden />}
+          mediaClassName={labelIconBadgeCls}
+          description={description}
+        />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Annuler</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
@@ -1032,15 +1027,8 @@ export function GroupModal(props: GroupModalProps) {
           }}
         >
           <FormDialogHeader
-            className="bg-card px-4 py-3"
-            bareIcon
-            icon={
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-violet-50 to-indigo-50 text-ring shadow-[0_8px_16px_rgba(47,111,237,0.12)]">
-                <Users className="h-5 w-5" strokeWidth={2} />
-              </div>
-            }
+            icon={<Users strokeWidth={2} />}
             title={dialogLabel}
-            titleClassName={modalTitleCls}
             description={
               !isCreate
                 ? "Créez un groupe et ajoutez les contacts à associer."
@@ -1147,35 +1135,28 @@ export function GroupModal(props: GroupModalProps) {
             </div>
           ) : null}
 
-          <div
-            className={cn(
-              "flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-card px-4 py-3",
-              isCreate ? "justify-end" : "justify-between"
-            )}
-          >
-            {!isCreate && (
-              <div className="flex items-center gap-2">
-                {onDeleteGroup && (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={onDeleteGroup}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden />
-                    Supprimer
-                  </button>
-                )}
-              </div>
-            )}
+          <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-between gap-2 rounded-b-xl p-2.5 px-4 sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
+              {!isCreate && onDeleteGroup && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={onDeleteGroup}
+                  className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Supprimer
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className={footerBtnCls}
                 disabled={saving}
                 onClick={onClose}
+                className="cursor-pointer"
               >
                 Annuler
               </Button>
@@ -1183,11 +1164,10 @@ export function GroupModal(props: GroupModalProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  size="lg"
-                  className={cn(footerBtnCls, "!px-3")}
                   disabled={saving}
-                  title="CTA présent, action non implémentée pour l’instant"
+                  title="CTA présent, action non implémentée pour l'instant"
                   onClick={handleLaunchCampaign}
+                  className="cursor-pointer"
                 >
                   Lancer une campagne
                 </Button>
@@ -1195,19 +1175,18 @@ export function GroupModal(props: GroupModalProps) {
               <Button
                 type="button"
                 variant="default"
-                size="lg"
-                className={cn(brandBtnPrimaryCls, footerBtnCls)}
                 disabled={saving}
                 onClick={() => void (isCreate ? handleCreate() : requestSave())}
+                className="cursor-pointer"
               >
                 {saving
                   ? "Enregistrement…"
                   : isCreate
-                  ? "Créer le groupe"
-                  : "Enregistrer"}
+                    ? "Créer le groupe"
+                    : "Enregistrer"}
               </Button>
             </div>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

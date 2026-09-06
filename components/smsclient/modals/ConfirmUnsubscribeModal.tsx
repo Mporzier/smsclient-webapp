@@ -5,19 +5,20 @@ import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
-import { BellOff } from "lucide-react";
+import { BellOff, Scale } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
-  dialogContentStackedZCls,
-  dialogOverlayStackedCls,
-} from "./modalChrome";
+  ConfirmDialogHeader,
+  ConfirmInfoCard,
+  confirmAlertContentCls,
+  confirmCardAmberIconCls,
+  confirmDialogMediaAmberCls,
+} from "./ConfirmInfoCard";
+import { dialogContentStackedZCls, dialogOverlayStackedCls } from "./modalChrome";
 
 type ConfirmUnsubscribeModalProps = {
   open: boolean;
@@ -64,9 +65,8 @@ export function ConfirmUnsubscribeModal({
       }}
     >
       <AlertDialogContent
-        size="default"
         overlayClassName={dialogOverlayStackedCls}
-        className={dialogContentStackedZCls}
+        className={cn(confirmAlertContentCls(true), dialogContentStackedZCls)}
         onOutsideDismiss={() => {
           if (!loading) onCancel();
         }}
@@ -74,31 +74,36 @@ export function ConfirmUnsubscribeModal({
           if (loading) e.preventDefault();
         }}
       >
-        <AlertDialogHeader>
-          <AlertDialogMedia className="bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">
-            <BellOff aria-hidden />
-          </AlertDialogMedia>
-          <AlertDialogTitle>{t("contact.unsub.title")}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="space-y-2">
-              <p>
-                <strong className="font-semibold text-foreground">
-                  {contactLabel}
-                </strong>{" "}
-                {t("contact.unsub.body")}
-              </p>
-              <p className="text-muted-foreground/90">
-                {t("contact.unsub.legal")}
-              </p>
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+        <ConfirmDialogHeader
+          title={t("contact.unsub.title")}
+          media={<BellOff aria-hidden />}
+          mediaClassName={confirmDialogMediaAmberCls}
+        >
+          <ConfirmInfoCard
+            icon={BellOff}
+            iconWrapClassName="bg-amber-200 dark:bg-amber-500/35"
+            iconClassName={confirmCardAmberIconCls}
+            className="bg-amber-100 text-foreground dark:bg-amber-500/20"
+            title="Plus de SMS"
+          >
+            <strong className="font-semibold">{contactLabel}</strong>{" "}
+            {t("contact.unsub.body")}
+          </ConfirmInfoCard>
+          <ConfirmInfoCard
+            icon={Scale}
+            iconClassName="text-slate-600 dark:text-slate-300"
+            className="bg-slate-100 text-foreground dark:bg-slate-500/10"
+            title="Mention légale"
+          >
+            {t("contact.unsub.legal")}
+          </ConfirmInfoCard>
+        </ConfirmDialogHeader>
 
-        {error && (
+        {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </p>
-        )}
+        ) : null}
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading} className="cursor-pointer">

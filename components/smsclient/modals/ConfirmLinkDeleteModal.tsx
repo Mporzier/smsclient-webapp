@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { Ban, ListPlus } from "lucide-react";
+import { Ban, Link2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   ConfirmDeleteAlertDialog,
@@ -10,19 +10,21 @@ import {
   confirmCardDestructiveIconCls,
 } from "./ConfirmInfoCard";
 
-type ConfirmCustomFieldDeleteModalProps = {
+type ConfirmLinkDeleteModalProps = {
   open: boolean;
-  labels: string[];
+  shortUrl: string;
+  originalUrl: string;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 };
 
-export function ConfirmCustomFieldDeleteModal({
+export function ConfirmLinkDeleteModal({
   open,
-  labels,
+  shortUrl,
+  originalUrl,
   onConfirm,
   onCancel,
-}: ConfirmCustomFieldDeleteModalProps) {
+}: ConfirmLinkDeleteModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,42 +49,35 @@ export function ConfirmCustomFieldDeleteModal({
     }
   }, [onConfirm, t]);
 
-  const n = labels.length;
-  const title =
-    n === 1
-      ? t("customFields.deleteTitle", { label: labels[0] ?? "" })
-      : n > 1
-        ? t("customFields.deleteTitleMany", { n })
-        : t("customFields.deleteTitleFallback");
-
   return (
     <ConfirmDeleteAlertDialog
       open={open}
-      stacked
-      title={title}
+      title={t("links.deleteTitle")}
       loading={loading}
       error={error}
       cancelLabel={t("common.cancel")}
-      confirmLabel={t("customFields.deleteConfirm")}
+      confirmLabel={t("common.delete")}
       deletingLabel={t("common.deleting")}
       onCancel={onCancel}
       onConfirm={() => void handleConfirm()}
     >
       <ConfirmInfoCard
-        icon={ListPlus}
+        icon={Link2}
         iconClassName={confirmCardDestructiveIconCls}
         className={confirmCardDestructiveCls}
-        title="Données effacées"
+        title="Redirection désactivée"
       >
-        {n > 1 ? t("customFields.deleteBodyMany") : t("customFields.deleteBody")}
+        Le lien court <strong className="font-semibold">{shortUrl}</strong> ne
+        redirigera plus vers{" "}
+        <strong className="font-semibold">{originalUrl}</strong>.
       </ConfirmInfoCard>
       <ConfirmInfoCard
         icon={Ban}
-        iconClassName="text-amber-700 dark:text-amber-400"
-        className="bg-amber-50 text-foreground dark:bg-amber-500/10"
+        iconClassName={confirmCardDestructiveIconCls}
+        className={confirmCardDestructiveCls}
         title="Action définitive"
       >
-        {t("customFields.deleteIrreversible")}
+        Cette suppression ne peut pas être annulée.
       </ConfirmInfoCard>
     </ConfirmDeleteAlertDialog>
   );

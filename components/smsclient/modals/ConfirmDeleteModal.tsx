@@ -5,16 +5,17 @@ import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { AlertTriangle } from "lucide-react";
 import { useCallback, useState } from "react";
+import {
+  ConfirmDialogHeader,
+  confirmAlertContentCls,
+  confirmDialogMediaDestructiveCls,
+} from "./ConfirmInfoCard";
 import {
   dialogContentStackedZCls,
   dialogContentZCls,
@@ -27,7 +28,7 @@ type ConfirmDeleteModalProps = {
   title: string;
   description: string;
   confirmLabel?: string;
-  /** Au-dessus d’une autre modale (ex. édition de groupe). */
+  /** Au-dessus d'une autre modale (ex. édition de groupe). */
   stacked?: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
@@ -79,7 +80,8 @@ export function ConfirmDeleteModal({
       <AlertDialogContent
         overlayClassName={stacked ? dialogOverlayStackedCls : dialogOverlayCls}
         className={cn(
-          stacked ? dialogContentStackedZCls : dialogContentZCls
+          confirmAlertContentCls(stacked),
+          stacked ? dialogContentStackedZCls : dialogContentZCls,
         )}
         onOutsideDismiss={() => {
           if (!loading) onCancel();
@@ -88,19 +90,18 @@ export function ConfirmDeleteModal({
           if (loading) e.preventDefault();
         }}
       >
-        <AlertDialogHeader>
-          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-            <AlertTriangle aria-hidden />
-          </AlertDialogMedia>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
+        <ConfirmDialogHeader
+          title={title}
+          media={<AlertTriangle aria-hidden />}
+          mediaClassName={confirmDialogMediaDestructiveCls}
+          description={description}
+        />
 
-        {error && (
+        {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </p>
-        )}
+        ) : null}
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading} className="cursor-pointer">

@@ -6,6 +6,7 @@ import { SoumettreAvisModal } from "@/components/smsclient/modals/SoumettreAvisM
 import {
   CampaignDetailsModal,
   CampaignNameModal,
+  ConfirmContactDeleteModal,
   ConfirmDeleteModal,
   ConfirmGroupDeleteModal,
   ContactCreateModal,
@@ -202,6 +203,18 @@ export function PrototypeAppModals({ ctx }: Props) {
         }
         onConfirm={modals.confirmDeleteAction ?? (async () => {})}
         onCancel={() => modals.setConfirmDeleteOpen(false)}
+      />
+
+      <ConfirmContactDeleteModal
+        open={modals.confirmContactDeleteOpen}
+        count={modals.confirmContactDeleteCount}
+        fromEdit={modals.confirmContactDeleteFromEdit}
+        stacked={
+          modals.confirmContactDeleteOpen &&
+          (modals.groupEditOpen || modals.contactModalOpen)
+        }
+        onConfirm={modals.confirmContactDeleteAction ?? (async () => {})}
+        onCancel={() => modals.setConfirmContactDeleteOpen(false)}
       />
 
       <ConfirmGroupDeleteModal

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import { ConfirmSmsTemplateDeleteModal } from "@/components/smsclient/modals/ConfirmSmsTemplateDeleteModal";
 import { CreateSmsTemplateModal } from "@/components/smsclient/modals/CreateSmsTemplateModal";
 import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
@@ -385,14 +385,6 @@ export function ModelesSmsView({
   );
 
   const deleteCount = pendingDelete?.ids.length ?? 0;
-  const deleteTitle =
-    deleteCount > 1
-      ? t("templates.deleteManyTitle", { n: deleteCount })
-      : t("templates.deleteTitle", { n: deleteCount || 1 });
-  const deleteDescription =
-    deleteCount > 1
-      ? t("templates.deleteManyDesc")
-      : t("templates.deleteDesc");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -526,11 +518,10 @@ export function ModelesSmsView({
         customFieldDefs={customFieldDefs}
       />
 
-      <ConfirmDeleteModal
+      <ConfirmSmsTemplateDeleteModal
         open={pendingDelete !== null}
+        count={deleteCount}
         stacked={formOpen && pendingDelete !== null}
-        title={deleteTitle}
-        description={deleteDescription}
         onConfirm={handleConfirmDelete}
         onCancel={() => setPendingDelete(null)}
       />

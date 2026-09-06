@@ -3,6 +3,7 @@
 export {
   CampaignDetailsModal,
   CampaignNameModal,
+  ConfirmContactDeleteModal,
   ConfirmDeleteModal,
   ConfirmGroupDeleteModal,
   ConfirmUnsubscribeModal,

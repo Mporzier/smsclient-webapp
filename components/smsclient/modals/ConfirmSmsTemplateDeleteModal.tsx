@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { Ban, ListPlus } from "lucide-react";
+import { Ban, LayoutTemplate } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   ConfirmDeleteAlertDialog,
@@ -10,19 +10,21 @@ import {
   confirmCardDestructiveIconCls,
 } from "./ConfirmInfoCard";
 
-type ConfirmCustomFieldDeleteModalProps = {
+type ConfirmSmsTemplateDeleteModalProps = {
   open: boolean;
-  labels: string[];
+  count: number;
+  stacked?: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 };
 
-export function ConfirmCustomFieldDeleteModal({
+export function ConfirmSmsTemplateDeleteModal({
   open,
-  labels,
+  count,
+  stacked = false,
   onConfirm,
   onCancel,
-}: ConfirmCustomFieldDeleteModalProps) {
+}: ConfirmSmsTemplateDeleteModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,34 +49,31 @@ export function ConfirmCustomFieldDeleteModal({
     }
   }, [onConfirm, t]);
 
-  const n = labels.length;
   const title =
-    n === 1
-      ? t("customFields.deleteTitle", { label: labels[0] ?? "" })
-      : n > 1
-        ? t("customFields.deleteTitleMany", { n })
-        : t("customFields.deleteTitleFallback");
+    count > 1
+      ? t("templates.deleteManyTitle", { n: count })
+      : t("templates.deleteTitle", { n: count || 1 });
 
   return (
     <ConfirmDeleteAlertDialog
       open={open}
-      stacked
+      stacked={stacked}
       title={title}
       loading={loading}
       error={error}
       cancelLabel={t("common.cancel")}
-      confirmLabel={t("customFields.deleteConfirm")}
+      confirmLabel={t("common.delete")}
       deletingLabel={t("common.deleting")}
       onCancel={onCancel}
       onConfirm={() => void handleConfirm()}
     >
       <ConfirmInfoCard
-        icon={ListPlus}
+        icon={LayoutTemplate}
         iconClassName={confirmCardDestructiveIconCls}
         className={confirmCardDestructiveCls}
-        title="Données effacées"
+        title="Modèle supprimé"
       >
-        {n > 1 ? t("customFields.deleteBodyMany") : t("customFields.deleteBody")}
+        {count > 1 ? t("templates.deleteManyDesc") : t("templates.deleteDesc")}
       </ConfirmInfoCard>
       <ConfirmInfoCard
         icon={Ban}
@@ -82,7 +81,7 @@ export function ConfirmCustomFieldDeleteModal({
         className="bg-amber-50 text-foreground dark:bg-amber-500/10"
         title="Action définitive"
       >
-        {t("customFields.deleteIrreversible")}
+        Cette action ne peut pas être annulée.
       </ConfirmInfoCard>
     </ConfirmDeleteAlertDialog>
   );

@@ -2,7 +2,7 @@
 
 import { ContactsView } from "@/components/smsclient/views/ContactsView";
 import { ContactCreateModal } from "@/components/smsclient/modals/ContactCreateModal";
-import { ConfirmDeleteModal } from "@/components/smsclient/modals/ConfirmDeleteModal";
+import { ConfirmContactDeleteModal } from "@/components/smsclient/modals/ConfirmContactDeleteModal";
 import type { ContactFormSubmitPayload } from "@/lib/supabase/clients";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldValues } from "@/lib/types/customFields";
@@ -196,10 +196,9 @@ export function ContactsFlowHarness({
         }
       />
 
-      <ConfirmDeleteModal
+      <ConfirmContactDeleteModal
         open={confirmOpen}
-        title={`Supprimer ${n} contact${n > 1 ? "s" : ""} ?`}
-        description="Le contact sera retiré de vos listes."
+        count={n}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);

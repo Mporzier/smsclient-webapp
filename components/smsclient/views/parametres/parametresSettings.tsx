@@ -37,7 +37,8 @@ export type SettingSectionId =
   | "entreprise"
   | "facturation"
   | "sms-alertes"
-  | "donnees";
+  | "champs-perso"
+  | "corbeille";
 
 export type SettingCardDef = {
   id: SettingId;
@@ -58,7 +59,8 @@ export const settingSections: SettingSectionDef[] = [
   { id: "entreprise" },
   { id: "facturation" },
   { id: "sms-alertes" },
-  { id: "donnees" },
+  { id: "champs-perso" },
+  { id: "corbeille" },
 ];
 
 export const emptyProfileForm: UserProfileForm = {
@@ -147,12 +149,12 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "champs-perso",
-    section: "donnees",
+    section: "champs-perso",
     icon: ListPlus,
   },
   {
     id: "corbeille",
-    section: "donnees",
+    section: "corbeille",
     icon: Trash2,
   },
 ];

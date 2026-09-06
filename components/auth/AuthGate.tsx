@@ -19,6 +19,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAuthPage = pathname?.startsWith("/auth") ?? false;
+  const isAuthCallbackPage = pathname?.includes("/auth/callback") ?? false;
+  const isAuthResetPasswordPage =
+    pathname?.includes("/auth/reset-password") ?? false;
   /** Même logique que `basePath` : le pathname côté app n’inclut pas le préfixe du repo. */
   const isPublicCapturePage =
     pathname === "/capture" || pathname === "/capture/" || false;
@@ -63,10 +66,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (!user && !isPublicPage) {
       router.replace("/auth/login");
     }
-    if (user && isAuthPage) {
+    if (user && isAuthPage && !isAuthCallbackPage && !isAuthResetPasswordPage) {
       router.replace("/");
     }
-  }, [user, loading, isAuthPage, isPublicPage, router, pathname, unconfirmed]);
+  }, [
+    user,
+    loading,
+    isAuthPage,
+    isAuthCallbackPage,
+    isAuthResetPasswordPage,
+    isPublicPage,
+    router,
+    pathname,
+    unconfirmed,
+  ]);
 
   if (unconfirmed && user) {
     return (
@@ -91,7 +104,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   const hideChildren =
-    (!user && !isPublicPage) || Boolean(user && isAuthPage);
+    (!user && !isPublicPage) ||
+    Boolean(
+      user && isAuthPage && !isAuthCallbackPage && !isAuthResetPasswordPage,
+    );
 
   return <>{!hideChildren ? children : null}</>;
 }

@@ -19,13 +19,14 @@ import {
 import { EMAIL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 type Props = { mode: "login" | "signup" };
 
 export function AuthForm({ mode }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +38,10 @@ export function AuthForm({ mode }: Props) {
   const [resendPending, setResendPending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendIsError, setResendIsError] = useState(false);
+  const emailChangedNotice = searchParams.get("email_changed") === "1";
+  const passwordChangedNotice = searchParams.get("password_changed") === "1";
+  const passwordResetExpiredNotice =
+    searchParams.get("password_reset_expired") === "1";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -205,6 +210,27 @@ export function AuthForm({ mode }: Props) {
             ? "Connectez-vous avec votre e-mail Supabase."
             : "Inscrivez-vous pour accéder au prototype."}
         </p>
+
+        {mode === "login" && emailChangedNotice ? (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm leading-relaxed text-emerald-950">
+            Votre adresse email a été modifiée. Connectez-vous avec votre
+            nouvelle adresse.
+          </div>
+        ) : null}
+
+        {mode === "login" && passwordChangedNotice ? (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm leading-relaxed text-emerald-950">
+            Votre mot de passe a été modifié. Connectez-vous avec votre nouveau
+            mot de passe.
+          </div>
+        ) : null}
+
+        {mode === "login" && passwordResetExpiredNotice ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-relaxed text-amber-950">
+            Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un
+            nouveau depuis Paramètres → Compte.
+          </div>
+        ) : null}
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
           <div>

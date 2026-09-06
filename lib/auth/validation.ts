@@ -5,6 +5,10 @@ export const PASSWORD_MAX_LENGTH = 72;
 const emailRx =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
+export function isValidEmailFormat(value: string): boolean {
+  return emailRx.test(value.trim());
+}
+
 export function validateSignupEmail(value: string): string | null {
   const t = value.trim();
   if (!t) {

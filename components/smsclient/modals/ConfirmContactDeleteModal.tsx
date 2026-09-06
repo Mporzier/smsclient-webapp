@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { CircleUserRound, RotateCcw } from "lucide-react";
+import { RotateCcw, Users } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   ConfirmDeleteAlertDialog,
@@ -13,25 +13,25 @@ import {
   confirmRestorePathCls,
 } from "./ConfirmInfoCard";
 
-type ConfirmGroupDeleteModalProps = {
+type ConfirmContactDeleteModalProps = {
   open: boolean;
   count: number;
-  /** Titre « Supprimer ce groupe ? » (modale édition) vs « Supprimer N groupe(s) ? » (liste). */
+  /** Titre « Supprimer ce contact ? » (modale édition) vs « Supprimer N contact(s) ? » (liste). */
   fromEdit?: boolean;
-  /** Au-dessus d'une autre modale (ex. édition de groupe). */
+  /** Au-dessus d'une autre modale (ex. édition de contact). */
   stacked?: boolean;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 };
 
-export function ConfirmGroupDeleteModal({
+export function ConfirmContactDeleteModal({
   open,
   count,
   fromEdit = false,
   stacked = false,
   onConfirm,
   onCancel,
-}: ConfirmGroupDeleteModalProps) {
+}: ConfirmContactDeleteModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,16 +51,23 @@ export function ConfirmGroupDeleteModal({
     try {
       await onConfirm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.errorOccurred"));
+      setError(
+        e instanceof Error ? e.message : t("common.errorOccurred"),
+      );
       setLoading(false);
     }
   }, [onConfirm, t]);
 
   const title = fromEdit
-    ? "Supprimer ce groupe ?"
+    ? "Supprimer ce contact ?"
     : count === 1
-      ? "Supprimer 1 groupe ?"
-      : `Supprimer ${count} groupes ?`;
+      ? "Supprimer 1 contact ?"
+      : `Supprimer ${count} contacts ?`;
+
+  const removedFromGroups =
+    count === 1
+      ? "Le contact sera retiré de ses groupes."
+      : "Les contacts seront retirés de leurs groupes.";
 
   return (
     <ConfirmDeleteAlertDialog
@@ -76,12 +83,12 @@ export function ConfirmGroupDeleteModal({
       onConfirm={() => void handleConfirm()}
     >
       <ConfirmInfoCard
-        icon={CircleUserRound}
+        icon={Users}
         iconClassName={confirmCardDestructiveIconCls}
         className={confirmCardDestructiveCls}
-        title="Les contacts ne seront pas supprimés"
+        title="Vos groupes ne seront pas supprimés"
       >
-        Ils resteront disponibles dans votre répertoire.
+        {removedFromGroups}
       </ConfirmInfoCard>
       <ConfirmInfoCard
         icon={RotateCcw}

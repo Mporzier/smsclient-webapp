@@ -60,7 +60,8 @@ const fr = {
   "parametres.section.entreprise": "Entreprise",
   "parametres.section.facturation": "Facturation",
   "parametres.section.sms-alertes": "SMS & alertes",
-  "parametres.section.donnees": "Données",
+  "parametres.section.champs-perso": "Champs personnalisés",
+  "parametres.section.corbeille": "Corbeille",
 
   "parametres.appearance.themeTitle": "Thème",
   "parametres.appearance.themeDescription": "Choisir le mode clair ou sombre.",
@@ -150,6 +151,59 @@ const fr = {
   "compte.languageEditDesc": "Langue de l'interface.",
   "compte.lang.fr": "Français",
   "compte.lang.en": "English",
+  "compte.emailEditTitle": "Changer d'adresse email",
+  "compte.emailNew": "Nouvelle adresse",
+  "compte.emailPassword": "Mot de passe actuel",
+  "compte.emailSubmit": "Envoyer la demande",
+  "compte.emailRequired": "L'email est requis.",
+  "compte.emailInvalid": "Format d'email invalide.",
+  "compte.emailSame": "Choisissez une adresse différente.",
+  "compte.emailExists": "Cette adresse est déjà utilisée.",
+  "compte.emailPasswordRequired": "Le mot de passe est requis.",
+  "compte.emailPasswordInvalid": "Mot de passe incorrect.",
+  "compte.emailFailed": "Demande impossible.",
+  "compte.emailSuccessTitle": "Validez la nouvelle adresse email",
+  "compte.emailSuccessBody":
+    "Un e-mail contenant un lien de confirmation vient d'être envoyé à {email}.\n\nVotre nouvelle adresse ne sera effective qu'une fois ce lien validé.\n\nUn message d'information vous a également été envoyé à {current}.",
+  "compte.emailPendingTitle": "Nouvelle adresse email en attente",
+  "compte.emailPendingHint":
+    "Un e-mail de confirmation a été envoyé à {email}. Cliquez sur le lien pour activer votre nouvelle adresse email. Votre ancienne adresse email reste inchangée jusqu'à validation.",
+  "compte.emailResend": "Renvoyer l'e-mail",
+  "compte.emailResending": "Envoi…",
+  "compte.emailResendSuccess": "E-mail renvoyé à {email}.",
+  "compte.emailCancelChange": "Annuler la demande",
+
+  "compte.password": "Mot de passe",
+  "compte.passwordMasked": "••••••••",
+  "compte.passwordEditTitle": "Changer le mot de passe",
+  "compte.passwordCurrent": "Mot de passe actuel",
+  "compte.passwordNew": "Nouveau mot de passe",
+  "compte.passwordConfirm": "Confirmer le mot de passe",
+  "compte.passwordSubmit": "Enregistrer",
+  "compte.passwordRules":
+    "{min} caractères min., au moins une lettre et un chiffre (max. {max}).",
+  "compte.passwordCurrentRequired": "Le mot de passe actuel est requis.",
+  "compte.passwordCurrentInvalid": "Mot de passe actuel incorrect.",
+  "compte.passwordNewRequired": "Le nouveau mot de passe est requis.",
+  "compte.passwordNewInvalid":
+    "Mot de passe trop faible ou invalide (voir règles ci-dessous).",
+  "compte.passwordConfirmRequired": "La confirmation est requise.",
+  "compte.passwordConfirmMismatch": "Les mots de passe ne correspondent pas.",
+  "compte.passwordSame": "Choisissez un mot de passe différent.",
+  "compte.passwordFailed": "Modification impossible.",
+  "compte.passwordSuccessTitle": "Mot de passe modifié",
+  "compte.passwordSuccessBody":
+    "Votre mot de passe a été mis à jour.\n\nReconnectez-vous avec votre nouvelle adresse email et votre nouveau mot de passe.",
+  "compte.passwordResetHint": "Vous ne connaissez plus votre mot de passe ?",
+  "compte.passwordResetEmailAction": "Recevoir un lien par e-mail",
+  "compte.passwordResetEmailSending": "Envoi…",
+  "compte.passwordResetEmailTitle": "E-mail envoyé",
+  "compte.passwordResetEmailBody":
+    "Un lien de réinitialisation a été envoyé à {email}. Cliquez dessus pour définir un nouveau mot de passe.",
+  "compte.passwordResetPageTitle": "Nouveau mot de passe",
+  "compte.passwordResetPageDesc":
+    "Choisissez un nouveau mot de passe pour votre compte.",
+  "compte.passwordResetPageSubmit": "Enregistrer le mot de passe",
 
   "invoices.col.date": "Date",
   "invoices.col.pack": "Pack",
@@ -234,16 +288,16 @@ const fr = {
   "trash.restoreSummaryDesc": "Voici le bilan de cette restauration.",
   "trash.restoredContact": "1 contact restauré.",
   "trash.restoredContacts": "{n} contacts restaurés.",
-  "trash.restoredGroup": "1 groupe restauré.",
+  "trash.restoredGroup": "1 groupe restauré",
   "trash.restoredGroups": "{n} groupes restaurés.",
   "trash.duplicateContact": "1 contact non restauré (doublon)",
   "trash.duplicateContacts": "{n} contacts non restaurés (doublons)",
   "trash.duplicateGroup": "1 groupe non restauré (doublon)",
   "trash.duplicateGroups": "{n} groupes non restaurés (doublons)",
   "trash.duplicateContactsHint":
-    "Un contact actif utilise déjà ce numéro. Ils restent dans la corbeille.",
+    "Un contact actif utilise déjà ce numéro. Ce contact reste dans la corbeille.",
   "trash.duplicateGroupsHint":
-    "Un groupe actif porte déjà ce nom. Ils restent dans la corbeille.",
+    "Un groupe actif porte déjà ce nom. Ce groupe reste dans la corbeille.",
   "trash.empty": "Aucun contact ni groupe supprimé pour le moment.",
   "trash.searchContacts": "Rechercher un contact…",
   "trash.searchGroups": "Rechercher un groupe…",
@@ -461,7 +515,8 @@ const fr = {
   "templates.creating": "Création…",
   "templates.createAction": "Créer le modèle",
   "templates.editTitle": "Modifier le modèle",
-  "templates.editSubtitle": "Les changements s’appliquent aux prochaines campagnes.",
+  "templates.editSubtitle":
+    "Les changements s’appliquent aux prochaines campagnes.",
   "templates.saving": "Enregistrement…",
   "templates.saveAction": "Enregistrer",
   "templates.updateFailed": "Enregistrement impossible.",
@@ -887,7 +942,7 @@ const fr = {
 
   "contact.unsub.title": "Désabonner ce contact ?",
   "contact.unsub.body":
-    "ne recevra plus vos SMS marketing. Le contact reste dans votre liste, mais il sera exclu des prochaines campagnes et des envois groupés.",
+    "ne recevra plus vos SMS. Contact déplacé dans la liste des désabonnés.",
   "contact.unsub.legal":
     "Cette action enregistre son droit de retrait (STOP SMS) conformément aux règles d'envoi.",
   "contact.unsub.busy": "Désabonnement…",
@@ -1057,7 +1112,8 @@ const en: Record<MessageKey, string> = {
   "parametres.section.entreprise": "Company",
   "parametres.section.facturation": "Billing",
   "parametres.section.sms-alertes": "SMS & alerts",
-  "parametres.section.donnees": "Data",
+  "parametres.section.champs-perso": "Custom fields",
+  "parametres.section.corbeille": "Trash",
 
   "parametres.appearance.themeTitle": "Theme",
   "parametres.appearance.themeDescription": "Choose light or dark mode.",
@@ -1140,6 +1196,58 @@ const en: Record<MessageKey, string> = {
   "compte.languageEditDesc": "Interface language.",
   "compte.lang.fr": "Français",
   "compte.lang.en": "English",
+  "compte.emailEditTitle": "Change email address",
+  "compte.emailNew": "New address",
+  "compte.emailPassword": "Current password",
+  "compte.emailSubmit": "Send request",
+  "compte.emailRequired": "Email is required.",
+  "compte.emailInvalid": "Invalid email format.",
+  "compte.emailSame": "Choose a different address.",
+  "compte.emailExists": "This address is already in use.",
+  "compte.emailPasswordRequired": "Password is required.",
+  "compte.emailPasswordInvalid": "Incorrect password.",
+  "compte.emailFailed": "Request failed.",
+  "compte.emailSuccessTitle": "Confirm your new email address",
+  "compte.emailSuccessBody":
+    "An email with a confirmation link was just sent to {email}.\n\nYour new address will only take effect once you validate that link.\n\nAn informational message was also sent to {current}.",
+  "compte.emailPendingTitle": "New email address pending",
+  "compte.emailPendingHint":
+    "A confirmation email was sent to {email}. Click the link to activate your new address — your account email stays the same until you confirm.",
+  "compte.emailResend": "Resend email",
+  "compte.emailResending": "Sending…",
+  "compte.emailResendSuccess": "Email resent to {email}.",
+  "compte.emailCancelChange": "Cancel request",
+
+  "compte.password": "Password",
+  "compte.passwordMasked": "••••••••",
+  "compte.passwordEditTitle": "Change password",
+  "compte.passwordCurrent": "Current password",
+  "compte.passwordNew": "New password",
+  "compte.passwordConfirm": "Confirm password",
+  "compte.passwordSubmit": "Save",
+  "compte.passwordRules":
+    "{min} characters min., at least one letter and one digit (max. {max}).",
+  "compte.passwordCurrentRequired": "Current password is required.",
+  "compte.passwordCurrentInvalid": "Incorrect current password.",
+  "compte.passwordNewRequired": "New password is required.",
+  "compte.passwordNewInvalid":
+    "Password too weak or invalid (see rules below).",
+  "compte.passwordConfirmRequired": "Confirmation is required.",
+  "compte.passwordConfirmMismatch": "Passwords do not match.",
+  "compte.passwordSame": "Choose a different password.",
+  "compte.passwordFailed": "Could not update password.",
+  "compte.passwordSuccessTitle": "Password updated",
+  "compte.passwordSuccessBody":
+    "Your password has been updated.\n\nSign in again with your email and new password.",
+  "compte.passwordResetHint": "Don't know your current password?",
+  "compte.passwordResetEmailAction": "Send a link by email",
+  "compte.passwordResetEmailSending": "Sending…",
+  "compte.passwordResetEmailTitle": "Email sent",
+  "compte.passwordResetEmailBody":
+    "A reset link was sent to {email}. Click it to set a new password.",
+  "compte.passwordResetPageTitle": "New password",
+  "compte.passwordResetPageDesc": "Choose a new password for your account.",
+  "compte.passwordResetPageSubmit": "Save password",
 
   "invoices.col.date": "Date",
   "invoices.col.pack": "Pack",
@@ -1230,9 +1338,9 @@ const en: Record<MessageKey, string> = {
   "trash.duplicateGroup": "1 group not restored (duplicate)",
   "trash.duplicateGroups": "{n} groups not restored (duplicates)",
   "trash.duplicateContactsHint":
-    "An active contact already uses that number. They stay in the trash.",
+    "An active contact already uses that number. This contact stays in the trash.",
   "trash.duplicateGroupsHint":
-    "An active group already has that name. They stay in the trash.",
+    "An active group already has that name. This group stays in the trash.",
   "trash.empty": "No deleted contacts or groups yet.",
   "trash.searchContacts": "Search a contact…",
   "trash.searchGroups": "Search a group…",
@@ -1462,8 +1570,7 @@ const en: Record<MessageKey, string> = {
   "templates.actionsAria": "Actions for {name}",
   "templates.deleteSelected": "Delete ({n})",
   "templates.deleteManyTitle": "Delete {n} templates?",
-  "templates.deleteManyDesc":
-    "Selected templates will be permanently deleted.",
+  "templates.deleteManyDesc": "Selected templates will be permanently deleted.",
   "templates.deletedManyToast": "{n} templates deleted",
   "templates.emptyTitle": "No custom templates",
   "templates.emptyBody":
@@ -1847,7 +1954,7 @@ const en: Record<MessageKey, string> = {
 
   "contact.unsub.title": "Unsubscribe this contact?",
   "contact.unsub.body":
-    "will no longer receive your marketing SMS. The contact stays in your list, but will be excluded from future campaigns and bulk sends.",
+    "will no longer receive your SMS. Contact moved to the unsubscribed list.",
   "contact.unsub.legal":
     "This action records their opt-out (STOP SMS) according to sending rules.",
   "contact.unsub.busy": "Unsubscribing…",
