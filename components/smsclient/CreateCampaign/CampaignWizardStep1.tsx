@@ -267,13 +267,13 @@ export function CampaignWizardStep1Main() {
       </div>
 
       <div
-        className="flex shrink-0 gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5"
+        className="inline-flex w-fit shrink-0 gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5"
         role="tablist"
         aria-label="Mode de sélection des destinataires"
       >
         {[
           ["manual", "Contacts", Contact] as const,
-          ["groups", "Groupes de contacts", FolderOpen] as const,
+          ["groups", "Groupes", FolderOpen] as const,
         ].map(([id, label, Icon]) => (
           <button
             key={id}
@@ -282,7 +282,7 @@ export function CampaignWizardStep1Main() {
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-extrabold transition-colors",
+              "flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-extrabold transition-colors",
               tab === id
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"

@@ -6,10 +6,6 @@ import type { CampaignEligibleAudienceFilter } from "@/lib/proto/campaignAudienc
 import type { ContactRowData } from "@/lib/types/contact";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
-import {
-  normalizeGroupName,
-  selectedGroupsForContact,
-} from "./step1Helpers";
 
 export type CampaignWizardStep1Props = {
   groups: GroupRowData[];
@@ -233,46 +229,11 @@ export function useCampaignWizardStep1State({
 
       if (checked) {
         if (inGroup) {
-          const contact = contacts.find((c) => c.id === id);
-          const affectedGroups = contact
-            ? selectedGroupsForContact(contact, selectedGroupNames)
-            : selectedGroupNames.filter((gName) =>
-                (groupMemberIdsByName[gName] ?? []).includes(id)
-              );
-          const affectedSet = new Set(
-            affectedGroups.map((g) => normalizeGroupName(g))
-          );
-          const nextGroupNames = selectedGroupNames.filter(
-            (g) => !affectedSet.has(normalizeGroupName(g))
-          );
-
-          setSelectedGroupNames(nextGroupNames);
-          setSelectedContactIds((prev) => {
-            const next = new Set(prev);
-            for (const gName of affectedGroups) {
-              for (const memberId of groupMemberIdsByName[gName] ?? []) {
-                if (
-                  memberId !== id &&
-                  !excludedContactIds.includes(memberId)
-                ) {
-                  next.add(memberId);
-                }
-              }
-            }
-            next.delete(id);
-            return Array.from(next);
-          });
           setExcludedContactIds((prev) =>
-            prev.filter((excludedId) => {
-              for (const gName of affectedGroups) {
-                if ((groupMemberIdsByName[gName] ?? []).includes(excludedId)) {
-                  return false;
-                }
-              }
-              return true;
-            })
+            prev.includes(id) ? prev : [...prev, id],
           );
-          setRecipientMode(nextGroupNames.length > 0 ? "lists" : "manual");
+          setSelectedContactIds((prev) => prev.filter((x) => x !== id));
+          setRecipientMode(selectedGroupNames.length > 0 ? "lists" : "manual");
           return;
         }
         setSelectedContactIds((prev) => prev.filter((x) => x !== id));
@@ -294,7 +255,6 @@ export function useCampaignWizardStep1State({
       selectedIdsFromGroups,
       effectiveSelectedIds,
       excludedContactIds,
-      groupMemberIdsByName,
       setRecipientMode,
       setSelectedContactIds,
       setSelectedGroupNames,
@@ -482,16 +442,23 @@ export function useCampaignWizardStep1State({
     if (recipientMode === "all") {
       return contacts.filter((c) => c.optIn && !c.stopSms).length;
     }
+    if (recipientMode === "lists" || selectedGroupNames.length > 0) {
+      return effectiveSelectedIds.size;
+    }
     return Math.max(contactsDisplaySelectedCount, effectiveSelectedIds.size);
   }, [
     eligibleAudienceFilter,
     eligibleAudienceCount,
     excludedContactIds.length,
     recipientMode,
+    selectedGroupNames.length,
     contacts,
     effectiveSelectedIds,
     contactsDisplaySelectedCount,
   ]);
+
+  const listsSelectionActive =
+    selectedGroupNames.length > 0 || recipientMode === "lists";
 
   const allLoadedContactsSelectedResolved = useMemo(() => {
     if (eligibleAudienceFilter) {
@@ -502,11 +469,19 @@ export function useCampaignWizardStep1State({
         )
       );
     }
+    if (listsSelectionActive) {
+      return (
+        selectableFilteredContacts.length > 0 &&
+        selectableFilteredContacts.every((c) => effectiveSelectedIds.has(c.id))
+      );
+    }
     return allLoadedContactsSelected;
   }, [
     eligibleAudienceFilter,
+    listsSelectionActive,
     selectableFilteredContacts,
     excludedContactIds,
+    effectiveSelectedIds,
     allLoadedContactsSelected,
   ]);
 
@@ -528,11 +503,30 @@ export function useCampaignWizardStep1State({
   const toggleAllLoadedContacts = useCallback(() => {
     const allSelected = eligibleAudienceFilter
       ? allLoadedContactsSelectedResolved
-      : allLoadedContactsSelected;
+      : listsSelectionActive
+        ? allLoadedContactsSelectedResolved
+        : allLoadedContactsSelected;
 
     if (allSelected) {
+      if (eligibleAudienceFilter) {
+        setSelectedContactIds([]);
+        setExcludedContactIds([]);
+        clearContactsSelection();
+        return;
+      }
+      if (listsSelectionActive) {
+        const loadedIds = new Set(contactLoadedIds);
+        setSelectedContactIds((prev) => prev.filter((id) => !loadedIds.has(id)));
+        setExcludedContactIds((prev) => {
+          const next = new Set(prev);
+          for (const id of contactLoadedIds) {
+            if (selectedIdsFromGroups.has(id)) next.add(id);
+          }
+          return Array.from(next);
+        });
+        return;
+      }
       const clearEntireSelection =
-        eligibleAudienceFilter ||
         contactsSelectedCount > selectableFilteredContacts.length;
       if (clearEntireSelection) {
         setSelectedContactIds([]);
@@ -552,13 +546,21 @@ export function useCampaignWizardStep1State({
       );
       return;
     }
+    if (listsSelectionActive) {
+      setExcludedContactIds((prev) =>
+        prev.filter((id) => !contactLoadedIds.includes(id)),
+      );
+    }
     selectContactsLoaded();
   }, [
     eligibleAudienceFilter,
+    listsSelectionActive,
     allLoadedContactsSelectedResolved,
     allLoadedContactsSelected,
     contactsSelectedCount,
     selectableFilteredContacts,
+    contactLoadedIds,
+    selectedIdsFromGroups,
     setSelectedContactIds,
     setExcludedContactIds,
     clearContactsSelection,
@@ -574,15 +576,29 @@ export function useCampaignWizardStep1State({
     selectGroupsLoaded();
   }, [allLoadedGroupsSelected, deselectGroupsLoaded, selectGroupsLoaded]);
 
-  const contactsPagePartiallySelected = eligibleAudienceFilter
-    ? !allLoadedContactsSelectedResolved &&
-      selectableFilteredContacts.some((c) =>
-        excludedContactIds.includes(c.id),
-      )
-    : !allLoadedContactsSelected &&
-      selectableFilteredContacts.some((c) =>
-        selectedContactIds.includes(c.id),
+  const contactsPagePartiallySelected = useMemo(() => {
+    if (eligibleAudienceFilter) {
+      return (
+        !allLoadedContactsSelectedResolved &&
+        selectableFilteredContacts.some((c) =>
+          excludedContactIds.includes(c.id),
+        )
       );
+    }
+    const selectedOnPage = selectableFilteredContacts.filter((c) =>
+      effectiveSelectedIds.has(c.id),
+    );
+    return (
+      selectedOnPage.length > 0 &&
+      selectedOnPage.length < selectableFilteredContacts.length
+    );
+  }, [
+    eligibleAudienceFilter,
+    allLoadedContactsSelectedResolved,
+    selectableFilteredContacts,
+    excludedContactIds,
+    effectiveSelectedIds,
+  ]);
 
   const handleClearSelection = useCallback(() => {
     if (tab === "manual") {

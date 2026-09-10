@@ -3,7 +3,7 @@
 import { useTheme } from "@/hooks/useTheme";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { Check, Moon, Sun } from "lucide-react";
+import { Check, Moon, Palette, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function ApparenceSettingsPanel() {
@@ -12,13 +12,20 @@ export function ApparenceSettingsPanel() {
 
   return (
     <section className="grid gap-3 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground">
-          {t("parametres.appearance.themeTitle")}
-        </h3>
-        <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground">
-          {t("parametres.appearance.themeDescription")}
-        </p>
+      <div className="flex items-start gap-2.5">
+        <Palette
+          className="mt-0.5 size-4 shrink-0 text-ring"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">
+            {t("parametres.appearance.themeTitle")}
+          </h3>
+          <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground">
+            {t("parametres.appearance.themeDescription")}
+          </p>
+        </div>
       </div>
 
       <div

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCampaignRecipientIdSet,
   containsKnownMergeTag,
   expandMergeTags,
   formatBirthdayShort,
@@ -7,7 +8,31 @@ import {
   normalizePrenomTokens,
   SMS_PRENOM_TAG,
 } from "@/lib/proto/smsPersonalization";
+import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldDef } from "@/lib/types/customFields";
+
+function contact(id: string, groups: string[] = []): ContactRowData {
+  return {
+    id,
+    created: "",
+    createdAt: "",
+    firstName: "",
+    lastName: "",
+    name: id,
+    phone: "0612345678",
+    groups,
+    birthday: "",
+    notes: "",
+    customFields: {},
+    lastSms: "",
+    lastSmsAt: null,
+    lastSmsBody: "",
+    unsubscribed: "",
+    source: "",
+    optIn: true,
+    stopSms: false,
+  };
+}
 
 const defs: CustomFieldDef[] = [
   {
@@ -109,5 +134,47 @@ describe("sms merge tags", () => {
 
   it("mergeTagToken custom", () => {
     expect(mergeTagToken("custom:cf1", defs)).toBe("[Numéro client]");
+  });
+});
+
+describe("buildCampaignRecipientIdSet", () => {
+  const contacts = [
+    contact("a", ["VIP"]),
+    contact("b", ["VIP"]),
+    contact("c", []),
+  ];
+
+  it("lists : contact manuel + groupe ne compte qu’une fois", () => {
+    const ids = buildCampaignRecipientIdSet({
+      contacts,
+      recipientMode: "lists",
+      selectedContactIds: ["a", "c"],
+      selectedGroupNames: ["VIP"],
+      resolvedGroupMemberIds: ["a", "b"],
+    });
+    expect([...ids].sort()).toEqual(["a", "b", "c"]);
+  });
+
+  it("lists : exclusion retire un membre de groupe", () => {
+    const ids = buildCampaignRecipientIdSet({
+      contacts,
+      recipientMode: "lists",
+      selectedContactIds: [],
+      selectedGroupNames: ["VIP"],
+      excludedContactIds: ["a"],
+      resolvedGroupMemberIds: ["a", "b"],
+    });
+    expect([...ids].sort()).toEqual(["b"]);
+  });
+
+  it("manual seul : pas de membres groupe implicites", () => {
+    const ids = buildCampaignRecipientIdSet({
+      contacts,
+      recipientMode: "manual",
+      selectedContactIds: ["a"],
+      selectedGroupNames: ["VIP"],
+      resolvedGroupMemberIds: ["a", "b"],
+    });
+    expect([...ids]).toEqual(["a"]);
   });
 });

@@ -1,19 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Check } from "lucide-react";
+import { FormDialogShell } from "@/components/smsclient/modals/FormDialogShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import {
+  BUSINESS_ACTIVITIES,
   BUSINESS_CATEGORIES,
-  type BusinessActivityId,
-  type BusinessCategoryId,
+  businessActivityLabel,
+  businessCategoryLabel,
   businessCategoryOf,
   normalizeBusinessActivityId,
   typesForCategory,
+  type BusinessActivityId,
+  type BusinessCategoryId,
 } from "@/lib/types/businessActivity";
+import { Check, Store } from "lucide-react";
+import { useState } from "react";
 
 type BusinessActivitySelectProps = {
   value: BusinessActivityId | "";
@@ -21,6 +25,12 @@ type BusinessActivitySelectProps = {
   disabled?: boolean;
   className?: string;
   highlighted?: boolean;
+};
+
+type BusinessActivityPickerProps = {
+  value: BusinessActivityId | "";
+  onChange: (value: BusinessActivityId | "") => void;
+  disabled?: boolean;
 };
 
 type Step = "category" | "type";
@@ -50,17 +60,13 @@ function SelectionCheck({ selected }: { selected: boolean }) {
   );
 }
 
-export function BusinessActivitySelect({
+export function BusinessActivityPicker({
   value,
   onChange,
   disabled = false,
-  className,
-  highlighted = false,
-}: BusinessActivitySelectProps) {
+}: BusinessActivityPickerProps) {
   const canonical = value ? normalizeBusinessActivityId(value) : null;
-  const initialCategory = canonical
-    ? businessCategoryOf(canonical)
-    : null;
+  const initialCategory = canonical ? businessCategoryOf(canonical) : null;
 
   const [step, setStep] = useState<Step>(
     initialCategory ? "type" : "category",
@@ -92,22 +98,14 @@ export function BusinessActivitySelect({
   };
 
   return (
-    <Card
-      size="sm"
-      className={cn(
-        "gap-0 py-0 text-card-foreground",
-        highlighted && "ring-2 ring-ring/30",
-        className,
-      )}
-    >
-      <CardContent className="space-y-3 p-3">
+    <div className="space-y-3">
       {step === "category" || !categoryId ? (
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">
             1. Choisissez votre secteur
           </Label>
           <div
-            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+            className="grid max-h-[min(52dvh,22rem)] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3"
             role="radiogroup"
             aria-label="Secteur d'activité"
           >
@@ -156,7 +154,7 @@ export function BusinessActivitySelect({
           </div>
 
           <div
-            className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3"
+            className="grid max-h-[min(52dvh,22rem)] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3"
             role="radiogroup"
             aria-label={`Type d'activité — ${categoryLabel}`}
           >
@@ -185,7 +183,91 @@ export function BusinessActivitySelect({
           </div>
         </div>
       )}
-      </CardContent>
-    </Card>
+    </div>
+  );
+}
+
+export function BusinessActivitySelect({
+  value,
+  onChange,
+  disabled = false,
+  className,
+  highlighted = false,
+}: BusinessActivitySelectProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const canonical = value ? normalizeBusinessActivityId(value) : null;
+  const activity = canonical
+    ? BUSINESS_ACTIVITIES.find((entry) => entry.id === canonical)
+    : null;
+  const categoryId = canonical ? businessCategoryOf(canonical) : null;
+
+  const handlePick = (next: BusinessActivityId | "") => {
+    if (!next) return;
+    onChange(next);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5",
+          highlighted && "ring-2 ring-ring/30",
+          disabled && "opacity-50",
+          className,
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          {activity && categoryId ? (
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="text-xl leading-none" aria-hidden>
+                {activity.emoji}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {businessActivityLabel(activity.id)}
+                </p>
+                <p className="truncate text-xs font-medium text-muted-foreground">
+                  {businessCategoryLabel(categoryId)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm font-medium text-muted-foreground">
+              {t("parametres.businessActivity.empty")}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          className="shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          {activity
+            ? t("parametres.businessActivity.change")
+            : t("parametres.businessActivity.choose")}
+        </Button>
+      </div>
+
+      <FormDialogShell
+        open={open}
+        title={t("parametres.businessActivity.modalTitle")}
+        description={t("parametres.businessActivity.modalDescription")}
+        icon={<Store className="h-5 w-5" strokeWidth={2.25} />}
+        wide
+        onClose={() => setOpen(false)}
+        bodyClassName="py-2"
+      >
+        <BusinessActivityPicker
+          value={value}
+          onChange={handlePick}
+          disabled={disabled}
+        />
+      </FormDialogShell>
+    </>
   );
 }

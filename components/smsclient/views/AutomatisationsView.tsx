@@ -1,19 +1,23 @@
 "use client";
 
+import { AutomationCatalogModal } from "@/components/smsclient/modals/AutomationCatalogModal";
 import { AutomationEditModal } from "@/components/smsclient/modals/AutomationEditModal";
+import { CreateAutomationModal } from "@/components/smsclient/modals/CreateAutomationModal";
 import { ActiveAutomationsTable } from "@/components/smsclient/views/automatisations/ActiveAutomationsTable";
-import { CatalogTab } from "@/components/smsclient/views/automatisations/CatalogTab";
+import { AutomationQuickActions } from "@/components/smsclient/views/automatisations/AutomationQuickActions";
 import type {
   AutomationPresetKey,
   AutomationRowData,
   AutomationSavePayload,
 } from "@/lib/types/automation";
 import type { ContactRowData } from "@/lib/types/contact";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import { useMemo, useState } from "react";
 
 export type AutomatisationsViewProps = {
   rows: AutomationRowData[];
   contacts: ContactRowData[];
+  customFieldDefs?: CustomFieldDef[];
   loading: boolean;
   error: string | null;
   onSave: (payload: AutomationSavePayload) => Promise<void>;
@@ -21,19 +25,34 @@ export type AutomatisationsViewProps = {
 
 export function AutomatisationsView({
   rows,
+  contacts,
+  customFieldDefs = [],
   error,
   onSave,
 }: AutomatisationsViewProps) {
   const [editRow, setEditRow] = useState<AutomationRowData | null>(null);
+  const [catalogModalOpen, setCatalogModalOpen] = useState(false);
+  const [catalogModalTag, setCatalogModalTag] = useState<string | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const enabledPresetKeys = useMemo(
-    () => new Set(rows.filter((r) => r.enabled).map((r) => r.presetKey)),
+    () =>
+      new Set(
+        rows
+          .filter((r) => r.enabled && r.presetKey)
+          .map((r) => r.presetKey as AutomationPresetKey),
+      ),
     [rows],
   );
 
   function handleConfigureFromCatalog(presetKey: AutomationPresetKey) {
     const row = rows.find((r) => r.presetKey === presetKey);
     if (row) setEditRow(row);
+  }
+
+  function openCatalogModal(tag: string | null = null) {
+    setCatalogModalTag(tag);
+    setCatalogModalOpen(true);
   }
 
   return (
@@ -46,16 +65,41 @@ export function AutomatisationsView({
             <code className="rounded bg-rose-100 px-1">
               20260528160000_sms_automations.sql
             </code>{" "}
-            si la table n&apos;existe pas encore.
+            et{" "}
+            <code className="rounded bg-rose-100 px-1">
+              20260910120000_sms_automations_custom.sql
+            </code>{" "}
+            si besoin.
           </p>
         </div>
       )}
 
-      <ActiveAutomationsTable rows={rows} onEdit={setEditRow} />
+      <ActiveAutomationsTable
+        rows={rows}
+        onEdit={setEditRow}
+        onCreate={() => setCreateModalOpen(true)}
+      />
 
-      <CatalogTab
+      <AutomationQuickActions
+        onActivate={() => openCatalogModal(null)}
+        onCreate={() => setCreateModalOpen(true)}
+        onConnectTool={() => openCatalogModal("api")}
+      />
+
+      <AutomationCatalogModal
+        open={catalogModalOpen}
         enabledPresetKeys={enabledPresetKeys}
+        focusTag={catalogModalTag}
+        onClose={() => setCatalogModalOpen(false)}
         onConfigure={handleConfigureFromCatalog}
+      />
+
+      <CreateAutomationModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSave={onSave}
+        contacts={contacts}
+        customFieldDefs={customFieldDefs}
       />
 
       <AutomationEditModal
@@ -63,6 +107,8 @@ export function AutomatisationsView({
         row={editRow}
         onClose={() => setEditRow(null)}
         onSave={onSave}
+        contacts={contacts}
+        customFieldDefs={customFieldDefs}
       />
     </div>
   );

@@ -43,6 +43,7 @@ export function renderContentRoute(
         <AutomatisationsView
           rows={automationsState.rows}
           contacts={contactsState.rows}
+          customFieldDefs={customFieldsState.defs}
           loading={automationsState.loading}
           error={automationsState.error}
           onSave={actions.handleAutomationSave}

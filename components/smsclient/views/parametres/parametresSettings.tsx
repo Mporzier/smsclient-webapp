@@ -4,17 +4,20 @@ import type { UserProfileForm } from "@/lib/types/profile";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   Building2,
   CreditCard,
   FileText,
   Hash,
-  MapPin,
-  MessageSquare,
+  ListPlus,
   Mail,
+  MapPin,
+  Megaphone,
+  MessageSquare,
+  Palette,
   Sparkles,
   Trash2,
-  UserCircle,
-  ListPlus,
+  UserRound,
 } from "lucide-react";
 
 export type SettingId =
@@ -36,6 +39,7 @@ export type SettingSectionId =
   | "apparence"
   | "entreprise"
   | "facturation"
+  | "campagnes"
   | "sms-alertes"
   | "champs-perso"
   | "corbeille";
@@ -51,17 +55,61 @@ export type SettingCardDef = {
 
 export type SettingSectionDef = {
   id: SettingSectionId;
+  icon: LucideIcon;
 };
 
 export const settingSections: SettingSectionDef[] = [
-  { id: "compte" },
-  { id: "apparence" },
-  { id: "entreprise" },
-  { id: "facturation" },
-  { id: "sms-alertes" },
-  { id: "champs-perso" },
-  { id: "corbeille" },
+  { id: "compte", icon: UserRound },
+  { id: "apparence", icon: Palette },
+  { id: "entreprise", icon: Building2 },
+  { id: "facturation", icon: CreditCard },
+  { id: "campagnes", icon: Megaphone },
+  { id: "sms-alertes", icon: Bell },
+  { id: "champs-perso", icon: ListPlus },
+  { id: "corbeille", icon: Trash2 },
 ];
+
+export const SECTION_PROFILE_FIELDS: Partial<
+  Record<SettingSectionId, readonly (keyof UserProfileForm)[]>
+> = {
+  entreprise: [
+    "companyName",
+    "businessActivity",
+    "siret",
+    "tva",
+    "address",
+    "zip",
+    "city",
+    "country",
+  ],
+  facturation: ["billingContact"],
+  campagnes: ["sender"],
+  "sms-alertes": ["notifyInvoices", "notifySummary"],
+};
+
+export function sectionProfileFields(
+  sectionId: SettingSectionId,
+): readonly (keyof UserProfileForm)[] {
+  return SECTION_PROFILE_FIELDS[sectionId] ?? [];
+}
+
+export function isSectionDirty(
+  sectionId: SettingSectionId,
+  draft: UserProfileForm,
+  saved: UserProfileForm,
+): boolean {
+  const fields = sectionProfileFields(sectionId);
+  return fields.some((key) => draft[key] !== saved[key]);
+}
+
+export function sectionDirtyFieldCount(
+  sectionId: SettingSectionId,
+  draft: UserProfileForm,
+  saved: UserProfileForm,
+): number {
+  const fields = sectionProfileFields(sectionId);
+  return fields.filter((key) => draft[key] !== saved[key]).length;
+}
 
 export const emptyProfileForm: UserProfileForm = {
   firstName: "",
@@ -108,8 +156,8 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "contact-facturation",
-    section: "entreprise",
-    icon: UserCircle,
+    section: "facturation",
+    icon: FileText,
     savable: true,
   },
   {
@@ -131,7 +179,7 @@ export const allSettingCards: SettingCardDef[] = [
   },
   {
     id: "expediteur-sms",
-    section: "sms-alertes",
+    section: "campagnes",
     icon: MessageSquare,
     savable: true,
   },

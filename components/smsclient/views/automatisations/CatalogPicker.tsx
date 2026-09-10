@@ -30,9 +30,10 @@ import { getOrCreateUserProfile } from "@/lib/supabase/profile";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-export type CatalogTabProps = {
+export type CatalogPickerProps = {
   enabledPresetKeys: ReadonlySet<string>;
   onConfigure: (presetKey: AutomationPresetKey) => void;
+  focusTag?: string | null;
 };
 
 function CatalogSection({
@@ -73,14 +74,15 @@ function CatalogSection({
   );
 }
 
-export function CatalogTab({
+export function CatalogPicker({
   enabledPresetKeys,
   onConfigure,
-}: CatalogTabProps) {
+  focusTag,
+}: CatalogPickerProps) {
   const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
-  const [tag, setTag] = useState<string | null>(null);
-  // `null` = profil pas encore résolu ; `{ id }` = résolu (id peut être null).
+  const [tag, setTag] = useState<string | null>(focusTag ?? null);
+
   const [activity, setActivity] = useState<{ id: string | null } | null>(null);
 
   useEffect(() => {
@@ -129,10 +131,7 @@ export function CatalogTab({
   }
 
   return (
-    <div id="automatisations-disponibles" className="flex flex-col gap-3">
-      <h2 className="m-0 text-sm font-black uppercase tracking-wide text-muted-foreground">
-        Automatisations disponibles
-      </h2>
+    <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2">
         <InputGroup
           className="max-w-xl bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"

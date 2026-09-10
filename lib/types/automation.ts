@@ -1,4 +1,6 @@
-export type AutomationKind = "birthday" | "fixed_date";
+export type AutomationKind = "birthday" | "fixed_date" | "recurring";
+
+export type AutomationRecurrenceUnit = "days" | "weeks" | "months";
 
 export type AutomationPresetKey =
   | "birthday"
@@ -10,7 +12,7 @@ export type AutomationPresetKey =
 /** Ligne affichée / éditée (fusion preset + base). */
 export type AutomationRowData = {
   id: string | null;
-  presetKey: AutomationPresetKey;
+  presetKey: AutomationPresetKey | null;
   kind: AutomationKind;
   name: string;
   description: string;
@@ -21,12 +23,39 @@ export type AutomationRowData = {
   sendTime: string;
   fixedMonth?: number;
   fixedDay?: number;
+  recurrenceUnit?: AutomationRecurrenceUnit;
+  recurrenceInterval?: number;
+  /** 1 = lundi … 7 = dimanche (ISO). */
+  recurrenceWeekday?: number;
   persisted: boolean;
 };
 
-export type AutomationSavePayload = {
+export type AutomationPresetSavePayload = {
+  mode: "preset";
   presetKey: AutomationPresetKey;
   body: string;
   enabled: boolean;
   sendTime: string;
 };
+
+export type AutomationCustomSavePayload = {
+  mode: "custom";
+  name: string;
+  kind: "fixed_date" | "recurring";
+  body: string;
+  enabled: boolean;
+  sendTime: string;
+  fixedMonth?: number;
+  fixedDay?: number;
+  recurrenceUnit?: AutomationRecurrenceUnit;
+  recurrenceInterval?: number;
+  recurrenceWeekday?: number;
+  id?: string;
+};
+
+export type AutomationSavePayload =
+  | AutomationPresetSavePayload
+  | AutomationCustomSavePayload;
+
+export const AUTOMATION_NAME_MIN_LENGTH = 3;
+export const AUTOMATION_NAME_MAX_LENGTH = 60;

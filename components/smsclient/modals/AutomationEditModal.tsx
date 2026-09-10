@@ -1,5 +1,6 @@
 "use client";
 
+import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
 import { innerInputSm } from "@/components/smsclient/flowFieldStyles";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,16 +9,20 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
 import { cn } from "@/lib/cn";
+import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
+import type { ContactRowData } from "@/lib/types/contact";
+import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { AutomationRowData, AutomationSavePayload } from "@/lib/types/automation";
 import { Clock, Zap } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   brandBtnCls,
   brandBtnPrimaryCls,
   dialogContentZCls,
   dialogOverlayCls,
+  dialogPopoverZCls,
   formDialogContentCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
@@ -31,6 +36,8 @@ type AutomationEditModalProps = {
   row: AutomationRowData | null;
   onClose: () => void;
   onSave: (payload: AutomationSavePayload) => Promise<void>;
+  contacts?: ContactRowData[];
+  customFieldDefs?: readonly CustomFieldDef[];
 };
 
 export function AutomationEditModal({
@@ -38,12 +45,19 @@ export function AutomationEditModal({
   row,
   onClose,
   onSave,
+  contacts = [],
+  customFieldDefs = [],
 }: AutomationEditModalProps) {
   const [body, setBody] = useState("");
   const [sendTime, setSendTime] = useState("09:00");
   const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const estimateSample = useMemo(
+    () => buildEstimateMergeValues(contacts, customFieldDefs),
+    [contacts, customFieldDefs],
+  );
 
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
@@ -64,31 +78,53 @@ export function AutomationEditModal({
 
   const handleSave = useCallback(async () => {
     if (!row) return;
-    const trimmed = body.trim();
-    if (!trimmed) {
-      setError("Le message ne peut pas être vide.");
+
+    const validationError = validateAutomationSmsBody(body, {
+      reserveStop: true,
+      estimateSample,
+      customFieldDefs,
+    });
+    if (validationError) {
+      setError(validationError);
       return;
     }
-    if (trimmed.length > 480) {
-      setError("Le message est limité à 480 caractères.");
-      return;
-    }
+
     setSaving(true);
     setError(null);
     try {
-      await onSave({
-        presetKey: row.presetKey,
-        body: trimmed,
-        enabled,
-        sendTime,
-      });
+      if (row.presetKey) {
+        await onSave({
+          mode: "preset",
+          presetKey: row.presetKey,
+          body: body.trim(),
+          enabled,
+          sendTime,
+        });
+      } else if (row.id) {
+        await onSave({
+          mode: "custom",
+          id: row.id,
+          name: row.name,
+          kind: row.kind === "recurring" ? "recurring" : "fixed_date",
+          body: body.trim(),
+          enabled,
+          sendTime,
+          fixedMonth: row.fixedMonth,
+          fixedDay: row.fixedDay,
+          recurrenceUnit: row.recurrenceUnit,
+          recurrenceInterval: row.recurrenceInterval,
+          recurrenceWeekday: row.recurrenceWeekday,
+        });
+      } else {
+        throw new Error("Automatisation introuvable.");
+      }
       handleClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Une erreur est survenue.");
     } finally {
       setSaving(false);
     }
-  }, [row, body, enabled, sendTime, onSave, handleClose]);
+  }, [row, body, enabled, sendTime, onSave, handleClose, estimateSample, customFieldDefs]);
 
   return (
     <Dialog
@@ -102,8 +138,8 @@ export function AutomationEditModal({
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
-          "max-h-[min(86dvh,720px)] sm:max-w-[560px]",
-          dialogContentZCls
+          "max-h-[min(90dvh,820px)] sm:max-w-[620px]",
+          dialogContentZCls,
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
@@ -160,36 +196,24 @@ export function AutomationEditModal({
               </div>
 
               <div className="rounded-xl border border-border bg-card p-2.5">
-                <div className="flex justify-between gap-2">
-                  <Label className={fieldLabelCls} htmlFor="automation-body">
-                    Message SMS
-                  </Label>
-                  <span className="text-[11px] text-muted-foreground">
-                    {body.length}/480
-                  </span>
-                </div>
-                <Textarea
-                  id="automation-body"
-                  className="mt-1.5 min-h-[100px] resize-y text-[13px] leading-snug"
-                  maxLength={480}
+                <span className={fieldLabelCls}>Message SMS</span>
+                <SmsMessageComposer
                   value={body}
-                  aria-invalid={Boolean(error)}
-                  onChange={(e) => {
-                    setBody(e.target.value);
+                  onChange={(next) => {
+                    setBody(next);
                     setError(null);
                   }}
-                  rows={4}
+                  hasError={Boolean(error)}
+                  estimateSample={estimateSample}
+                  customFieldDefs={customFieldDefs}
+                  reserveStop
+                  popoverClassName={dialogPopoverZCls}
                 />
                 {error ? (
                   <p className="mt-1.5 text-xs font-medium text-destructive">
                     {error}
                   </p>
                 ) : null}
-                <p className={cn("mt-1.5", hintTextCls)}>
-                  Variables :{" "}
-                  <code className="rounded bg-muted px-1">{"{prenom}"}</code>,{" "}
-                  <code className="rounded bg-muted px-1">{"{nom}"}</code>
-                </p>
               </div>
             </div>
 

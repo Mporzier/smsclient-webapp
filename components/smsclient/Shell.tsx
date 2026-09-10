@@ -423,9 +423,15 @@ export function AppShell({
               "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-card px-4 md:px-5",
               route === "nouvelle-campagne" ||
                 route === "reglementations-sms" ||
+                route === "qr-boutique" ||
+                route === "parametres"
+                ? "overflow-hidden"
+                : "overflow-auto",
+              route === "nouvelle-campagne" ||
+                route === "reglementations-sms" ||
                 route === "qr-boutique"
-                ? "gap-2 overflow-hidden py-3"
-                : "gap-[18px] overflow-auto py-4 md:py-5"
+                ? "gap-2 py-3"
+                : "gap-[18px] py-4 md:py-5",
             )}
           >
             {children}

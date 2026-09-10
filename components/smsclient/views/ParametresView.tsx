@@ -4,22 +4,38 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingLabel } from "@/components/ui/loading-label";
+import { toast } from "@/components/ui/sonner";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
-import { cn } from "@/lib/cn";
 import { ParametresTrashSection } from "@/components/smsclient/views/ParametresTrashSection";
 import { TRASH_RETENTION_DAYS } from "@/lib/proto/trashRetention";
 import { ApparenceSettingsPanel } from "@/components/smsclient/views/parametres/ApparenceSettingsPanel";
 import { CompteSettingsPanel } from "@/components/smsclient/views/parametres/CompteSettingsPanel";
 import { CustomFieldsSettingsPanel } from "@/components/smsclient/views/parametres/CustomFieldsSettingsPanel";
+import {
+  ENTREPRISE_SUBSECTION_FIELDS,
+  EntrepriseSettingsPanel,
+  type EntrepriseSectionId,
+} from "@/components/smsclient/views/parametres/EntrepriseSettingsPanel";
+import {
+  CAMPAGNES_SUBSECTION_FIELDS,
+  CampagnesSettingsPanel,
+  type CampagnesSectionId,
+} from "@/components/smsclient/views/parametres/CampagnesSettingsPanel";
+import {
+  FACTURATION_SUBSECTION_FIELDS,
+  FacturationSettingsPanel,
+  type FacturationSectionId,
+} from "@/components/smsclient/views/parametres/FacturationSettingsPanel";
+import { firstEntrepriseSubsectionErrorKey } from "@/lib/forms/entrepriseValidation";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
 import {
   allSettingCards,
   emptyProfileForm,
-  parametresDirtyInp,
-  parametresFieldLbl,
+  isSectionDirty,
+  sectionDirtyFieldCount,
+  sectionProfileFields,
   settingSections,
   type SettingId,
   type SettingSectionId,
@@ -29,7 +45,6 @@ import {
   isSettingSectionId,
   PARAMETRES_SECTION_EVENT,
 } from "@/components/smsclient/views/parametres/parametresNav";
-import { BusinessActivitySelect } from "@/components/smsclient/views/parametres/BusinessActivitySelect";
 import type { CreditPurchaseRowData } from "@/lib/types/credits";
 import {
   CUSTOM_FIELD_MAX_PER_ACCOUNT,
@@ -43,17 +58,6 @@ import type {
   TrashRestoreResult,
 } from "@/lib/types/trash";
 import { useI18n, type MessageKey } from "@/lib/i18n";
-import {
-  ADDRESS_MAX_LENGTH,
-  BILLING_CONTACT_MAX_LENGTH,
-  CITY_MAX_LENGTH,
-  COMPANY_NAME_MAX_LENGTH,
-  COUNTRY_MAX_LENGTH,
-  SIRET_MAX_LENGTH,
-  VAT_MAX_LENGTH,
-  ZIP_MAX_LENGTH,
-  SMS_SENDER_MAX_LENGTH,
-} from "@/lib/forms/fieldLimits";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -84,23 +88,15 @@ const MODAL_SETTINGS = new Set<SettingId>([
   "corbeille",
 ]);
 
-function SettingsField({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id} className={parametresFieldLbl}>
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
+function sectionSaveLabelKey(id: SettingSectionId): MessageKey | null {
+  switch (id) {
+    case "entreprise":
+      return "parametres.saveSection.entreprise";
+    case "sms-alertes":
+      return "parametres.saveSection.smsAlertes";
+    default:
+      return null;
+  }
 }
 
 function SettingsBlock({
@@ -294,22 +290,48 @@ export function ParametresView({
     closeModal();
   };
 
-  const validateBeforeSave = (): string | null => {
-    if (changed("companyName") && !draftForm.companyName.trim()) {
+  const validateSectionBeforeSave = (
+    activeSectionId: SettingSectionId,
+  ): string | null => {
+    if (
+      activeSectionId === "entreprise" &&
+      changed("companyName") &&
+      !draftForm.companyName.trim()
+    ) {
       return t("parametres.companyNameRequired");
     }
-    if (changed("businessActivity") && !draftForm.businessActivity) {
+    if (
+      activeSectionId === "entreprise" &&
+      changed("businessActivity") &&
+      !draftForm.businessActivity
+    ) {
       return t("parametres.activityRequired");
     }
-    if (changed("sender") && !draftForm.sender.trim()) {
+    if (
+      activeSectionId === "campagnes" &&
+      changed("sender") &&
+      !draftForm.sender.trim()
+    ) {
       return t("parametres.senderRequired");
     }
     return null;
   };
 
-  const onSaveChanges = async () => {
-    if (!dirty) return;
-    const validationError = validateBeforeSave();
+  const revertSectionDraft = (activeSectionId: SettingSectionId) => {
+    const fields = sectionProfileFields(activeSectionId);
+    if (!fields.length) return;
+    setDraftForm((prev) => ({
+      ...prev,
+      ...(Object.fromEntries(
+        fields.map((key) => [key, savedForm[key]]),
+      ) as Partial<UserProfileForm>),
+    }));
+    setSaveError(null);
+  };
+
+  const onSaveChanges = async (activeSectionId: SettingSectionId) => {
+    if (!isSectionDirty(activeSectionId, draftForm, savedForm)) return;
+    const validationError = validateSectionBeforeSave(activeSectionId);
     if (validationError) {
       setSaveError(validationError);
       return;
@@ -322,7 +344,116 @@ export function ParametresView({
       setOpenSetting(null);
     } catch (e) {
       setSaveError(
-        e instanceof Error ? e.message : t("parametres.saveFailed")
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSaveEntrepriseSubsection = async (
+    subsectionId: EntrepriseSectionId,
+  ) => {
+    const subsectionDirty = ENTREPRISE_SUBSECTION_FIELDS[subsectionId].some(
+      (key) => changed(key),
+    );
+    if (!subsectionDirty) return;
+
+    if (subsectionId === "entreprise") {
+      if (changed("companyName") && !draftForm.companyName.trim()) {
+        setSaveError(t("parametres.companyNameRequired"));
+        return;
+      }
+      if (changed("businessActivity") && !draftForm.businessActivity) {
+        setSaveError(t("parametres.activityRequired"));
+        return;
+      }
+    }
+
+    const formatErrorKey = firstEntrepriseSubsectionErrorKey(
+      ENTREPRISE_SUBSECTION_FIELDS[subsectionId],
+      draftForm,
+    );
+    if (formatErrorKey) {
+      setSaveError(t(formatErrorKey));
+      return;
+    }
+
+    setSaveError(null);
+    setSaving(true);
+    try {
+      await onSaveProfile(draftForm);
+      setSavedForm(draftForm);
+      toast(t("parametres.savedToast"));
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSaveFacturationSubsection = async (
+    subsectionId: FacturationSectionId,
+  ) => {
+    const fields = FACTURATION_SUBSECTION_FIELDS[subsectionId];
+    const trimmedContact = draftForm.billingContact.trim();
+    const nextForm =
+      trimmedContact === draftForm.billingContact
+        ? draftForm
+        : { ...draftForm, billingContact: trimmedContact };
+    if (nextForm !== draftForm) {
+      setDraftForm(nextForm);
+    }
+
+    const subsectionDirty = fields.some(
+      (key) => nextForm[key] !== savedForm[key],
+    );
+    if (!subsectionDirty) return;
+
+    const formatErrorKey = firstEntrepriseSubsectionErrorKey(fields, nextForm);
+    if (formatErrorKey) {
+      setSaveError(t(formatErrorKey));
+      return;
+    }
+
+    setSaveError(null);
+    setSaving(true);
+    try {
+      await onSaveProfile(nextForm);
+      setSavedForm(nextForm);
+      toast(t("parametres.savedToast"));
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSaveCampagnesSubsection = async (
+    subsectionId: CampagnesSectionId,
+  ) => {
+    const fields = CAMPAGNES_SUBSECTION_FIELDS[subsectionId];
+    const subsectionDirty = fields.some((key) => changed(key));
+    if (!subsectionDirty) return;
+
+    if (changed("sender") && !draftForm.sender.trim()) {
+      setSaveError(t("parametres.senderRequired"));
+      return;
+    }
+
+    setSaveError(null);
+    setSaving(true);
+    try {
+      await onSaveProfile(draftForm);
+      setSavedForm(draftForm);
+      toast(t("parametres.savedToast"));
+    } catch (e) {
+      setSaveError(
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
       );
     } finally {
       setSaving(false);
@@ -377,6 +508,9 @@ export function ParametresView({
   const sectionCards = visibleCards.filter((c) => c.section === sectionId);
   const inlineCards = sectionCards.filter((c) => !MODAL_SETTINGS.has(c.id));
   const modalCards = sectionCards.filter((c) => MODAL_SETTINGS.has(c.id));
+  const sectionDirty = isSectionDirty(sectionId, draftForm, savedForm);
+  const sectionDirtyCount = sectionDirtyFieldCount(sectionId, draftForm, savedForm);
+  const sectionSaveLabel = sectionSaveLabelKey(sectionId);
 
   const modalIcon = openCard ? (
     <openCard.icon className="h-5 w-5" strokeWidth={2.25} />
@@ -384,145 +518,6 @@ export function ParametresView({
 
   const renderInlineSetting = (id: SettingId): ReactNode => {
     switch (id) {
-      case "entreprise":
-        return (
-          <>
-            <SettingsField
-              id="param-company-name"
-              label={t("parametres.field.companyName")}
-            >
-              <Input
-                id="param-company-name"
-                className={cn(changed("companyName") && parametresDirtyInp)}
-                maxLength={COMPANY_NAME_MAX_LENGTH}
-                value={draftForm.companyName}
-                onChange={(e) => setField("companyName", e.target.value)}
-              />
-            </SettingsField>
-            <div className="grid gap-1.5">
-              <Label className={parametresFieldLbl}>
-                {t("parametres.field.businessActivity")}
-              </Label>
-              <BusinessActivitySelect
-                value={draftForm.businessActivity}
-                onChange={(activityId) =>
-                  setField("businessActivity", activityId)
-                }
-                highlighted={changed("businessActivity")}
-              />
-            </div>
-          </>
-        );
-      case "identifiants-legaux":
-        return (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SettingsField id="param-siret" label={t("parametres.field.siret")}>
-              <Input
-                id="param-siret"
-                className={cn(changed("siret") && parametresDirtyInp)}
-                maxLength={SIRET_MAX_LENGTH}
-                value={draftForm.siret}
-                onChange={(e) => setField("siret", e.target.value)}
-              />
-            </SettingsField>
-            <SettingsField id="param-tva" label={t("parametres.field.tva")}>
-              <Input
-                id="param-tva"
-                className={cn(changed("tva") && parametresDirtyInp)}
-                maxLength={VAT_MAX_LENGTH}
-                value={draftForm.tva}
-                onChange={(e) => setField("tva", e.target.value)}
-              />
-            </SettingsField>
-          </div>
-        );
-      case "adresse-facturation":
-        return (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <SettingsField
-                id="param-address"
-                label={t("parametres.field.address")}
-              >
-                <Input
-                  id="param-address"
-                  className={cn(changed("address") && parametresDirtyInp)}
-                  maxLength={ADDRESS_MAX_LENGTH}
-                  value={draftForm.address}
-                  onChange={(e) => setField("address", e.target.value)}
-                />
-              </SettingsField>
-            </div>
-            <SettingsField id="param-zip" label={t("parametres.field.zip")}>
-              <Input
-                id="param-zip"
-                className={cn(changed("zip") && parametresDirtyInp)}
-                maxLength={ZIP_MAX_LENGTH}
-                value={draftForm.zip}
-                onChange={(e) => setField("zip", e.target.value)}
-              />
-            </SettingsField>
-            <SettingsField id="param-city" label={t("parametres.field.city")}>
-              <Input
-                id="param-city"
-                className={cn(changed("city") && parametresDirtyInp)}
-                maxLength={CITY_MAX_LENGTH}
-                value={draftForm.city}
-                onChange={(e) => setField("city", e.target.value)}
-              />
-            </SettingsField>
-            <SettingsField
-              id="param-country"
-              label={t("parametres.field.country")}
-            >
-              <Input
-                id="param-country"
-                className={cn(changed("country") && parametresDirtyInp)}
-                maxLength={COUNTRY_MAX_LENGTH}
-                value={draftForm.country}
-                onChange={(e) => setField("country", e.target.value)}
-              />
-            </SettingsField>
-          </div>
-        );
-      case "contact-facturation":
-        return (
-          <SettingsField
-            id="param-billing-contact"
-            label={t("parametres.field.billingContact")}
-          >
-            <Input
-              id="param-billing-contact"
-              className={cn(changed("billingContact") && parametresDirtyInp)}
-              maxLength={BILLING_CONTACT_MAX_LENGTH}
-              value={draftForm.billingContact}
-              onChange={(e) => setField("billingContact", e.target.value)}
-              placeholder={t("parametres.field.billingContactPlaceholder")}
-            />
-          </SettingsField>
-        );
-      case "expediteur-sms":
-        return (
-          <>
-            <SettingsField
-              id="param-sender"
-              label={t("parametres.field.sender")}
-            >
-              <Input
-                id="param-sender"
-                className={cn(changed("sender") && parametresDirtyInp)}
-                maxLength={SMS_SENDER_MAX_LENGTH}
-                value={draftForm.sender}
-                onChange={(e) => setField("sender", e.target.value)}
-                placeholder="Ex. BOULANGERIE"
-                autoComplete="off"
-              />
-            </SettingsField>
-            <p className="m-0 text-xs font-medium text-muted-foreground">
-              {t("parametres.field.senderHint")}
-            </p>
-          </>
-        );
       case "notifications-email":
         return (
           <>
@@ -589,104 +584,185 @@ export function ParametresView({
 
   return (
     <>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+      <div className="flex h-full min-h-0 flex-col gap-4 lg:flex-row lg:gap-8">
         <nav
-          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:overflow-visible lg:border-r lg:border-border lg:px-0 lg:pr-4 lg:pb-0"
+          className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:w-52 lg:flex-col lg:overflow-visible lg:self-stretch lg:border-r lg:border-border lg:px-0 lg:pr-4 lg:pb-0"
           aria-label={t("parametres.sectionsAria")}
         >
-          {availableSections.map((section) => (
-            <Button
-              key={section.id}
-              type="button"
-              size="sm"
-              variant={sectionId === section.id ? "secondary" : "ghost"}
-              aria-current={sectionId === section.id ? "page" : undefined}
-              className="shrink-0 justify-start lg:w-full"
-              onClick={() => setActiveSection(section.id)}
-            >
-              {t(sectionTitleKey(section.id))}
-            </Button>
-          ))}
+          {availableSections.map((section) => {
+            const SectionIcon = section.icon;
+            return (
+              <Button
+                key={section.id}
+                type="button"
+                size="sm"
+                variant={sectionId === section.id ? "secondary" : "ghost"}
+                aria-current={sectionId === section.id ? "page" : undefined}
+                className="shrink-0 justify-start gap-2 lg:w-full"
+                onClick={() => setActiveSection(section.id)}
+              >
+                <SectionIcon
+                  className="size-4 shrink-0"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                {t(sectionTitleKey(section.id))}
+              </Button>
+            );
+          })}
         </nav>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <h2 className="text-base font-semibold text-foreground">
-            {sectionLabel}
-          </h2>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 flex-col gap-3">
+            <h2 className="text-base font-semibold text-foreground">
+              {sectionLabel}
+            </h2>
 
-          {profileLoading && (
-            <p className="m-0 text-sm font-semibold text-muted-foreground">
-              <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
-            </p>
-          )}
-          {saveError && (
-            <Alert variant="destructive">
-              <AlertDescription className="font-bold">
-                {saveError}
-              </AlertDescription>
-            </Alert>
-          )}
+            {profileLoading && (
+              <p className="m-0 text-sm font-semibold text-muted-foreground">
+                <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
+              </p>
+            )}
+            {saveError && (
+              <Alert variant="destructive">
+                <AlertDescription className="font-bold">
+                  {saveError}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
 
-          {sectionId === "compte" ? (
-            <CompteSettingsPanel
-              form={draftForm}
-              loading={profileLoading}
-              saving={saving}
-              saveError={compteSaveError}
-              onSaveField={onSaveCompteField}
-            />
-          ) : sectionId === "apparence" ? (
-            <ApparenceSettingsPanel />
-          ) : (
-            <div className="flex flex-col gap-6">
-              {inlineCards.map((card) => (
-                <SettingsBlock
-                  key={card.id}
-                  icon={card.icon}
-                  title={t(cardTitleKey(card.id))}
-                  description={t(cardDescKey(card.id), cardDescVars(card.id))}
-                  upcoming={card.upcoming ? t("parametres.upcoming") : null}
-                >
-                  {renderInlineSetting(card.id)}
-                </SettingsBlock>
-              ))}
-              {modalCards.map((card) => (
-                <SettingsModalRow
-                  key={card.id}
-                  icon={card.icon}
-                  title={t(cardTitleKey(card.id))}
-                  description={t(cardDescKey(card.id), cardDescVars(card.id))}
-                  openLabel={t("common.open")}
-                  onOpen={() => setOpenSetting(card.id)}
+          <div className="min-h-0 flex-1 overflow-y-auto pt-3">
+            {sectionId === "compte" ? (
+              <CompteSettingsPanel
+                form={draftForm}
+                loading={profileLoading}
+                saving={saving}
+                saveError={compteSaveError}
+                onSaveField={onSaveCompteField}
+              />
+            ) : sectionId === "apparence" ? (
+              <ApparenceSettingsPanel />
+            ) : sectionId === "entreprise" ? (
+              <EntrepriseSettingsPanel
+                form={draftForm}
+                saving={saving}
+                changed={changed}
+                onFieldChange={setField}
+                onSaveSubsection={onSaveEntrepriseSubsection}
+              />
+            ) : sectionId === "facturation" ? (
+              <div className="flex flex-col gap-6">
+                <FacturationSettingsPanel
+                  form={draftForm}
+                  saving={saving}
+                  changed={changed}
+                  onFieldChange={setField}
+                  onSaveSubsection={onSaveFacturationSubsection}
                 />
-              ))}
-            </div>
-          )}
+                {inlineCards
+                  .filter((card) => card.id !== "contact-facturation")
+                  .map((card) => (
+                      <SettingsBlock
+                        key={card.id}
+                        icon={card.icon}
+                        title={t(cardTitleKey(card.id))}
+                        description={t(
+                          cardDescKey(card.id),
+                          cardDescVars(card.id),
+                        )}
+                        upcoming={
+                          card.upcoming ? t("parametres.upcoming") : null
+                        }
+                      >
+                        {renderInlineSetting(card.id)}
+                      </SettingsBlock>
+                    ))}
+                {modalCards.map((card) => (
+                  <SettingsModalRow
+                    key={card.id}
+                    icon={card.icon}
+                    title={t(cardTitleKey(card.id))}
+                    description={t(
+                      cardDescKey(card.id),
+                      cardDescVars(card.id),
+                    )}
+                    openLabel={t("common.open")}
+                    onOpen={() => setOpenSetting(card.id)}
+                  />
+                ))}
+              </div>
+            ) : sectionId === "campagnes" ? (
+              <CampagnesSettingsPanel
+                form={draftForm}
+                saving={saving}
+                changed={changed}
+                onFieldChange={setField}
+                onSaveSubsection={onSaveCampagnesSubsection}
+              />
+            ) : (
+              <div className="flex flex-col gap-6">
+                {inlineCards.map((card) => (
+                  <SettingsBlock
+                    key={card.id}
+                    icon={card.icon}
+                    title={t(cardTitleKey(card.id))}
+                    description={t(
+                      cardDescKey(card.id),
+                      cardDescVars(card.id),
+                    )}
+                    upcoming={card.upcoming ? t("parametres.upcoming") : null}
+                  >
+                    {renderInlineSetting(card.id)}
+                  </SettingsBlock>
+                ))}
+                {modalCards.map((card) => (
+                  <SettingsModalRow
+                    key={card.id}
+                    icon={card.icon}
+                    title={t(cardTitleKey(card.id))}
+                    description={t(
+                      cardDescKey(card.id),
+                      cardDescVars(card.id),
+                    )}
+                    openLabel={t("common.open")}
+                    onOpen={() => setOpenSetting(card.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-          {dirty && (
-            <div className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t border-border bg-background/95 py-3 backdrop-blur">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={saving}
-                onClick={() => {
-                  setDraftForm(savedForm);
-                  setSaveError(null);
-                }}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={saving}
-                onClick={() => void onSaveChanges()}
-              >
-                {t("dialog.save")}
-              </Button>
+          {sectionDirty &&
+          sectionSaveLabel &&
+          sectionId !== "entreprise" &&
+          sectionId !== "facturation" &&
+          sectionId !== "campagnes" ? (
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-background py-3">
+              <p className="m-0 text-xs font-medium text-muted-foreground">
+                {t("parametres.unsavedHint", { count: sectionDirtyCount })}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => revertSectionDraft(sectionId)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => void onSaveChanges(sectionId)}
+                >
+                  {t(sectionSaveLabel)}
+                </Button>
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

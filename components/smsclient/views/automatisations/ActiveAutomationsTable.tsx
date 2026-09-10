@@ -37,7 +37,9 @@ function activityLabel(row: AutomationRowData): string {
   const catalog = AUTOMATION_CATALOG.find((a) => a.id === row.presetKey);
   const tag = catalog ? primaryTagForDisplay(catalog) : undefined;
   if (tag) return TAG_LABEL[tag] ?? tag;
-  return row.kind === "birthday" ? "Anniversaire" : "Date fixe";
+  if (row.kind === "birthday") return "Anniversaire";
+  if (row.kind === "recurring") return "Récurrent";
+  return "Date fixe";
 }
 
 function triggerLabel(row: AutomationRowData): string {
@@ -47,11 +49,13 @@ function triggerLabel(row: AutomationRowData): string {
 export type ActiveAutomationsTableProps = {
   rows: AutomationRowData[];
   onEdit: (row: AutomationRowData) => void;
+  onCreate: () => void;
 };
 
 export function ActiveAutomationsTable({
   rows,
   onEdit,
+  onCreate,
 }: ActiveAutomationsTableProps) {
   const [query, setQuery] = useState("");
 
@@ -139,8 +143,8 @@ export function ActiveAutomationsTable({
         </EmptyMedia>
         <EmptyTitle className="text-sm">Aucune automatisation active</EmptyTitle>
         <EmptyDescription className="text-xs">
-          Configurez une automatisation du catalogue ci-dessous pour
-          l&apos;afficher ici.
+          Activez une automatisation depuis le catalogue pour l&apos;afficher
+          ici.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -173,11 +177,7 @@ export function ActiveAutomationsTable({
             variant="default"
             size="lg"
             className="rounded-full"
-            onClick={() => {
-              document
-                .getElementById("automatisations-disponibles")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
+            onClick={onCreate}
           >
             <Plus aria-hidden />
             Créer une automatisation

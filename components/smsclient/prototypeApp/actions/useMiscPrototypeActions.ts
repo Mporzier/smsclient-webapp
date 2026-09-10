@@ -1,6 +1,6 @@
 "use client";
 
-import { upsertAutomation } from "@/lib/supabase/automations";
+import { saveAutomation } from "@/lib/supabase/automations";
 import { restoreClients, restoreGroups } from "@/lib/supabase/trash";
 import type { AutomationSavePayload } from "@/lib/types/automation";
 import type { StatsPeriodPreset } from "@/lib/statsDateRanges";
@@ -60,13 +60,17 @@ export function useMiscPrototypeActions({ data, modals }: ActionsContext) {
           "Vous devez être connecté pour enregistrer une automatisation."
         );
       }
-      const { error } = await upsertAutomation(supabase, user.id, payload);
+      const { error } = await saveAutomation(supabase, user.id, payload);
       if (error) throw error;
       await automationsState.refresh();
       toast(
-        payload.enabled
-          ? "Automatisation activée."
-          : "Automatisation enregistrée."
+        payload.mode === "custom" && !payload.id
+          ? payload.enabled
+            ? "Automatisation personnalisée créée et activée."
+            : "Automatisation personnalisée créée."
+          : payload.enabled
+            ? "Automatisation activée."
+            : "Automatisation enregistrée.",
       );
     },
     [user, supabase, automationsState]
