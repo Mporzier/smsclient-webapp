@@ -159,10 +159,10 @@ describe("Groupes — flows (intégration, mocks)", () => {
 
     await user.click(screen.getAllByRole("checkbox")[1]);
     expect(
-      screen.getByRole("button", { name: "Créer une campagne" }),
+      screen.getByRole("button", { name: "Créer un envoi SMS" }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Créer une campagne" }));
+    await user.click(screen.getByRole("button", { name: "Créer un envoi SMS" }));
     expect(onCreateCampaign).toHaveBeenCalledWith(["group-1"]);
   });
 

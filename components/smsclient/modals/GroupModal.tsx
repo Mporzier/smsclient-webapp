@@ -1169,7 +1169,7 @@ export function GroupModal(props: GroupModalProps) {
                   onClick={handleLaunchCampaign}
                   className="cursor-pointer"
                 >
-                  Lancer une campagne
+                  Lancer un envoi SMS
                 </Button>
               )}
               <Button

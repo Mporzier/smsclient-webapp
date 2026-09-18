@@ -22,7 +22,7 @@ export function CampaignWizardStepper({
         "flex min-w-0 items-center gap-1.5",
         compact ? "overflow-x-auto" : "gap-2",
       )}
-      aria-label="Étapes de création de campagne"
+      aria-label="Étapes de création d'envoi SMS"
     >
       {CAMPAIGN_WIZARD_STEPS.map((s, idx) => {
         const done = s.id < current;

@@ -1,54 +1,55 @@
 "use client";
 
-import { cn } from "@/lib/cn";
-import { SmsLinkPicker } from "@/components/smsclient/CreateCampaign/SmsLinkPicker";
-import type { LinkRowData } from "@/lib/types/link";
+import { SmsAiLinkOptionCard } from "@/components/smsclient/CreateCampaign/SmsAiLinkOptionCard";
 import {
-  Link2,
-  Smile,
-  Sparkles,
-  Wand2,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  aiOptionCardClass,
+  SmsAiOptionHeader,
+  SmsAiOptionSwitch,
+} from "@/components/smsclient/CreateCampaign/SmsAiOptionChrome";
+import { cn } from "@/lib/cn";
+import type { LinkRowData } from "@/lib/types/link";
 import type { MergeTagKey } from "@/lib/proto/smsPersonalization";
+import {
+  DEFAULT_SMS_AI_MESSAGE_TONE,
+  type SmsAiMessageTone,
+} from "@/components/smsclient/CreateCampaign/smsAiTone";
+import { SmsAiToneOptionCard } from "@/components/smsclient/CreateCampaign/SmsAiToneOptionCard";
 
 export type SmsAiOptions = {
   autoOptimize: boolean;
   selectedMergeTags: MergeTagKey[];
-  allowSpecialChars: boolean;
-  linkTracking: boolean;
+  /** Lien court que l’IA doit intégrer au SMS généré. */
+  selectedLinkId: string | null;
+  messageTone: SmsAiMessageTone;
 };
 
 export const DEFAULT_SMS_AI_OPTIONS: SmsAiOptions = {
   autoOptimize: true,
   selectedMergeTags: [],
-  allowSpecialChars: false,
-  linkTracking: false,
+  selectedLinkId: null,
+  messageTone: DEFAULT_SMS_AI_MESSAGE_TONE,
 };
 
 type SmsAiOptionCardsProps = {
   options: SmsAiOptions;
   onChange: (patch: Partial<SmsAiOptions>) => void;
-  savedLinks: LinkRowData[];
+  /** Sans en-tête ni bordure — pour panneau repliable. */
+  embedded?: boolean;
+  savedLinks?: LinkRowData[];
   linksLoading?: boolean;
-  selectedLinkId: string | null;
-  onSelectLink: (link: LinkRowData) => void;
   onCreateLink?: (args: {
     originalUrl: string;
     label: string;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
-  composeDisabled?: boolean;
-  /** Sans en-tête ni bordure — pour panneau repliable. */
-  embedded?: boolean;
 };
 
-type BooleanAiOption = "autoOptimize" | "allowSpecialChars" | "linkTracking";
+type BooleanAiOption = "autoOptimize";
 
 type CardDef = {
   key: BooleanAiOption;
   title: string;
   description: string;
-  icon: LucideIcon;
+  emoji: string;
 };
 
 const CARDS: CardDef[] = [
@@ -57,33 +58,20 @@ const CARDS: CardDef[] = [
     title: "Optimisation automatique",
     description:
       "Nous optimisons votre message pour réduire le nombre de crédits SMS utilisés.",
-    icon: Wand2,
-  },
-  {
-    key: "allowSpecialChars",
-    title: "Caractères spéciaux",
-    description: "Autoriser les caractères spéciaux (émojis)",
-    icon: Smile,
-  },
-  {
-    key: "linkTracking",
-    title: "Suivi des liens",
-    description:
-      "Sélectionnez un lien court enregistré et suivez les clics dans votre SMS.",
-    icon: Link2,
+    emoji: "⚡",
   },
 ];
 
 function SmsAiOptionCard({
   title,
   description,
-  icon: Icon,
+  emoji,
   enabled,
   onToggle,
 }: {
   title: string;
   description: string;
-  icon: LucideIcon;
+  emoji: string;
   enabled: boolean;
   onToggle: () => void;
 }) {
@@ -93,52 +81,17 @@ function SmsAiOptionCard({
       role="switch"
       aria-checked={enabled}
       onClick={onToggle}
-      className={cn(
-        "flex w-full cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors",
-        enabled
-          ? "border-[#2f6fed] bg-[#eef4ff] shadow-[inset_0_0_0_1px_rgba(47,111,237,0.12)]"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
-      )}
+      className={cn(aiOptionCardClass(enabled), "cursor-pointer text-left")}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span
-          className={cn(
-            "grid h-8 w-8 shrink-0 place-items-center rounded-lg border",
-            enabled
-              ? "border-[#2f6fed]/25 bg-white text-[#2f6fed]"
-              : "border-slate-200 bg-slate-50 text-slate-500"
-          )}
-        >
-          <Icon className="h-4 w-4" aria-hidden />
-        </span>
-        <span
-          className={cn(
-            "relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors",
-            enabled ? "bg-[#2f6fed]" : "bg-slate-200"
-          )}
-          aria-hidden
-        >
-          <span
-            className={cn(
-              "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
-              enabled ? "translate-x-4" : "translate-x-0.5"
-            )}
-          />
-        </span>
-      </div>
-      <div>
-        <p
-          className={cn(
-            "m-0 text-xs font-black leading-snug",
-            enabled ? "text-[#1f3b77]" : "text-slate-900"
-          )}
-        >
-          {title}
-        </p>
-        <p className="m-0 mt-1 text-[11px] font-semibold leading-snug text-slate-500">
-          {description}
-        </p>
-      </div>
+      <SmsAiOptionHeader
+        emoji={emoji}
+        emojiTone={enabled ? "active" : "neutral"}
+        title={title}
+        trailing={<SmsAiOptionSwitch enabled={enabled} />}
+      />
+      <p className="m-0 text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </p>
     </button>
   );
 }
@@ -146,67 +99,50 @@ function SmsAiOptionCard({
 export function SmsAiOptionCards({
   options,
   onChange,
-  savedLinks,
-  linksLoading = false,
-  selectedLinkId,
-  onSelectLink,
-  onCreateLink,
-  composeDisabled = false,
   embedded = false,
+  savedLinks = [],
+  linksLoading = false,
+  onCreateLink,
 }: SmsAiOptionCardsProps) {
   return (
     <div className={cn(!embedded && "shrink-0 border-t border-slate-100 pt-3")}>
       {!embedded ? (
-        <div className="mb-2 flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-[#2f6fed]" aria-hidden />
-          <span className="text-xs font-black text-slate-900">Options IA</span>
+        <div className="mb-2 flex items-center gap-2">
+          <span
+            className="flex size-7 items-center justify-center rounded-full bg-blue-100 text-base leading-none"
+            aria-hidden
+          >
+            ✨
+          </span>
+          <span className="text-sm font-semibold text-foreground">
+            Options IA
+          </span>
         </div>
       ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {CARDS.map((card) => {
-          if (card.key === "linkTracking") {
-            return (
-              <div key={card.key} className="flex flex-col gap-2">
-                <SmsAiOptionCard
-                  title={card.title}
-                  description={card.description}
-                  icon={card.icon}
-                  enabled={options.linkTracking}
-                  onToggle={() =>
-                    onChange({ linkTracking: !options.linkTracking })
-                  }
-                />
-                {options.linkTracking ? (
-                  <div className="min-w-0 overflow-x-hidden rounded-xl border border-[#dfe6f2] bg-slate-50/80 p-2.5">
-                    <p className="m-0 mb-2 text-[10px] font-black uppercase tracking-wide text-slate-500">
-                      Sélectionner un lien
-                    </p>
-                    <SmsLinkPicker
-                      links={savedLinks}
-                      loading={linksLoading}
-                      mode="select"
-                      selectedLinkId={selectedLinkId}
-                      onSelectLink={onSelectLink}
-                      disabled={composeDisabled}
-                      onCreateLink={onCreateLink}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            );
+        {CARDS.map((card) => (
+          <SmsAiOptionCard
+            key={card.key}
+            title={card.title}
+            description={card.description}
+            emoji={card.emoji}
+            enabled={options[card.key]}
+            onToggle={() => onChange({ [card.key]: !options[card.key] })}
+          />
+        ))}
+        <SmsAiToneOptionCard
+          value={options.messageTone}
+          onChange={(messageTone) => onChange({ messageTone })}
+        />
+        <SmsAiLinkOptionCard
+          links={savedLinks}
+          loading={linksLoading}
+          selectedLinkId={options.selectedLinkId}
+          onSelectedLinkIdChange={(selectedLinkId) =>
+            onChange({ selectedLinkId })
           }
-
-          return (
-            <SmsAiOptionCard
-              key={card.key}
-              title={card.title}
-              description={card.description}
-              icon={card.icon}
-              enabled={options[card.key]}
-              onToggle={() => onChange({ [card.key]: !options[card.key] })}
-            />
-          );
-        })}
+          onCreateLink={onCreateLink}
+        />
       </div>
     </div>
   );

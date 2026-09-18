@@ -50,18 +50,18 @@ export function renderAudienceRoute(
           creditsLabel={
             creditsState.loading ? undefined : creditsState.balanceLabel
           }
-          creditsBalance={creditsState.balance}
           contactsCount={
             contactsState.totalCount ?? contactsState.rows.length
           }
           groupsCount={groupsState.totalCount ?? groupsState.rows.length}
           campaignRows={campaignsState.rows}
-          groupRows={groupsState.rows}
-          contacts={contactsState.rows}
           contactsLoading={contactsState.loading}
           campaignsLoading={campaignsState.loading}
           onNewCampaign={() => modals.setCampaignNameOpen(true)}
           onGo={wizard.guardedGo}
+          qrPublicUrl={data.userQrState.publicUrl}
+          qrLoading={data.userQrState.loading}
+          qrError={data.userQrState.error}
         />
       );
     case "contacts":

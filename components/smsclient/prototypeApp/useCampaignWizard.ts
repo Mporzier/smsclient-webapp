@@ -946,7 +946,7 @@ export function useCampaignWizard({
   const handleCampaignConfirm = useCallback(async () => {
     if (!userId) {
       throw new Error(
-        "Vous devez être connecté pour enregistrer une campagne."
+        "Vous devez être connecté pour enregistrer un envoi SMS."
       );
     }
     const targetContacts =
@@ -990,7 +990,7 @@ export function useCampaignWizard({
       await stampLastSmsOnContacts(supabase, ids, smsBody);
     }
     await onCampaignSaved();
-    toast("Campagne enregistrée");
+    toast("Envoi SMS enregistré");
   }, [
     userId,
     supabase,
@@ -1011,6 +1011,7 @@ export function useCampaignWizard({
     onWizardStepChange: handleWizardStepChange,
     onWizardExit: handleWizardExit,
     requestWizardLeave,
+    composeApproach: campaignComposeApproach,
     onComposeApproachChange: setCampaignComposeApproach,
     go,
     title: campaignTitle,

@@ -7,11 +7,8 @@ import {
   SmsAiOptionCards,
   type SmsAiOptions,
 } from "@/components/smsclient/CreateCampaign/SmsAiOptionCards";
-import { SmsMergeTagChecklist } from "@/components/smsclient/CreateCampaign/SmsMergeTagMenu";
-import type { CustomFieldDef } from "@/lib/types/customFields";
-import type { MergeFillCounts, MergeFillStatus } from "@/lib/proto/smsMergeFill";
-import type { LinkRowData } from "@/lib/types/link";
 import { stripStopMention } from "@/lib/proto/smsStopMention";
+import type { LinkRowData } from "@/lib/types/link";
 import { Spinner } from "@/components/ui/spinner";
 import { ChevronDown, Check, SlidersHorizontal, Sparkles } from "lucide-react";
 
@@ -20,14 +17,6 @@ const VARIANT_LABELS = ["Direct", "Chaleureux", "Dynamique"] as const;
 type SmsAiComposePanelProps = {
   options: SmsAiOptions;
   onOptionsChange: (patch: Partial<SmsAiOptions>) => void;
-  savedLinks: LinkRowData[];
-  linksLoading?: boolean;
-  selectedLinkId: string | null;
-  onSelectLink: (link: LinkRowData) => void;
-  onCreateLink?: (args: {
-    originalUrl: string;
-    label: string;
-  }) => Promise<{ data: LinkRowData | null; error: string | null }>;
   generating: boolean;
   onGenerate: () => void;
   optionsOpen: boolean;
@@ -35,19 +24,17 @@ type SmsAiComposePanelProps = {
   variants: string[];
   selectedVariant: string | null;
   onSelectVariant: (variant: string) => void;
-  customFieldDefs?: CustomFieldDef[];
-  mergeFillCounts?: MergeFillCounts;
-  mergeFillStatus?: MergeFillStatus;
+  savedLinks?: LinkRowData[];
+  linksLoading?: boolean;
+  onCreateLink?: (args: {
+    originalUrl: string;
+    label: string;
+  }) => Promise<{ data: LinkRowData | null; error: string | null }>;
 };
 
 export function SmsAiComposePanel({
   options,
   onOptionsChange,
-  savedLinks,
-  linksLoading = false,
-  selectedLinkId,
-  onSelectLink,
-  onCreateLink,
   generating,
   onGenerate,
   optionsOpen,
@@ -55,9 +42,9 @@ export function SmsAiComposePanel({
   variants,
   selectedVariant,
   onSelectVariant,
-  customFieldDefs = [],
-  mergeFillCounts,
-  mergeFillStatus,
+  savedLinks = [],
+  linksLoading = false,
+  onCreateLink,
 }: SmsAiComposePanelProps) {
   const hasVariants = variants.length > 0;
 
@@ -86,23 +73,25 @@ export function SmsAiComposePanel({
           />
         </button>
         {!hasVariants ? (
-          <Button
-            variant="default"
-            size="lg"
-            className={cn(
-              brandBtnPrimaryCls,
-              "h-10 min-w-0 flex-1 gap-2 px-4 text-sm sm:flex-none",
-            )}
-            disabled={generating}
-            onClick={onGenerate}
-          >
-            {generating ? (
-              <Spinner className="size-4" />
-            ) : (
-              <Sparkles className="h-4 w-4" aria-hidden />
-            )}
-            {generating ? "Génération…" : "Générer le message"}
-          </Button>
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:flex-none">
+            <Button
+              variant="default"
+              size="lg"
+              className={cn(
+                brandBtnPrimaryCls,
+                "h-10 shrink-0 gap-2 px-4 text-sm",
+              )}
+              disabled={generating}
+              onClick={onGenerate}
+            >
+              {generating ? (
+                <Spinner className="size-4" />
+              ) : (
+                <Sparkles className="h-4 w-4" aria-hidden />
+              )}
+              {generating ? "Génération…" : "Générer le message"}
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -114,20 +103,7 @@ export function SmsAiComposePanel({
             onChange={onOptionsChange}
             savedLinks={savedLinks}
             linksLoading={linksLoading}
-            selectedLinkId={selectedLinkId}
-            onSelectLink={onSelectLink}
             onCreateLink={onCreateLink}
-            composeDisabled={generating}
-          />
-          <SmsMergeTagChecklist
-            className="mt-3 border-t border-slate-200 pt-3"
-            defs={customFieldDefs}
-            selected={options.selectedMergeTags}
-            onChange={(selectedMergeTags) =>
-              onOptionsChange({ selectedMergeTags })
-            }
-            fillCounts={mergeFillCounts}
-            fillStatus={mergeFillStatus}
           />
         </div>
       ) : null}

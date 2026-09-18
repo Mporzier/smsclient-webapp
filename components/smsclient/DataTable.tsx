@@ -326,9 +326,7 @@ export function DataTable<T>({
   const { rows: tableRows } = table.getRowModel();
   const totalSize = table.getTotalSize();
 
-  // Loader plein cadre seulement quand rien à montrer. Refetch (search, tri,
-  // refresh après mutation) garde les lignes en place.
-  const showLoader = loading && data.length === 0;
+  const initialLoad = loading && data.length === 0;
 
   const isEmpty =
     !loading &&
@@ -404,17 +402,6 @@ export function DataTable<T>({
           clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
         )}
       >
-        {showLoader ? (
-          <div
-            className="flex min-h-[240px] w-full flex-1 items-center justify-center px-[18px] py-12 text-sm font-medium text-muted-foreground"
-            role="status"
-            aria-live="polite"
-            aria-busy="true"
-          >
-            <LoadingLabel>{loadingMessage}</LoadingLabel>
-          </div>
-        ) : null}
-        {!showLoader ? (
         <table
           aria-busy={loading}
           className={cn(
@@ -661,8 +648,7 @@ export function DataTable<T>({
               ))}
           </tbody>
         </table>
-        ) : null}
-        {!showLoader && onLoadMore && hasMore ? (
+        {onLoadMore && hasMore ? (
           <div
             ref={sentinelRef}
             className="flex h-10 items-center justify-center text-xs text-muted-foreground"
@@ -678,8 +664,8 @@ export function DataTable<T>({
       </div>
       <div className="flex min-h-9 shrink-0 items-center gap-2 border-t border-border px-3.5 py-1 text-sm font-medium text-muted-foreground">
         <span className="min-w-0">
-          {showLoader
-            ? "…"
+          {initialLoad
+            ? loadingMessage
             : footer ??
               `${data.length} élément${data.length > 1 ? "s" : ""}`}
         </span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/components/ui/sonner";
 import type { UserProfileForm } from "@/lib/types/profile";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -12,7 +13,7 @@ import {
   ListPlus,
   Mail,
   MapPin,
-  Megaphone,
+  Send,
   MessageSquare,
   Palette,
   Sparkles,
@@ -63,7 +64,7 @@ export const settingSections: SettingSectionDef[] = [
   { id: "apparence", icon: Palette },
   { id: "entreprise", icon: Building2 },
   { id: "facturation", icon: CreditCard },
-  { id: "campagnes", icon: Megaphone },
+  { id: "campagnes", icon: Send },
   { id: "sms-alertes", icon: Bell },
   { id: "champs-perso", icon: ListPlus },
   { id: "corbeille", icon: Trash2 },
@@ -131,9 +132,27 @@ export const emptyProfileForm: UserProfileForm = {
   notifySummary: true,
 };
 
+/** @deprecated Préférer `parametresRowLabelCls` + `ParametresInputRow`. */
 export const parametresFieldLbl =
   "text-xs font-semibold text-muted-foreground";
 export const parametresDirtyInp = "border-ring ring-2 ring-ring/20";
+
+/** Grille label | champ — alignée onglet Compte. */
+export const parametresRowCls =
+  "grid min-h-[3.25rem] grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 border-b border-border py-2 last:border-b-0 max-[480px]:grid-cols-[5.5rem_minmax(0,1fr)]";
+export const parametresRowLabelCls =
+  "text-sm font-medium text-muted-foreground";
+export const parametresRowValueCls =
+  "flex min-w-0 w-full items-center gap-1.5";
+export const parametresRowInputCls =
+  "h-9 min-w-0 flex-1 text-sm focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
+export const parametresRowHintCls =
+  "text-xs font-normal leading-snug text-muted-foreground";
+export const parametresFieldStackCls = "w-full max-w-md";
+
+export function parametresToastError(message: string) {
+  toast.error(message);
+}
 
 export const allSettingCards: SettingCardDef[] = [
   {

@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -68,7 +69,7 @@ export function listMergeTagKeys(
   }));
 }
 
-function MergeFillHint({
+function MergeFillBadge({
   itemKey,
   fillCounts,
   fillStatus,
@@ -77,21 +78,35 @@ function MergeFillHint({
   fillCounts?: MergeFillCounts;
   fillStatus?: MergeFillStatus;
 }) {
-  if (!fillStatus || fillStatus === "error") return null;
-  if (fillStatus === "na") {
-    return <span className="text-[11px] leading-tight text-muted-foreground">—</span>;
+  if (!fillStatus || fillStatus === "error" || fillStatus === "na") {
+    return null;
   }
   if (fillStatus === "loading") {
-    return <span className="text-[11px] leading-tight text-muted-foreground">…</span>;
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
+        …
+      </span>
+    );
   }
   if (!fillCounts || fillCounts.total <= 0) return null;
-  const suffix = formatMergeFillSuffix(
-    filledCountForMergeKey(fillCounts, itemKey),
-    fillCounts.total,
-  );
-  if (!suffix) return null;
+  const filled = filledCountForMergeKey(fillCounts, itemKey);
+  const total = fillCounts.total;
+  const safe = Math.min(Math.max(0, filled), total);
+  const pct = Math.round((safe / total) * 100);
   return (
-    <span className="text-[11px] leading-tight text-muted-foreground">{suffix}</span>
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold leading-none tabular-nums",
+        pct >= 90
+          ? "border-emerald-200/90 bg-emerald-50 text-emerald-800"
+          : pct >= 50
+            ? "border-amber-200/90 bg-amber-50 text-amber-900"
+            : "border-slate-200 bg-slate-50 text-slate-600",
+      )}
+      title={formatMergeFillSuffix(safe, total)}
+    >
+      {pct}%
+    </span>
   );
 }
 
@@ -101,6 +116,7 @@ export function SmsMergeTagMenu({
   contentClassName,
   fillCounts,
   fillStatus,
+  disabled = false,
 }: {
   defs?: readonly CustomFieldDef[];
   onInsert: (token: string) => void;
@@ -108,6 +124,7 @@ export function SmsMergeTagMenu({
   contentClassName?: string;
   fillCounts?: MergeFillCounts;
   fillStatus?: MergeFillStatus;
+  disabled?: boolean;
 }) {
   const items = listMergeTagKeys(defs).filter((i) => i.token);
 
@@ -118,6 +135,7 @@ export function SmsMergeTagMenu({
           type="button"
           variant="outline"
           size="sm"
+          disabled={disabled}
           className="h-8 gap-1.5 rounded-lg px-2.5 text-[11px] font-bold"
         >
           <Tag className="size-3.5" aria-hidden />
@@ -126,38 +144,30 @@ export function SmsMergeTagMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className={cn("min-w-80 max-w-96", contentClassName)}
+        className={cn("w-72", contentClassName)}
       >
-        <div className="sticky top-0 z-10 -mx-1 -mt-1 bg-popover px-1 pt-1">
-          <DropdownMenuLabel className="py-0.5 text-[11px] leading-snug font-medium">
-            Remplacée par la valeur de chaque contact à l’envoi.
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-        </div>
-        {items.map((item) => (
-          <DropdownMenuItem
-            key={item.key}
-            className="flex-col items-start gap-0 whitespace-normal py-1"
-            onSelect={() => onInsert(item.token)}
-          >
-            <span className="text-[13px] font-medium leading-tight">
-              {item.label}
-            </span>
-            <span className="text-[11px] leading-tight text-muted-foreground">
-              Ex. « {item.example} »
+        <DropdownMenuLabel>
+          Remplacée par la valeur de chaque contact à l’envoi.
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {items.map((item) => (
+            <DropdownMenuItem
+              key={item.key}
+              className="flex items-center justify-between gap-2"
+              onSelect={() => onInsert(item.token)}
+            >
+              <span className="min-w-0 truncate font-medium">{item.label}</span>
               {fillStatus ? (
-                <>
-                  {" "}
-                  <MergeFillHint
-                    itemKey={item.key}
-                    fillCounts={fillCounts}
-                    fillStatus={fillStatus}
-                  />
-                </>
+                <MergeFillBadge
+                  itemKey={item.key}
+                  fillCounts={fillCounts}
+                  fillStatus={fillStatus}
+                />
               ) : null}
-            </span>
-          </DropdownMenuItem>
-        ))}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -215,7 +225,7 @@ export function SmsMergeTagChecklist({
                   {fillStatus ? (
                     <>
                       {" · "}
-                      <MergeFillHint
+                      <MergeFillBadge
                         itemKey={item.key}
                         fillCounts={fillCounts}
                         fillStatus={fillStatus}

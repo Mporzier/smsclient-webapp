@@ -141,7 +141,7 @@ export function SmsTemplatePicker({
               Aucun modèle personnalisé
             </p>
             <p className="m-0 mt-1 text-[11px] font-semibold text-slate-500">
-              Créez votre premier modèle sans quitter la campagne.
+              Créez votre premier modèle sans quitter l&apos;envoi SMS.
             </p>
             {handleCreate ? (
               <button

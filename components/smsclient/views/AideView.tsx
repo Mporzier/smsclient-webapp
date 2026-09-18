@@ -7,7 +7,7 @@ import {
   BarChart3,
   Check,
   LayoutTemplate,
-  Megaphone,
+  Send,
   MessageSquare,
   Users,
   Zap,
@@ -154,7 +154,7 @@ export function AideView({ onGo }: AideViewProps) {
         <HelpCard
           softBg="#eaf8d8"
           color="#6fbd27"
-          icon={Megaphone}
+          icon={Send}
           title={t("help.firstSms.title")}
           description={t("help.firstSms.desc")}
         >

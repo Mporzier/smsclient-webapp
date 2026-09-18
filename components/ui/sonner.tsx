@@ -58,8 +58,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       icons={{
         success: <CircleCheck className="size-4" />,
         info: <Info className="size-4" />,
-        warning: <TriangleAlert className="size-4" />,
-        error: <CircleAlert className="size-4" />,
+        warning: <CircleAlert className="size-4" />,
+        error: <TriangleAlert className="size-4 shrink-0" aria-hidden />,
         loading: <Spinner className="size-4" />,
       }}
       style={
@@ -70,6 +70,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--border-radius": "var(--radius)",
           "--success-bg": "var(--toast-bg)",
           "--error-bg": "var(--toast-bg-error)",
+          "--error-text": "var(--toast-fg-error)",
+          "--error-border": "var(--toast-border-error)",
         } as CSSProperties
       }
       toastOptions={{
@@ -79,6 +81,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           description: "text-sm",
           icon: "",
           closeButton: "",
+          error: "border border-[var(--toast-border-error)]",
         },
       }}
       {...props}

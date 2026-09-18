@@ -10,7 +10,7 @@ import {
   modalIconCls,
   preventDialogOpenAutoFocus,
 } from "@/components/smsclient/modals/modalChrome";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { parametresToastError } from "@/components/smsclient/views/parametres/parametresSettings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,12 +46,11 @@ import {
 } from "@/lib/types/customFields";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const TABLE_CLS = "min-h-0 flex-1";
 const fieldLabelCls = "text-xs font-semibold text-foreground";
 const fieldMetaCls = "text-xs font-normal text-muted-foreground";
-const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
@@ -91,11 +90,13 @@ export function CustomFieldsSettingsPanel({
   const [fieldType, setFieldType] = useState<CustomFieldType>("text");
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [labelError, setLabelError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (error) parametresToastError(error);
+  }, [error]);
 
   const atCap = defs.length >= CUSTOM_FIELD_MAX_PER_ACCOUNT;
   const q = query.trim().toLowerCase();
@@ -137,23 +138,14 @@ export function CustomFieldsSettingsPanel({
   const handleCreate = async () => {
     const next = label.trim();
     if (!next) {
-      setLabelError(t("customFields.labelRequired"));
+      parametresToastError(t("customFields.labelRequired"));
       return;
     }
-    setLabelError(null);
     setBusy(true);
-    setLocalError(null);
     try {
       const { error: err } = await onCreate({ label: next, fieldType });
       if (err) {
-        if (
-          err.message.includes("existe déjà") ||
-          err.message.includes("already")
-        ) {
-          setLabelError(err.message);
-        } else {
-          setLocalError(err.message);
-        }
+        parametresToastError(err.message);
         return;
       }
       setLabel("");
@@ -168,15 +160,14 @@ export function CustomFieldsSettingsPanel({
     async (fieldId: string) => {
       const next = editLabel.trim();
       if (!next) {
-        setLocalError(t("customFields.labelRequired"));
+        parametresToastError(t("customFields.labelRequired"));
         return;
       }
       setBusy(true);
-      setLocalError(null);
       try {
         const { error: err } = await onRename(fieldId, next);
         if (err) {
-          setLocalError(err.message);
+          parametresToastError(err.message);
           return;
         }
         setEditingId(null);
@@ -190,7 +181,6 @@ export function CustomFieldsSettingsPanel({
   const confirmDelete = useCallback(async () => {
     if (!deleteIds?.length) return;
     setBusy(true);
-    setLocalError(null);
     try {
       const { error: err } = await onRemove(deleteIds);
       if (err) throw err;
@@ -200,17 +190,20 @@ export function CustomFieldsSettingsPanel({
         return next;
       });
       setDeleteIds(null);
+    } catch (e) {
+      parametresToastError(
+        e instanceof Error ? e.message : t("parametres.saveFailed"),
+      );
     } finally {
       setBusy(false);
     }
-  }, [deleteIds, onRemove]);
+  }, [deleteIds, onRemove, t]);
 
   const closeCreate = () => {
     if (busy) return;
     setCreateOpen(false);
     setLabel("");
     setFieldType("text");
-    setLabelError(null);
   };
 
   const deleteLabels = (deleteIds ?? [])
@@ -381,14 +374,6 @@ export function CustomFieldsSettingsPanel({
           </Button>
         </div>
 
-        {(error || localError) && (
-          <Alert variant="destructive" className="shrink-0">
-            <AlertDescription className="font-bold">
-              {localError ?? error}
-            </AlertDescription>
-          </Alert>
-        )}
-
         {atCap && (
           <p className="m-0 shrink-0 text-xs font-bold text-muted-foreground">
             {t("customFields.atCap", { n: CUSTOM_FIELD_MAX_PER_ACCOUNT })}
@@ -474,26 +459,10 @@ export function CustomFieldsSettingsPanel({
                 className={modalFieldCls}
                 maxLength={CUSTOM_FIELD_LABEL_MAX_LENGTH}
                 value={label}
-                onChange={(e) => {
-                  setLabel(e.target.value);
-                  if (labelError) setLabelError(null);
-                  if (localError) setLocalError(null);
-                }}
+                onChange={(e) => setLabel(e.target.value)}
                 placeholder={t("customFields.placeholder")}
                 disabled={busy}
-                aria-invalid={Boolean(labelError)}
-                aria-describedby={
-                  labelError ? "custom-field-new-label-err" : undefined
-                }
               />
-              {labelError ? (
-                <p
-                  id="custom-field-new-label-err"
-                  className={cn(hintTextCls, "text-destructive")}
-                >
-                  {labelError}
-                </p>
-              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label className={fieldLabelCls}>{t("customFields.type")}</Label>

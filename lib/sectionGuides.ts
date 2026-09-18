@@ -9,7 +9,7 @@ import {
   Coins,
   LayoutTemplate,
   Link,
-  Megaphone,
+  Send,
   MessageSquareText,
   QrCode,
   Scale,
@@ -57,7 +57,7 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideMeta> = {
     kbSlug: "groupes",
   },
   campagnes: {
-    icon: Megaphone,
+    icon: Send,
     primaryRoute: "nouvelle-campagne",
     kbSlug: "campagnes",
   },
@@ -94,7 +94,7 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideMeta> = {
     kbSlug: "accueil",
   },
   "nouvelle-campagne": {
-    icon: Megaphone,
+    icon: Send,
     primaryRoute: "campagnes",
     kbSlug: "campagnes",
   },

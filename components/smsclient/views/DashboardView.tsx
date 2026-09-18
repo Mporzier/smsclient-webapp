@@ -2,26 +2,17 @@
 
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
 import { LoadingLabel } from "@/components/ui/loading-label";
-import {
-  buildRecentActivities,
-  countActiveGroups,
-  countSentSms,
-  countSentSmsThisMonth,
-  estimateSmsFromCredits,
-  hasUserSentSms,
-} from "@/components/smsclient/views/dashboard/dashboardHelpers";
+import { hasAccountCampaignDone } from "@/components/smsclient/views/dashboard/dashboardHelpers";
+import { DashboardCampaignHomeGrid } from "@/components/smsclient/views/dashboard/DashboardCampaignHomeGrid";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
-import { formatStatsNumber } from "@/lib/supabase/statistics";
 import { SMS_STOP_SUFFIX } from "@/lib/proto/smsStopMention";
 import type { CampaignRowData } from "@/lib/types/campaign";
-import type { ContactRowData } from "@/lib/types/contact";
-import type { GroupRowData } from "@/lib/types/group";
 import {
   Check,
   Coins,
   Headphones,
-  Megaphone,
+  Send,
   Shield,
   UserPlus,
   Users,
@@ -29,20 +20,20 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type DashboardViewProps = {
   creditsLabel?: string;
-  creditsBalance?: number;
   contactsCount: number;
   groupsCount: number;
   campaignRows: CampaignRowData[];
-  groupRows: GroupRowData[];
-  contacts: ContactRowData[];
   contactsLoading?: boolean;
   campaignsLoading?: boolean;
   onNewCampaign: () => void;
   onGo: (hash: string) => void;
+  qrPublicUrl?: string;
+  qrLoading?: boolean;
+  qrError?: string | null;
 };
 
 function LinkishBtn({
@@ -312,7 +303,7 @@ function DashboardFirstVisit({
       onClick: () => onGo("groupes"),
     },
     {
-      icon: Megaphone,
+      icon: Send,
       step: 3,
       title: t("dashboard.step.sms"),
       onClick: onNewCampaign,
@@ -393,7 +384,7 @@ function DashboardFirstVisit({
                 gradient="bg-gradient-to-br from-[#f5efff] to-card"
               />
               <OverviewMetric
-                icon={Megaphone}
+                icon={Send}
                 value="0"
                 label={t("dashboard.smsSent")}
                 hint={t("dashboard.smsHintNone")}
@@ -422,187 +413,18 @@ function DashboardFirstVisit({
   );
 }
 
-function DashboardReturning({
-  greetingName,
-  creditsLabel,
-  creditsBalance,
-  contactsCount,
-  groupsCount,
-  smsSentCount,
-  smsSentThisMonth,
-  activeGroupsCount,
-  campaignRows,
-  contacts,
-  contactsLoading,
-  campaignsLoading,
-  onGo,
-}: {
-  greetingName: string;
-  creditsLabel: string;
-  creditsBalance: number;
-  contactsCount: number;
-  groupsCount: number;
-  smsSentCount: number;
-  smsSentThisMonth: number;
-  activeGroupsCount: number;
-  campaignRows: CampaignRowData[];
-  contacts: ContactRowData[];
-  contactsLoading?: boolean;
-  campaignsLoading?: boolean;
-  onGo: (hash: string) => void;
-}) {
-  const { t } = useI18n();
-  const activities = useMemo(
-    () => buildRecentActivities(campaignRows, contacts, t),
-    [campaignRows, contacts, t],
-  );
-
-  const creditsHint =
-    creditsBalance > 0
-      ? t("dashboard.creditsApproxSms", {
-          n: formatStatsNumber(estimateSmsFromCredits(creditsBalance)),
-        })
-      : t("dashboard.creditsHintSend");
-
-  const smsHint =
-    smsSentThisMonth > 0
-      ? t("dashboard.smsHintMonth", {
-          n: formatStatsNumber(smsSentThisMonth),
-        })
-      : t("dashboard.smsHintStats");
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <h2 className="m-0 text-2xl font-extrabold leading-tight text-foreground">
-          {t("dashboard.hello", { name: greetingName })}
-        </h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">
-          {t("dashboard.helloSubtitle")}
-        </p>
-      </div>
-
-      <div className="grid gap-3 min-[1100px]:grid-cols-[1fr_240px]">
-        <div className="flex flex-col gap-3">
-          <section>
-            <SectionTitle>{t("dashboard.recentActivity")}</SectionTitle>
-            {campaignsLoading ? (
-              <p className="m-0 text-xs font-semibold text-muted-foreground">
-                {t("common.loading")}
-              </p>
-            ) : activities.length === 0 ? (
-              <p className="m-0 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                {t("dashboard.noActivity")}
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card min-[900px]:grid-cols-4">
-                {activities.map((act) => (
-                  <article
-                    key={`${act.title}-${act.sortAt}`}
-                    className="border-b border-r border-border px-3 py-2.5 last:border-r-0 min-[900px]:border-b-0"
-                  >
-                    <div className="mb-1.5 grid h-8 w-8 place-items-center rounded-full bg-accent text-primary">
-                      <act.icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    </div>
-                    <b className="block text-xs text-foreground">{act.title}</b>
-                    <p className="m-0 mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                      {act.description.replace("\n", " · ")}
-                    </p>
-                    <span
-                      className={cn(
-                        "mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold",
-                        act.tagClassName,
-                      )}
-                    >
-                      {act.tag}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <SectionTitle>{t("dashboard.overview")}</SectionTitle>
-            <div className="grid grid-cols-2 gap-2 min-[900px]:grid-cols-4">
-              <OverviewMetric
-                icon={Coins}
-                value={creditsLabel}
-                label={t("dashboard.creditsRemaining")}
-                hint={creditsHint}
-                action={t("dashboard.recharge")}
-                onAction={() => onGo("acheter-credits")}
-                gradient="bg-gradient-to-br from-[#fff7dc] to-card"
-              />
-              <OverviewMetric
-                icon={UserPlus}
-                value={contactsLoading ? "…" : formatStatsNumber(contactsCount)}
-                label={t("dashboard.contacts")}
-                hint={t("dashboard.contactsHintManage")}
-                action={t("dashboard.viewContacts")}
-                onAction={() => onGo("contacts")}
-                gradient="bg-gradient-to-br from-[#eafff4] to-card"
-              />
-              <OverviewMetric
-                icon={Users}
-                value={formatStatsNumber(groupsCount)}
-                label={t("dashboard.groups")}
-                hint={
-                  activeGroupsCount > 0
-                    ? t(
-                        activeGroupsCount > 1
-                          ? "dashboard.groupsActiveMany"
-                          : "dashboard.groupsActiveOne",
-                        { n: formatStatsNumber(activeGroupsCount) },
-                      )
-                    : t("dashboard.groupsHintOrganize")
-                }
-                action={t("dashboard.viewGroups")}
-                onAction={() => onGo("groupes")}
-                gradient="bg-gradient-to-br from-[#f5efff] to-card"
-              />
-              <OverviewMetric
-                icon={Megaphone}
-                value={formatStatsNumber(smsSentCount)}
-                label={t("dashboard.smsSent")}
-                hint={smsHint}
-                action={t("dashboard.viewStats")}
-                onAction={() => onGo("statistiques")}
-                gradient="bg-gradient-to-br from-accent to-card"
-              />
-            </div>
-          </section>
-
-          <NoticeBar
-            action={t("dashboard.regulation")}
-            onAction={() => onGo("reglementations-sms")}
-          >
-            {t("dashboard.noticeConsent")}
-          </NoticeBar>
-        </div>
-
-        <DashboardSideColumn
-          creditsLabel={creditsLabel}
-          creditsHint={creditsHint}
-          onGo={onGo}
-        />
-      </div>
-    </div>
-  );
-}
-
 export function DashboardView({
   creditsLabel,
-  creditsBalance = 0,
   contactsCount,
   groupsCount,
   campaignRows,
-  groupRows,
-  contacts,
   contactsLoading = false,
   campaignsLoading = false,
   onNewCampaign,
   onGo,
+  qrPublicUrl = "",
+  qrLoading = false,
+  qrError = null,
 }: DashboardViewProps) {
   const { profile, loading: profileLoading } = useUserProfile();
   const { t } = useI18n();
@@ -613,12 +435,9 @@ export function DashboardView({
     t("dashboard.greetingFallback");
 
   const displayCredits = creditsLabel ?? "0";
-  const sentSms = hasUserSentSms(campaignRows);
-  const smsSentCount = countSentSms(campaignRows);
-  const smsSentThisMonth = countSentSmsThisMonth(campaignRows);
-  const activeGroupsCount = countActiveGroups(groupRows);
+  const hasCampaign = hasAccountCampaignDone(campaignRows);
 
-  if (profileLoading) {
+  if (profileLoading || campaignsLoading) {
     return (
       <p className="m-0 text-sm font-semibold text-muted-foreground">
         <LoadingLabel>{t("common.loading")}</LoadingLabel>
@@ -626,23 +445,21 @@ export function DashboardView({
     );
   }
 
-  if (sentSms) {
+  if (hasCampaign) {
     return (
-      <DashboardReturning
-        greetingName={greetingName}
-        creditsLabel={displayCredits}
-        creditsBalance={creditsBalance}
-        contactsCount={contactsCount}
-        groupsCount={groupsCount}
-        smsSentCount={smsSentCount}
-        smsSentThisMonth={smsSentThisMonth}
-        activeGroupsCount={activeGroupsCount}
-        campaignRows={campaignRows}
-        contacts={contacts}
-        contactsLoading={contactsLoading}
-        campaignsLoading={campaignsLoading}
-        onGo={onGo}
-      />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <DashboardCampaignHomeGrid
+          greetingName={greetingName}
+          campaignRows={campaignRows}
+          businessActivity={profile?.businessActivity ?? ""}
+          campaignsLoading={campaignsLoading}
+          qrPublicUrl={qrPublicUrl}
+          qrLoading={qrLoading}
+          qrError={qrError}
+          onNewCampaign={onNewCampaign}
+          onGo={onGo}
+        />
+      </div>
     );
   }
 

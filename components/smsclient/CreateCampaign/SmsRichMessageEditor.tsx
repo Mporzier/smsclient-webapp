@@ -25,6 +25,8 @@ export type SmsRichMessageEditorHandle = {
   insertText: (text: string) => void;
   insertPrenom: () => void;
   focus: () => void;
+  /** Lit le DOM, sync state parent, retourne le texte sérialisé. */
+  flush: () => string;
 };
 
 type SmsRichMessageEditorProps = {
@@ -44,9 +46,9 @@ export const SmsRichMessageEditor = forwardRef<
   const editorRef = useRef<HTMLDivElement>(null);
   const lastEmittedRef = useRef(value);
 
-  const emitChange = useCallback(() => {
+  const readSerialized = useCallback((): string => {
     const root = editorRef.current;
-    if (!root) return;
+    if (!root) return lastEmittedRef.current;
     clearFillerBreaks(root);
     repairPrenomChips(root);
     let next = serializeSmsEditor(root);
@@ -54,9 +56,15 @@ export const SmsRichMessageEditor = forwardRef<
       next = next.slice(0, SMS_BODY_HARD_MAX_LENGTH);
       renderSmsEditorValue(root, next);
     }
+    return next;
+  }, []);
+
+  const emitChange = useCallback(() => {
+    const next = readSerialized();
+    if (next === lastEmittedRef.current) return;
     lastEmittedRef.current = next;
     onChange(next);
-  }, [onChange]);
+  }, [onChange, readSerialized]);
 
   useLayoutEffect(() => {
     const root = editorRef.current;
@@ -86,8 +94,16 @@ export const SmsRichMessageEditor = forwardRef<
         emitChange();
       },
       focus: () => editorRef.current?.focus(),
+      flush: () => {
+        const next = readSerialized();
+        if (next !== lastEmittedRef.current) {
+          lastEmittedRef.current = next;
+          onChange(next);
+        }
+        return next;
+      },
     }),
-    [emitChange],
+    [emitChange, onChange, readSerialized],
   );
 
   return (

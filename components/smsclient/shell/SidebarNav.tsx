@@ -11,7 +11,7 @@ import {
   Coins,
   LayoutTemplate,
   Link,
-  Megaphone,
+  Send,
   MessageSquareText,
   QrCode,
   Scale,
@@ -114,7 +114,7 @@ export const generalNav: NavItem[] = [
   { id: "dashboard", hash: "dashboard", icon: LayoutTemplate },
   { id: "contacts", hash: "contacts", icon: CircleUserRound },
   { id: "groupes", hash: "groupes", icon: Users },
-  { id: "campagnes", hash: "campagnes", icon: Megaphone },
+  { id: "campagnes", hash: "campagnes", icon: Send },
   { id: "statistiques", hash: "statistiques", icon: BarChart3 },
 ];
 
@@ -135,7 +135,7 @@ export const ROUTE_ICONS: Record<AppRoute, LucideIcon> = {
   dashboard: LayoutTemplate,
   contacts: CircleUserRound,
   groupes: Users,
-  campagnes: Megaphone,
+  campagnes: Send,
   automatisations: CalendarSync,
   statistiques: BarChart3,
   parametres: Settings,
@@ -144,7 +144,7 @@ export const ROUTE_ICONS: Record<AppRoute, LucideIcon> = {
   "modeles-sms": MessageSquareText,
   "reglementations-sms": Scale,
   aide: CircleHelp,
-  "nouvelle-campagne": Megaphone,
+  "nouvelle-campagne": Send,
   "acheter-credits": Coins,
 };
 

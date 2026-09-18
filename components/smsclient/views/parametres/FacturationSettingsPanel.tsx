@@ -1,17 +1,19 @@
 "use client";
 
-import { parametresDirtyInp } from "@/components/smsclient/views/parametres/parametresSettings";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  ParametresDisplayRow,
+  valueIconCls,
+} from "@/components/smsclient/views/parametres/ParametresDisplayRow";
+import {
+  parametresFieldStackCls,
+  parametresToastError,
+} from "@/components/smsclient/views/parametres/parametresSettings";
 import { cn } from "@/lib/cn";
 import { BILLING_CONTACT_MAX_LENGTH, EMAIL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
-import {
-  entrepriseFieldErrorKey,
-  firstEntrepriseSubsectionErrorKey,
-} from "@/lib/forms/entrepriseValidation";
+import { entrepriseFieldErrorKey } from "@/lib/forms/entrepriseValidation";
 import { useI18n } from "@/lib/i18n";
 import type { UserProfileForm } from "@/lib/types/profile";
-import { FileText } from "lucide-react";
+import { FileText, Mail } from "lucide-react";
 import { useState } from "react";
 
 export const FACTURATION_SUBSECTION_FIELDS = {
@@ -20,54 +22,48 @@ export const FACTURATION_SUBSECTION_FIELDS = {
 
 export type FacturationSectionId = keyof typeof FACTURATION_SUBSECTION_FIELDS;
 
-const invalidInputCls =
-  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
-
 type FacturationSettingsPanelProps = {
   form: UserProfileForm;
   saving?: boolean;
-  changed: (key: keyof UserProfileForm) => boolean;
-  onFieldChange: <K extends keyof UserProfileForm>(
-    key: K,
-    value: UserProfileForm[K],
-  ) => void;
-  onSaveSubsection: (sectionId: FacturationSectionId) => void | Promise<void>;
+  onSaveBillingContact: (billingContact: string) => Promise<void>;
 };
 
 export function FacturationSettingsPanel({
   form,
   saving = false,
-  changed,
-  onFieldChange,
-  onSaveSubsection,
+  onSaveBillingContact,
 }: FacturationSettingsPanelProps) {
   const { t } = useI18n();
-  const [touched, setTouched] = useState(false);
-  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const openEdit = () => {
+    if (saving) return;
+    setDraft(form.billingContact);
+    setEditing(true);
+  };
 
-  const dirty = changed("billingContact");
-  const billingContactError =
-    touched || submitAttempted
-      ? entrepriseFieldErrorKey("billingContact", {
-          ...form,
-          billingContact: form.billingContact.trim(),
-        })
-      : null;
+  const closeEdit = () => {
+    setEditing(false);
+    setDraft("");
+  };
 
-  const handleSave = () => {
-    setSubmitAttempted(true);
-    setTouched(true);
-    const trimmedContact = form.billingContact.trim();
-    const formForValidation = { ...form, billingContact: trimmedContact };
-    const errorKey = firstEntrepriseSubsectionErrorKey(
-      FACTURATION_SUBSECTION_FIELDS["contact-facturation"],
-      formForValidation,
-    );
-    if (errorKey) return;
-    if (trimmedContact !== form.billingContact) {
-      onFieldChange("billingContact", trimmedContact);
+  const handleSubmit = async () => {
+    if (saving) return;
+    const trimmed = draft.trim();
+    const errorKey = entrepriseFieldErrorKey("billingContact", {
+      ...form,
+      billingContact: trimmed,
+    });
+    if (errorKey) {
+      parametresToastError(t(errorKey));
+      return;
     }
-    void onSaveSubsection("contact-facturation");
+    try {
+      await onSaveBillingContact(trimmed);
+      closeEdit();
+    } catch {
+      /* toast déjà émis par persistProfileForm */
+    }
   };
 
   return (
@@ -88,48 +84,33 @@ export function FacturationSettingsPanel({
         </div>
       </div>
 
-      <div className="grid min-w-0 gap-1.5">
-        <div className="flex min-w-0 items-start gap-2">
-          <Input
-            id="param-billing-contact"
-            type="text"
-            inputMode="email"
-            autoComplete="email"
-            spellCheck={false}
-            aria-label={t("parametres.card.contact-facturation.description")}
-            className={cn(
-              "min-w-0 flex-1",
-              invalidInputCls,
-              changed("billingContact") && parametresDirtyInp,
-            )}
-            maxLength={Math.min(BILLING_CONTACT_MAX_LENGTH, EMAIL_MAX_LENGTH)}
-            aria-invalid={Boolean(billingContactError)}
-            value={form.billingContact}
-            onBlur={() => {
-              setTouched(true);
-              const trimmed = form.billingContact.trim();
-              if (trimmed !== form.billingContact) {
-                onFieldChange("billingContact", trimmed);
-              }
-            }}
-            onChange={(e) => onFieldChange("billingContact", e.target.value)}
-            placeholder={t("parametres.field.billingContactPlaceholder")}
-          />
-          <Button
-            type="button"
-            size="sm"
-            className="shrink-0"
-            disabled={saving || !dirty}
-            onClick={handleSave}
-          >
-            {saving ? t("dialog.saving") : t("dialog.save")}
-          </Button>
-        </div>
-        {billingContactError ? (
-          <p className="m-0 text-xs font-medium text-destructive">
-            {t(billingContactError)}
-          </p>
-        ) : null}
+      <div className={parametresFieldStackCls}>
+        <ParametresDisplayRow
+          label={t("parametres.field.billingContact")}
+          leading={
+            <Mail
+              className={cn(valueIconCls, "text-sky-600")}
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          }
+          display={form.billingContact.trim() || "—"}
+          editing={editing}
+          draft={draft}
+          onDraftChange={setDraft}
+          maxLength={Math.min(BILLING_CONTACT_MAX_LENGTH, EMAIL_MAX_LENGTH)}
+          disabled={saving}
+          saving={saving}
+          inputId="param-billing-contact"
+          type="text"
+          inputMode="email"
+          autoComplete="email"
+          spellCheck={false}
+          placeholder={t("parametres.field.billingContactPlaceholder")}
+          onEdit={openEdit}
+          onSubmit={() => void handleSubmit()}
+          onCancel={closeEdit}
+        />
       </div>
     </section>
   );

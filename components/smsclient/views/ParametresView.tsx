@@ -1,10 +1,8 @@
 "use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { toast } from "@/components/ui/sonner";
 import { ParametresSettingModal } from "@/components/smsclient/modals/ParametresSettingModal";
@@ -18,22 +16,20 @@ import {
   EntrepriseSettingsPanel,
   type EntrepriseSectionId,
 } from "@/components/smsclient/views/parametres/EntrepriseSettingsPanel";
-import {
-  CAMPAGNES_SUBSECTION_FIELDS,
-  CampagnesSettingsPanel,
-  type CampagnesSectionId,
-} from "@/components/smsclient/views/parametres/CampagnesSettingsPanel";
+import { CampagnesSettingsPanel } from "@/components/smsclient/views/parametres/CampagnesSettingsPanel";
 import {
   FACTURATION_SUBSECTION_FIELDS,
   FacturationSettingsPanel,
-  type FacturationSectionId,
 } from "@/components/smsclient/views/parametres/FacturationSettingsPanel";
 import { firstEntrepriseSubsectionErrorKey } from "@/lib/forms/entrepriseValidation";
 import { InvoicesTable } from "@/components/smsclient/views/parametres/InvoicesTable";
+import { ParametresInputRow } from "@/components/smsclient/views/parametres/ParametresInputRow";
 import {
   allSettingCards,
   emptyProfileForm,
   isSectionDirty,
+  parametresFieldStackCls,
+  parametresToastError,
   sectionDirtyFieldCount,
   sectionProfileFields,
   settingSections,
@@ -240,13 +236,10 @@ export function ParametresView({
   const [savedForm, setSavedForm] = useState<UserProfileForm>(emptyProfileForm);
   const [draftForm, setDraftForm] = useState<UserProfileForm>(emptyProfileForm);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [openSetting, setOpenSetting] = useState<SettingId | null>(null);
   const [activeSection, setActiveSection] = useState<SettingSectionId>(
     () => consumeRequestedParametresSection() ?? "compte",
   );
-  const [compteSaveError, setCompteSaveError] = useState<string | null>(null);
-
   useEffect(() => {
     const onSection = (e: Event) => {
       const detail = (e as CustomEvent<unknown>).detail;
@@ -282,7 +275,6 @@ export function ParametresView({
 
   const closeModal = () => {
     setOpenSetting(null);
-    setSaveError(null);
   };
 
   const handleCloseModal = () => {
@@ -326,24 +318,22 @@ export function ParametresView({
         fields.map((key) => [key, savedForm[key]]),
       ) as Partial<UserProfileForm>),
     }));
-    setSaveError(null);
   };
 
   const onSaveChanges = async (activeSectionId: SettingSectionId) => {
     if (!isSectionDirty(activeSectionId, draftForm, savedForm)) return;
     const validationError = validateSectionBeforeSave(activeSectionId);
     if (validationError) {
-      setSaveError(validationError);
+      parametresToastError(validationError);
       return;
     }
-    setSaveError(null);
     setSaving(true);
     try {
       await onSaveProfile(draftForm);
       setSavedForm(draftForm);
       setOpenSetting(null);
     } catch (e) {
-      setSaveError(
+      parametresToastError(
         e instanceof Error ? e.message : t("parametres.saveFailed"),
       );
     } finally {
@@ -361,11 +351,11 @@ export function ParametresView({
 
     if (subsectionId === "entreprise") {
       if (changed("companyName") && !draftForm.companyName.trim()) {
-        setSaveError(t("parametres.companyNameRequired"));
+        parametresToastError(t("parametres.companyNameRequired"));
         return;
       }
       if (changed("businessActivity") && !draftForm.businessActivity) {
-        setSaveError(t("parametres.activityRequired"));
+        parametresToastError(t("parametres.activityRequired"));
         return;
       }
     }
@@ -375,18 +365,17 @@ export function ParametresView({
       draftForm,
     );
     if (formatErrorKey) {
-      setSaveError(t(formatErrorKey));
+      parametresToastError(t(formatErrorKey));
       return;
     }
 
-    setSaveError(null);
     setSaving(true);
     try {
       await onSaveProfile(draftForm);
       setSavedForm(draftForm);
       toast(t("parametres.savedToast"));
     } catch (e) {
-      setSaveError(
+      parametresToastError(
         e instanceof Error ? e.message : t("parametres.saveFailed"),
       );
     } finally {
@@ -394,70 +383,43 @@ export function ParametresView({
     }
   };
 
-  const onSaveFacturationSubsection = async (
-    subsectionId: FacturationSectionId,
-  ) => {
-    const fields = FACTURATION_SUBSECTION_FIELDS[subsectionId];
-    const trimmedContact = draftForm.billingContact.trim();
-    const nextForm =
-      trimmedContact === draftForm.billingContact
-        ? draftForm
-        : { ...draftForm, billingContact: trimmedContact };
-    if (nextForm !== draftForm) {
-      setDraftForm(nextForm);
+  const persistProfileForm = async (next: UserProfileForm) => {
+    setSaving(true);
+    try {
+      await onSaveProfile(next);
+      setSavedForm(next);
+      setDraftForm(next);
+      toast(t("parametres.savedToast"));
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : t("parametres.saveFailed");
+      parametresToastError(msg);
+      throw e instanceof Error ? e : new Error(msg);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    const subsectionDirty = fields.some(
-      (key) => nextForm[key] !== savedForm[key],
+  const onSaveBillingContactField = async (billingContact: string) => {
+    const next = { ...draftForm, billingContact };
+    const formatErrorKey = firstEntrepriseSubsectionErrorKey(
+      FACTURATION_SUBSECTION_FIELDS["contact-facturation"],
+      next,
     );
-    if (!subsectionDirty) return;
-
-    const formatErrorKey = firstEntrepriseSubsectionErrorKey(fields, nextForm);
     if (formatErrorKey) {
-      setSaveError(t(formatErrorKey));
-      return;
+      throw new Error(t(formatErrorKey));
     }
-
-    setSaveError(null);
-    setSaving(true);
-    try {
-      await onSaveProfile(nextForm);
-      setSavedForm(nextForm);
-      toast(t("parametres.savedToast"));
-    } catch (e) {
-      setSaveError(
-        e instanceof Error ? e.message : t("parametres.saveFailed"),
-      );
-    } finally {
-      setSaving(false);
-    }
+    if (next.billingContact === savedForm.billingContact) return;
+    await persistProfileForm(next);
   };
 
-  const onSaveCampagnesSubsection = async (
-    subsectionId: CampagnesSectionId,
-  ) => {
-    const fields = CAMPAGNES_SUBSECTION_FIELDS[subsectionId];
-    const subsectionDirty = fields.some((key) => changed(key));
-    if (!subsectionDirty) return;
-
-    if (changed("sender") && !draftForm.sender.trim()) {
-      setSaveError(t("parametres.senderRequired"));
-      return;
+  const onSaveSenderField = async (sender: string) => {
+    const next = { ...draftForm, sender };
+    if (!sender.trim()) {
+      throw new Error(t("parametres.senderRequired"));
     }
-
-    setSaveError(null);
-    setSaving(true);
-    try {
-      await onSaveProfile(draftForm);
-      setSavedForm(draftForm);
-      toast(t("parametres.savedToast"));
-    } catch (e) {
-      setSaveError(
-        e instanceof Error ? e.message : t("parametres.saveFailed"),
-      );
-    } finally {
-      setSaving(false);
-    }
+    if (next.sender === savedForm.sender) return;
+    await persistProfileForm(next);
   };
 
   const onSaveCompteField = async <K extends keyof UserProfileForm>(
@@ -467,10 +429,9 @@ export function ParametresView({
     const next = { ...draftForm, [key]: value };
     if (!next.firstName.trim()) {
       const msg = t("parametres.firstNameRequired");
-      setCompteSaveError(msg);
+      parametresToastError(msg);
       throw new Error(msg);
     }
-    setCompteSaveError(null);
     setDraftForm(next);
     setSaving(true);
     try {
@@ -479,7 +440,7 @@ export function ParametresView({
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : t("parametres.saveFailed");
-      setCompteSaveError(msg);
+      parametresToastError(msg);
       throw e instanceof Error ? e : new Error(msg);
     } finally {
       setSaving(false);
@@ -520,8 +481,13 @@ export function ParametresView({
     switch (id) {
       case "notifications-email":
         return (
-          <>
-            <div className="flex items-start gap-2.5">
+          <div className={parametresFieldStackCls}>
+            <ParametresInputRow
+              id="param-notify-invoices"
+              label={t("parametres.field.notifyInvoices")}
+              alignTop
+              hint={t("parametres.field.notifyInvoicesHint")}
+            >
               <Checkbox
                 id="param-notify-invoices"
                 checked={draftForm.notifyInvoices}
@@ -530,35 +496,26 @@ export function ParametresView({
                 }
                 className="mt-0.5"
               />
-              <Label
-                htmlFor="param-notify-invoices"
-                className="text-sm font-semibold leading-snug"
-              >
-                {t("parametres.field.notifyInvoices")}
-              </Label>
-            </div>
-            <p className="m-0 text-xs font-medium text-muted-foreground">
-              {t("parametres.field.notifyInvoicesHint")}
-            </p>
-          </>
+            </ParametresInputRow>
+          </div>
         );
       case "resume-mensuel":
         return (
-          <div className="flex items-start gap-2.5">
-            <Checkbox
+          <div className={parametresFieldStackCls}>
+            <ParametresInputRow
               id="param-notify-summary"
-              checked={draftForm.notifySummary}
-              onCheckedChange={(checked) =>
-                setField("notifySummary", checked === true)
-              }
-              className="mt-0.5"
-            />
-            <Label
-              htmlFor="param-notify-summary"
-              className="text-sm font-semibold leading-snug"
+              label={t("parametres.field.notifySummary")}
+              alignTop
             >
-              {t("parametres.field.notifySummary")}
-            </Label>
+              <Checkbox
+                id="param-notify-summary"
+                checked={draftForm.notifySummary}
+                onCheckedChange={(checked) =>
+                  setField("notifySummary", checked === true)
+                }
+                className="mt-0.5"
+              />
+            </ParametresInputRow>
           </div>
         );
       case "abonnement":
@@ -623,13 +580,6 @@ export function ParametresView({
                 <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
               </p>
             )}
-            {saveError && (
-              <Alert variant="destructive">
-                <AlertDescription className="font-bold">
-                  {saveError}
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto pt-3">
@@ -638,7 +588,6 @@ export function ParametresView({
                 form={draftForm}
                 loading={profileLoading}
                 saving={saving}
-                saveError={compteSaveError}
                 onSaveField={onSaveCompteField}
               />
             ) : sectionId === "apparence" ? (
@@ -654,11 +603,9 @@ export function ParametresView({
             ) : sectionId === "facturation" ? (
               <div className="flex flex-col gap-6">
                 <FacturationSettingsPanel
-                  form={draftForm}
+                  form={savedForm}
                   saving={saving}
-                  changed={changed}
-                  onFieldChange={setField}
-                  onSaveSubsection={onSaveFacturationSubsection}
+                  onSaveBillingContact={onSaveBillingContactField}
                 />
                 {inlineCards
                   .filter((card) => card.id !== "contact-facturation")
@@ -694,11 +641,9 @@ export function ParametresView({
               </div>
             ) : sectionId === "campagnes" ? (
               <CampagnesSettingsPanel
-                form={draftForm}
+                form={savedForm}
                 saving={saving}
-                changed={changed}
-                onFieldChange={setField}
-                onSaveSubsection={onSaveCampagnesSubsection}
+                onSaveSender={onSaveSenderField}
               />
             ) : (
               <div className="flex flex-col gap-6">

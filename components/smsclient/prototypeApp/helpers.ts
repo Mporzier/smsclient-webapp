@@ -1,3 +1,4 @@
+import { buildDefaultCampaignTitle } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
 import { plusTenMinutesParis } from "@/lib/proto/timezone";
 
 export function plusTenMinutesLocalValue() {
@@ -5,7 +6,7 @@ export function plusTenMinutesLocalValue() {
 }
 
 export function defaultCampaignTitle() {
-  return `Campagne du ${new Date().toLocaleDateString("fr-FR")}`;
+  return buildDefaultCampaignTitle();
 }
 
 export function parseManualNumbers(raw: string): string[] {

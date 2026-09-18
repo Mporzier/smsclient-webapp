@@ -1,5 +1,6 @@
 import { appendStopMention, stripStopMention } from "@/lib/proto/smsStopMention";
 import type { SmsAiOptions } from "./SmsAiOptionCards";
+import { smsAiMessageToneToApi } from "./smsAiTone";
 import { generateAiVariants } from "./campaignTextUtils";
 import { mergeTagToken } from "@/lib/proto/smsPersonalization";
 import type { CustomFieldDef } from "@/lib/types/customFields";
@@ -30,6 +31,7 @@ export async function generateCampaignSmsVariants(
 
   const objective = input.prompt.trim() || input.campaignTitle.trim() || "offre boutique";
   const snippet = objective.slice(0, 48);
+  const apiTone = smsAiMessageToneToApi(input.options.messageTone);
 
   const mergeTokens = input.options.selectedMergeTags
     .map((key) => mergeTagToken(key, input.customFieldDefs ?? []))
@@ -39,7 +41,7 @@ export async function generateCampaignSmsVariants(
     objective: snippet,
     offer: `votre offre : ${snippet}`,
     duration: "48h",
-    tone: "amical",
+    tone: apiTone,
     mergeTokens,
   }).filter((v) => variantHasAllTokens(v, mergeTokens));
 
@@ -48,17 +50,17 @@ export async function generateCampaignSmsVariants(
       objective: snippet,
       offer: `votre offre : ${snippet}`,
       duration: "48h",
-      tone: "amical",
+      tone: apiTone,
       mergeTokens,
     }).map((v) => `${mergeTokens.join(" ")} ${v}`.trim());
   }
 
-  if (!input.options.allowSpecialChars) {
-    variants = variants.map(stripEmojis);
-  }
+  variants = variants.map(stripEmojis);
 
-  if (input.options.linkTracking && input.linkUrl) {
-    variants = variants.map((v) => `${v} ${input.linkUrl}`.trim());
+  if (input.linkUrl) {
+    variants = variants.map((v) =>
+      v.includes(input.linkUrl!) ? v : `${v} ${input.linkUrl}`.trim(),
+    );
   }
 
   return variants

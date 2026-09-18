@@ -27,17 +27,15 @@ export function usePrototypeData(route: AppRoute) {
   );
   const customFieldsState = useCustomFieldDefs();
   const groupsState = useGroups();
-  const campaignsState = useCampaigns(
-    route === "dashboard" ||
-      route === "campagnes" ||
-      route === "nouvelle-campagne",
-  );
+  const campaignsState = useCampaigns();
   const linksState = useLinks(route === "liens");
   const smsTemplatesState = useSmsTemplates(route === "modeles-sms");
   const automationsState = useAutomations(route === "automatisations");
   const creditsState = useCredits(route === "parametres");
   const profileState = useUserProfile();
-  const userQrState = useUserQrCode(route === "qr-boutique");
+  const userQrState = useUserQrCode(
+    route === "qr-boutique" || route === "dashboard",
+  );
   const qrWheelState = useQrWheel(route === "qr-boutique");
   const trashState = useTrashItems(supabase, user?.id, route === "parametres");
 

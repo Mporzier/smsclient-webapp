@@ -23,6 +23,31 @@ export function normalizeVatInput(value: string): string {
   return value.replace(/\s/g, "").toUpperCase().slice(0, 20);
 }
 
+export const BILLING_COUNTRY_STORED_VALUES = [
+  "France",
+  "Belgique",
+  "Suisse",
+] as const;
+
+export type BillingCountryStoredValue =
+  (typeof BILLING_COUNTRY_STORED_VALUES)[number];
+
+export function normalizeBillingCountry(
+  value: string,
+): BillingCountryStoredValue | "" {
+  const key = value.trim().toLowerCase();
+  if (key === "france") return "France";
+  if (key === "belgique" || key === "belgium") return "Belgique";
+  if (key === "suisse" || key === "switzerland") return "Suisse";
+  const trimmed = value.trim();
+  if (
+    (BILLING_COUNTRY_STORED_VALUES as readonly string[]).includes(trimmed)
+  ) {
+    return trimmed as BillingCountryStoredValue;
+  }
+  return "";
+}
+
 export function normalizePostalCodeInput(value: string, country: string): string {
   const trimmed = value.trim();
   const countryKey = country.trim().toLowerCase();

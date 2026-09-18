@@ -1,0 +1,233 @@
+.dashboard-react-calendar.react-calendar {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-react-calendar .react-calendar__viewContainer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-react-calendar .react-calendar__month-view {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-react-calendar .react-calendar__month-view > div {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__days {
+  flex: 1;
+  min-height: 0;
+  display: grid !important;
+  flex-wrap: unset !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(6, var(--dashboard-day-row-h, minmax(0, 1fr)));
+  gap: 3px;
+  overflow: hidden;
+  align-content: stretch;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__days__day,
+.dashboard-react-calendar .react-calendar__month-view__days__day--weekend {
+  flex: none !important;
+  max-width: none !important;
+  width: auto !important;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__days__day > .react-calendar__tile {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+.dashboard-react-calendar .react-calendar__navigation {
+  display: none;
+}
+
+.dashboard-react-calendar .react-calendar__navigation button {
+  min-width: 1.75rem;
+  background: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+}
+
+.dashboard-react-calendar .react-calendar__navigation button:enabled:hover,
+.dashboard-react-calendar .react-calendar__navigation button:enabled:focus {
+  background: var(--muted);
+}
+
+.dashboard-react-calendar .react-calendar__navigation button:disabled {
+  opacity: 0.35;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__weekdays {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 3px;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__weekdays abbr {
+  text-decoration: none;
+}
+
+.dashboard-react-calendar button.react-calendar__tile {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  padding: clamp(0.15rem, 0.35vw, 0.35rem);
+  font-size: clamp(0.55rem, 0.9vw, 0.7rem);
+  font-weight: 700;
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.dashboard-react-calendar .react-calendar__tile abbr {
+  flex-shrink: 0;
+  align-self: flex-end;
+  font-size: inherit;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__days__day .react-calendar__tile:enabled {
+  cursor: pointer;
+}
+
+.dashboard-react-calendar .react-calendar__tile:enabled:hover,
+.dashboard-react-calendar .react-calendar__tile:enabled:focus {
+  background: color-mix(in oklab, var(--muted) 70%, var(--card));
+}
+
+.dashboard-react-calendar .react-calendar__tile--now {
+  border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+  background: color-mix(in oklab, var(--primary) 8%, var(--card));
+}
+
+/* Pas de jour « sélectionné » au clic — seule la modale s’ouvre (--now = aujourd’hui OK). */
+.dashboard-react-calendar .react-calendar__tile--active {
+  border-color: var(--border);
+  background: var(--card) !important;
+  color: var(--foreground);
+  box-shadow: none;
+}
+
+.dashboard-react-calendar .react-calendar__tile--active:enabled:hover,
+.dashboard-react-calendar .react-calendar__tile--active:enabled:focus {
+  background: color-mix(in oklab, var(--muted) 70%, var(--card)) !important;
+}
+
+.dashboard-react-calendar .react-calendar__month-view__days__day--neighboringMonth {
+  opacity: 0.45;
+}
+
+.dashboard-react-calendar .react-calendar__tile-events {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 0.1rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: calc(var(--radius-md) - 2px);
+  padding: 1px 3px;
+  font-size: clamp(0.45rem, 0.75vw, 0.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--scheduled {
+  background: color-mix(in oklab, #f43f5e 22%, var(--card));
+  color: #be123c;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--past {
+  background: color-mix(in oklab, #f43f5e 14%, var(--card));
+  color: #9f1239;
+  opacity: 0.85;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--type-holiday {
+  background: color-mix(in oklab, #8b5cf6 24%, var(--card));
+  color: #5b21b6;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--type-commercial {
+  background: color-mix(in oklab, #f97316 24%, var(--card));
+  color: #c2410c;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--type-seasonal {
+  background: color-mix(in oklab, #14b8a6 24%, var(--card));
+  color: #0f766e;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--type-professional {
+  background: color-mix(in oklab, #3b82f6 24%, var(--card));
+  color: #1d4ed8;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event--type-personal {
+  background: color-mix(in oklab, #f43f5e 24%, var(--card));
+  color: #be123c;
+}
+
+.dashboard-react-calendar .react-calendar__tile-event-more {
+  font-size: clamp(0.4rem, 0.65vw, 0.55rem);
+  font-weight: 800;
+  color: var(--muted-foreground);
+  padding: 0 2px;
+  line-height: 1.1;
+}

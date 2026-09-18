@@ -48,9 +48,11 @@ export function useCampaigns(active = true) {
 
   const list = useInfiniteList<CampaignRowData>({ enabled, fetchPage, sort });
 
+  const loading = active && (authLoading || list.loading);
+
   return {
     rows: list.rows,
-    loading: list.loading,
+    loading,
     loadingMore: list.loadingMore,
     hasMore: list.hasMore,
     loadMore: list.loadMore,

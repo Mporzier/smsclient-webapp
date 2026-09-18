@@ -51,7 +51,7 @@ const PACKS: ReadonlyArray<{
     icon: Sparkles,
     iconBg: "bg-amber-50",
     iconColor: "text-amber-600",
-    features: ["Envoi SMS campagne", "Statistiques de base", "Support e-mail"],
+    features: ["Envoi SMS groupé", "Statistiques de base", "Support e-mail"],
   },
   {
     code: "business",

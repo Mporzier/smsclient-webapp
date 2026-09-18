@@ -1,32 +1,44 @@
 "use client";
 
+import { CountryFlag } from "@/components/smsclient/CountryFlag";
 import { BusinessActivitySelect } from "@/components/smsclient/views/parametres/BusinessActivitySelect";
 import {
-  parametresDirtyInp,
-  parametresFieldLbl,
+  ParametresInputRow,
+  parametresControlCls,
+} from "@/components/smsclient/views/parametres/ParametresInputRow";
+import {
+  parametresFieldStackCls,
+  parametresToastError,
 } from "@/components/smsclient/views/parametres/parametresSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/cn";
 import {
   ADDRESS_MAX_LENGTH,
   CITY_MAX_LENGTH,
   COMPANY_NAME_MAX_LENGTH,
-  COUNTRY_MAX_LENGTH,
   SIRET_MAX_LENGTH,
   VAT_MAX_LENGTH,
   ZIP_MAX_LENGTH,
 } from "@/lib/forms/fieldLimits";
 import {
-  entrepriseFieldErrorKey,
+  BILLING_COUNTRY_STORED_VALUES,
   firstEntrepriseSubsectionErrorKey,
+  normalizeBillingCountry,
   normalizePostalCodeInput,
   normalizeSiretInput,
   normalizeVatInput,
-  type EntrepriseFormField,
 } from "@/lib/forms/entrepriseValidation";
 import { useI18n } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
+import type { SmsRegulationCountry } from "@/lib/proto/smsRegulations";
 import type { UserProfileForm } from "@/lib/types/profile";
 import {
   Building2,
@@ -42,6 +54,16 @@ export type EntrepriseSectionId =
   | "identifiants-legaux"
   | "adresse-facturation";
 
+const BILLING_COUNTRY_OPTIONS: {
+  id: SmsRegulationCountry;
+  storedValue: (typeof BILLING_COUNTRY_STORED_VALUES)[number];
+  labelKey: MessageKey;
+}[] = [
+  { id: "fr", storedValue: "France", labelKey: "regs.country.fr" },
+  { id: "be", storedValue: "Belgique", labelKey: "regs.country.be" },
+  { id: "ch", storedValue: "Suisse", labelKey: "regs.country.ch" },
+];
+
 export const ENTREPRISE_SUBSECTION_FIELDS: Record<
   EntrepriseSectionId,
   readonly (keyof UserProfileForm)[]
@@ -50,33 +72,6 @@ export const ENTREPRISE_SUBSECTION_FIELDS: Record<
   "identifiants-legaux": ["siret", "tva"],
   "adresse-facturation": ["address", "zip", "city", "country"],
 };
-
-const invalidInputCls =
-  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
-
-function SettingsField({
-  id,
-  label,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  error?: string | null;
-  children: ReactNode;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id} className={parametresFieldLbl}>
-        {label}
-      </Label>
-      {children}
-      {error ? (
-        <p className="m-0 text-xs font-medium text-destructive">{error}</p>
-      ) : null}
-    </div>
-  );
-}
 
 function EntrepriseSection({
   sectionId,
@@ -157,7 +152,9 @@ function EntrepriseSection({
             <p className="mb-3 text-xs font-medium leading-snug text-muted-foreground">
               {description}
             </p>
-            <div className="grid min-w-0 gap-3">{children}</div>
+            <div className={cn("grid min-w-0 gap-0", parametresFieldStackCls)}>
+              {children}
+            </div>
             <div className="mt-4 flex justify-end border-t border-border pt-3">
               <Button
                 type="button"
@@ -194,14 +191,10 @@ export function EntrepriseSettingsPanel({
   onSaveSubsection,
 }: EntrepriseSettingsPanelProps) {
   const { t } = useI18n();
+  const billingCountryValue = normalizeBillingCountry(form.country);
   const [openSection, setOpenSection] = useState<EntrepriseSectionId | null>(
     null,
   );
-  const [touched, setTouched] = useState<
-    Partial<Record<EntrepriseFormField, boolean>>
-  >({});
-  const [submitSection, setSubmitSection] =
-    useState<EntrepriseSectionId | null>(null);
 
   const toggleSection = (id: EntrepriseSectionId) => {
     setOpenSection((prev) => (prev === id ? null : id));
@@ -212,36 +205,27 @@ export function EntrepriseSettingsPanel({
   const isSubsectionDirty = (id: EntrepriseSectionId) =>
     ENTREPRISE_SUBSECTION_FIELDS[id].some((key) => changed(key));
 
-  const markTouched = (field: EntrepriseFormField) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-  };
-
-  const fieldError = (
-    field: EntrepriseFormField,
-    sectionId: EntrepriseSectionId,
-  ): string | null => {
-    if (!touched[field] && submitSection !== sectionId) return null;
-    const key = entrepriseFieldErrorKey(field, form);
-    return key ? t(key) : null;
-  };
-
   const handleSaveSubsection = (sectionId: EntrepriseSectionId) => {
-    setSubmitSection(sectionId);
-    setTouched((prev) => {
-      const next = { ...prev };
-      for (const field of ENTREPRISE_SUBSECTION_FIELDS[sectionId]) {
-        next[field as EntrepriseFormField] = true;
+    if (sectionId === "entreprise") {
+      if (changed("companyName") && !form.companyName.trim()) {
+        parametresToastError(t("parametres.companyNameRequired"));
+        return;
       }
-      return next;
-    });
+      if (changed("businessActivity") && !form.businessActivity) {
+        parametresToastError(t("parametres.activityRequired"));
+        return;
+      }
+    }
 
     const errorKey = firstEntrepriseSubsectionErrorKey(
       ENTREPRISE_SUBSECTION_FIELDS[sectionId],
       form,
     );
-    if (errorKey) return;
+    if (errorKey) {
+      parametresToastError(t(errorKey));
+      return;
+    }
 
-    setSubmitSection(null);
     void onSaveSubsection(sectionId);
   };
 
@@ -258,25 +242,29 @@ export function EntrepriseSettingsPanel({
         onToggle={() => toggleSection("entreprise")}
         onSave={() => handleSaveSubsection("entreprise")}
       >
-        <SettingsField
+        <ParametresInputRow
           id="param-company-name"
           label={t("parametres.field.companyName")}
+          leading={
+            <Building2
+              className="h-4 w-4 shrink-0 text-ring"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          }
         >
           <Input
             id="param-company-name"
-            className={cn(
-              invalidInputCls,
-              changed("companyName") && parametresDirtyInp,
-            )}
+            className={parametresControlCls(changed("companyName"))}
             maxLength={COMPANY_NAME_MAX_LENGTH}
             value={form.companyName}
             onChange={(e) => onFieldChange("companyName", e.target.value)}
           />
-        </SettingsField>
-        <div className="grid gap-1.5">
-          <Label className={parametresFieldLbl}>
-            {t("parametres.field.businessActivity")}
-          </Label>
+        </ParametresInputRow>
+        <ParametresInputRow
+          label={t("parametres.field.businessActivity")}
+          alignTop
+        >
           <BusinessActivitySelect
             value={form.businessActivity}
             onChange={(activityId) =>
@@ -284,7 +272,7 @@ export function EntrepriseSettingsPanel({
             }
             highlighted={changed("businessActivity")}
           />
-        </div>
+        </ParametresInputRow>
       </EntrepriseSection>
 
       <EntrepriseSection
@@ -298,51 +286,44 @@ export function EntrepriseSettingsPanel({
         onToggle={() => toggleSection("identifiants-legaux")}
         onSave={() => handleSaveSubsection("identifiants-legaux")}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SettingsField
+        <ParametresInputRow
+          id="param-siret"
+          label={t("parametres.field.siret")}
+          leading={
+            <Hash
+              className="h-4 w-4 shrink-0 text-ring"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          }
+        >
+          <Input
             id="param-siret"
-            label={t("parametres.field.siret")}
-            error={fieldError("siret", "identifiants-legaux")}
-          >
-            <Input
-              id="param-siret"
-              inputMode="numeric"
-              autoComplete="off"
-              className={cn(
-                invalidInputCls,
-                changed("siret") && parametresDirtyInp,
-              )}
-              maxLength={SIRET_MAX_LENGTH}
-              aria-invalid={Boolean(fieldError("siret", "identifiants-legaux"))}
-              value={form.siret}
-              onBlur={() => markTouched("siret")}
-              onChange={(e) =>
-                onFieldChange("siret", normalizeSiretInput(e.target.value))
-              }
-            />
-          </SettingsField>
-          <SettingsField
+            inputMode="numeric"
+            autoComplete="off"
+            className={parametresControlCls(changed("siret"))}
+            maxLength={SIRET_MAX_LENGTH}
+            value={form.siret}
+            onChange={(e) =>
+              onFieldChange("siret", normalizeSiretInput(e.target.value))
+            }
+          />
+        </ParametresInputRow>
+        <ParametresInputRow
+          id="param-tva"
+          label={t("parametres.field.tva")}
+        >
+          <Input
             id="param-tva"
-            label={t("parametres.field.tva")}
-            error={fieldError("tva", "identifiants-legaux")}
-          >
-            <Input
-              id="param-tva"
-              autoComplete="off"
-              className={cn(
-                invalidInputCls,
-                changed("tva") && parametresDirtyInp,
-              )}
-              maxLength={VAT_MAX_LENGTH}
-              aria-invalid={Boolean(fieldError("tva", "identifiants-legaux"))}
-              value={form.tva}
-              onBlur={() => markTouched("tva")}
-              onChange={(e) =>
-                onFieldChange("tva", normalizeVatInput(e.target.value))
-              }
-            />
-          </SettingsField>
-        </div>
+            autoComplete="off"
+            className={parametresControlCls(changed("tva"))}
+            maxLength={VAT_MAX_LENGTH}
+            value={form.tva}
+            onChange={(e) =>
+              onFieldChange("tva", normalizeVatInput(e.target.value))
+            }
+          />
+        </ParametresInputRow>
       </EntrepriseSection>
 
       <EntrepriseSection
@@ -356,77 +337,95 @@ export function EntrepriseSettingsPanel({
         onToggle={() => toggleSection("adresse-facturation")}
         onSave={() => handleSaveSubsection("adresse-facturation")}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <SettingsField
-              id="param-address"
-              label={t("parametres.field.address")}
-            >
-              <Input
-                id="param-address"
-                className={cn(
-                  invalidInputCls,
-                  changed("address") && parametresDirtyInp,
-                )}
-                maxLength={ADDRESS_MAX_LENGTH}
-                value={form.address}
-                onChange={(e) => onFieldChange("address", e.target.value)}
-              />
-            </SettingsField>
-          </div>
-          <SettingsField
+        <ParametresInputRow
+          id="param-address"
+          label={t("parametres.field.address")}
+          leading={
+            <MapPin
+              className="h-4 w-4 shrink-0 text-ring"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          }
+        >
+          <Input
+            id="param-address"
+            className={parametresControlCls(changed("address"))}
+            maxLength={ADDRESS_MAX_LENGTH}
+            value={form.address}
+            onChange={(e) => onFieldChange("address", e.target.value)}
+          />
+        </ParametresInputRow>
+        <ParametresInputRow
+          id="param-zip"
+          label={t("parametres.field.zip")}
+        >
+          <Input
             id="param-zip"
-            label={t("parametres.field.zip")}
-            error={fieldError("zip", "adresse-facturation")}
-          >
-            <Input
-              id="param-zip"
-              inputMode="text"
-              autoComplete="postal-code"
-              className={cn(
-                invalidInputCls,
-                changed("zip") && parametresDirtyInp,
-              )}
-              maxLength={ZIP_MAX_LENGTH}
-              aria-invalid={Boolean(fieldError("zip", "adresse-facturation"))}
-              value={form.zip}
-              onBlur={() => markTouched("zip")}
-              onChange={(e) =>
+            inputMode="text"
+            autoComplete="postal-code"
+            className={parametresControlCls(changed("zip"))}
+            maxLength={ZIP_MAX_LENGTH}
+            value={form.zip}
+            onChange={(e) =>
+              onFieldChange(
+                "zip",
+                normalizePostalCodeInput(e.target.value, form.country),
+              )
+            }
+          />
+        </ParametresInputRow>
+        <ParametresInputRow id="param-city" label={t("parametres.field.city")}>
+          <Input
+            id="param-city"
+            className={parametresControlCls(changed("city"))}
+            maxLength={CITY_MAX_LENGTH}
+            value={form.city}
+            onChange={(e) => onFieldChange("city", e.target.value)}
+          />
+        </ParametresInputRow>
+        <ParametresInputRow
+          id="param-country"
+          label={t("parametres.field.country")}
+        >
+          <Select
+            value={billingCountryValue || undefined}
+            disabled={saving}
+            onValueChange={(value) => {
+              onFieldChange("country", value);
+              if (form.zip) {
                 onFieldChange(
                   "zip",
-                  normalizePostalCodeInput(e.target.value, form.country),
-                )
+                  normalizePostalCodeInput(form.zip, value),
+                );
               }
-            />
-          </SettingsField>
-          <SettingsField id="param-city" label={t("parametres.field.city")}>
-            <Input
-              id="param-city"
-              className={cn(
-                invalidInputCls,
-                changed("city") && parametresDirtyInp,
-              )}
-              maxLength={CITY_MAX_LENGTH}
-              value={form.city}
-              onChange={(e) => onFieldChange("city", e.target.value)}
-            />
-          </SettingsField>
-          <SettingsField
-            id="param-country"
-            label={t("parametres.field.country")}
+            }}
           >
-            <Input
+            <SelectTrigger
               id="param-country"
               className={cn(
-                invalidInputCls,
-                changed("country") && parametresDirtyInp,
+                "w-full cursor-pointer",
+                parametresControlCls(changed("country")),
               )}
-              maxLength={COUNTRY_MAX_LENGTH}
-              value={form.country}
-              onChange={(e) => onFieldChange("country", e.target.value)}
-            />
-          </SettingsField>
-        </div>
+            >
+              <SelectValue placeholder={t("parametres.field.country")} />
+            </SelectTrigger>
+            <SelectContent align="start">
+              {BILLING_COUNTRY_OPTIONS.map((opt) => (
+                <SelectItem
+                  key={opt.id}
+                  value={opt.storedValue}
+                  textValue={t(opt.labelKey)}
+                >
+                  <span className="flex items-center gap-2">
+                    <CountryFlag country={opt.id} className="h-4 w-[1.35rem]" />
+                    <span>{t(opt.labelKey)}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </ParametresInputRow>
       </EntrepriseSection>
     </div>
   );

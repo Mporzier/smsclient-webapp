@@ -21,7 +21,7 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 import { groupColor, groupTagBase } from "@/lib/proto/contactDisplay";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { useState } from "react";
-import { Megaphone, Send, Users } from "lucide-react";
+import { Send, Users } from "lucide-react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
@@ -127,7 +127,7 @@ export function CampaignDetailsModal({
           <>
             <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
               <div className={modalIconCls("sm")} aria-hidden>
-                <Megaphone />
+                <Send />
               </div>
               <DialogTitle className="min-w-0 flex-1 truncate pr-8 text-base font-semibold leading-snug tracking-tight">
                 {t("campaigns.details.title")}

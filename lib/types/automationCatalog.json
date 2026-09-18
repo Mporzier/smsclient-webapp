@@ -606,7 +606,7 @@
     {
       "id": "saint_valentin",
       "label": "Saint-Valentin",
-      "description": "Campagne calendaire 14 février.",
+      "description": "Envoi SMS calendaire 14 février.",
       "kind": "fixed_date",
       "status": "available",
       "fixedMonth": 2,

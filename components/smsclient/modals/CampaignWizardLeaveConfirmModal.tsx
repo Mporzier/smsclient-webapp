@@ -44,7 +44,7 @@ export function CampaignWizardLeaveConfirmModal({
         onOutsideDismiss={onStay}
       >
         <ConfirmDialogHeader
-          title="Quitter la création de campagne ?"
+          title="Quitter la création d'envoi SMS ?"
           media={<TriangleAlert aria-hidden />}
           mediaClassName={cn(
             confirmDialogMediaBaseCls,

@@ -1,0 +1,924 @@
+{
+  "version": 1,
+  "calendarYear": 2026,
+  "locale": "fr-FR",
+  "activityGroupsSource": "lib/types/automationCatalog.json",
+  "events": [
+    {
+      "id": "nouvel_an",
+      "title": "Nouvel An",
+      "date": "2026-01-01",
+      "type": "holiday",
+      "note": "Vœux clients / résolution — bonne année + offre douce.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "epiphanie",
+      "title": "Épiphanie (galette des rois)",
+      "date": "2026-01-06",
+      "type": "commercial",
+      "note": "Galette, couronne, précommande — pic surtout 1–6 janvier.",
+      "activityGroups": ["restauration"],
+      "businessActivityIds": ["boulangerie", "patisserie", "chocolaterie", "traiteur"]
+    },
+    {
+      "id": "soldes_hiver_debut",
+      "title": "Soldes d'hiver (ouverture)",
+      "date": "2026-01-07",
+      "type": "commercial",
+      "note": "Annonce ouverture soldes + accès VIP / early access.",
+      "activityGroups": ["retail_ecommerce", "retail_pos"]
+    },
+    {
+      "id": "soldes_hiver_fin",
+      "title": "Soldes d'hiver (derniers jours)",
+      "date": "2026-02-03",
+      "type": "commercial",
+      "note": "Urgence « dernière démarque » — stock à écouler.",
+      "activityGroups": ["retail_ecommerce", "retail_pos"]
+    },
+    {
+      "id": "chandeleur",
+      "title": "Chandeleur",
+      "date": "2026-02-02",
+      "type": "seasonal",
+      "note": "Crêpes / beignets — promo du jour ou menu spécial.",
+      "activityGroups": ["restauration"],
+      "businessActivityIds": ["boulangerie", "patisserie", "creperie", "epicerie"]
+    },
+    {
+      "id": "saint_valentin",
+      "title": "Saint-Valentin",
+      "date": "2026-02-14",
+      "type": "commercial",
+      "note": "Cadeaux, réservation, menu duo — rappel J-7 puis J-1.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "carnaval_mardi_gras",
+      "title": "Mardi gras / Carnaval",
+      "date": "2026-02-17",
+      "type": "seasonal",
+      "note": "Beignets, fête, déguisements — restauration & loisirs.",
+      "activityGroups": ["restauration", "loisirs_evenementiel"],
+      "businessActivityIds": ["boulangerie", "patisserie", "magasin_jouet"]
+    },
+    {
+      "id": "fete_grands_meres",
+      "title": "Fête des grands-mères",
+      "date": "2026-03-01",
+      "type": "commercial",
+      "note": "Petit cadeau / bouquet — 1er dimanche de mars.",
+      "activityGroups": ["fleuriste_cadeau", "retail", "restauration"]
+    },
+    {
+      "id": "printemps_equinoxe",
+      "title": "Début du printemps",
+      "date": "2026-03-20",
+      "type": "seasonal",
+      "note": "Jardin, terrasse, nouveautés saison — lancement printemps.",
+      "activityGroups": ["commerce"],
+      "businessActivityIds": ["jardinerie", "fleuriste", "decoration_maison", "restaurant", "bar", "brasserie"]
+    },
+    {
+      "id": "allergie_pollens",
+      "title": "Saison allergies (pollens)",
+      "date": "2026-03-15",
+      "type": "seasonal",
+      "note": "Conseil + produits — rappel discret, pas de diagnostic.",
+      "activityGroups": ["sante"],
+      "businessActivityIds": ["pharmacie", "opticien"]
+    },
+    {
+      "id": "paques",
+      "title": "Pâques",
+      "date": "2026-04-05",
+      "type": "holiday",
+      "note": "Week-end famille — chocolats, brunch, fleurs.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "lundi_paques",
+      "title": "Lundi de Pâques",
+      "date": "2026-04-06",
+      "type": "holiday",
+      "note": "Pont / ouverture exceptionnelle — communiquer horaires.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "declaration_impots_ouverture",
+      "title": "Ouverture déclaration revenus",
+      "date": "2026-04-10",
+      "type": "professional",
+      "note": "Rappel RDV expert-comptable / notaire / conseil patrimonial.",
+      "activityGroups": ["public_pro"],
+      "businessActivityIds": ["comptable", "notaire", "avocat", "agence_immobiliere"]
+    },
+    {
+      "id": "journee_mondiale_sante",
+      "title": "Journée mondiale de la santé",
+      "date": "2026-04-07",
+      "type": "professional",
+      "note": "Prévention, dépistage, bilan — message institutionnel.",
+      "activityGroups": ["sante", "sante_liberal"]
+    },
+    {
+      "id": "saison_mariages_debut",
+      "title": "Saison mariages (démarrage)",
+      "date": "2026-04-15",
+      "type": "seasonal",
+      "note": "Forfaits photo, traiteur, salle — réservations printemps–été.",
+      "activityGroups": ["evenementiel", "beaute"],
+      "businessActivityIds": ["fleuriste", "bijouterie", "photographe", "coiffeur_barber", "bien_etre_beaute"]
+    },
+    {
+      "id": "fete_travail",
+      "title": "Fête du travail",
+      "date": "2026-05-01",
+      "type": "holiday",
+      "note": "1er mai — muguet (fleuriste) ou fermeture / horaires réduits.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "muguet_premier_mai",
+      "title": "Muguet du 1er mai",
+      "date": "2026-05-01",
+      "type": "commercial",
+      "note": "Précommande muguet — livraison ou retrait boutique.",
+      "businessActivityIds": ["fleuriste"]
+    },
+    {
+      "id": "victoire_1945",
+      "title": "Victoire 1945 (8 mai)",
+      "date": "2026-05-08",
+      "type": "holiday",
+      "note": "Jour férié — horaires et livraisons.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "ascension",
+      "title": "Ascension",
+      "date": "2026-05-14",
+      "type": "holiday",
+      "note": "Pont — pic escapades hôtellerie / camping / restauration.",
+      "activityGroups": ["hotellerie_tourisme", "restauration"]
+    },
+    {
+      "id": "fete_des_meres",
+      "title": "Fête des mères",
+      "date": "2026-05-31",
+      "type": "commercial",
+      "note": "Dernier dimanche de mai — cadeau, réservation, livraison.",
+      "activityGroups": ["fleuriste_cadeau", "retail", "restauration", "beaute"]
+    },
+    {
+      "id": "lundi_pentecote",
+      "title": "Lundi de Pentecôte",
+      "date": "2026-05-25",
+      "type": "holiday",
+      "note": "Pont — séjour court, restaurant, loisirs.",
+      "activityGroups": ["hotellerie_tourisme", "restauration", "loisirs_evenementiel"]
+    },
+    {
+      "id": "debut_chemin_st_jacques",
+      "title": "Saison randonnée / vélo",
+      "date": "2026-05-01",
+      "type": "seasonal",
+      "note": "Équipement, entretien vélo, coaching outdoor.",
+      "businessActivityIds": ["sport_retail", "salle_sport", "garage_auto"]
+    },
+    {
+      "id": "fete_des_peres",
+      "title": "Fête des pères",
+      "date": "2026-06-21",
+      "type": "commercial",
+      "note": "3e dimanche de juin — idées cadeaux ciblées.",
+      "activityGroups": ["fleuriste_cadeau", "retail", "restauration"]
+    },
+    {
+      "id": "fete_musique",
+      "title": "Fête de la musique",
+      "date": "2026-06-21",
+      "type": "seasonal",
+      "note": "Soirée, terrasse, DJ — bars, restaurants, salles.",
+      "activityGroups": ["restauration", "loisirs_evenementiel"],
+      "businessActivityIds": ["dj_animation", "bar", "brasserie"]
+    },
+    {
+      "id": "ete_debut",
+      "title": "Début de l'été (solstice)",
+      "date": "2026-06-21",
+      "type": "seasonal",
+      "note": "Carte d'été, glaces, terrasses, campings — lancement saison.",
+      "activityGroups": ["hotellerie_loisirs", "restauration"],
+      "businessActivityIds": ["glacier", "camping", "hotellerie", "jardinerie"]
+    },
+    {
+      "id": "soldes_ete_debut",
+      "title": "Soldes d'été (ouverture)",
+      "date": "2026-06-24",
+      "type": "commercial",
+      "note": "Soldes estivales — même playbook que hiver.",
+      "activityGroups": ["retail_ecommerce", "retail_pos"]
+    },
+    {
+      "id": "soldes_ete_fin",
+      "title": "Soldes d'été (derniers jours)",
+      "date": "2026-07-21",
+      "type": "commercial",
+      "note": "Clearance fin de soldes — SMS urgence stock.",
+      "activityGroups": ["retail_ecommerce", "retail_pos"]
+    },
+    {
+      "id": "fete_nationale",
+      "title": "Fête nationale (14 juillet)",
+      "date": "2026-07-14",
+      "type": "holiday",
+      "note": "Feu d'artifice, barbecue, menus patriotiques — resto / hôtellerie.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "canicule_prevention",
+      "title": "Période canicule",
+      "date": "2026-07-01",
+      "type": "seasonal",
+      "note": "Hydratation, crème solaire, conserves fraîcheur — pharmacie / épicerie.",
+      "activityGroups": ["sante"],
+      "businessActivityIds": ["pharmacie", "epicerie", "caviste"]
+    },
+    {
+      "id": "vacances_ete_pic",
+      "title": "Vacances d'été (pic)",
+      "date": "2026-07-15",
+      "type": "seasonal",
+      "note": "Juillet–août — tourisme, camping, garde animaux, activités kids.",
+      "activityGroups": ["hotellerie_tourisme", "loisirs_evenementiel"],
+      "businessActivityIds": ["veterinaire", "animalerie", "parc_loisirs", "office_tourisme"]
+    },
+    {
+      "id": "controle_technique_ete",
+      "title": "Contrôle technique / départs vacances",
+      "date": "2026-07-01",
+      "type": "professional",
+      "note": "Rappel entretien avant long trajet — garage, concession.",
+      "activityGroups": ["auto_mobilite"]
+    },
+    {
+      "id": "pneus_ete",
+      "title": "Changement pneus été",
+      "date": "2026-04-01",
+      "type": "seasonal",
+      "note": "Envoi SMS pneus + parallélisme — garage / concession.",
+      "activityGroups": ["auto_mobilite"]
+    },
+    {
+      "id": "assomption",
+      "title": "Assomption",
+      "date": "2026-08-15",
+      "type": "holiday",
+      "note": "15 août — dernière ligne droite vacances côte / montagne.",
+      "activityGroups": ["hotellerie_tourisme", "restauration"]
+    },
+    {
+      "id": "rentree_scolaire",
+      "title": "Rentrée scolaire",
+      "date": "2026-09-01",
+      "type": "seasonal",
+      "note": "Fournitures, sport, coiffure, optique — pack rentrée.",
+      "activityGroups": ["retail"],
+      "businessActivityIds": ["librairie", "sport_retail", "coiffeur_barber", "opticien", "high_tech", "magasin_jouet"]
+    },
+    {
+      "id": "rentree_universitaire",
+      "title": "Rentrée universitaire",
+      "date": "2026-09-01",
+      "type": "seasonal",
+      "note": "Logement, forfaits, coworking — cible étudiants.",
+      "businessActivityIds": ["universite", "coworking", "high_tech", "decoration_maison"]
+    },
+    {
+      "id": "rentree_sport_resolutions",
+      "title": "Rentrée sportive (septembre)",
+      "date": "2026-09-07",
+      "type": "commercial",
+      "note": "Abonnement, séance d'essai, challenge 30 jours.",
+      "businessActivityIds": ["salle_sport", "sport_retail", "bien_etre_beaute"]
+    },
+    {
+      "id": "semaine_mobilite",
+      "title": "Semaine européenne de la mobilité",
+      "date": "2026-09-16",
+      "type": "professional",
+      "note": "Permis, code, mobilité douce — auto-école / transports.",
+      "activityGroups": ["auto_mobilite"]
+    },
+    {
+      "id": "journees_patrimoine",
+      "title": "Journées européennes du patrimoine",
+      "date": "2026-09-19",
+      "type": "seasonal",
+      "note": "Visites, événements locaux — mairie, OT, musées (commerce de proximité).",
+      "businessActivityIds": ["office_tourisme", "mairie"]
+    },
+    {
+      "id": "declaration_impots_fin",
+      "title": "Échéance déclaration revenus (en ligne)",
+      "date": "2026-06-08",
+      "type": "professional",
+      "note": "Dernière ligne droite — RDV comptable / rappel pièces.",
+      "activityGroups": ["public_pro"],
+      "businessActivityIds": ["comptable", "notaire"]
+    },
+    {
+      "id": "ag_syndic_printemps",
+      "title": "Assemblées générales copropriété (saison)",
+      "date": "2026-05-01",
+      "type": "professional",
+      "note": "Convocations, votes travaux — syndic / gestion locative.",
+      "activityGroups": ["immobilier"],
+      "businessActivityIds": ["syndic", "gestion_locative"]
+    },
+    {
+      "id": "marche_immobilier_printemps",
+      "title": "Marché immobilier (printemps)",
+      "date": "2026-03-15",
+      "type": "seasonal",
+      "note": "Estimations, visites, portes ouvertes — agence / promoteur.",
+      "activityGroups": ["immobilier"]
+    },
+    {
+      "id": "toussaint",
+      "title": "Toussaint",
+      "date": "2026-11-01",
+      "type": "holiday",
+      "note": "1er novembre — fleurs, chrysanthèmes, horaires cimetière / boutique.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "toussaint_fleuriste_pic",
+      "title": "Toussaint (pic fleuriste)",
+      "date": "2026-10-28",
+      "type": "commercial",
+      "note": "Commandes compositions — livraison ou retrait J-3 à J-1.",
+      "businessActivityIds": ["fleuriste"]
+    },
+    {
+      "id": "halloween",
+      "title": "Halloween",
+      "date": "2026-10-31",
+      "type": "seasonal",
+      "note": "Déco, confiseries, menu thème — retail & restauration.",
+      "activityGroups": ["retail", "restauration"],
+      "businessActivityIds": ["magasin_jouet", "patisserie", "chocolaterie", "decoration_maison"]
+    },
+    {
+      "id": "campagne_grippe",
+      "title": "Envoi SMS vaccination grippe",
+      "date": "2026-10-15",
+      "type": "seasonal",
+      "note": "Rappel RDV vaccin — pharmacie / centre de santé.",
+      "activityGroups": ["sante"],
+      "businessActivityIds": ["pharmacie", "centre_sante", "medecin"]
+    },
+    {
+      "id": "armistice",
+      "title": "Armistice 1918",
+      "date": "2026-11-11",
+      "type": "holiday",
+      "note": "11 novembre — commémoration, horaires publics.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "beaujolais_nouveau",
+      "title": "Beaujolais nouveau",
+      "date": "2026-11-19",
+      "type": "commercial",
+      "note": "3e jeudi de novembre — dégustation, précommande, soirée caviste.",
+      "businessActivityIds": ["caviste", "restaurant", "bar", "brasserie", "traiteur"]
+    },
+    {
+      "id": "black_friday",
+      "title": "Black Friday",
+      "date": "2026-11-27",
+      "type": "commercial",
+      "note": "Offre flash 48–72 h — e-commerce et magasins connectés.",
+      "activityGroups": ["retail_ecommerce"],
+      "businessActivityIds": [
+        "high_tech",
+        "mode",
+        "concept_store",
+        "sport_retail",
+        "parfumerie",
+        "decoration_maison",
+        "cbd_shop",
+        "cigarette_electronique"
+      ]
+    },
+    {
+      "id": "cyber_monday",
+      "title": "Cyber Monday",
+      "date": "2026-11-30",
+      "type": "commercial",
+      "note": "Relance online post Black Friday — code promo dédié.",
+      "activityGroups": ["retail_ecommerce"]
+    },
+    {
+      "id": "noel_veille",
+      "title": "Réveillon de Noël",
+      "date": "2026-12-24",
+      "type": "commercial",
+      "note": "Menus, derniers cadeaux, horaires exceptionnels.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "noel",
+      "title": "Noël",
+      "date": "2026-12-25",
+      "type": "holiday",
+      "note": "25 décembre — vœux chaleureux, fermeture ou service limité.",
+      "activityGroups": ["all"]
+    },
+    {
+      "id": "saint_etienne",
+      "title": "Saint-Étienne (soldes de fin d'année)",
+      "date": "2026-12-26",
+      "type": "commercial",
+      "note": "26 décembre — déstockage cadeaux / relance soldes.",
+      "activityGroups": ["retail_ecommerce", "retail_pos"]
+    },
+    {
+      "id": "nouvel_an_eve",
+      "title": "Réveillon du Nouvel An",
+      "date": "2026-12-31",
+      "type": "commercial",
+      "note": "Réservation, cotillons, champagne — resto, bar, traiteur.",
+      "activityGroups": ["restauration", "evenementiel"],
+      "businessActivityIds": ["caviste", "traiteur_evenementiel", "salle_reception"]
+    },
+    {
+      "id": "boulangerie_rentree_gourmande",
+      "title": "Rentrée gourmande (goûter)",
+      "date": "2026-09-01",
+      "type": "commercial",
+      "note": "Viennoiseries rentrée, abonnement midi — fidélisation école proximité.",
+      "businessActivityIds": ["boulangerie", "patisserie"]
+    },
+    {
+      "id": "boulangerie_galette_fin_saison",
+      "title": "Fin saison galettes",
+      "date": "2026-01-31",
+      "type": "commercial",
+      "note": "Dernières galettes / promo — écouler stock janvier.",
+      "businessActivityIds": ["boulangerie", "patisserie"]
+    },
+    {
+      "id": "restaurant_terrasse_ouverture",
+      "title": "Ouverture terrasses",
+      "date": "2026-04-01",
+      "type": "seasonal",
+      "note": "Annonce terrasse, apéro, réservation — bars & restaurants.",
+      "activityGroups": ["restauration_resa"]
+    },
+    {
+      "id": "restaurant_brunch_paques",
+      "title": "Brunch de Pâques",
+      "date": "2026-04-06",
+      "type": "commercial",
+      "note": "Menu brunch familial — réservation obligatoire.",
+      "activityGroups": ["restauration_resa"]
+    },
+    {
+      "id": "fast_food_rentree_menu",
+      "title": "Menus rentrée (rapide)",
+      "date": "2026-09-01",
+      "type": "commercial",
+      "note": "Formule étudiant / midi express — drive & livraison.",
+      "activityGroups": ["restauration_delivery"]
+    },
+    {
+      "id": "cafe_saint_valentin_latte",
+      "title": "Saint-Valentin (café / salon de thé)",
+      "date": "2026-02-10",
+      "type": "commercial",
+      "note": "Boisson limitée, pâtisserie duo — teaser J-4.",
+      "businessActivityIds": ["cafe", "salon_the", "chocolaterie"]
+    },
+    {
+      "id": "glacier_ouverture_saison",
+      "title": "Ouverture saison glaces",
+      "date": "2026-03-15",
+      "type": "seasonal",
+      "note": "Nouveaux parfums, opening — fidélité SMS.",
+      "businessActivityIds": ["glacier"]
+    },
+    {
+      "id": "fleuriste_mariage_pic",
+      "title": "Mariages (pic été)",
+      "date": "2026-06-15",
+      "type": "seasonal",
+      "note": "Bouquets, arches — rappel RDV essai décoration.",
+      "businessActivityIds": ["fleuriste", "wedding_planner"]
+    },
+    {
+      "id": "fleuriste_saint_valentin_precommande",
+      "title": "Saint-Valentin — précommande fleurs",
+      "date": "2026-02-10",
+      "type": "commercial",
+      "note": "Livraison garantie 14/02 — cutoff commande.",
+      "businessActivityIds": ["fleuriste"]
+    },
+    {
+      "id": "jardinerie_semis_printemps",
+      "title": "Semis & plantations printemps",
+      "date": "2026-03-01",
+      "type": "seasonal",
+      "note": "Atelier jardin, promos terreau / graines.",
+      "businessActivityIds": ["jardinerie"]
+    },
+    {
+      "id": "jardinerie_bulbes_automne",
+      "title": "Bulbes et automne jardin",
+      "date": "2026-09-15",
+      "type": "seasonal",
+      "note": "Tulipes, chrysanthèmes jardin — conseil plantation.",
+      "businessActivityIds": ["jardinerie"]
+    },
+    {
+      "id": "animalerie_noel_animaux",
+      "title": "Noël (animaux de compagnie)",
+      "date": "2026-12-10",
+      "type": "commercial",
+      "note": "Jouets, friandises, garde vacances — pas cadeau vivant impulsif.",
+      "businessActivityIds": ["animalerie", "veterinaire"]
+    },
+    {
+      "id": "veterinaire_parasites_printemps",
+      "title": "Antiparasitaires (printemps)",
+      "date": "2026-04-01",
+      "type": "seasonal",
+      "note": "Rappel traitement tiques / puces — RDV ou rappel produit.",
+      "businessActivityIds": ["veterinaire", "animalerie"]
+    },
+    {
+      "id": "pharmacie_bilan_sante",
+      "title": "Bilan santé / mutuelle fin d'année",
+      "date": "2026-11-15",
+      "type": "commercial",
+      "note": "Optique, dentaire, ortho — reste à charge mutuelle.",
+      "activityGroups": ["sante_liberal"],
+      "businessActivityIds": ["pharmacie", "opticien", "dentiste", "kine"]
+    },
+    {
+      "id": "opticien_soleil_ete",
+      "title": "Solariés & lunettes soleil",
+      "date": "2026-06-01",
+      "type": "commercial",
+      "note": "Promo 2e paire soleil — avant vacances.",
+      "businessActivityIds": ["opticien"]
+    },
+    {
+      "id": "coiffeur_mariage_saison",
+      "title": "Coiffure mariée (saison)",
+      "date": "2026-05-01",
+      "type": "seasonal",
+      "note": "Essai coiffure, forfait mariage — réservation tôt.",
+      "businessActivityIds": ["coiffeur_barber", "bien_etre_beaute"]
+    },
+    {
+      "id": "coiffeur_decembre_fetes",
+      "title": "Coiffure fêtes de fin d'année",
+      "date": "2026-12-01",
+      "type": "commercial",
+      "note": "Créneaux saturés — réserver avant décembre.",
+      "activityGroups": ["beaute"]
+    },
+    {
+      "id": "bijouterie_demandes_mariage",
+      "title": "Fiançailles & mariage (bijoux)",
+      "date": "2026-02-01",
+      "type": "commercial",
+      "note": "Saint-Valentin + saison — gravure, taille bague.",
+      "businessActivityIds": ["bijouterie"]
+    },
+    {
+      "id": "librairie_fete_livre",
+      "title": "Fête du livre / rentrée littéraire",
+      "date": "2026-09-20",
+      "type": "seasonal",
+      "note": "Rencontres auteurs, précommandes — librairie indé.",
+      "businessActivityIds": ["librairie"]
+    },
+    {
+      "id": "librairie_noel_lecture",
+      "title": "Noël (livres cadeaux)",
+      "date": "2026-12-01",
+      "type": "commercial",
+      "note": "Sélection cadeaux, coffrets — click & collect.",
+      "businessActivityIds": ["librairie", "magasin_jouet"]
+    },
+    {
+      "id": "high_tech_rentree_parc",
+      "title": "Rentrée high-tech",
+      "date": "2026-08-25",
+      "type": "commercial",
+      "note": "PC, tablettes, accessoires — promo bundle.",
+      "businessActivityIds": ["high_tech"]
+    },
+    {
+      "id": "garage_revision_hiver",
+      "title": "Préparation hiver (batterie / liquides)",
+      "date": "2026-11-01",
+      "type": "seasonal",
+      "note": "Check hiver — garage, pneus neige.",
+      "activityGroups": ["auto_mobilite"]
+    },
+    {
+      "id": "concessionnaire_fin_annee",
+      "title": "Fin d'année auto (0 km / VO)",
+      "date": "2026-12-01",
+      "type": "commercial",
+      "note": "Stock fin année, LOA — essai RDV.",
+      "businessActivityIds": ["concessionnaire"]
+    },
+    {
+      "id": "auto_ecole_rentree_permis",
+      "title": "Rentrée permis de conduire",
+      "date": "2026-09-01",
+      "type": "commercial",
+      "note": "Forfait code + conduite — inscription septembre.",
+      "businessActivityIds": ["auto_ecole"]
+    },
+    {
+      "id": "hotellerie_ponts_mai",
+      "title": "Ponts de mai (escapades)",
+      "date": "2026-05-01",
+      "type": "seasonal",
+      "note": "Packages 1–3 nuits — Ascension & Pentecôte.",
+      "activityGroups": ["hotellerie_tourisme"]
+    },
+    {
+      "id": "camping_ouverture_saison",
+      "title": "Ouverture saison camping",
+      "date": "2026-04-01",
+      "type": "seasonal",
+      "note": "Early booking été — réduction pré-réservation.",
+      "businessActivityIds": ["camping", "hotellerie"]
+    },
+    {
+      "id": "office_tourisme_ete",
+      "title": "Saison touristique (OT)",
+      "date": "2026-06-01",
+      "type": "seasonal",
+      "note": "Agenda événements, brochures — SMS visiteurs opt-in.",
+      "businessActivityIds": ["office_tourisme"]
+    },
+    {
+      "id": "salle_sport_janvier",
+      "title": "Bonnes résolutions (janvier)",
+      "date": "2026-01-05",
+      "type": "commercial",
+      "note": "Essai gratuit, sans engagement — pic inscriptions.",
+      "businessActivityIds": ["salle_sport"]
+    },
+    {
+      "id": "parc_loisirs_ouverture",
+      "title": "Ouverture parc / saison",
+      "date": "2026-04-01",
+      "type": "seasonal",
+      "note": "Billets early bird, abonnements familles.",
+      "businessActivityIds": ["parc_loisirs", "jeux"]
+    },
+    {
+      "id": "photographe_seance_automne",
+      "title": "Mini-séances photo automne",
+      "date": "2026-10-01",
+      "type": "commercial",
+      "note": "Créneaux outdoor — familles & couples.",
+      "businessActivityIds": ["photographe"]
+    },
+    {
+      "id": "wedding_planner_salon_mariage",
+      "title": "Salons du mariage (saison)",
+      "date": "2026-01-15",
+      "type": "professional",
+      "note": "Inviter leads post-salon — RDV planification.",
+      "activityGroups": ["evenementiel"]
+    },
+    {
+      "id": "traiteur_evenementiel_fin_annee",
+      "title": "Événements entreprise fin d'année",
+      "date": "2026-11-01",
+      "type": "commercial",
+      "note": "Cocktails, arbre de Noël pro — devis avant saturation.",
+      "businessActivityIds": ["traiteur_evenementiel", "traiteur", "agence_evenementielle"]
+    },
+    {
+      "id": "salle_reception_fianailles",
+      "title": "Saison fiançailles / repas familiaux",
+      "date": "2026-02-14",
+      "type": "commercial",
+      "note": "Privatisation salle — menu Saint-Valentin.",
+      "businessActivityIds": ["salle_reception"]
+    },
+    {
+      "id": "dj_animation_mariage_ete",
+      "title": "DJ / animation (pic mariages)",
+      "date": "2026-07-01",
+      "type": "seasonal",
+      "note": "Disponibilités été — contrat & acompte.",
+      "businessActivityIds": ["dj_animation", "location_materiel_event"]
+    },
+    {
+      "id": "btp_renovation_printemps",
+      "title": "Saison rénovation (printemps)",
+      "date": "2026-03-01",
+      "type": "seasonal",
+      "note": "Devis fenêtres, isolation, toiture — planning chantier.",
+      "activityGroups": ["btp"]
+    },
+    {
+      "id": "immobilier_estimation_rentree",
+      "title": "Estimations immobilières (rentrée)",
+      "date": "2026-09-15",
+      "type": "commercial",
+      "note": "Vendeurs actifs post-été — RDV estimation gratuite.",
+      "activityGroups": ["immobilier"]
+    },
+    {
+      "id": "promoteur_lancement_programme",
+      "title": "Lancement programme neuf (printemps)",
+      "date": "2026-04-01",
+      "type": "commercial",
+      "note": "Invitation VIP, visite maquette — promoteur.",
+      "businessActivityIds": ["promoteur", "architecte"]
+    },
+    {
+      "id": "coworking_rentree_freelances",
+      "title": "Rentrée freelances / startups",
+      "date": "2026-09-01",
+      "type": "commercial",
+      "note": "Mois offert, bureau flex — coworking.",
+      "businessActivityIds": ["coworking"]
+    },
+    {
+      "id": "pressing_hiver_manteaux",
+      "title": "Nettoyage manteaux (automne)",
+      "date": "2026-10-01",
+      "type": "seasonal",
+      "note": "Pressing hiver — rappel avant froid.",
+      "businessActivityIds": ["pressing"]
+    },
+    {
+      "id": "reparation_telephonique_rentree",
+      "title": "Rentrée (réparation mobile)",
+      "date": "2026-09-01",
+      "type": "commercial",
+      "note": "Coques, écrans, reprise — promo étudiant.",
+      "businessActivityIds": ["reparation_telephonique", "high_tech"]
+    },
+    {
+      "id": "ecole_privee_inscriptions",
+      "title": "Inscriptions école privée",
+      "date": "2026-02-01",
+      "type": "professional",
+      "note": "Portes ouvertes, dossiers — rappel dates limites.",
+      "businessActivityIds": ["ecole_privee"]
+    },
+    {
+      "id": "universite_forums_emploi",
+      "title": "Forums emploi / stages",
+      "date": "2026-03-01",
+      "type": "professional",
+      "note": "Communication campus — université.",
+      "businessActivityIds": ["universite"]
+    },
+    {
+      "id": "mairie_inscription_scolaire",
+      "title": "Inscriptions scolaires mairie",
+      "date": "2026-04-01",
+      "type": "professional",
+      "note": "Rappel démarches en ligne — mairie.",
+      "businessActivityIds": ["mairie"]
+    },
+    {
+      "id": "avocat_rentree_juridique",
+      "title": "Rentrée judiciaire",
+      "date": "2026-09-01",
+      "type": "professional",
+      "note": "Contentieux actifs — RDV conseil.",
+      "businessActivityIds": ["avocat", "notaire"]
+    },
+    {
+      "id": "centre_commerciaux_noel",
+      "title": "Animations Noël (centre commercial)",
+      "date": "2026-12-01",
+      "type": "commercial",
+      "note": "Traffick Noël — commerçants du centre, horaires étendus.",
+      "businessActivityIds": ["centre_commerciaux"]
+    },
+    {
+      "id": "cbd_shop_promo_wellness",
+      "title": "Journée bien-être (retail)",
+      "date": "2026-01-12",
+      "type": "commercial",
+      "note": "Promo produits bien-être — conforme réglementation locale.",
+      "businessActivityIds": ["cbd_shop", "bien_etre_beaute"]
+    },
+    {
+      "id": "tabac_presse_loto_euromillions",
+      "title": "Jackpots Loto / Euromillions (pics)",
+      "date": "2026-09-25",
+      "type": "commercial",
+      "note": "Rappel tirage — tabac-presse (sans incitation excessive).",
+      "businessActivityIds": ["tabac_presse"]
+    },
+    {
+      "id": "mercerie_rentree_crea",
+      "title": "Rentrée créative (mercerie)",
+      "date": "2026-09-01",
+      "type": "seasonal",
+      "note": "Ateliers couture, rentrée des clubs.",
+      "businessActivityIds": ["mercerie"]
+    },
+    {
+      "id": "boucherie_barbecue_ete",
+      "title": "Saison barbecue",
+      "date": "2026-05-15",
+      "type": "seasonal",
+      "note": "Promos grillades, marinades — boucherie / épicerie.",
+      "businessActivityIds": ["boucherie", "epicerie"]
+    },
+    {
+      "id": "poke_bowl_nouveaute_menu",
+      "title": "Nouveau menu (bowl / healthy)",
+      "date": "2026-01-15",
+      "type": "commercial",
+      "note": "Lancement recette — fidélisation base SMS.",
+      "businessActivityIds": ["poke_bowl", "fast_food"]
+    },
+    {
+      "id": "tattoo_convention_saison",
+      "title": "Conventions tattoo (saison)",
+      "date": "2026-03-01",
+      "type": "professional",
+      "note": "Créneaux consult / flash day — réservation.",
+      "businessActivityIds": ["tattoo"]
+    },
+    {
+      "id": "infirmier_prevention_automne",
+      "title": "Prévention santé à domicile",
+      "date": "2026-10-01",
+      "type": "professional",
+      "note": "Tournée patients, rappel vaccins — libéral.",
+      "businessActivityIds": ["infirmier", "medecin", "kine"]
+    },
+    {
+      "id": "laboratoire_analyses_rentree",
+      "title": "Bilans analyses (rentrée)",
+      "date": "2026-09-01",
+      "type": "professional",
+      "note": "Prise RDV prélèvement — laboratoire.",
+      "businessActivityIds": ["laboratoire"]
+    },
+    {
+      "id": "gestion_locative_renouvellement_baux",
+      "title": "Renouvellements de baux (automne)",
+      "date": "2026-09-01",
+      "type": "professional",
+      "note": "Échéances bail — gestion locative / propriétaires.",
+      "businessActivityIds": ["gestion_locative", "marchand_biens"]
+    },
+    {
+      "id": "marchand_biens_investissement",
+      "title": "Investissement locatif (fin d'année)",
+      "date": "2026-11-01",
+      "type": "professional",
+      "note": "Fiscalité fin d'année — rendez-vous investisseurs.",
+      "businessActivityIds": ["marchand_biens", "promoteur"]
+    },
+    {
+      "id": "transports_rentree_abonnements",
+      "title": "Rentrée transports / abonnements",
+      "date": "2026-08-20",
+      "type": "commercial",
+      "note": "Forfaits, reprise service — transporteurs locaux.",
+      "businessActivityIds": ["transports"]
+    },
+    {
+      "id": "food_truck_festival_saison",
+      "title": "Festivals & événements street-food",
+      "date": "2026-06-01",
+      "type": "seasonal",
+      "note": "Annonce présence food truck — géolocalisation jour J.",
+      "businessActivityIds": ["food_truck"]
+    },
+    {
+      "id": "autre_evenement_local",
+      "title": "Créneau événement local (personnalisable)",
+      "date": "2026-06-15",
+      "type": "personal",
+      "note": "Placeholder « autre » — remplacer par fête locale / anniversaire shop.",
+      "businessActivityIds": ["autre"]
+    }
+  ]
+}

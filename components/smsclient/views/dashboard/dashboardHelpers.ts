@@ -5,7 +5,7 @@ import type { MessageKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import {
   Clock3,
-  Megaphone,
+  Send,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -42,6 +42,11 @@ export function hasUserSentSms(campaigns: CampaignRowData[]): boolean {
   return campaigns.some((c) => c.status === "sent");
 }
 
+/** Compte avec au moins une campagne lancée, planifiée ou terminée (hors brouillon seul). */
+export function hasAccountCampaignDone(campaigns: CampaignRowData[]): boolean {
+  return campaigns.some((c) => c.status !== "draft");
+}
+
 export function countSentSmsThisMonth(campaigns: CampaignRowData[]): number {
   return campaigns
     .filter((c) => c.status === "sent" && c.sentAt && isCurrentMonth(c.sentAt))
@@ -73,7 +78,7 @@ export function buildRecentActivities(
 
   if (latestSent) {
     items.push({
-      icon: Megaphone,
+      icon: Send,
       title: t("dashboard.activity.campaignSent"),
       description: `« ${latestSent.name} »\n${latestSent.sendLabel}`,
       tag: t(

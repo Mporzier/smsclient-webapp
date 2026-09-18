@@ -22,6 +22,10 @@ export const CUSTOM_FIELD_LABEL_MAX_LENGTH = 60;
 export const CUSTOM_FIELD_VALUE_MAX_LENGTH = 280;
 export const CONTACT_NOTES_MAX_LENGTH = CUSTOM_FIELD_VALUE_MAX_LENGTH;
 export const AI_PROMPT_MAX_LENGTH = 1000;
+/** Step 2 — prompt IA avant génération. */
+export const AI_PROMPT_MIN_LENGTH = 10;
+/** Step 2 — corps SMS (manuel / modèle / variante IA) avant Continuer. */
+export const SMS_CAMPAIGN_BODY_MIN_LENGTH = 10;
 export const QR_WHEEL_TITLE_MAX_LENGTH = 60;
 export const QR_WHEEL_SUBTITLE_MAX_LENGTH = 120;
 export const QR_WHEEL_SEGMENT_LABEL_MAX_LENGTH = 40;

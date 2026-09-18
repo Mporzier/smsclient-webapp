@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { Smile } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 import {
   EmojiPicker,
   EmojiPickerContent,
@@ -15,7 +15,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { SmsCompositionCounter } from "./SmsCompositionCounter";
+import { SmsLinkInsertMenu } from "./SmsLinkInsertMenu";
 import { SmsMergeTagMenu } from "./SmsMergeTagMenu";
+import type { LinkRowData } from "@/lib/types/link";
 import {
   SmsRichMessageEditor,
   type SmsRichMessageEditorHandle,
@@ -24,51 +26,133 @@ import type { CustomFieldDef } from "@/lib/types/customFields";
 import { useI18n } from "@/lib/i18n";
 import type { SmsMergeValues } from "@/lib/proto/smsPersonalization";
 import type { MergeFillCounts, MergeFillStatus } from "@/lib/proto/smsMergeFill";
+import { AI_PROMPT_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 
-export function SmsMessageComposer({
-  value,
-  onChange,
-  placeholder = "Ex. Bonjour [Prénom], -20 % cette semaine en boutique.",
-  hasError,
-  estimateFirstName,
-  reserveStop = false,
-  billableMessage,
-  compact = false,
-  customFieldDefs = [],
-  estimateSample,
-  popoverClassName,
-  mergeFillCounts,
-  mergeFillStatus,
-}: {
+type SmsMessageComposerProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   hasError?: boolean;
-  estimateFirstName?: string;
-  reserveStop?: boolean;
-  billableMessage?: string;
   compact?: boolean;
   customFieldDefs?: readonly CustomFieldDef[];
-  estimateSample?: SmsMergeValues;
   /** Emoji + tags sont portalisés : z à relever dans une Dialog. */
   popoverClassName?: string;
   mergeFillCounts?: MergeFillCounts;
   mergeFillStatus?: MergeFillStatus;
-}) {
+  disabled?: boolean;
+  mode?: "message" | "aiPrompt";
+  estimateFirstName?: string;
+  reserveStop?: boolean;
+  billableMessage?: string;
+  estimateSample?: SmsMergeValues;
+  maxLength?: number;
+  savedLinks?: LinkRowData[];
+  linksLoading?: boolean;
+  onCreateLink?: (args: {
+    originalUrl: string;
+    label: string;
+  }) => Promise<{ data: LinkRowData | null; error: string | null }>;
+};
+
+export type SmsMessageComposerHandle = {
+  flushMessage: () => string;
+};
+
+export const SmsMessageComposer = forwardRef<
+  SmsMessageComposerHandle,
+  SmsMessageComposerProps
+>(function SmsMessageComposer(
+  {
+    value,
+    onChange,
+    placeholder = "Ex. Bonjour [Prénom], -20 % cette semaine en boutique.",
+    hasError,
+    estimateFirstName,
+    reserveStop = false,
+    billableMessage,
+    compact = false,
+    customFieldDefs = [],
+    estimateSample,
+    popoverClassName,
+    mergeFillCounts,
+    mergeFillStatus,
+    disabled = false,
+    mode = "message",
+    maxLength = AI_PROMPT_MAX_LENGTH,
+    savedLinks = [],
+    linksLoading = false,
+    onCreateLink,
+  },
+  ref,
+) {
   const { locale, t } = useI18n();
   const [emojisOpen, setEmojisOpen] = useState(false);
   const editorRef = useRef<SmsRichMessageEditorHandle>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const isAiPrompt = mode === "aiPrompt";
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flushMessage: () =>
+        isAiPrompt ? value.trim() : editorRef.current?.flush() ?? value,
+    }),
+    [isAiPrompt, value],
+  );
+
+  const insertAtPromptCursor = useCallback(
+    (text: string) => {
+      const el = promptRef.current;
+      if (!el) return;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const next = value.slice(0, start) + text + value.slice(end);
+      if (next.length > maxLength) return;
+      onChange(next);
+      requestAnimationFrame(() => {
+        el.focus();
+        const pos = start + text.length;
+        el.setSelectionRange(pos, pos);
+      });
+    },
+    [maxLength, onChange, value],
+  );
 
   const insertEmoji = useCallback(
     (emoji: string) => {
+      if (isAiPrompt) {
+        insertAtPromptCursor(emoji);
+        return;
+      }
       editorRef.current?.insertText(emoji);
     },
-    [],
+    [insertAtPromptCursor, isAiPrompt],
   );
 
-  const insertMergeToken = useCallback((token: string) => {
-    editorRef.current?.insertText(token);
-  }, []);
+  const insertMergeToken = useCallback(
+    (token: string) => {
+      if (isAiPrompt) {
+        insertAtPromptCursor(token);
+        return;
+      }
+      editorRef.current?.insertText(token);
+    },
+    [insertAtPromptCursor, isAiPrompt],
+  );
+
+  const insertLink = useCallback(
+    (link: LinkRowData) => {
+      const text = `${link.shortUrl} `;
+      if (isAiPrompt) {
+        insertAtPromptCursor(text);
+        return;
+      }
+      editorRef.current?.insertText(text);
+    },
+    [insertAtPromptCursor, isAiPrompt],
+  );
+
+  const showLinkMenu = savedLinks.length > 0 || linksLoading || onCreateLink;
 
   return (
     <div className={cn("shrink-0", compact ? "mt-1.5" : "mt-2.5")}>
@@ -80,13 +164,32 @@ export function SmsMessageComposer({
             : "border-[#dfe6f2] focus-within:border-[#2f6fed]/40 focus-within:ring-2 focus-within:ring-[#2f6fed]/15",
         )}
       >
-        <SmsRichMessageEditor
-          ref={editorRef}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={compact ? "min-h-16 max-h-20 py-2 text-[13px] leading-snug" : undefined}
-        />
+        {isAiPrompt ? (
+          <textarea
+            ref={promptRef}
+            value={value}
+            disabled={disabled}
+            maxLength={maxLength}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={cn(
+              "block min-h-28 w-full resize-none overflow-y-auto border-none bg-transparent px-3.5 pt-3.5",
+              "text-sm font-semibold leading-relaxed text-slate-900 outline-none",
+              "placeholder:font-normal placeholder:leading-relaxed placeholder:text-muted-foreground/40",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+          />
+        ) : (
+          <SmsRichMessageEditor
+            ref={editorRef}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={
+              compact ? "min-h-16 max-h-20 py-2 text-[13px] leading-snug" : undefined
+            }
+          />
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100/80 px-2 py-1.5">
           <div className="flex items-center gap-1.5">
@@ -94,10 +197,13 @@ export function SmsMessageComposer({
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  disabled={disabled}
                   title={t("emoji.insertAria")}
                   aria-label={t("emoji.insertAria")}
                   className={cn(
                     "grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-slate-200/90 bg-white text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 data-[state=open]:border-[#2f6fed]/30 data-[state=open]:bg-[#eef4ff] data-[state=open]:text-[#2f6fed]",
+                    disabled &&
+                      "pointer-events-none cursor-not-allowed opacity-50",
                   )}
                 >
                   <Smile className="h-4 w-4" aria-hidden />
@@ -129,7 +235,18 @@ export function SmsMessageComposer({
               contentClassName={popoverClassName}
               fillCounts={mergeFillCounts}
               fillStatus={mergeFillStatus}
+              disabled={disabled}
             />
+            {showLinkMenu ? (
+              <SmsLinkInsertMenu
+                links={savedLinks}
+                loading={linksLoading}
+                disabled={disabled}
+                onInsert={insertLink}
+                onCreateLink={onCreateLink}
+                contentClassName={popoverClassName}
+              />
+            ) : null}
           </div>
 
           <SmsCompositionCounter
@@ -145,4 +262,4 @@ export function SmsMessageComposer({
       </div>
     </div>
   );
-}
+});

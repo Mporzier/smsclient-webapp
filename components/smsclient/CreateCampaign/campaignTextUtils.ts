@@ -1,9 +1,14 @@
 import { appendStopMention, hasStopMention } from "@/lib/proto/smsStopMention";
 import { SMS_NOM_TAG, SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 
-export function buildDefaultCampaignTitle(): string {
-  const d = new Date().toLocaleDateString("fr-FR");
-  return `Campagne du ${d}`.slice(0, 80);
+export function formatDefaultCampaignDate(d = new Date()): string {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+export function buildDefaultCampaignTitle(d = new Date()): string {
+  return `Campagne · ${formatDefaultCampaignDate(d)}`.slice(0, 80);
 }
 
 export function generateAiVariants(args: {
@@ -24,25 +29,119 @@ export function generateAiVariants(args: {
   );
   const extra = tokens.filter((t) => t !== SMS_PRENOM_TAG && t !== SMS_NOM_TAG);
 
-  const opener =
-    greetBits.length > 0
-      ? tone === "urgent"
-        ? `${greetBits.join(" ")},`
-        : `Bonjour ${greetBits.join(" ")},`
-      : tone === "premium"
-        ? "Bonjour,"
-        : tone === "urgent"
-          ? ""
-          : "Hello,";
-
+  const opener = buildToneOpener(tone, greetBits);
   const greet = opener ? `${opener} ` : "";
   const extraBit = extra.length ? ` ${extra.join(" ")}` : "";
 
-  return [
-    `${greet}${objective} : ${offer}.${extraBit} Valable ${duration}.`,
-    `${greet}profite de ${offer} pour ${objective}.${extraBit} Fin de l'offre dans ${duration}.`,
-    `${objective} ${offer} pendant ${duration}.${extraBit} Passe en boutique avec ce SMS !`,
-  ].map((x) => x.replace(/\s+/g, " ").trim().slice(0, 320));
+  const lines = buildToneVariantLines(tone, {
+    greet,
+    objective,
+    offer,
+    duration,
+    extraBit,
+  });
+
+  return lines.map((x) => x.replace(/\s+/g, " ").trim().slice(0, 320));
+}
+
+function buildToneOpener(
+  tone: string,
+  greetBits: string[],
+): string {
+  const hasName = greetBits.length > 0;
+  const names = greetBits.join(" ");
+
+  switch (tone) {
+    case "urgent":
+    case "energetic":
+      return hasName ? `${names},` : "";
+    case "promo":
+      return hasName ? `Bonjour ${names},` : "Bonjour,";
+    case "premium":
+      return hasName ? `Bonjour ${names},` : "Bonjour,";
+    case "pro":
+      return hasName ? `Bonjour ${names},` : "Bonjour,";
+    case "festive":
+      return hasName ? `Hello ${names} !` : "Hello !";
+    case "direct":
+      return hasName ? `${names},` : "";
+    case "neutral":
+      return hasName ? `Bonjour ${names},` : "Bonjour,";
+    case "amical":
+    default:
+      return hasName ? `Bonjour ${names},` : "Hello,";
+  }
+}
+
+function buildToneVariantLines(
+  tone: string,
+  ctx: {
+    greet: string;
+    objective: string;
+    offer: string;
+    duration: string;
+    extraBit: string;
+  },
+): string[] {
+  const { greet, objective, offer, duration, extraBit } = ctx;
+
+  switch (tone) {
+    case "urgent":
+      return [
+        `${greet}Dernières heures : ${objective} — ${offer}.${extraBit} Fin ${duration}.`,
+        `${greet}${objective} : ${offer}.${extraBit} Plus que ${duration} !`,
+        `${greet}Ne ratez pas : ${offer} pour ${objective}.${extraBit}`,
+      ];
+    case "promo":
+      return [
+        `${greet}Bon plan : ${objective} — ${offer}.${extraBit} Jusqu'à ${duration}.`,
+        `${greet}${offer} sur ${objective}.${extraBit} Promo ${duration} !`,
+        `${greet}Profitez de ${offer} : ${objective}.${extraBit}`,
+      ];
+    case "premium":
+      return [
+        `${greet}${objective} — ${offer}.${extraBit} Offre exclusive ${duration}.`,
+        `${greet}Nous vous réservons ${offer} : ${objective}.${extraBit}`,
+        `${greet}${objective}. ${offer}.${extraBit} Valable ${duration}.`,
+      ];
+    case "festive":
+      return [
+        `${greet}${objective} : ${offer} !${extraBit} Jusqu'au ${duration}.`,
+        `${greet}C'est le moment : ${offer} pour ${objective}.${extraBit}`,
+        `${greet}${objective} — ${offer}.${extraBit} Fêtez avec nous !`,
+      ];
+    case "pro":
+      return [
+        `${greet}${objective} : ${offer}.${extraBit} Valable ${duration}.`,
+        `${greet}Information : ${offer} — ${objective}.${extraBit}`,
+        `${greet}${objective}. ${offer}.${extraBit} Merci de votre confiance.`,
+      ];
+    case "direct":
+      return [
+        `${greet}${objective}. ${offer}.${extraBit} ${duration}.`,
+        `${greet}${offer} — ${objective}.${extraBit}`,
+        `${greet}${objective} : ${offer}.${extraBit} Fin ${duration}.`,
+      ];
+    case "energetic":
+      return [
+        `${greet}${objective} : ${offer} !${extraBit} Go — ${duration} !`,
+        `${greet}C'est parti : ${offer} pour ${objective}.${extraBit}`,
+        `${greet}${objective} — ${offer}.${extraBit} On vous attend !`,
+      ];
+    case "neutral":
+      return [
+        `${greet}${objective} : ${offer}.${extraBit} Valable ${duration}.`,
+        `${greet}${offer} — ${objective}.${extraBit} Jusqu'au ${duration}.`,
+        `${greet}${objective}. ${offer}.${extraBit}`,
+      ];
+    case "amical":
+    default:
+      return [
+        `${greet}${objective} : ${offer}.${extraBit} Valable ${duration}.`,
+        `${greet}profite de ${offer} pour ${objective}.${extraBit} Fin de l'offre dans ${duration}.`,
+        `${objective} ${offer} pendant ${duration}.${extraBit} Passe en boutique avec ce SMS !`,
+      ];
+  }
 }
 
 export function normalizeUrl(url: string): string {

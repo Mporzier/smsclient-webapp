@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import { CAMPAIGN_NAME_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { useI18n } from "@/lib/i18n";
-import { Megaphone } from "lucide-react";
+import { formatDefaultCampaignDate } from "@/components/smsclient/CreateCampaign/campaignTextUtils";
+import { Send } from "lucide-react";
 import { useState } from "react";
 import {
   dialogContentZCls,
@@ -27,12 +28,6 @@ const fieldLabelCls = "text-xs font-semibold text-foreground";
 const fieldMetaCls = "text-xs font-normal text-muted-foreground";
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
-
-function formatCampaignDate(d: Date) {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}/${mm}/${d.getFullYear()}`;
-}
 
 type CampaignNameModalProps = {
   open: boolean;
@@ -56,7 +51,7 @@ export function CampaignNameModal({
   }
 
   const defaultName = t("campaigns.nameModal.defaultName", {
-    date: formatCampaignDate(new Date()),
+    date: formatDefaultCampaignDate(new Date()),
   });
 
   function handleSubmit() {
@@ -82,7 +77,7 @@ export function CampaignNameModal({
       >
         <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
           <div className={modalIconCls("sm")} aria-hidden>
-            <Megaphone />
+            <Send />
           </div>
           <DialogTitle className="min-w-0 flex-1 pr-8 text-base font-semibold leading-none tracking-tight">
             {t("campaigns.nameModal.title")}

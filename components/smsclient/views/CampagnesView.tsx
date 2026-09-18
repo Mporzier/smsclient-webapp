@@ -14,6 +14,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { CAMPAIGN_COL } from "@/components/smsclient/listColumnSizes";
 import {
@@ -24,7 +32,7 @@ import {
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { useMemo } from "react";
-import { Megaphone, MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Plus, Search, Send } from "lucide-react";
 import type {
   ColumnDef,
   OnChangeFn,
@@ -85,21 +93,40 @@ export function CampagnesView({
   sorting,
   onSortingChange,
   error,
+  onNewCampaign,
   onOpenDetails,
 }: CampagnesProps) {
   const { t } = useI18n();
 
-  const showBigEmpty =
-    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+  const emptyState = (
+    <Empty className="p-0 md:p-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Send aria-hidden />
+        </EmptyMedia>
+        <EmptyTitle>{t("campaigns.emptyTitle")}</EmptyTitle>
+        <EmptyDescription>{t("campaigns.emptyBody")}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button
+          variant="default"
+          className="rounded-full"
+          onClick={onNewCampaign}
+        >
+          <Plus aria-hidden />
+          {t("shell.newCampaign")}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
 
   const footerN = typeof totalCount === "number" ? totalCount : rows.length;
-  const footerLabel = useMemo(
-    () =>
-      t(footerN === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
-        n: footerN,
-      }),
-    [footerN, t],
-  );
+  const footerLabel = useMemo(() => {
+    if (loading) return "…";
+    return t(footerN === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
+      n: footerN,
+    });
+  }, [footerN, loading, t]);
 
   const columns: ColumnDef<CampaignRowData, unknown>[] = useMemo(
     () => [
@@ -214,41 +241,22 @@ export function CampagnesView({
         </div>
       )}
 
-      {showBigEmpty ? (
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-          <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <Megaphone
-              className="h-14 w-14 text-slate-400"
-              strokeWidth={1.25}
-              aria-hidden
-            />
-            <p className="m-0 max-w-[360px] text-lg font-extrabold text-slate-800">
-              {t("campaigns.emptyTitle")}
-            </p>
-            <p className="m-0 max-w-[400px] text-sm font-semibold leading-relaxed text-slate-500">
-              {t("campaigns.emptyBody")}
-            </p>
-          </div>
-        </section>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={rows}
-          loading={loading}
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-          onLoadMore={onLoadMore}
-          globalFilter={searchQuery}
-          loadingMessage={t("campaigns.loading")}
-          emptyMessage={t("campaigns.emptyTable")}
-          searchNoResultsMessage={t("campaigns.noSearchResults")}
-          onRowClick={onOpenDetails}
-          footer={footerLabel}
-          sorting={sorting}
-          onSortingChange={onSortingChange}
-          manualSorting
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={loading}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMore={onLoadMore}
+        globalFilter={searchQuery}
+        emptyMessage={emptyState}
+        searchNoResultsMessage={t("campaigns.noSearchResults")}
+        onRowClick={onOpenDetails}
+        footer={footerLabel}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+        manualSorting
+      />
     </div>
   );
 }

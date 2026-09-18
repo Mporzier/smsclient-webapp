@@ -9,10 +9,7 @@ import { requestParametresSection } from "@/components/smsclient/views/parametre
 import { cn } from "@/lib/utils";
 import { contactInitials } from "@/lib/proto/contactDisplay";
 import { useRouter } from "next/navigation";
-import {
-  navOverrideForRoute,
-  isCampaignWizardRoute,
-} from "@/lib/proto/routes";
+import { navOverrideForRoute, isCampaignWizardRoute } from "@/lib/proto/routes";
 import { navItemKey, routeTitleKey, useI18n } from "@/lib/i18n";
 import { guideKeyForRoute } from "@/lib/sectionGuides";
 import { useMemo, useState } from "react";
@@ -78,12 +75,13 @@ export function AppShell({
   const email = user?.email ?? "";
 
   const labeledGeneral = useMemo(
-    () => generalNav.map((item) => ({ ...item, label: t(navItemKey(item.id)) })),
-    [t],
+    () =>
+      generalNav.map((item) => ({ ...item, label: t(navItemKey(item.id)) })),
+    [t]
   );
   const labeledTools = useMemo(
     () => toolsNav.map((item) => ({ ...item, label: t(navItemKey(item.id)) })),
-    [t],
+    [t]
   );
   const labeledAssistance = useMemo(
     () =>
@@ -91,7 +89,7 @@ export function AppShell({
         ...item,
         label: t(navItemKey(item.id)),
       })),
-    [t],
+    [t]
   );
 
   const displayName = useMemo(() => {
@@ -134,7 +132,10 @@ export function AppShell({
   return (
     <div className={cn("h-screen w-screen", APP_CANVAS_CLASS)}>
       <div
-        className={cn("flex h-full w-full min-w-0 overflow-hidden", APP_CANVAS_CLASS)}
+        className={cn(
+          "flex h-full w-full min-w-0 overflow-hidden",
+          APP_CANVAS_CLASS
+        )}
         role="application"
         aria-label={t("shell.appAria")}
       >
@@ -188,7 +189,8 @@ export function AppShell({
               </div>
               {!sidebarCollapsed && (
                 <span className="min-w-0 truncate text-lg font-extrabold leading-none text-foreground">
-                  smsclient.fr
+                  smsclient
+                  <span className="text-chart-1">.fr</span>
                 </span>
               )}
             </button>
@@ -299,9 +301,7 @@ export function AppShell({
                         </span>
                       ) : null}
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => onOpenFeedback?.()}
-                    >
+                    <DropdownMenuItem onSelect={() => onOpenFeedback?.()}>
                       <SidebarMenuIcon icon={MessageSquareText} />
                       {t("shell.submitReview")}
                     </DropdownMenuItem>
@@ -326,116 +326,122 @@ export function AppShell({
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col p-1.5 pl-0 max-[860px]:pl-1.5">
           <div className={MAIN_PANEL_CLASS}>
-          <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border pl-8 pr-[22px] md:pl-9 md:pr-5">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => go("dashboard")}
-                aria-label={t("shell.homeAria")}
-                className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-0 max-[860px]:flex"
-              >
-                <div
-                  className="grid h-10 w-10 shrink-0 place-items-center"
-                  aria-hidden
+            <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-border pl-8 pr-[22px] md:pl-9 md:pr-5">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => go("dashboard")}
+                  aria-label={t("shell.homeAria")}
+                  className="hidden min-w-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left outline-none transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-0 max-[860px]:flex"
                 >
-                  <LogoMark size={40} />
-                </div>
-                <span className="min-w-0 truncate text-lg font-semibold leading-none text-foreground">
-                  smsclient.fr
-                </span>
-              </button>
-              <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
-                <TitleIcon
-                  className="size-6 shrink-0 text-primary"
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-                {t(routeTitleKey(route))}
-              </h1>
-              {isCampaignWizard && campaignWizardStep != null && (
-                <div className="flex min-w-0 flex-1 justify-center px-4">
-                  <CampaignWizardStepper current={campaignWizardStep} compact />
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {creditsLabel && (
-                <Badge
-                  asChild
-                  variant="outline"
-                  className="h-9 cursor-pointer gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted [&>svg]:size-3.5!"
-                >
-                  <button
-                    type="button"
-                    onClick={() => go("acheter-credits")}
-                    title={t("shell.creditsRemaining")}
-                    aria-label={t("shell.credits")}
+                  <div
+                    className="grid h-10 w-10 shrink-0 place-items-center"
+                    aria-hidden
                   >
-                    <Coins
-                      data-icon="inline-start"
-                      className="text-amber-600 dark:text-amber-400"
-                      strokeWidth={2.25}
-                      aria-hidden
+                    <LogoMark size={40} />
+                  </div>
+                  <span className="min-w-0 truncate text-lg font-semibold leading-none text-foreground">
+                    smsclient
+                    <span className="text-chart-1">.fr</span>
+                  </span>
+                </button>
+                <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
+                  <TitleIcon
+                    className="size-6 shrink-0 text-primary"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  {t(routeTitleKey(route))}
+                </h1>
+                {isCampaignWizard && campaignWizardStep != null && (
+                  <div className="flex min-w-0 flex-1 justify-center px-4">
+                    <CampaignWizardStepper
+                      current={campaignWizardStep}
+                      compact
                     />
-                    <span className="tabular-nums font-semibold text-foreground">
-                      {creditsLabel}
-                    </span>
-                    <span className="font-normal text-muted-foreground">
-                      {t("shell.creditsUnit")}
-                    </span>
-                  </button>
-                </Badge>
-              )}
-              <Button
-                type="button"
-                size="lg"
-                onClick={onNewCampaign}
-                className="bg-chart-1 px-3.5 font-semibold text-primary-foreground shadow-xs hover:bg-chart-2"
-              >
-                <Plus
-                  data-icon="inline-start"
-                  className="size-4"
-                  strokeWidth={2.5}
-                  aria-hidden
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {creditsLabel && (
+                  <Badge
+                    asChild
+                    variant="outline"
+                    className="h-9 cursor-pointer gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted [&>svg]:size-3.5!"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => go("acheter-credits")}
+                      title={t("shell.creditsRemaining")}
+                      aria-label={t("shell.credits")}
+                    >
+                      <Coins
+                        data-icon="inline-start"
+                        className="text-amber-600 dark:text-amber-400"
+                        strokeWidth={2.25}
+                        aria-hidden
+                      />
+                      <span className="tabular-nums font-semibold text-foreground">
+                        {creditsLabel}
+                      </span>
+                      <span className="font-normal text-muted-foreground">
+                        {t("shell.creditsUnit")}
+                      </span>
+                    </button>
+                  </Badge>
+                )}
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={onNewCampaign}
+                  className="bg-chart-1 px-3.5 font-semibold text-primary-foreground shadow-xs hover:bg-chart-2"
+                >
+                  <Plus
+                    data-icon="inline-start"
+                    className="size-4"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                  {t("shell.newCampaign")}
+                </Button>
+                <HeaderHelpMenu
+                  open={helpOpen}
+                  onToggle={() => setHelpOpen((v) => !v)}
                 />
-                {t("shell.newCampaign")}
-              </Button>
-              <HeaderHelpMenu
-                open={helpOpen}
-                onToggle={() => setHelpOpen((v) => !v)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-lg"
-                title={t("shell.notifications")}
-                aria-label={t("shell.notifications")}
-                className="border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 hover:text-orange-700 dark:text-amber-400 dark:hover:text-amber-300"
-              >
-                <Bell className="size-5" strokeWidth={2.5} aria-hidden />
-              </Button>
-            </div>
-          </header>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-lg"
+                  title={t("shell.notifications")}
+                  aria-label={t("shell.notifications")}
+                  className="border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 hover:text-orange-700 dark:text-amber-400 dark:hover:text-amber-300"
+                >
+                  <Bell className="size-5" strokeWidth={2.5} aria-hidden />
+                </Button>
+              </div>
+            </header>
 
-          <main
-            data-app-main-scroll
-            className={cn(
-              "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-card px-4 md:px-5",
-              route === "nouvelle-campagne" ||
-                route === "reglementations-sms" ||
-                route === "qr-boutique" ||
-                route === "parametres"
-                ? "overflow-hidden"
-                : "overflow-auto",
-              route === "nouvelle-campagne" ||
-                route === "reglementations-sms" ||
-                route === "qr-boutique"
-                ? "gap-2 py-3"
-                : "gap-[18px] py-4 md:py-5",
-            )}
-          >
-            {children}
-          </main>
+            <main
+              data-app-main-scroll
+              className={cn(
+                "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-card px-4 md:px-5",
+                route === "dashboard" ||
+                  route === "nouvelle-campagne" ||
+                  route === "reglementations-sms" ||
+                  route === "qr-boutique" ||
+                  route === "parametres"
+                  ? "overflow-hidden"
+                  : "overflow-auto",
+                route === "dashboard" ||
+                  route === "nouvelle-campagne" ||
+                  route === "reglementations-sms" ||
+                  route === "qr-boutique"
+                  ? "gap-2 py-3"
+                  : "gap-[18px] py-4 md:py-5"
+              )}
+            >
+              {children}
+            </main>
           </div>
         </div>
       </div>
@@ -452,4 +458,3 @@ export function AppShell({
     </div>
   );
 }
-

@@ -10,28 +10,28 @@ const fr = {
   "nav.dashboard": "Accueil",
   "nav.contacts": "Contacts",
   "nav.groupes": "Groupes",
-  "nav.campagnes": "Campagnes",
+  "nav.campagnes": "Envois SMS",
   "nav.statistiques": "Statistiques",
   "nav.automatisations": "Automatisations",
   "nav.liens": "Liens",
   "nav.modeles-sms": "Modèles SMS",
-  "nav.qr-boutique": "QR code boutique",
+  "nav.qr-boutique": "Collecte clients",
   "nav.aide": "Centre d'aide",
   "nav.reglementations-sms": "Réglementations SMS",
 
   "route.dashboard": "Accueil",
   "route.contacts": "Contacts",
   "route.groupes": "Groupes",
-  "route.campagnes": "Campagnes",
+  "route.campagnes": "Envois SMS",
   "route.automatisations": "Automatisations",
   "route.statistiques": "Statistiques",
   "route.parametres": "Paramètres",
-  "route.qr-boutique": "QR code boutique",
+  "route.qr-boutique": "Collecte clients",
   "route.liens": "Liens",
   "route.modeles-sms": "Modèles SMS",
   "route.reglementations-sms": "Réglementations SMS",
   "route.aide": "Centre d'aide",
-  "route.nouvelle-campagne": "Nouvelle campagne",
+  "route.nouvelle-campagne": "Nouvel envoi SMS",
   "route.acheter-credits": "Acheter des crédits",
 
   "shell.appAria": "smsclient.fr - Application SMS",
@@ -47,7 +47,7 @@ const fr = {
   "shell.logout": "Se déconnecter",
   "shell.creditsRemaining": "Crédits restants",
   "shell.creditsUnit": "crédits",
-  "shell.newCampaign": "Nouvelle campagne",
+  "shell.newCampaign": "Nouvel envoi SMS",
   "shell.notifications": "Notifications",
 
   "dialog.close": "Fermer",
@@ -59,7 +59,7 @@ const fr = {
   "parametres.section.apparence": "Apparence",
   "parametres.section.entreprise": "Entreprise",
   "parametres.section.facturation": "Facturation",
-  "parametres.section.campagnes": "Campagnes",
+  "parametres.section.campagnes": "Envois SMS",
   "parametres.section.sms-alertes": "SMS & alertes",
   "parametres.section.champs-perso": "Champs personnalisés",
   "parametres.section.corbeille": "Corbeille",
@@ -94,7 +94,7 @@ const fr = {
     "Infos importantes et conseils par email.",
   "parametres.card.resume-mensuel.title": "Résumé mensuel",
   "parametres.card.resume-mensuel.description":
-    "Synthèse de vos campagnes par email.",
+    "Synthèse de vos envois SMS par email.",
   "parametres.card.champs-perso.title": "Champs personnalisés",
   "parametres.card.champs-perso.description":
     "Champs date, texte ou nombre sur les contacts (max {n}).",
@@ -140,7 +140,7 @@ const fr = {
   "parametres.field.notifyInvoicesHint":
     "Les factures sont toujours envoyées par email.",
   "parametres.field.notifySummary":
-    "Recevoir un résumé mensuel de vos campagnes par email",
+    "Recevoir un résumé mensuel de vos envois SMS par email",
 
   "parametres.upcomingTitle": "Bientôt disponible",
   "parametres.abonnementBody":
@@ -343,6 +343,49 @@ const fr = {
     "Suivez ces étapes pour envoyer votre premier SMS.",
   "dashboard.hello": "Bonjour {name} ! 👋",
   "dashboard.helloSubtitle": "Voici un aperçu de votre activité.",
+  "dashboard.whatToDo": "Que voulez-vous faire ?",
+  "dashboard.homeProductVisualAlt":
+    "Visuel smsclient : envoi SMS, simplicité et résultats pour votre commerce.",
+  "dashboard.launchCampaign": "Lancer un envoi SMS",
+  "dashboard.calendarTitle": "Calendrier marketing",
+  "dashboard.calendarSubtitle":
+    "Les dates clés à ne pas manquer pour communiquer au bon moment.",
+  "dashboard.calendarPrevMonth": "Mois précédent",
+  "dashboard.calendarNextMonth": "Mois suivant",
+  "dashboard.calendarScheduled": "Planifiées",
+  "dashboard.calendarPast": "Passées",
+  "dashboard.calendarEmptyDay": "Aucun événement ce jour-là.",
+  "dashboard.calendarMoreEvents": "+{n} autre(s)",
+  "dashboard.calendarDayDetailTitle": "Détail du jour",
+  "dashboard.calendarSourceCampaignScheduled": "Envoi SMS planifié",
+  "dashboard.calendarSourceCampaignPast": "Envoi SMS effectué",
+  "dashboard.calendarSourceMarketingSeed": "Date clé (suggestions)",
+  "dashboard.calendarSourceMarketingUser": "Mon événement",
+  "dashboard.calendarEventNoteLabel": "Conseil",
+  "dashboard.calendarType.holiday": "Fête",
+  "dashboard.calendarType.commercial": "Temps fort commercial",
+  "dashboard.calendarType.seasonal": "Saisonnier",
+  "dashboard.calendarType.professional": "Professionnel",
+  "dashboard.calendarType.personal": "Mes événements",
+  "dashboard.calendarAddEvent": "Ajouter un événement",
+  "dashboard.calendarEventModalDesc":
+    "Planifiez une date clé à afficher sur votre calendrier marketing.",
+  "dashboard.calendarEventTitleLabel": "Titre",
+  "dashboard.calendarEventTitlePlaceholder": "Ex. Soldes d'été",
+  "dashboard.calendarEventDateLabel": "Date",
+  "dashboard.calendarEventTypeLabel": "Type d'événement",
+  "dashboard.calendarEventSubmit": "Ajouter",
+  "dashboard.calendarEventSaving": "Enregistrement…",
+  "dashboard.calendarEventErrorTitle": "Indiquez un titre.",
+  "dashboard.calendarEventErrorDate": "Choisissez une date valide.",
+  "dashboard.calendarEventErrorAuth": "Connectez-vous pour enregistrer l'événement.",
+  "dashboard.videoTitle": "Revoir SMSclient en 2 minutes",
+  "dashboard.videoSubtitle": "Présentation rapide de l'application",
+  "dashboard.videoPlaceholder": "Vidéo à venir",
+  "dashboard.qrTitle": "Collecte clients",
+  "dashboard.qrSubtitle": "Inscription en boutique via scan.",
+  "dashboard.qrManage": "Gérer la collecte",
+  "dashboard.qrUnavailable": "Collecte clients indisponible pour le moment.",
   "dashboard.greetingFallback": "bienvenue",
   "dashboard.step.contacts": "Ajouter des contacts",
   "dashboard.step.group": "Créer un groupe",
@@ -376,7 +419,7 @@ const fr = {
   "dashboard.noticeConsent":
     "Consentement des contacts et mention STOP obligatoires.",
   "dashboard.regulation": "Réglementation",
-  "dashboard.activity.campaignSent": "Campagne envoyée",
+  "dashboard.activity.campaignSent": "Envoi SMS effectué",
   "dashboard.activity.contactsAdded": "Contacts ajoutés",
   "dashboard.activity.groupUsed": "Groupe utilisé",
   "dashboard.activity.smsScheduled": "SMS planifié",
@@ -395,7 +438,7 @@ const fr = {
   "contacts.selectOneAria": "Sélectionner {name}",
   "contacts.actionsAria": "Actions pour {name}",
   "contacts.deleteSelected": "Supprimer ({n})",
-  "contacts.createCampaign": "Créer une campagne",
+  "contacts.createCampaign": "Créer un envoi SMS",
   "contacts.import": "Importer",
   "contacts.add": "Ajouter un contact",
   "contacts.emptyTitle": "Aucun contact trouvé",
@@ -424,7 +467,7 @@ const fr = {
   "groups.selectOneAria": "Sélectionner {name}",
   "groups.actionsAria": "Actions pour {name}",
   "groups.deleteSelected": "Supprimer ({n})",
-  "groups.createCampaign": "Créer une campagne",
+  "groups.createCampaign": "Créer un envoi SMS",
   "groups.create": "Créer un groupe",
   "groups.emptyTitle": "Aucun groupe trouvé",
   "groups.emptyBody":
@@ -435,22 +478,22 @@ const fr = {
   "groups.col.name": "Nom du groupe",
   "groups.col.description": "Description",
   "groups.col.contacts": "Contacts",
-  "groups.col.lastCampaign": "Dernière campagne",
+  "groups.col.lastCampaign": "Dernier envoi SMS",
   "groups.col.created": "Création",
   "groups.footerOne": "1 groupe",
   "groups.footerMany": "{n} groupes",
 
-  "campaigns.searchPlaceholder": "Rechercher une campagne…",
-  "campaigns.searchAria": "Rechercher une campagne",
+  "campaigns.searchPlaceholder": "Rechercher un envoi SMS…",
+  "campaigns.searchAria": "Rechercher un envoi SMS",
   "campaigns.actionsAria": "Actions pour {name}",
   "campaigns.viewDetails": "Voir détails",
-  "campaigns.emptyTitle": "Aucune campagne",
-  "campaigns.emptyBody": "Créez une campagne avec « Nouvelle campagne ».",
-  "campaigns.emptyTable": "Aucune campagne.",
-  "campaigns.loading": "Chargement de la liste des campagnes…",
+  "campaigns.emptyTitle": "Aucun envoi SMS",
+  "campaigns.emptyBody": "Créez un envoi SMS avec « Nouvel envoi SMS ».",
+  "campaigns.emptyTable": "Aucun envoi SMS.",
+  "campaigns.loading": "Chargement de la liste des envois SMS…",
   "campaigns.noSearchResults": "Aucun résultat pour cette recherche.",
   "campaigns.col.date": "Date",
-  "campaigns.col.name": "Campagne",
+  "campaigns.col.name": "Envoi SMS",
   "campaigns.col.recipients": "Destinataires",
   "campaigns.col.status": "Statut",
   "campaigns.col.send": "Envoi",
@@ -460,9 +503,9 @@ const fr = {
   "campaigns.status.draft": "Brouillon",
   "campaigns.status.failed": "Échec",
   "campaigns.status.cancelled": "Annulée",
-  "campaigns.footerOne": "1 campagne",
-  "campaigns.footerMany": "{n} campagnes",
-  "campaigns.details.title": "Détails de campagne",
+  "campaigns.footerOne": "1 envoi SMS",
+  "campaigns.footerMany": "{n} envois SMS",
+  "campaigns.details.title": "Détails de l'envoi SMS",
   "campaigns.details.created": "Date de création",
   "campaigns.details.mode": "Mode",
   "campaigns.details.modeSched": "Programmé",
@@ -474,9 +517,9 @@ const fr = {
   "campaigns.details.sectionDetail": "Détail",
   "campaigns.details.sectionList": "Destinataires",
   "campaigns.details.resend": "Renvoyer",
-  "campaigns.nameModal.title": "Nouvelle campagne",
-  "campaigns.nameModal.label": "Nom de votre campagne :",
-  "campaigns.nameModal.defaultName": "Campagne du {date}",
+  "campaigns.nameModal.title": "Nouvel envoi SMS",
+  "campaigns.nameModal.label": "Nom de votre envoi SMS :",
+  "campaigns.nameModal.defaultName": "Campagne · {date}",
   "campaigns.nameModal.continue": "Continuer",
 
   "links.searchPlaceholder": "Rechercher un lien…",
@@ -495,7 +538,7 @@ const fr = {
     "Le lien court {shortUrl} ne redirigera plus vers {originalUrl}. Cette action est définitive.",
   "links.emptyTitle": "Aucun lien court pour le moment",
   "links.emptyBody":
-    "Créez votre premier lien ou activez le suivi des liens dans une campagne SMS.",
+    "Créez votre premier lien ou activez le suivi des liens dans un envoi SMS.",
   "links.emptyTable": "Aucun lien.",
   "links.loading": "Chargement de la liste des liens…",
   "links.noSearchResults": "Aucun résultat pour cette recherche.",
@@ -510,7 +553,7 @@ const fr = {
   "templates.create": "Créer un modèle",
   "templates.createTitle": "Créer un modèle",
   "templates.createSubtitle":
-    "Réutilisez-le lors de la rédaction d'une campagne SMS.",
+    "Réutilisez-le lors de la rédaction d'un envoi SMS.",
   "templates.field.title": "Titre",
   "templates.field.titleCount": "{current}/{max}",
   "templates.field.titlePlaceholder": "Ex. Promo été",
@@ -529,7 +572,7 @@ const fr = {
   "templates.createAction": "Créer le modèle",
   "templates.editTitle": "Modifier le modèle",
   "templates.editSubtitle":
-    "Les changements s’appliquent aux prochaines campagnes.",
+    "Les changements s’appliquent aux prochains envois SMS.",
   "templates.saving": "Enregistrement…",
   "templates.saveAction": "Enregistrer",
   "templates.updateFailed": "Enregistrement impossible.",
@@ -550,7 +593,7 @@ const fr = {
   "templates.deletedManyToast": "{n} modèles supprimés",
   "templates.emptyTitle": "Aucun modèle personnalisé",
   "templates.emptyBody":
-    "Créez votre premier modèle pour le retrouver dans le wizard campagne.",
+    "Créez votre premier modèle pour le retrouver dans l'assistant envoi SMS.",
   "templates.emptyTable": "Aucun modèle.",
   "templates.loading": "Chargement de la liste des modèles…",
   "templates.noSearchResults": "Aucun résultat pour cette recherche.",
@@ -573,7 +616,7 @@ const fr = {
   "stats.shortcuts": "Raccourcis",
   "stats.export": "Exporter",
   "stats.kpi.smsSent": "SMS envoyés",
-  "stats.kpi.smsSentHint": "campagnes envoyées sur la période",
+  "stats.kpi.smsSentHint": "envois SMS effectués sur la période",
   "stats.kpi.delivery": "Taux délivré",
   "stats.kpi.deliveryHint": "ratio envoyé / (envoyé + échec)",
   "stats.kpi.signups": "Inscriptions",
@@ -583,9 +626,9 @@ const fr = {
   "stats.kpi.credits": "Crédits consommés",
   "stats.kpi.creditsHint": "sur la période sélectionnée",
   "stats.viewList": "Voir la liste",
-  "stats.chartTitle": "Évolution des campagnes",
-  "stats.chartEmpty": "Aucune campagne sur cette période",
-  "stats.chartAria": "Graphique de l'évolution des campagnes",
+  "stats.chartTitle": "Évolution des envois SMS",
+  "stats.chartEmpty": "Aucun envoi SMS sur cette période",
+  "stats.chartAria": "Graphique de l'évolution des envois SMS",
   "stats.legend.sent": "Envoyés",
   "stats.legend.failed": "Échecs",
   "stats.legend.scheduled": "Programmés",
@@ -603,14 +646,14 @@ const fr = {
     "Tout ce qu'il vous faut pour envoyer vos premiers SMS, gérer vos contacts et suivre vos résultats simplement.",
   "help.firstSms.title": "Envoyer votre premier SMS",
   "help.firstSms.desc":
-    "Apprenez à créer et envoyer une campagne SMS en quelques minutes.",
+    "Apprenez à créer et envoyer un envoi SMS en quelques minutes.",
   "help.firstSms.step1": "Sélectionner vos destinataires",
   "help.firstSms.step2": "Rédiger votre message",
-  "help.firstSms.step3": "Programmer et envoyer votre campagne",
+  "help.firstSms.step3": "Programmer et envoyer votre SMS",
   "help.firstSms.cta": "Voir le guide pas à pas",
   "help.contacts.title": "Gérer vos contacts",
   "help.contacts.desc":
-    "Importez, organisez et segmentez vos contacts pour des campagnes ciblées et efficaces.",
+    "Importez, organisez et segmentez vos contacts pour des envois SMS ciblés et efficaces.",
   "help.contacts.step1": "Importez vos contacts CSV, Excel ou manuel",
   "help.contacts.step2": "Créez des groupes et segments",
   "help.contacts.how": "Voir comment",
@@ -623,7 +666,7 @@ const fr = {
   "help.ai.discover": "Découvrir",
   "help.perf.title": "Suivre vos performances",
   "help.perf.desc":
-    "Analysez vos campagnes et comprenez les résultats pour toujours mieux communiquer.",
+    "Analysez vos envois SMS et comprenez les résultats pour toujours mieux communiquer.",
   "help.perf.delivery": "Taux de livraison",
   "help.perf.deliveryHint": "SMS délivrés",
   "help.perf.read": "Taux de lecture",
@@ -751,7 +794,7 @@ const fr = {
   "guide.dashboard.b1":
     "Suivez crédits, contacts, groupes et envois en un coup d'œil.",
   "guide.dashboard.b2":
-    "Les activités récentes reprennent vos dernières campagnes et imports.",
+    "Les activités récentes reprennent vos derniers envois SMS et imports.",
   "guide.dashboard.b3":
     "Chaque section du menu dispose de son propre guide et de ressources d'aide.",
   "guide.dashboard.primary": "Envoyer un SMS",
@@ -763,7 +806,7 @@ const fr = {
   "guide.contacts.b1":
     "Chaque ligne = un contact avec téléphone, groupes et dernier SMS reçu.",
   "guide.contacts.b2":
-    "Seuls les contacts abonnés (sans STOP) sont éligibles aux campagnes.",
+    "Seuls les contacts abonnés (sans STOP) sont éligibles aux envois SMS.",
   "guide.contacts.b3":
     "Importez en masse ou ajoutez manuellement, puis classez par groupes.",
   "guide.contacts.primary": "Ajouter un contact",
@@ -771,17 +814,17 @@ const fr = {
   "guide.groupes.eyebrow": "Groupes",
   "guide.groupes.title": "Organiser vos contacts en groupes",
   "guide.groupes.desc":
-    "Les groupes segmentent votre base pour cibler précisément vos campagnes et automatisations.",
+    "Les groupes segmentent votre base pour cibler précisément vos envois SMS et automatisations.",
   "guide.groupes.b1":
     "Un groupe regroupe des contacts partageant un même profil ou besoin.",
   "guide.groupes.b2":
-    "La colonne « Dernière campagne » indique le dernier envoi ciblant ce groupe.",
+    "La colonne « Dernier envoi SMS » indique le dernier envoi ciblant ce groupe.",
   "guide.groupes.b3":
-    "Sélectionnez plusieurs groupes pour créer une campagne ciblée.",
+    "Sélectionnez plusieurs groupes pour créer un envoi SMS ciblé.",
   "guide.groupes.primary": "Créer un groupe",
 
-  "guide.campagnes.eyebrow": "Campagnes",
-  "guide.campagnes.title": "Suivre vos campagnes SMS",
+  "guide.campagnes.eyebrow": "Envois SMS",
+  "guide.campagnes.title": "Suivre vos envois SMS",
   "guide.campagnes.desc":
     "Cette liste retrace chaque envoi : brouillons, programmations, messages envoyés ou en échec.",
   "guide.campagnes.b1":
@@ -789,8 +832,8 @@ const fr = {
   "guide.campagnes.b2":
     "Destinataires et crédits estimés sont visibles avant et après l'envoi.",
   "guide.campagnes.b3":
-    "Cliquez sur une ligne pour consulter le détail d'une campagne.",
-  "guide.campagnes.primary": "Nouvelle campagne",
+    "Cliquez sur une ligne pour consulter le détail d'un envoi SMS.",
+  "guide.campagnes.primary": "Nouvel envoi SMS",
 
   "guide.statistiques.eyebrow": "Statistiques",
   "guide.statistiques.title": "Lire vos performances SMS",
@@ -801,7 +844,7 @@ const fr = {
   "guide.statistiques.b2":
     "Le graphique détaille envois, échecs et programmations par jour.",
   "guide.statistiques.b3":
-    "Filtrez la période pour comparer vos campagnes dans le temps.",
+    "Filtrez la période pour comparer vos envois SMS dans le temps.",
 
   "guide.automatisations.eyebrow": "Automatisations",
   "guide.automatisations.title": "Automatiser vos envois récurrents",
@@ -817,7 +860,7 @@ const fr = {
   "guide.liens.eyebrow": "Liens",
   "guide.liens.title": "Liens courts traçables pour vos SMS",
   "guide.liens.desc":
-    "Créez des URLs courtes pour vos campagnes et mesurez les clics depuis cette liste.",
+    "Créez des URLs courtes pour vos envois SMS et mesurez les clics depuis cette liste.",
   "guide.liens.b1":
     "Chaque lien associe une URL d'origine à une adresse courte smsclient.fr.",
   "guide.liens.b2":
@@ -831,7 +874,7 @@ const fr = {
   "guide.modeles-sms.desc":
     "Gagnez du temps avec des textes prêts à l'emploi : promos, rappels, remerciements et relances.",
   "guide.modeles-sms.b1":
-    "Enregistrez vos modèles personnalisés pour les réutiliser en campagne.",
+    "Enregistrez vos modèles personnalisés pour les réutiliser lors d'un envoi SMS.",
   "guide.modeles-sms.b2":
     "Titre, description et corps du message sont modifiables à tout moment.",
   "guide.modeles-sms.b3":
@@ -870,20 +913,20 @@ const fr = {
     "Consultez le centre d'aide pour le détail réglementaire.",
   "guide.reglementations-sms.primary": "Centre d'aide",
 
-  "guide.nouvelle-campagne.eyebrow": "Nouvelle campagne",
-  "guide.nouvelle-campagne.title": "Créer et envoyer une campagne",
+  "guide.nouvelle-campagne.eyebrow": "Nouvel envoi SMS",
+  "guide.nouvelle-campagne.title": "Créer et envoyer un envoi SMS",
   "guide.nouvelle-campagne.desc":
     "Assistant en 3 étapes : destinataires, message, puis confirmation et envoi.",
   "guide.nouvelle-campagne.b1": "Choisissez contacts ou groupes abonnés.",
   "guide.nouvelle-campagne.b2":
     "Rédigez le SMS et vérifiez le coût en crédits.",
   "guide.nouvelle-campagne.b3": "Envoyez tout de suite ou programmez l'envoi.",
-  "guide.nouvelle-campagne.primary": "Voir les campagnes",
+  "guide.nouvelle-campagne.primary": "Voir les envois SMS",
 
   "guide.acheter-credits.eyebrow": "Crédits",
   "guide.acheter-credits.title": "Recharger votre solde SMS",
   "guide.acheter-credits.desc":
-    "Achetez des crédits pour continuer à envoyer des campagnes et automatisations.",
+    "Achetez des crédits pour continuer à envoyer des SMS et automatisations.",
   "guide.acheter-credits.b1": "1 crédit ≈ 1 SMS standard (selon encodage).",
   "guide.acheter-credits.b2": "Le solde apparaît dans la barre du haut.",
   "guide.acheter-credits.b3":
@@ -899,7 +942,7 @@ const fr = {
 
   "regs.title": "Réglementation SMS",
   "regs.subtitle":
-    "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre campagne.",
+    "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre envoi SMS.",
   "regs.step1": "1. Sélectionnez le pays",
   "regs.searchPh": "Rechercher un pays…",
   "regs.orList": "Ou sélectionnez dans la liste",
@@ -929,7 +972,7 @@ const fr = {
   "contact.modal.edit": "Modifier le contact",
   "contact.modal.fallbackName": "Contact",
   "contact.modal.unsubBanner":
-    "Ce contact est désabonné : il ne recevra plus vos campagnes SMS.",
+    "Ce contact est désabonné : il ne recevra plus vos envois SMS.",
   "contact.modal.phoneHint":
     "Indiquez un mobile 06 ou 07 à 10 chiffres (ex. 06 12 34 56 78).",
   "contact.modal.phoneTitle":
@@ -1075,28 +1118,28 @@ const en: Record<MessageKey, string> = {
   "nav.dashboard": "Home",
   "nav.contacts": "Contacts",
   "nav.groupes": "Groups",
-  "nav.campagnes": "Campaigns",
+  "nav.campagnes": "SMS sends",
   "nav.statistiques": "Statistics",
   "nav.automatisations": "Automations",
   "nav.liens": "Links",
   "nav.modeles-sms": "SMS templates",
-  "nav.qr-boutique": "Store QR code",
+  "nav.qr-boutique": "Client capture",
   "nav.aide": "Help center",
   "nav.reglementations-sms": "SMS regulations",
 
   "route.dashboard": "Home",
   "route.contacts": "Contacts",
   "route.groupes": "Groups",
-  "route.campagnes": "Campaigns",
+  "route.campagnes": "SMS sends",
   "route.automatisations": "Automations",
   "route.statistiques": "Statistics",
   "route.parametres": "Settings",
-  "route.qr-boutique": "Store QR code",
+  "route.qr-boutique": "Client capture",
   "route.liens": "Links",
   "route.modeles-sms": "SMS templates",
   "route.reglementations-sms": "SMS regulations",
   "route.aide": "Help center",
-  "route.nouvelle-campagne": "New campaign",
+  "route.nouvelle-campagne": "New SMS send",
   "route.acheter-credits": "Buy credits",
 
   "shell.appAria": "smsclient.fr - SMS Application",
@@ -1112,7 +1155,7 @@ const en: Record<MessageKey, string> = {
   "shell.logout": "Log out",
   "shell.creditsRemaining": "Credits remaining",
   "shell.creditsUnit": "credits",
-  "shell.newCampaign": "New campaign",
+  "shell.newCampaign": "New SMS send",
   "shell.notifications": "Notifications",
 
   "dialog.close": "Close",
@@ -1124,7 +1167,7 @@ const en: Record<MessageKey, string> = {
   "parametres.section.apparence": "Appearance",
   "parametres.section.entreprise": "Company",
   "parametres.section.facturation": "Billing",
-  "parametres.section.campagnes": "Campaigns",
+  "parametres.section.campagnes": "SMS sends",
   "parametres.section.sms-alertes": "SMS & alerts",
   "parametres.section.champs-perso": "Custom fields",
   "parametres.section.corbeille": "Trash",
@@ -1156,7 +1199,7 @@ const en: Record<MessageKey, string> = {
   "parametres.card.notifications-email.description":
     "Important info and tips by email.",
   "parametres.card.resume-mensuel.title": "Monthly summary",
-  "parametres.card.resume-mensuel.description": "Campaign summary by email.",
+  "parametres.card.resume-mensuel.description": "SMS send summary by email.",
   "parametres.card.champs-perso.title": "Custom fields",
   "parametres.card.champs-perso.description":
     "Date, text, or number fields on contacts (max {n}).",
@@ -1200,7 +1243,7 @@ const en: Record<MessageKey, string> = {
   "parametres.field.notifyInvoices": "Receive alerts and tips by email",
   "parametres.field.notifyInvoicesHint": "Invoices are always sent by email.",
   "parametres.field.notifySummary":
-    "Receive a monthly summary of your campaigns by email",
+    "Receive a monthly summary of your SMS sends by email",
 
   "parametres.upcomingTitle": "Coming soon",
   "parametres.abonnementBody":
@@ -1399,6 +1442,49 @@ const en: Record<MessageKey, string> = {
   "dashboard.welcomeSubtitle": "Follow these steps to send your first SMS.",
   "dashboard.hello": "Hello {name}! 👋",
   "dashboard.helloSubtitle": "Here’s an overview of your activity.",
+  "dashboard.whatToDo": "What would you like to do?",
+  "dashboard.homeProductVisualAlt":
+    "smsclient visual: SMS outreach, simplicity, and results for your business.",
+  "dashboard.launchCampaign": "Send an SMS",
+  "dashboard.calendarTitle": "Marketing calendar",
+  "dashboard.calendarSubtitle":
+    "Key dates not to miss so you reach customers at the right time.",
+  "dashboard.calendarPrevMonth": "Previous month",
+  "dashboard.calendarNextMonth": "Next month",
+  "dashboard.calendarScheduled": "Scheduled",
+  "dashboard.calendarPast": "Past",
+  "dashboard.calendarEmptyDay": "No events on this day.",
+  "dashboard.calendarMoreEvents": "+{n} more",
+  "dashboard.calendarDayDetailTitle": "Day details",
+  "dashboard.calendarSourceCampaignScheduled": "Scheduled SMS send",
+  "dashboard.calendarSourceCampaignPast": "SMS send completed",
+  "dashboard.calendarSourceMarketingSeed": "Key date (suggestions)",
+  "dashboard.calendarSourceMarketingUser": "My event",
+  "dashboard.calendarEventNoteLabel": "Tip",
+  "dashboard.calendarType.holiday": "Holiday",
+  "dashboard.calendarType.commercial": "Commercial peak",
+  "dashboard.calendarType.seasonal": "Seasonal",
+  "dashboard.calendarType.professional": "Professional",
+  "dashboard.calendarType.personal": "My events",
+  "dashboard.calendarAddEvent": "Add event",
+  "dashboard.calendarEventModalDesc":
+    "Schedule a key date on your marketing calendar.",
+  "dashboard.calendarEventTitleLabel": "Title",
+  "dashboard.calendarEventTitlePlaceholder": "E.g. Summer sale",
+  "dashboard.calendarEventDateLabel": "Date",
+  "dashboard.calendarEventTypeLabel": "Event type",
+  "dashboard.calendarEventSubmit": "Add",
+  "dashboard.calendarEventSaving": "Saving…",
+  "dashboard.calendarEventErrorTitle": "Enter a title.",
+  "dashboard.calendarEventErrorDate": "Pick a valid date.",
+  "dashboard.calendarEventErrorAuth": "Sign in to save the event.",
+  "dashboard.videoTitle": "Watch SMSclient in 2 minutes",
+  "dashboard.videoSubtitle": "A quick tour of the app",
+  "dashboard.videoPlaceholder": "Video coming soon",
+  "dashboard.qrTitle": "Client capture",
+  "dashboard.qrSubtitle": "In-store sign-up via scan.",
+  "dashboard.qrManage": "Manage capture",
+  "dashboard.qrUnavailable": "Client capture unavailable right now.",
   "dashboard.greetingFallback": "there",
   "dashboard.step.contacts": "Add contacts",
   "dashboard.step.group": "Create a group",
@@ -1431,7 +1517,7 @@ const en: Record<MessageKey, string> = {
   "dashboard.noticeStop": "Marketing SMS: STOP mention required",
   "dashboard.noticeConsent": "Contact consent and STOP mention are required.",
   "dashboard.regulation": "Regulations",
-  "dashboard.activity.campaignSent": "Campaign sent",
+  "dashboard.activity.campaignSent": "SMS send completed",
   "dashboard.activity.contactsAdded": "Contacts added",
   "dashboard.activity.groupUsed": "Group used",
   "dashboard.activity.smsScheduled": "Scheduled SMS",
@@ -1450,7 +1536,7 @@ const en: Record<MessageKey, string> = {
   "contacts.selectOneAria": "Select {name}",
   "contacts.actionsAria": "Actions for {name}",
   "contacts.deleteSelected": "Delete ({n})",
-  "contacts.createCampaign": "Create a campaign",
+  "contacts.createCampaign": "Create an SMS send",
   "contacts.import": "Import",
   "contacts.add": "Add a contact",
   "contacts.emptyTitle": "No contacts found",
@@ -1479,7 +1565,7 @@ const en: Record<MessageKey, string> = {
   "groups.selectOneAria": "Select {name}",
   "groups.actionsAria": "Actions for {name}",
   "groups.deleteSelected": "Delete ({n})",
-  "groups.createCampaign": "Create a campaign",
+  "groups.createCampaign": "Create an SMS send",
   "groups.create": "Create a group",
   "groups.emptyTitle": "No groups found",
   "groups.emptyBody":
@@ -1490,22 +1576,22 @@ const en: Record<MessageKey, string> = {
   "groups.col.name": "Group name",
   "groups.col.description": "Description",
   "groups.col.contacts": "Contacts",
-  "groups.col.lastCampaign": "Last campaign",
+  "groups.col.lastCampaign": "Last SMS send",
   "groups.col.created": "Created",
   "groups.footerOne": "1 group",
   "groups.footerMany": "{n} groups",
 
-  "campaigns.searchPlaceholder": "Search a campaign…",
-  "campaigns.searchAria": "Search a campaign",
+  "campaigns.searchPlaceholder": "Search an SMS send…",
+  "campaigns.searchAria": "Search an SMS send",
   "campaigns.actionsAria": "Actions for {name}",
   "campaigns.viewDetails": "View details",
-  "campaigns.emptyTitle": "No campaigns yet",
-  "campaigns.emptyBody": "Create a campaign with “New campaign”.",
-  "campaigns.emptyTable": "No campaigns.",
-  "campaigns.loading": "Loading campaigns list…",
+  "campaigns.emptyTitle": "No SMS sends yet",
+  "campaigns.emptyBody": "Create an SMS send with “New SMS send”.",
+  "campaigns.emptyTable": "No SMS sends.",
+  "campaigns.loading": "Loading SMS sends list…",
   "campaigns.noSearchResults": "No results for this search.",
   "campaigns.col.date": "Date",
-  "campaigns.col.name": "Campaign",
+  "campaigns.col.name": "SMS send",
   "campaigns.col.recipients": "Recipients",
   "campaigns.col.status": "Status",
   "campaigns.col.send": "Send",
@@ -1515,9 +1601,9 @@ const en: Record<MessageKey, string> = {
   "campaigns.status.draft": "Draft",
   "campaigns.status.failed": "Failed",
   "campaigns.status.cancelled": "Cancelled",
-  "campaigns.footerOne": "1 campaign",
-  "campaigns.footerMany": "{n} campaigns",
-  "campaigns.details.title": "Campaign details",
+  "campaigns.footerOne": "1 SMS send",
+  "campaigns.footerMany": "{n} SMS sends",
+  "campaigns.details.title": "SMS send details",
   "campaigns.details.created": "Created",
   "campaigns.details.mode": "Mode",
   "campaigns.details.modeSched": "Scheduled",
@@ -1529,9 +1615,9 @@ const en: Record<MessageKey, string> = {
   "campaigns.details.sectionDetail": "Detail",
   "campaigns.details.sectionList": "Recipients",
   "campaigns.details.resend": "Resend",
-  "campaigns.nameModal.title": "New campaign",
-  "campaigns.nameModal.label": "Your campaign name:",
-  "campaigns.nameModal.defaultName": "Campaign of {date}",
+  "campaigns.nameModal.title": "New SMS send",
+  "campaigns.nameModal.label": "Your SMS send name:",
+  "campaigns.nameModal.defaultName": "Campaign · {date}",
   "campaigns.nameModal.continue": "Continue",
 
   "links.searchPlaceholder": "Search a link…",
@@ -1550,7 +1636,7 @@ const en: Record<MessageKey, string> = {
     "The short link {shortUrl} will no longer redirect to {originalUrl}. This cannot be undone.",
   "links.emptyTitle": "No short links yet",
   "links.emptyBody":
-    "Create your first link or enable link tracking in an SMS campaign.",
+    "Create your first link or enable link tracking in an SMS send.",
   "links.emptyTable": "No links.",
   "links.loading": "Loading links list…",
   "links.noSearchResults": "No results for this search.",
@@ -1564,7 +1650,7 @@ const en: Record<MessageKey, string> = {
 
   "templates.create": "Create a template",
   "templates.createTitle": "Create a template",
-  "templates.createSubtitle": "Reuse it when writing an SMS campaign.",
+  "templates.createSubtitle": "Reuse it when writing an SMS send.",
   "templates.field.title": "Title",
   "templates.field.titleCount": "{current}/{max}",
   "templates.field.titlePlaceholder": "Ex. Summer promo",
@@ -1581,7 +1667,7 @@ const en: Record<MessageKey, string> = {
   "templates.creating": "Creating…",
   "templates.createAction": "Create template",
   "templates.editTitle": "Edit template",
-  "templates.editSubtitle": "Changes apply to future campaigns.",
+  "templates.editSubtitle": "Changes apply to future SMS sends.",
   "templates.saving": "Saving…",
   "templates.saveAction": "Save",
   "templates.updateFailed": "Could not save.",
@@ -1601,7 +1687,7 @@ const en: Record<MessageKey, string> = {
   "templates.deletedManyToast": "{n} templates deleted",
   "templates.emptyTitle": "No custom templates",
   "templates.emptyBody":
-    "Create your first template to reuse it in the campaign wizard.",
+    "Create your first template to reuse it in the SMS send wizard.",
   "templates.emptyTable": "No templates.",
   "templates.loading": "Loading templates list…",
   "templates.noSearchResults": "No results for this search.",
@@ -1624,7 +1710,7 @@ const en: Record<MessageKey, string> = {
   "stats.shortcuts": "Shortcuts",
   "stats.export": "Export",
   "stats.kpi.smsSent": "SMS sent",
-  "stats.kpi.smsSentHint": "campaigns sent in the period",
+  "stats.kpi.smsSentHint": "SMS sends completed in the period",
   "stats.kpi.delivery": "Delivery rate",
   "stats.kpi.deliveryHint": "sent / (sent + failed)",
   "stats.kpi.signups": "Sign-ups",
@@ -1634,9 +1720,9 @@ const en: Record<MessageKey, string> = {
   "stats.kpi.credits": "Credits used",
   "stats.kpi.creditsHint": "in the selected period",
   "stats.viewList": "View list",
-  "stats.chartTitle": "Campaign trends",
-  "stats.chartEmpty": "No campaigns in this period",
-  "stats.chartAria": "Campaign trends chart",
+  "stats.chartTitle": "SMS send trends",
+  "stats.chartEmpty": "No SMS sends in this period",
+  "stats.chartAria": "SMS send trends chart",
   "stats.legend.sent": "Sent",
   "stats.legend.failed": "Failed",
   "stats.legend.scheduled": "Scheduled",
@@ -1654,14 +1740,14 @@ const en: Record<MessageKey, string> = {
     "Everything you need to send your first SMS, manage contacts, and track results simply.",
   "help.firstSms.title": "Send your first SMS",
   "help.firstSms.desc":
-    "Learn how to create and send an SMS campaign in a few minutes.",
+    "Learn how to create and send an SMS in a few minutes.",
   "help.firstSms.step1": "Select your recipients",
   "help.firstSms.step2": "Write your message",
-  "help.firstSms.step3": "Schedule and send your campaign",
+  "help.firstSms.step3": "Schedule and send your SMS",
   "help.firstSms.cta": "See the step-by-step guide",
   "help.contacts.title": "Manage your contacts",
   "help.contacts.desc":
-    "Import, organize, and segment contacts for targeted, effective campaigns.",
+    "Import, organize, and segment contacts for targeted, effective SMS sends.",
   "help.contacts.step1": "Import contacts via CSV, Excel, or manually",
   "help.contacts.step2": "Create groups and segments",
   "help.contacts.how": "See how",
@@ -1674,7 +1760,7 @@ const en: Record<MessageKey, string> = {
   "help.ai.discover": "Discover",
   "help.perf.title": "Track your performance",
   "help.perf.desc":
-    "Analyze campaigns and understand results to communicate better.",
+    "Analyze SMS sends and understand results to communicate better.",
   "help.perf.delivery": "Delivery rate",
   "help.perf.deliveryHint": "SMS delivered",
   "help.perf.read": "Read rate",
@@ -1793,7 +1879,7 @@ const en: Record<MessageKey, string> = {
   "guide.dashboard.b1":
     "Track credits, contacts, groups, and sends at a glance.",
   "guide.dashboard.b2":
-    "Recent activity shows your latest campaigns and imports.",
+    "Recent activity shows your latest SMS sends and imports.",
   "guide.dashboard.b3":
     "Each menu section has its own guide and help resources.",
   "guide.dashboard.primary": "Send an SMS",
@@ -1805,7 +1891,7 @@ const en: Record<MessageKey, string> = {
   "guide.contacts.b1":
     "Each row = a contact with phone, groups, and last SMS received.",
   "guide.contacts.b2":
-    "Only subscribed contacts (no STOP) are eligible for campaigns.",
+    "Only subscribed contacts (no STOP) are eligible for SMS sends.",
   "guide.contacts.b3":
     "Import in bulk or add manually, then organize by groups.",
   "guide.contacts.primary": "Add a contact",
@@ -1813,22 +1899,22 @@ const en: Record<MessageKey, string> = {
   "guide.groupes.eyebrow": "Groups",
   "guide.groupes.title": "Organize contacts into groups",
   "guide.groupes.desc":
-    "Groups segment your base so you can target campaigns and automations precisely.",
+    "Groups segment your base so you can target SMS sends and automations precisely.",
   "guide.groupes.b1": "A group gathers contacts that share a profile or need.",
   "guide.groupes.b2":
-    "The “Last campaign” column shows the last send targeting that group.",
-  "guide.groupes.b3": "Select several groups to create a targeted campaign.",
+    "The “Last SMS send” column shows the last send targeting that group.",
+  "guide.groupes.b3": "Select several groups to create a targeted SMS send.",
   "guide.groupes.primary": "Create a group",
 
-  "guide.campagnes.eyebrow": "Campaigns",
-  "guide.campagnes.title": "Track your SMS campaigns",
+  "guide.campagnes.eyebrow": "SMS sends",
+  "guide.campagnes.title": "Track your SMS sends",
   "guide.campagnes.desc":
     "This list tracks every send: drafts, scheduled, sent, or failed.",
   "guide.campagnes.b1": "Status: draft, scheduled, sent, failed, or cancelled.",
   "guide.campagnes.b2":
     "Recipients and estimated credits are visible before and after sending.",
-  "guide.campagnes.b3": "Click a row to open campaign details.",
-  "guide.campagnes.primary": "New campaign",
+  "guide.campagnes.b3": "Click a row to open SMS send details.",
+  "guide.campagnes.primary": "New SMS send",
 
   "guide.statistiques.eyebrow": "Statistics",
   "guide.statistiques.title": "Read your SMS performance",
@@ -1838,7 +1924,7 @@ const en: Record<MessageKey, string> = {
     "KPIs summarize SMS sent, delivery rate, QR sign-ups, STOP, and credits used.",
   "guide.statistiques.b2":
     "The chart breaks down sends, failures, and scheduled items by day.",
-  "guide.statistiques.b3": "Filter the period to compare campaigns over time.",
+  "guide.statistiques.b3": "Filter the period to compare SMS sends over time.",
 
   "guide.automatisations.eyebrow": "Automations",
   "guide.automatisations.title": "Automate recurring sends",
@@ -1854,7 +1940,7 @@ const en: Record<MessageKey, string> = {
   "guide.liens.eyebrow": "Links",
   "guide.liens.title": "Trackable short links for SMS",
   "guide.liens.desc":
-    "Create short URLs for campaigns and measure clicks from this list.",
+    "Create short URLs for SMS sends and measure clicks from this list.",
   "guide.liens.b1":
     "Each link maps an original URL to a short smsclient.fr address.",
   "guide.liens.b2": "The “Clicks” column counts opens after the SMS is sent.",
@@ -1865,7 +1951,7 @@ const en: Record<MessageKey, string> = {
   "guide.modeles-sms.title": "Most popular SMS templates",
   "guide.modeles-sms.desc":
     "Save time with ready-made copy: promos, reminders, thanks, and follow-ups.",
-  "guide.modeles-sms.b1": "Save custom templates to reuse in campaigns.",
+  "guide.modeles-sms.b1": "Save custom templates to reuse in SMS sends.",
   "guide.modeles-sms.b2": "Title, description, and body can be edited anytime.",
   "guide.modeles-sms.b3": "Get inspiration from the most used examples.",
   "guide.modeles-sms.primary": "Browse templates",
@@ -1898,19 +1984,19 @@ const en: Record<MessageKey, string> = {
   "guide.reglementations-sms.b3": "See the help center for regulatory detail.",
   "guide.reglementations-sms.primary": "Help center",
 
-  "guide.nouvelle-campagne.eyebrow": "New campaign",
-  "guide.nouvelle-campagne.title": "Create and send a campaign",
+  "guide.nouvelle-campagne.eyebrow": "New SMS send",
+  "guide.nouvelle-campagne.title": "Create and send an SMS",
   "guide.nouvelle-campagne.desc":
     "3-step wizard: recipients, message, then confirm and send.",
   "guide.nouvelle-campagne.b1": "Choose subscribed contacts or groups.",
   "guide.nouvelle-campagne.b2": "Write the SMS and check the credit cost.",
   "guide.nouvelle-campagne.b3": "Send now or schedule the send.",
-  "guide.nouvelle-campagne.primary": "View campaigns",
+  "guide.nouvelle-campagne.primary": "View SMS sends",
 
   "guide.acheter-credits.eyebrow": "Credits",
   "guide.acheter-credits.title": "Top up your SMS balance",
   "guide.acheter-credits.desc":
-    "Buy credits to keep sending campaigns and automations.",
+    "Buy credits to keep sending SMS and automations.",
   "guide.acheter-credits.b1":
     "1 credit ≈ 1 standard SMS (depends on encoding).",
   "guide.acheter-credits.b2": "Balance appears in the top bar.",
@@ -1926,7 +2012,7 @@ const en: Record<MessageKey, string> = {
 
   "regs.title": "SMS regulations",
   "regs.subtitle":
-    "Review SMS sending rules for each country before launching your campaign.",
+    "Review SMS sending rules for each country before launching your SMS send.",
   "regs.step1": "1. Select the country",
   "regs.searchPh": "Search a country…",
   "regs.orList": "Or pick from the list",
@@ -1956,7 +2042,7 @@ const en: Record<MessageKey, string> = {
   "contact.modal.edit": "Edit contact",
   "contact.modal.fallbackName": "Contact",
   "contact.modal.unsubBanner":
-    "This contact is unsubscribed: they will no longer receive your SMS campaigns.",
+    "This contact is unsubscribed: they will no longer receive your SMS sends.",
   "contact.modal.phoneHint":
     "Enter a 06 or 07 mobile number with 10 digits (e.g. 06 12 34 56 78).",
   "contact.modal.phoneTitle":

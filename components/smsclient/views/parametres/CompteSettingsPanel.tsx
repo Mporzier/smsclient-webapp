@@ -1,16 +1,12 @@
 "use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  LanguageFlag,
+  ParametresDisplayRow,
+  valueIconCls,
+} from "@/components/smsclient/views/parametres/ParametresDisplayRow";
 import { cn } from "@/lib/cn";
 import { ChangeEmailModal } from "@/components/smsclient/modals/ChangeEmailModal";
 import { ChangePasswordModal } from "@/components/smsclient/modals/ChangePasswordModal";
@@ -30,33 +26,25 @@ import {
   formatFrPhoneInput,
   isValidFrMobile,
 } from "@/lib/proto/smsUtils";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { peekPendingEmailChange } from "@/lib/auth/pendingEmailChange";
 import {
   cancelPendingEmailChange,
   resendPendingEmailChange,
 } from "@/lib/supabase/changeEmail";
-import { createClient } from "@/lib/supabase/client";
 import {
   Info,
   KeyRound,
   Mail,
-  Pencil,
   Phone,
   User,
   UserRound,
 } from "lucide-react";
-import { useCallback, useEffect, useState, type ChangeEvent, type ReactNode } from "react";
-
-const rowCls =
-  "grid min-h-[3.25rem] grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 border-b border-border py-2 last:border-b-0 max-[480px]:grid-cols-[5.5rem_minmax(0,1fr)]";
-const labelCls = "text-sm font-medium text-muted-foreground";
-const valueClusterCls =
-  "flex min-w-0 w-full items-center gap-1.5";
-const valueTextCls =
-  "min-w-0 flex-1 truncate text-left text-sm font-normal text-foreground";
-const valueIconCls = "h-4 w-4 shrink-0";
-const fieldHintCls = "text-xs font-normal leading-snug text-muted-foreground";
-const phoneInputCls =
-  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
+import {
+  parametresFieldStackCls,
+  parametresToastError,
+} from "@/components/smsclient/views/parametres/parametresSettings";
+import { useCallback, useState, type ChangeEvent } from "react";
 
 type EditableKey = "firstName" | "lastName" | "phone" | "language";
 
@@ -64,85 +52,33 @@ type CompteSettingsPanelProps = {
   form: UserProfileForm;
   loading?: boolean;
   saving?: boolean;
-  saveError?: string | null;
   onSaveField: <K extends keyof UserProfileForm>(
     key: K,
     value: UserProfileForm[K],
   ) => void | Promise<void>;
 };
 
-/** Drapeaux SVG — pas d’emoji (Windows / certains navigateurs). */
-function LanguageFlag({
-  lang,
-  className,
-}: {
-  lang: ProfileLanguage | string;
-  className?: string;
-}) {
-  const isEn = lang === "en";
-  return (
-    <span
-      className={cn(
-        "inline-flex h-4 w-[1.35rem] shrink-0 overflow-hidden rounded-[2px]",
-        className,
-      )}
-      aria-hidden
-    >
-      {isEn ? (
-        <svg viewBox="0 0 60 40" className="h-full w-full" focusable="false">
-          <rect width="60" height="40" fill="#012169" />
-          <path d="M0 0 L60 40 M60 0 L0 40" stroke="#fff" strokeWidth="8" />
-          <path d="M0 0 L60 40 M60 0 L0 40" stroke="#C8102E" strokeWidth="5" />
-          <path d="M30 0 V40 M0 20 H60" stroke="#fff" strokeWidth="14" />
-          <path d="M30 0 V40 M0 20 H60" stroke="#C8102E" strokeWidth="8" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 60 40" className="h-full w-full" focusable="false">
-          <rect width="20" height="40" fill="#002395" />
-          <rect x="20" width="20" height="40" fill="#fff" />
-          <rect x="40" width="20" height="40" fill="#ED2939" />
-        </svg>
-      )}
-    </span>
-  );
-}
-
 export function CompteSettingsPanel({
   form,
   loading = false,
   saving = false,
-  saveError = null,
   onSaveField,
 }: CompteSettingsPanelProps) {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [editKey, setEditKey] = useState<EditableKey | null>(null);
   const [draft, setDraft] = useState("");
-  const [fieldError, setFieldError] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [pendingEmailOverride, setPendingEmailOverride] = useState<
+    string | null
+  >(() => peekPendingEmailChange());
+  const pendingEmail = user?.new_email ?? pendingEmailOverride;
   const [emailActionPending, setEmailActionPending] = useState(false);
   const [emailActionNotice, setEmailActionNotice] = useState<string | null>(
     null,
   );
   const [emailActionIsError, setEmailActionIsError] = useState(false);
-  const [phoneFieldError, setPhoneFieldError] = useState<string | null>(null);
-  const [phoneBlurred, setPhoneBlurred] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void createClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setPendingEmail(data.user?.new_email ?? null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const languageLabel = (lang: ProfileLanguage) =>
     lang === "en" ? t("compte.lang.en") : t("compte.lang.fr");
 
@@ -150,18 +86,12 @@ export function CompteSettingsPanel({
     if (saving || loading) return;
     setEditKey(key);
     setDraft(form[key]);
-    setFieldError(null);
-    setPhoneFieldError(null);
-    setPhoneBlurred(false);
   };
 
   const closeEdit = () => {
     if (saving) return;
     setEditKey(null);
     setDraft("");
-    setFieldError(null);
-    setPhoneFieldError(null);
-    setPhoneBlurred(false);
   };
 
   const handlePhoneChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -173,23 +103,21 @@ export function CompteSettingsPanel({
     input.value = formatted;
     input.setSelectionRange(nextCaret, nextCaret);
     setDraft(formatted);
-    setPhoneFieldError(null);
   }, []);
 
   const handleSaveEdit = async () => {
     if (!editKey) return;
     if (editKey === "firstName" && !draft.trim()) {
-      setFieldError(t("parametres.firstNameRequired"));
+      parametresToastError(t("parametres.firstNameRequired"));
       return;
     }
     if (editKey === "phone") {
       const digits = draft.replace(/\D/g, "");
       if (digits.length > 0 && !isValidFrMobile(draft)) {
-        setPhoneFieldError(t("contact.modal.phoneHint"));
+        parametresToastError(t("contact.modal.phoneHint"));
         return;
       }
     }
-    setFieldError(null);
     try {
       if (editKey === "language") {
         await onSaveField(
@@ -201,10 +129,8 @@ export function CompteSettingsPanel({
       }
       setEditKey(null);
       setDraft("");
-    } catch (e) {
-      setFieldError(
-        e instanceof Error ? e.message : t("parametres.saveFailed"),
-      );
+    } catch {
+      /* toast déjà émis par onSaveField */
     }
   };
 
@@ -236,29 +162,18 @@ export function CompteSettingsPanel({
       setEmailActionNotice(result.message);
       return;
     }
-    setPendingEmail(null);
+    setPendingEmailOverride(null);
     setEmailActionNotice(null);
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className={parametresFieldStackCls}>
       {loading ? (
         <p className="py-4 text-sm font-normal text-muted-foreground">
           <LoadingLabel>{t("parametres.loading")}</LoadingLabel>
         </p>
       ) : null}
-      {saveError ? (
-        <Alert variant="destructive" className="mb-3">
-          <AlertDescription>{saveError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {fieldError ? (
-        <Alert variant="destructive" className="mb-3">
-          <AlertDescription>{fieldError}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.firstName")}
         leading={
           <User
@@ -279,7 +194,7 @@ export function CompteSettingsPanel({
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
       />
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.lastName")}
         leading={
           <UserRound
@@ -300,7 +215,7 @@ export function CompteSettingsPanel({
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
       />
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.email")}
         leading={
           <Mail
@@ -316,7 +231,7 @@ export function CompteSettingsPanel({
           setEmailModalOpen(true);
         }}
       />
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.password")}
         leading={
           <KeyRound
@@ -332,7 +247,7 @@ export function CompteSettingsPanel({
           setPasswordModalOpen(true);
         }}
       />
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.phone")}
         leading={
           <Phone
@@ -348,21 +263,14 @@ export function CompteSettingsPanel({
         maxLength={PHONE_DISPLAY_MAX_LENGTH}
         disabled={saving || loading}
         saving={saving}
+        inputId="compte-edit-phone"
         phoneMode
-        phoneError={phoneFieldError}
-        phoneInvalid={
-          Boolean(phoneFieldError) ||
-          (phoneBlurred &&
-            draft.replace(/\D/g, "").length > 0 &&
-            !isValidFrMobile(draft))
-        }
         onPhoneChange={handlePhoneChange}
-        onPhoneBlur={() => setPhoneBlurred(true)}
         onEdit={() => openEdit("phone")}
         onSubmit={() => void handleSaveEdit()}
         onCancel={closeEdit}
       />
-      <CompteDisplayRow
+      <ParametresDisplayRow
         label={t("compte.language")}
         leading={<LanguageFlag lang={form.language} />}
         display={languageLabel(form.language)}
@@ -428,206 +336,13 @@ export function CompteSettingsPanel({
         open={emailModalOpen}
         currentEmail={form.email.trim()}
         onClose={() => setEmailModalOpen(false)}
-        onRequested={(next) => setPendingEmail(next)}
+        onRequested={(next) => setPendingEmailOverride(next)}
       />
       <ChangePasswordModal
         open={passwordModalOpen}
         email={form.email.trim()}
         onClose={() => setPasswordModalOpen(false)}
       />
-    </div>
-  );
-}
-
-function CompteDisplayRow({
-  label,
-  leading,
-  display = "",
-  editing = false,
-  draft = "",
-  onDraftChange,
-  maxLength,
-  disabled = false,
-  saving = false,
-  autoComplete,
-  languageMode = false,
-  languageOptions,
-  phoneMode = false,
-  phoneError = null,
-  phoneInvalid = false,
-  onPhoneChange,
-  onPhoneBlur,
-  onEdit,
-  onSubmit,
-  onCancel,
-}: {
-  label: string;
-  leading: ReactNode;
-  display?: string;
-  editing?: boolean;
-  draft?: string;
-  onDraftChange?: (v: string) => void;
-  maxLength?: number;
-  disabled?: boolean;
-  saving?: boolean;
-  autoComplete?: string;
-  languageMode?: boolean;
-  languageOptions?: { id: "fr" | "en"; label: string }[];
-  phoneMode?: boolean;
-  phoneError?: string | null;
-  phoneInvalid?: boolean;
-  onPhoneChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-  onPhoneBlur?: () => void;
-  onEdit?: () => void;
-  onSubmit?: () => void;
-  onCancel?: () => void;
-}) {
-  const { t } = useI18n();
-  const draftLang = draft === "en" ? "en" : "fr";
-  const phoneHint =
-    phoneError ??
-    (phoneInvalid ? t("contact.modal.phoneHint") : null);
-  return (
-    <div className={rowCls}>
-      <span className={labelCls}>{label}</span>
-      <div
-        className={cn(
-          valueClusterCls,
-          editing && (languageMode || phoneMode) && "items-start pt-0.5",
-        )}
-      >
-        {editing && (languageMode || phoneMode) ? null : leading}
-        {editing ? (
-          languageMode && languageOptions ? (
-            <Select
-              value={draftLang}
-              disabled={saving}
-              onValueChange={(value) => onDraftChange?.(value)}
-            >
-              <SelectTrigger className="h-9 min-w-0 flex-1 cursor-pointer text-sm font-normal">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="start">
-                {languageOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id} textValue={opt.label}>
-                    <span className="flex items-center gap-1.5">
-                      <LanguageFlag lang={opt.id} />
-                      <span>{opt.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : phoneMode ? (
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="relative">
-                <Phone
-                  className={cn(
-                    "pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-emerald-600",
-                    phoneInvalid && "text-destructive",
-                  )}
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-                <Input
-                  id="compte-edit-phone"
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  enterKeyHint="done"
-                  placeholder="Ex. 06 12 34 56 78"
-                  className={cn(phoneInputCls, "h-9 pl-8 text-sm")}
-                  value={draft}
-                  maxLength={maxLength}
-                  disabled={saving}
-                  autoFocus
-                  aria-invalid={phoneInvalid}
-                  aria-describedby={
-                    phoneHint ? "compte-edit-phone-err" : undefined
-                  }
-                  onChange={onPhoneChange}
-                  onBlur={onPhoneBlur}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      onSubmit?.();
-                    }
-                    if (e.key === "Escape") {
-                      e.preventDefault();
-                      onCancel?.();
-                    }
-                  }}
-                />
-              </div>
-              {phoneHint ? (
-                <p
-                  id="compte-edit-phone-err"
-                  className={cn(fieldHintCls, "text-destructive")}
-                >
-                  {phoneHint}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <Input
-              className="h-9 min-w-0 flex-1 text-sm"
-              value={draft}
-              maxLength={maxLength}
-              disabled={saving}
-              autoFocus
-              autoComplete={autoComplete}
-              onChange={(e) => onDraftChange?.(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  onSubmit?.();
-                }
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  onCancel?.();
-                }
-              }}
-            />
-          )
-        ) : (
-          <span className={valueTextCls}>{display}</span>
-        )}
-        {onEdit ? (
-          editing ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                disabled={disabled || saving}
-                onClick={onSubmit}
-              >
-                {t("common.ok")}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={disabled || saving}
-                onClick={onCancel}
-              >
-                {t("common.cancel")}
-              </Button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              disabled={disabled}
-              aria-label={t("compte.edit")}
-              onClick={onEdit}
-            >
-              <Pencil aria-hidden />
-            </Button>
-          )
-        ) : null}
-      </div>
     </div>
   );
 }

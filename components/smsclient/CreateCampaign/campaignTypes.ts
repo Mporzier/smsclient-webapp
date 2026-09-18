@@ -11,6 +11,7 @@ export type CampaignWizardProps = {
   onWizardStepChange: (step: 1 | 2 | 3) => void;
   onWizardExit: () => void;
   requestWizardLeave: (path?: string, after?: () => void) => void;
+  composeApproach: SmsComposeApproach | null;
   onComposeApproachChange: (approach: SmsComposeApproach | null) => void;
   go: (h: string) => void;
   title: string;

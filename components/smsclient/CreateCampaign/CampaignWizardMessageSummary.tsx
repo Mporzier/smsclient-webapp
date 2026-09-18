@@ -83,7 +83,7 @@ export function CampaignWizardMessageSummary({
             "m-0 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[10px] font-medium leading-snug text-rose-800"
           )}
         >
-          Crédits insuffisants pour cette campagne.
+          Crédits insuffisants pour cet envoi SMS.
         </p>
       )}
     </aside>
