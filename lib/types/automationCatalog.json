@@ -524,7 +524,42 @@
       "label": "HubSpot",
       "category": "crm",
       "status": "planned",
-      "description": "CRM & pipelines."
+      "description": "CRM & pipelines commerciaux."
+    },
+    {
+      "id": "brevo",
+      "label": "Brevo",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM & marketing (ex-Sendinblue), très utilisé en France."
+    },
+    {
+      "id": "pipedrive",
+      "label": "Pipedrive",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM ventes & suivi des deals."
+    },
+    {
+      "id": "sellsy",
+      "label": "Sellsy",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM & facturation pour TPE / PME françaises."
+    },
+    {
+      "id": "axonaut",
+      "label": "Axonaut",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM tout-en-un pour petites entreprises."
+    },
+    {
+      "id": "zoho_crm",
+      "label": "Zoho CRM",
+      "category": "crm",
+      "status": "planned",
+      "description": "CRM cloud pour équipes commerciales."
     },
     {
       "id": "odoo",
@@ -587,7 +622,7 @@
     {
       "id": "birthday",
       "label": "Anniversaire client",
-      "description": "SMS le jour anniversaire si date renseignée.",
+      "description": "Un SMS personnalisé part automatiquement le jour J pour chaque contact avec une date d'anniversaire — idéal pour fidéliser sans effort.",
       "kind": "birthday",
       "status": "available",
       "activityGroups": [
@@ -606,7 +641,7 @@
     {
       "id": "saint_valentin",
       "label": "Saint-Valentin",
-      "description": "Envoi SMS calendaire 14 février.",
+      "description": "Touchez vos abonnés le 14 février avec un message chaleureux ou une offre duo — parfait pour boulangeries, fleuristes et commerces de proximité.",
       "kind": "fixed_date",
       "status": "available",
       "fixedMonth": 2,
@@ -627,7 +662,7 @@
     {
       "id": "noel",
       "label": "Noël",
-      "description": "Vœux / offre fin d’année.",
+      "description": "Envoyez vos vœux de Noël le 24 décembre et rappellez vos horaires ou promotions de fin d'année en un seul envoi.",
       "kind": "fixed_date",
       "status": "available",
       "fixedMonth": 12,
@@ -647,7 +682,7 @@
     {
       "id": "nouvel_an",
       "label": "Nouvel An",
-      "description": "Vœux le 1er janvier.",
+      "description": "Souhaitez une bonne année à toute votre base le 1er janvier — message court, impact fort pour repartir sur de bonnes bases.",
       "kind": "fixed_date",
       "status": "available",
       "fixedMonth": 1,
@@ -667,7 +702,7 @@
     {
       "id": "fete_des_meres",
       "label": "Fête des mères",
-      "description": "Rappel / offre fête des mères.",
+      "description": "Anticipez la fête des mères avec un rappel ou une offre cadeau — fleuristes, restaurants et boutiques en profitent le plus.",
       "kind": "fixed_date",
       "status": "available",
       "activityGroups": [
@@ -690,25 +725,106 @@
     {
       "id": "fete_des_peres",
       "label": "Fête des pères",
-      "description": "Rappel / offre fête des pères.",
+      "description": "Proposez une idée cadeau ou un moment à partager mi-juin : un SMS simple qui convertit sans campagne manuelle.",
       "kind": "fixed_date",
-      "status": "planned",
+      "status": "available",
+      "fixedMonth": 6,
+      "fixedDay": 21,
       "activityGroups": [
-        "fleuriste_cadeau",
-        "restauration",
-        "retail"
+        "all"
       ],
       "integrationIds": [
-        "native",
-        "shopify",
-        "sumup"
+        "native"
       ],
-      "defaultBody": "Fête des pères approche {prenom} ! Découvrez nos idées cadeaux.",
+      "defaultBody": "Bonne fête des pères {prenom} ! Une pensée chaleureuse pour vous.",
       "tags": [
         "calendrier",
         "cadeau"
       ],
-      "relevance": 2
+      "relevance": 4
+    },
+    {
+      "id": "paques",
+      "label": "Pâques",
+      "description": "Vœux de Pâques à vos clients abonnés — date indicative à ajuster selon le calendrier ; personnalisez le texte avant activation.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 4,
+      "fixedDay": 20,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Joyeuses Pâques {prenom} ! Toute l'équipe vous envoie ses vœux.",
+      "tags": [
+        "calendrier"
+      ],
+      "relevance": 5
+    },
+    {
+      "id": "rentree",
+      "label": "Rentrée",
+      "description": "Relancez vos clients début septembre : fournitures, mode, librairie ou offre rentrée — le bon timing pour un panier moyen plus haut.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 9,
+      "fixedDay": 1,
+      "activityGroups": [
+        "commerce",
+        "retail"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Bonne rentrée {prenom} ! Préparez-vous avec nos offres du moment.",
+      "tags": [
+        "calendrier",
+        "promo"
+      ],
+      "relevance": 4
+    },
+    {
+      "id": "halloween",
+      "label": "Halloween",
+      "description": "Animez votre point de vente le 31 octobre : offre flash, événement ou code promo — un coup de boost en pleine saison.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 10,
+      "fixedDay": 31,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Happy Halloween {prenom} ! Découvrez nos surprises du moment.",
+      "tags": [
+        "calendrier",
+        "promo"
+      ],
+      "relevance": 3
+    },
+    {
+      "id": "toussaint",
+      "label": "Toussaint",
+      "description": "Un message sobre et attentionné le 1er novembre pour rester présent auprès de vos contacts sans ton commercial.",
+      "kind": "fixed_date",
+      "status": "available",
+      "fixedMonth": 11,
+      "fixedDay": 1,
+      "activityGroups": [
+        "all"
+      ],
+      "integrationIds": [
+        "native"
+      ],
+      "defaultBody": "Bon Toussaint {prenom}. Pensées sincères de notre équipe.",
+      "tags": [
+        "calendrier"
+      ],
+      "relevance": 3
     },
     {
       "id": "soldes",

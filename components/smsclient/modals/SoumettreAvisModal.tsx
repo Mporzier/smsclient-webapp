@@ -40,11 +40,15 @@ const CATEGORIES: {
 type SoumettreAvisModalProps = {
   open: boolean;
   onClose: () => void;
+  initialCategory?: FeedbackCategory;
+  initialMessage?: string;
 };
 
 export function SoumettreAvisModal({
   open,
   onClose,
+  initialCategory,
+  initialMessage,
 }: SoumettreAvisModalProps) {
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
@@ -56,8 +60,8 @@ export function SoumettreAvisModal({
 
   if (open && !wasOpen) {
     setWasOpen(true);
-    setCategory("suggestion");
-    setMessage("");
+    setCategory(initialCategory ?? "suggestion");
+    setMessage(initialMessage ?? "");
     setSubmitting(false);
     setSubmitError(null);
   }

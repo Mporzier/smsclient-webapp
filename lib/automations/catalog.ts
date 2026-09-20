@@ -1,5 +1,6 @@
 import catalog from "@/lib/types/automationCatalog.json";
-import type { AutomationPresetKey } from "@/lib/types/automation";
+import { automationScheduleLabel } from "@/lib/automations/scheduleLabel";
+import type { AutomationKind, AutomationPresetKey } from "@/lib/types/automation";
 import {
   isValidBusinessActivityId,
   normalizeBusinessActivityId,
@@ -33,6 +34,15 @@ export type CatalogAutomation = {
   relevance?: number;
 };
 
+export function catalogAutomationScheduleLabel(
+  automation: CatalogAutomation,
+): string {
+  return automationScheduleLabel(automation.kind as AutomationKind, {
+    fixedMonth: automation.fixedMonth,
+    fixedDay: automation.fixedDay,
+  });
+}
+
 type CatalogFile = {
   version: number;
   activityGroups: Record<string, string[]>;
@@ -45,30 +55,87 @@ const DATA = catalog as CatalogFile;
 export const AUTOMATION_CATALOG_INTEGRATIONS: readonly CatalogIntegration[] =
   DATA.integrations;
 
-export const AUTOMATION_CATALOG: readonly CatalogAutomation[] =
-  DATA.automations;
+const CONFIGURABLE_PRESET_IDS = new Set<string>([
+  "birthday",
+  "saint_valentin",
+  "paques",
+  "fete_des_meres",
+  "fete_des_peres",
+  "rentree",
+  "halloween",
+  "toussaint",
+  "noel",
+  "nouvel_an",
+]);
 
+export type CatalogScopeFilter = "all" | "general" | "activity";
+
+/** Automatisation proposée à tous les commerces (groupe « all »). */
+export function isGeneralCatalogAutomation(
+  automation: CatalogAutomation,
+): boolean {
+  const groups = automation.activityGroups ?? [];
+  if ((automation.businessActivityIds?.length ?? 0) > 0) return false;
+  if (groups.length === 0) return true;
+  return groups.length === 1 && groups[0] === "all";
+}
+
+export function filterCatalogByScope(
+  automations: readonly CatalogAutomation[],
+  scope: CatalogScopeFilter,
+  activityId: string | null | undefined,
+): CatalogAutomation[] {
+  if (scope === "all") return [...automations];
+  if (scope === "general") {
+    return automations.filter(isGeneralCatalogAutomation);
+  }
+  const id = (activityId ?? "").trim();
+  if (!id) return [];
+  return automations.filter((a) => automationMatchesActivity(a, id));
+}
+
+/** Filtres catalogue — jeu volontairement restreint. */
 export const PRIMARY_CATALOG_TAGS = [
-  "promo",
-  "api",
-  "fidelisation",
-  "acquisition",
   "calendrier",
+  "fidelisation",
+  "promo",
 ] as const;
 
 const TAG_ALIASES: Record<string, string> = {
   fidélité: "fidelisation",
   fidelite: "fidelisation",
-  ipaas: "api",
+  cadeau: "calendrier",
+  acquisition: "fidelisation",
+  retail: "promo",
+  ecommerce: "promo",
 };
 
-const CONFIGURABLE_PRESET_IDS = new Set<string>([
-  "birthday",
-  "saint_valentin",
-  "noel",
-  "nouvel_an",
-  "fete_des_meres",
-]);
+function catalogTagsForUi(tags: string[] | undefined): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const tag of tags ?? []) {
+    const n = normalizeCatalogTag(tag);
+    if (!n || seen.has(n)) continue;
+    if (!(PRIMARY_CATALOG_TAGS as readonly string[]).includes(n)) continue;
+    seen.add(n);
+    out.push(n);
+  }
+  if (out.length === 0) return ["fidelisation"];
+  return out;
+}
+
+function prepareCatalogAutomation(raw: CatalogAutomation): CatalogAutomation {
+  return { ...raw, tags: catalogTagsForUi(raw.tags) };
+}
+
+/** Catalogue UI : presets activables uniquement (pas de scénarios « Bientôt »). */
+export const AUTOMATION_CATALOG: readonly CatalogAutomation[] =
+  DATA.automations
+    .filter(
+      (a) =>
+        CONFIGURABLE_PRESET_IDS.has(a.id) && a.status === "available",
+    )
+    .map(prepareCatalogAutomation);
 
 /** Clamp relevance pour affichage étoiles (0 = aucune). */
 export function clampRelevance(value: unknown): number {
@@ -96,7 +163,7 @@ export function automationNormalizedTags(
   return out;
 }
 
-/** Tags pour chips : primary d’abord (si présents), puis reste alpha. */
+/** Tags affichés en filtres (primary uniquement, présents dans le catalogue). */
 export function listCatalogFilterTags(
   automations: readonly CatalogAutomation[] = AUTOMATION_CATALOG,
 ): string[] {
@@ -104,11 +171,7 @@ export function listCatalogFilterTags(
   for (const auto of automations) {
     for (const t of automationNormalizedTags(auto)) present.add(t);
   }
-  const primary = PRIMARY_CATALOG_TAGS.filter((t) => present.has(t));
-  const rest = [...present]
-    .filter((t) => !(PRIMARY_CATALOG_TAGS as readonly string[]).includes(t))
-    .sort((a, b) => a.localeCompare(b, "fr"));
-  return [...primary, ...rest];
+  return PRIMARY_CATALOG_TAGS.filter((t) => present.has(t));
 }
 
 export function sortByRelevance(
@@ -249,4 +312,52 @@ export function catalogIntegrationById(
   id: string,
 ): CatalogIntegration | undefined {
   return AUTOMATION_CATALOG_INTEGRATIONS.find((i) => i.id === id);
+}
+
+/** CRM proposés dans la modale « Connecter un outil » (ordre produit). */
+export const CONNECT_MODAL_CRM_INTEGRATION_IDS = [
+  "hubspot",
+  "brevo",
+  "pipedrive",
+  "sellsy",
+  "axonaut",
+  "zoho_crm",
+] as const;
+
+export function listConnectModalIntegrations(): CatalogIntegration[] {
+  const byId = new Map(
+    AUTOMATION_CATALOG_INTEGRATIONS.map((i) => [i.id, i]),
+  );
+  const out: CatalogIntegration[] = [];
+  for (const id of CONNECT_MODAL_CRM_INTEGRATION_IDS) {
+    const item = byId.get(id);
+    if (item) out.push(item);
+  }
+  return out;
+}
+
+export function listCatalogIntegrations(): CatalogIntegration[] {
+  return [...AUTOMATION_CATALOG_INTEGRATIONS].sort((a, b) =>
+    a.label.localeCompare(b.label, "fr"),
+  );
+}
+
+export function integrationConnectLabel(
+  status: IntegrationStatus,
+): "Connecter" | "Sur demande" {
+  return status === "available" ? "Connecter" : "Sur demande";
+}
+
+export function filterCatalogIntegrations(
+  integrations: readonly CatalogIntegration[],
+  query: string,
+): CatalogIntegration[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...integrations];
+  return integrations.filter((item) => {
+    const hay = [item.label, item.description, item.category]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  });
 }

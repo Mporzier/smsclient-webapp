@@ -6,6 +6,7 @@ import { AUTOMATION_PRESETS, presetByKey } from "@/lib/automations/presets";
 import type {
   AutomationKind,
   AutomationPresetKey,
+  AutomationRecurrenceMonthDayKind,
   AutomationRecurrenceUnit,
   AutomationRowData,
   AutomationSavePayload,
@@ -26,6 +27,7 @@ type AutomationRecord = {
   recurrence_unit: AutomationRecurrenceUnit | null;
   recurrence_interval: number | null;
   recurrence_weekday: number | null;
+  recurrence_month_day_kind?: AutomationRecurrenceMonthDayKind | null;
 };
 
 function sendTimeFromDb(raw: string): string {
@@ -47,6 +49,7 @@ function schedulePartsFromRecord(record: AutomationRecord) {
     recurrenceUnit: record.recurrence_unit,
     recurrenceInterval: record.recurrence_interval,
     recurrenceWeekday: record.recurrence_weekday,
+    recurrenceMonthDayKind: record.recurrence_month_day_kind ?? null,
   };
 }
 
@@ -105,6 +108,8 @@ function recordToCustomRow(record: AutomationRecord): AutomationRowData {
     recurrenceUnit: record.recurrence_unit ?? undefined,
     recurrenceInterval: record.recurrence_interval ?? undefined,
     recurrenceWeekday: record.recurrence_weekday ?? undefined,
+    recurrenceMonthDayKind:
+      record.recurrence_month_day_kind ?? undefined,
     persisted: true,
   };
 }
@@ -125,13 +130,25 @@ function customRowFromPayload(
     fixed_month:
       payload.kind === "fixed_date" ? (payload.fixedMonth ?? null) : null,
     fixed_day:
-      payload.kind === "fixed_date" ? (payload.fixedDay ?? null) : null,
+      payload.kind === "fixed_date"
+        ? (payload.fixedDay ?? null)
+        : payload.kind === "recurring" &&
+            payload.recurrenceUnit === "months" &&
+            (payload.recurrenceMonthDayKind === "fixed" ||
+              payload.recurrenceMonthDayKind == null) &&
+            payload.fixedDay != null
+          ? payload.fixedDay
+          : null,
     recurrence_unit:
       payload.kind === "recurring" ? (payload.recurrenceUnit ?? null) : null,
     recurrence_interval:
       payload.kind === "recurring" ? (payload.recurrenceInterval ?? null) : null,
     recurrence_weekday:
       payload.kind === "recurring" ? (payload.recurrenceWeekday ?? null) : null,
+    recurrence_month_day_kind:
+      payload.kind === "recurring" && payload.recurrenceUnit === "months"
+        ? (payload.recurrenceMonthDayKind ?? null)
+        : null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -192,6 +209,7 @@ export async function saveAutomation(
       recurrence_unit: null,
       recurrence_interval: null,
       recurrence_weekday: null,
+      recurrence_month_day_kind: null,
       updated_at: new Date().toISOString(),
     };
 

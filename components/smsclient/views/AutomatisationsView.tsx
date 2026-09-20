@@ -1,6 +1,7 @@
 "use client";
 
 import { AutomationCatalogModal } from "@/components/smsclient/modals/AutomationCatalogModal";
+import { AutomationIntegrationsModal } from "@/components/smsclient/modals/AutomationIntegrationsModal";
 import { AutomationEditModal } from "@/components/smsclient/modals/AutomationEditModal";
 import { CreateAutomationModal } from "@/components/smsclient/modals/CreateAutomationModal";
 import { ActiveAutomationsTable } from "@/components/smsclient/views/automatisations/ActiveAutomationsTable";
@@ -32,7 +33,7 @@ export function AutomatisationsView({
 }: AutomatisationsViewProps) {
   const [editRow, setEditRow] = useState<AutomationRowData | null>(null);
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
-  const [catalogModalTag, setCatalogModalTag] = useState<string | null>(null);
+  const [integrationsModalOpen, setIntegrationsModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const enabledPresetKeys = useMemo(
@@ -50,13 +51,8 @@ export function AutomatisationsView({
     if (row) setEditRow(row);
   }
 
-  function openCatalogModal(tag: string | null = null) {
-    setCatalogModalTag(tag);
-    setCatalogModalOpen(true);
-  }
-
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
           {error}
@@ -81,17 +77,22 @@ export function AutomatisationsView({
       />
 
       <AutomationQuickActions
-        onActivate={() => openCatalogModal(null)}
+        className="shrink-0"
+        onActivate={() => setCatalogModalOpen(true)}
         onCreate={() => setCreateModalOpen(true)}
-        onConnectTool={() => openCatalogModal("api")}
+        onConnectTool={() => setIntegrationsModalOpen(true)}
       />
 
       <AutomationCatalogModal
         open={catalogModalOpen}
         enabledPresetKeys={enabledPresetKeys}
-        focusTag={catalogModalTag}
         onClose={() => setCatalogModalOpen(false)}
         onConfigure={handleConfigureFromCatalog}
+      />
+
+      <AutomationIntegrationsModal
+        open={integrationsModalOpen}
+        onClose={() => setIntegrationsModalOpen(false)}
       />
 
       <CreateAutomationModal

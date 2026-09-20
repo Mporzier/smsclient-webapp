@@ -1,5 +1,6 @@
 import type {
   AutomationKind,
+  AutomationRecurrenceMonthDayKind,
   AutomationRecurrenceUnit,
 } from "@/lib/types/automation";
 
@@ -20,6 +21,7 @@ export type AutomationScheduleParts = {
   recurrenceUnit?: AutomationRecurrenceUnit | null;
   recurrenceInterval?: number | null;
   recurrenceWeekday?: number | null;
+  recurrenceMonthDayKind?: AutomationRecurrenceMonthDayKind | null;
 };
 
 export function automationScheduleLabel(
@@ -32,6 +34,7 @@ export function automationScheduleLabel(
     recurrenceUnit,
     recurrenceInterval,
     recurrenceWeekday,
+    recurrenceMonthDayKind,
   } = parts;
 
   if (kind === "birthday") {
@@ -54,6 +57,20 @@ export function automationScheduleLabel(
       return interval === 1 ? "Tous les jours" : `Tous les ${interval} jours`;
     }
     if (recurrenceUnit === "months") {
+      const prefix =
+        interval === 1 ? "Chaque mois" : `Tous les ${interval} mois`;
+      if (recurrenceMonthDayKind === "first") {
+        return `${prefix} (premier jour)`;
+      }
+      if (recurrenceMonthDayKind === "last") {
+        return `${prefix} (dernier jour)`;
+      }
+      if (fixedDay != null && fixedDay >= 1 && fixedDay <= 31) {
+        const d = String(fixedDay).padStart(2, "0");
+        return interval === 1
+          ? `Chaque mois le ${d}`
+          : `Tous les ${interval} mois le ${d}`;
+      }
       return interval === 1 ? "Tous les mois" : `Tous les ${interval} mois`;
     }
   }

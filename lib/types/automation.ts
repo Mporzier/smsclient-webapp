@@ -2,12 +2,20 @@ export type AutomationKind = "birthday" | "fixed_date" | "recurring";
 
 export type AutomationRecurrenceUnit = "days" | "weeks" | "months";
 
+/** Récurrence mensuelle : jour fixe, 1er ou dernier du mois. */
+export type AutomationRecurrenceMonthDayKind = "fixed" | "first" | "last";
+
 export type AutomationPresetKey =
   | "birthday"
   | "saint_valentin"
   | "noel"
   | "nouvel_an"
-  | "fete_des_meres";
+  | "fete_des_meres"
+  | "fete_des_peres"
+  | "paques"
+  | "rentree"
+  | "toussaint"
+  | "halloween";
 
 /** Ligne affichée / éditée (fusion preset + base). */
 export type AutomationRowData = {
@@ -27,6 +35,7 @@ export type AutomationRowData = {
   recurrenceInterval?: number;
   /** 1 = lundi … 7 = dimanche (ISO). */
   recurrenceWeekday?: number;
+  recurrenceMonthDayKind?: AutomationRecurrenceMonthDayKind;
   persisted: boolean;
 };
 
@@ -50,6 +59,7 @@ export type AutomationCustomSavePayload = {
   recurrenceUnit?: AutomationRecurrenceUnit;
   recurrenceInterval?: number;
   recurrenceWeekday?: number;
+  recurrenceMonthDayKind?: AutomationRecurrenceMonthDayKind;
   id?: string;
 };
 

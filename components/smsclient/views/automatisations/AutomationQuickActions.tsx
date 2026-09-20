@@ -17,12 +17,14 @@ type QuickAction = {
 };
 
 export type AutomationQuickActionsProps = {
+  className?: string;
   onActivate: () => void;
   onCreate: () => void;
   onConnectTool: () => void;
 };
 
 export function AutomationQuickActions({
+  className,
   onActivate,
   onCreate,
   onConnectTool,
@@ -54,14 +56,14 @@ export function AutomationQuickActions({
       description:
         "Connectez vos outils et déclenchez des automatisations synchronisées.",
       cta: "Voir les intégrations",
-      emoji: "🔗",
+      emoji: "🔧",
       emojiBg: "bg-violet-100",
       onClick: onConnectTool,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className={cn("grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3", className)}>
       {actions.map((action) => (
         <button
           key={action.id}

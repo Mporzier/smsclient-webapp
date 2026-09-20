@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogAutomation } from "@/lib/automations/catalog";
 import {
+  AUTOMATION_CATALOG,
   clampRelevance,
   filterCatalogAutomations,
+  filterCatalogByScope,
+  isGeneralCatalogAutomation,
+  listCatalogFilterTags,
   normalizeCatalogTag,
   sortByRelevance,
   splitByActivity,
@@ -25,6 +29,26 @@ function auto(
   };
 }
 
+describe("AUTOMATION_CATALOG curation", () => {
+  it("keeps a small curated set and primary tags only", () => {
+    expect(AUTOMATION_CATALOG.length).toBe(10);
+    expect(AUTOMATION_CATALOG.every((a) => a.status === "available")).toBe(
+      true,
+    );
+    expect(listCatalogFilterTags().length).toBeLessThanOrEqual(3);
+    const general = AUTOMATION_CATALOG.filter(isGeneralCatalogAutomation);
+    expect(general.length).toBeGreaterThan(0);
+    expect(
+      filterCatalogByScope(AUTOMATION_CATALOG, "general", null).length,
+    ).toBe(general.length);
+    for (const auto of AUTOMATION_CATALOG) {
+      for (const tag of auto.tags ?? []) {
+        expect(["calendrier", "fidelisation", "promo"]).toContain(tag);
+      }
+    }
+  });
+});
+
 describe("clampRelevance", () => {
   it("clamps and rounds", () => {
     expect(clampRelevance(undefined)).toBe(0);
@@ -39,7 +63,7 @@ describe("clampRelevance", () => {
 describe("normalizeCatalogTag", () => {
   it("maps aliases", () => {
     expect(normalizeCatalogTag("fidélité")).toBe("fidelisation");
-    expect(normalizeCatalogTag("iPaaS")).toBe("api");
+    expect(normalizeCatalogTag("cadeau")).toBe("calendrier");
     expect(normalizeCatalogTag("Promo")).toBe("promo");
   });
 });
@@ -64,7 +88,7 @@ describe("filterCatalogAutomations", () => {
       id: "c",
       label: "Zapier hook",
       description: "Bridge",
-      tags: ["iPaaS"],
+      tags: ["promo"],
       relevance: 2,
     }),
   ];
@@ -77,8 +101,8 @@ describe("filterCatalogAutomations", () => {
   it("filters by single normalized tag", () => {
     const r = filterCatalogAutomations({ source, tag: "fidelisation" });
     expect(r.map((x) => x.id)).toEqual(["a"]);
-    const api = filterCatalogAutomations({ source, tag: "api" });
-    expect(api.map((x) => x.id)).toEqual(["c"]);
+    const promo = filterCatalogAutomations({ source, tag: "promo" });
+    expect(promo.map((x) => x.id).sort()).toEqual(["b", "c"]);
   });
 
   it("filters favorites only", () => {

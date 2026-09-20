@@ -69,11 +69,19 @@ export const SmsRichMessageEditor = forwardRef<
   useLayoutEffect(() => {
     const root = editorRef.current;
     if (!root) return;
-    const current = root.childNodes.length > 0 ? serializeSmsEditor(root) : "";
+    const current =
+      root.childNodes.length > 0 ? serializeSmsEditor(root) : "";
     if (current === value) {
       lastEmittedRef.current = value;
       return;
     }
+    // Parent pas encore à jour après saisie locale (ex. balise via menu Radix).
+    const parentBehindLocal =
+      lastEmittedRef.current !== value &&
+      lastEmittedRef.current.startsWith(value) &&
+      lastEmittedRef.current.length > value.length;
+    if (parentBehindLocal) return;
+
     renderSmsEditorValue(root, value);
     lastEmittedRef.current = value;
   }, [value]);

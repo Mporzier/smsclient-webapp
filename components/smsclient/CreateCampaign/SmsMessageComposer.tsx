@@ -135,7 +135,10 @@ export const SmsMessageComposer = forwardRef<
         insertAtPromptCursor(token);
         return;
       }
-      editorRef.current?.insertText(token);
+      // Après fermeture menu : focus + sélection stables, state parent à jour pour l’aperçu iPhone.
+      requestAnimationFrame(() => {
+        editorRef.current?.insertText(token);
+      });
     },
     [insertAtPromptCursor, isAiPrompt],
   );

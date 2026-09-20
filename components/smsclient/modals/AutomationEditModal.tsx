@@ -1,25 +1,25 @@
 "use client";
 
 import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
-import { innerInputSm } from "@/components/smsclient/flowFieldStyles";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { automationPresetEmoji } from "@/lib/automations/catalogEmojis";
 import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
 import { cn } from "@/lib/cn";
 import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { AutomationRowData, AutomationSavePayload } from "@/lib/types/automation";
-import { Clock, Zap } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
   dialogContentZCls,
   dialogOverlayCls,
   dialogPopoverZCls,
@@ -28,8 +28,13 @@ import {
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
 
-const fieldLabelCls = "text-xs font-semibold text-foreground/80";
-const hintTextCls = "text-[11px] font-normal leading-snug text-muted-foreground";
+const fieldLabelCls = "text-xs font-semibold text-foreground";
+const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
+const modalFieldCls =
+  "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
+
+const sectionCls =
+  "space-y-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm";
 
 type AutomationEditModalProps = {
   open: boolean;
@@ -114,6 +119,7 @@ export function AutomationEditModal({
           recurrenceUnit: row.recurrenceUnit,
           recurrenceInterval: row.recurrenceInterval,
           recurrenceWeekday: row.recurrenceWeekday,
+          recurrenceMonthDayKind: row.recurrenceMonthDayKind,
         });
       } else {
         throw new Error("Automatisation introuvable.");
@@ -124,7 +130,23 @@ export function AutomationEditModal({
     } finally {
       setSaving(false);
     }
-  }, [row, body, enabled, sendTime, onSave, handleClose, estimateSample, customFieldDefs]);
+  }, [
+    row,
+    body,
+    enabled,
+    sendTime,
+    onSave,
+    handleClose,
+    estimateSample,
+    customFieldDefs,
+  ]);
+
+  const headerEmoji = row
+    ? automationPresetEmoji(row.presetKey)
+    : "⚡";
+  const isPreset = Boolean(row?.presetKey);
+  const headerTitle = isPreset ? "Configurer l'automatisation" : row?.name;
+  const headerDescription = isPreset ? row?.name : row?.scheduleLabel;
 
   return (
     <Dialog
@@ -152,93 +174,125 @@ export function AutomationEditModal({
         {row && (
           <>
             <FormDialogHeader
-              className="px-4 py-3"
+              className="shrink-0 border-b border-border/60 px-4 py-3"
               bareIcon
               icon={
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-blue-50 to-indigo-50 text-ring">
-                  <Zap className="h-5 w-5" strokeWidth={2.25} />
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-teal-50 text-2xl leading-none">
+                  <span aria-hidden>{headerEmoji}</span>
                 </div>
               }
-              title={row.name}
-              description={row.scheduleLabel}
+              title={headerTitle}
+              description={headerDescription}
             />
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/50 px-4 py-3">
-              <p className={cn("m-0", hintTextCls)}>{row.description}</p>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/30 px-4 py-4">
+              {row.description ? (
+                <p className={cn("m-0 px-0.5", hintTextCls)}>{row.description}</p>
+              ) : null}
 
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5">
-                <Checkbox
-                  checked={enabled}
-                  onCheckedChange={(checked) => setEnabled(checked === true)}
-                />
-                <span className="text-sm font-semibold text-foreground/90">
-                  Activer cette automatisation
-                </span>
-              </label>
+              {isPreset && row.scheduleLabel ? (
+                <div className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-background px-3.5 py-2.5 text-sm text-muted-foreground shadow-sm">
+                  <CalendarDays
+                    className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                    aria-hidden
+                  />
+                  <span className="leading-snug">{row.scheduleLabel}</span>
+                </div>
+              ) : null}
 
-              <div className="rounded-xl border border-border bg-card p-2.5">
-                <Label className={fieldLabelCls} htmlFor="automation-send-time">
-                  Heure d&apos;envoi
-                </Label>
-                <div className={cn(innerInputSm, "mt-1.5 h-9 gap-2")}>
-                  <Clock className="h-4 w-4 shrink-0 text-ring" aria-hidden />
-                  <input
-                    id="automation-send-time"
-                    type="time"
-                    className="w-full border-none bg-transparent text-[13px] text-foreground outline-none"
-                    value={sendTime}
-                    onChange={(e) => setSendTime(e.target.value)}
+              <div className={sectionCls}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 space-y-0.5">
+                    <Label
+                      htmlFor="automation-enabled"
+                      className={cn(fieldLabelCls, "cursor-pointer")}
+                    >
+                      Statut
+                    </Label>
+                    <p className={hintTextCls}>
+                      {enabled
+                        ? "Les envois suivent le calendrier défini."
+                        : "Brouillon — aucun envoi tant que c'est désactivé."}
+                    </p>
+                  </div>
+                  <Switch
+                    id="automation-enabled"
+                    checked={enabled}
+                    disabled={saving}
+                    onCheckedChange={setEnabled}
                   />
                 </div>
-                <p className={cn("mt-1.5", hintTextCls)}>
-                  Fuseau horaire : Europe/Paris
-                </p>
               </div>
 
-              <div className="rounded-xl border border-border bg-card p-2.5">
-                <span className={fieldLabelCls}>Message SMS</span>
-                <SmsMessageComposer
-                  value={body}
-                  onChange={(next) => {
-                    setBody(next);
-                    setError(null);
-                  }}
-                  hasError={Boolean(error)}
-                  estimateSample={estimateSample}
-                  customFieldDefs={customFieldDefs}
-                  reserveStop
-                  popoverClassName={dialogPopoverZCls}
-                />
-                {error ? (
-                  <p className="mt-1.5 text-xs font-medium text-destructive">
-                    {error}
-                  </p>
-                ) : null}
+              <div className={sectionCls}>
+                <div className="space-y-1.5">
+                  <Label
+                    className={fieldLabelCls}
+                    htmlFor="automation-send-time"
+                  >
+                    Heure d&apos;envoi
+                  </Label>
+                  <Input
+                    id="automation-send-time"
+                    type="time"
+                    className={modalFieldCls}
+                    value={sendTime}
+                    disabled={saving}
+                    onChange={(e) => setSendTime(e.target.value)}
+                  />
+                  <p className={hintTextCls}>Fuseau horaire : Europe/Paris</p>
+                </div>
+              </div>
+
+              <div className={sectionCls}>
+                <div className="space-y-1.5">
+                  <Label className={fieldLabelCls}>
+                    Message SMS{" "}
+                    <span className="text-destructive" aria-hidden>
+                      *
+                    </span>
+                  </Label>
+                  <SmsMessageComposer
+                    value={body}
+                    onChange={(next) => {
+                      setBody(next);
+                      setError(null);
+                    }}
+                    hasError={Boolean(error)}
+                    estimateSample={estimateSample}
+                    customFieldDefs={customFieldDefs}
+                    reserveStop
+                    popoverClassName={dialogPopoverZCls}
+                  />
+                  {error ? (
+                    <p className={cn(hintTextCls, "text-destructive")}>
+                      {error}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-card px-4 py-3">
+            <DialogFooter className="mx-0 mb-0 shrink-0 flex-row flex-wrap items-center justify-end gap-2 rounded-b-xl border-t border-border/60 bg-card p-2.5 px-4 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
-                className={brandBtnCls}
                 disabled={saving}
                 onClick={handleClose}
+                className="cursor-pointer"
               >
                 Annuler
               </Button>
               <Button
                 type="button"
                 variant="default"
-                size="lg"
-                className={brandBtnPrimaryCls}
                 disabled={saving}
                 onClick={() => void handleSave()}
+                className="cursor-pointer"
               >
                 {saving ? "Enregistrement…" : "Enregistrer"}
               </Button>
-            </div>
+            </DialogFooter>
           </>
         )}
       </DialogContent>

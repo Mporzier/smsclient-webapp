@@ -25,12 +25,9 @@ import { Plus, Search, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const TAG_LABEL: Record<string, string> = {
-  promo: "Promo",
-  api: "API",
-  fidelisation: "Fidélisation",
-  acquisition: "Acquisition",
   calendrier: "Calendrier",
-  cadeau: "Cadeau",
+  fidelisation: "Fidélisation",
+  promo: "Promo",
 };
 
 function activityLabel(row: AutomationRowData): string {
@@ -154,7 +151,7 @@ export function ActiveAutomationsTable({
   const footer = n === 1 ? "1 automatisation" : `${n} automatisations`;
 
   return (
-    <section className="flex shrink-0 flex-col gap-3">
+    <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <div className="flex flex-wrap items-center gap-3">
         <InputGroup
           className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
@@ -192,7 +189,7 @@ export function ActiveAutomationsTable({
         globalFilter={query}
         clipHorizontalOverflow
         onRowClick={onEdit}
-        className="flex-none"
+        className="min-h-0 flex-1"
         emptyRowClassName="py-4"
         footer={footer}
       />

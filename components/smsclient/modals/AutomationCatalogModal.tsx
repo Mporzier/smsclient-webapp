@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import type { AutomationPresetKey } from "@/lib/types/automation";
-import { Zap } from "lucide-react";
 import { FormDialogHeader } from "./FormDialogHeader";
 import {
   dialogContentZCls,
@@ -48,24 +47,24 @@ export function AutomationCatalogModal({
         overlayClassName={dialogOverlayCls}
         className={cn(
           formDialogContentCls,
-          "max-h-[min(90dvh,820px)] sm:max-w-[920px]",
+          "flex max-h-[min(90dvh,820px)] min-h-0 sm:max-w-[920px]",
           dialogContentZCls,
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
       >
         <FormDialogHeader
-          className="px-4 py-3"
+          className="shrink-0 border-b border-border/60 px-4 py-3"
           bareIcon
           icon={
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
-              <Zap className="h-5 w-5" strokeWidth={2.25} />
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-teal-50 text-2xl leading-none">
+              <span aria-hidden>🚀</span>
             </div>
           }
           title="Activer une automatisation"
-          description="Choisissez un scénario prêt à l'emploi dans le catalogue."
+          description="Scénarios prêts à l'emploi — filtres, pertinence et configuration en un clic."
         />
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-4 py-3">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/30 px-3 py-3 sm:px-4">
           <CatalogPicker
             key={open ? `catalog-${focusTag ?? "all"}` : "catalog-closed"}
             enabledPresetKeys={enabledPresetKeys}

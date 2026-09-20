@@ -412,10 +412,11 @@ export function CampaignWizard({
 
   const handleTemplateSelect = useCallback(
     (template: CampaignSmsTemplate) => {
-      setSelectedTemplateId(template.id);
       applyExternalMessage(template.body);
+      setSelectedTemplateId(null);
+      onComposeApproachChange("manual");
     },
-    [applyExternalMessage]
+    [applyExternalMessage, onComposeApproachChange]
   );
 
   const handleCreateSmsTemplate = useCallback(
@@ -849,7 +850,7 @@ export function CampaignWizard({
   const summaryIphone = (
     <div className="shrink-0">
       <SmsIphonePreview
-        message={step === 2 ? smsBody : sms}
+        message={smsBody}
         sender={displaySender}
         width={SMS_IPHONE_PREVIEW_WIDTH_COMPACT}
         customFieldDefs={customFieldDefs}

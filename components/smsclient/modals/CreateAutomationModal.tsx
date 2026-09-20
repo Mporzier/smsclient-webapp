@@ -1,6 +1,12 @@
 "use client";
 
 import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
+import {
+  isValidMonthDay,
+  maxDayInMonth,
+  monthRecurrenceAnchorFromWhen,
+} from "@/lib/automations/automationCalendarDay";
+import { MONTHLY_SHORT_MONTH_HINT } from "@/lib/automations/monthlySchedule";
 import { AUTOMATION_WEEKDAY_OPTIONS } from "@/lib/automations/scheduleLabel";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +54,90 @@ const modalFieldCls =
 const selectContentCls = cn(dialogPopoverZCls, "max-h-60");
 
 type ScheduleType = "fixed_date" | "recurring";
-type RecurrenceMode = "weekly" | "interval_days" | "interval_months";
+type RecurrenceMode =
+  | "weekly"
+  | "monthly"
+  | "interval_days"
+  | "interval_months";
+
+type MonthlyWhen = "first" | "last" | "day";
+
+type MonthlyWhenFieldsProps = {
+  monthlyWhen: MonthlyWhen;
+  onMonthlyWhenChange: (value: MonthlyWhen) => void;
+  monthlyDay: string;
+  onMonthlyDayChange: (value: string) => void;
+  saving: boolean;
+  whenSelectId: string;
+  daySelectId: string;
+};
+
+function MonthlyWhenFields({
+  monthlyWhen,
+  onMonthlyWhenChange,
+  monthlyDay,
+  onMonthlyDayChange,
+  saving,
+  whenSelectId,
+  daySelectId,
+}: MonthlyWhenFieldsProps) {
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1.5">
+        <Label className={fieldLabelCls} htmlFor={whenSelectId}>
+          Quand
+        </Label>
+        <Select
+          value={monthlyWhen}
+          onValueChange={(value) => onMonthlyWhenChange(value as MonthlyWhen)}
+          disabled={saving}
+        >
+          <SelectTrigger
+            id={whenSelectId}
+            className={cn("w-full", modalFieldCls)}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" className={selectContentCls}>
+            <SelectItem value="first">Premier jour du mois</SelectItem>
+            <SelectItem value="last">Dernier jour du mois</SelectItem>
+            <SelectItem value="day">Un jour précis</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {monthlyWhen === "day" ? (
+        <div className="space-y-1.5">
+          <Label className={fieldLabelCls} htmlFor={daySelectId}>
+            Jour du mois
+          </Label>
+          <Select
+            value={monthlyDay}
+            onValueChange={onMonthlyDayChange}
+            disabled={saving}
+          >
+            <SelectTrigger
+              id={daySelectId}
+              className={cn("w-full", modalFieldCls)}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" className={selectContentCls}>
+              {Array.from({ length: 31 }, (_, i) => {
+                const d = String(i + 1);
+                return (
+                  <SelectItem key={d} value={d}>
+                    {d.padStart(2, "0")}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <p className={hintTextCls}>{MONTHLY_SHORT_MONTH_HINT}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function isDialogPortaledLayer(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -82,6 +171,8 @@ export function CreateAutomationModal({
     useState<RecurrenceMode>("weekly");
   const [recurrenceInterval, setRecurrenceInterval] = useState("7");
   const [recurrenceWeekday, setRecurrenceWeekday] = useState("1");
+  const [monthlyWhen, setMonthlyWhen] = useState<MonthlyWhen>("day");
+  const [monthlyDay, setMonthlyDay] = useState("1");
   const [body, setBody] = useState("");
   const [sendTime, setSendTime] = useState("09:00");
   const [saving, setSaving] = useState(false);
@@ -95,6 +186,11 @@ export function CreateAutomationModal({
     [contacts, customFieldDefs],
   );
 
+  const fixedMonthNum = Number.parseInt(fixedMonth, 10);
+  const fixedMonthMaxDay = maxDayInMonth(
+    Number.isFinite(fixedMonthNum) ? fixedMonthNum : 1,
+  );
+
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -106,6 +202,8 @@ export function CreateAutomationModal({
       setRecurrenceMode("weekly");
       setRecurrenceInterval("7");
       setRecurrenceWeekday("1");
+      setMonthlyWhen("day");
+      setMonthlyDay("1");
       setBody("");
       setSendTime("09:00");
       setNameError(null);
@@ -149,10 +247,11 @@ export function CreateAutomationModal({
         Number.isFinite(day) &&
         month >= 1 &&
         month <= 12 &&
-        day >= 1 &&
-        day <= 31;
+        isValidMonthDay(month, day);
       if (!dateValid) {
-        setScheduleError("Indiquez une date valide (jour et mois).");
+        setScheduleError(
+          "Indiquez une date valide (ex. pas de 31 en avril ni de 30 en février).",
+        );
         hasError = true;
       } else {
         setScheduleError(null);
@@ -186,16 +285,47 @@ export function CreateAutomationModal({
           recurrenceWeekday: weekday,
         };
       }
+    } else if (
+      recurrenceMode === "monthly" ||
+      recurrenceMode === "interval_months"
+    ) {
+      const interval =
+        recurrenceMode === "monthly"
+          ? 1
+          : Number.parseInt(recurrenceInterval, 10);
+      const maxMonths = 24;
+      if (
+        recurrenceMode === "interval_months" &&
+        (!Number.isFinite(interval) || interval < 1 || interval > maxMonths)
+      ) {
+        setScheduleError("Indiquez un intervalle entre 1 et 24 mois.");
+        hasError = true;
+      } else {
+        const anchor = monthRecurrenceAnchorFromWhen(monthlyWhen, monthlyDay);
+        if (!anchor.ok) {
+          setScheduleError(anchor.message);
+          hasError = true;
+        } else {
+          setScheduleError(null);
+          payload = {
+            mode: "custom",
+            name: trimmedName,
+            kind: "recurring",
+            body: "",
+            enabled: false,
+            sendTime,
+            recurrenceUnit: "months",
+            recurrenceInterval: interval,
+            recurrenceMonthDayKind: anchor.recurrenceMonthDayKind,
+            ...(anchor.fixedDay != null ? { fixedDay: anchor.fixedDay } : {}),
+          };
+        }
+      }
     } else {
       const interval = Number.parseInt(recurrenceInterval, 10);
-      const unit = recurrenceMode === "interval_days" ? "days" : "months";
-      const max = unit === "days" ? 365 : 24;
+      const max = 365;
       if (!Number.isFinite(interval) || interval < 1 || interval > max) {
-        setScheduleError(
-          unit === "days"
-            ? "Indiquez un intervalle entre 1 et 365 jours."
-            : "Indiquez un intervalle entre 1 et 24 mois.",
-        );
+        setScheduleError("Indiquez un intervalle entre 1 et 365 jours.");
         hasError = true;
       } else {
         setScheduleError(null);
@@ -206,7 +336,7 @@ export function CreateAutomationModal({
           body: "",
           enabled: false,
           sendTime,
-          recurrenceUnit: unit,
+          recurrenceUnit: "days",
           recurrenceInterval: interval,
         };
       }
@@ -245,6 +375,8 @@ export function CreateAutomationModal({
     fixedDay,
     fixedMonth,
     handleClose,
+    monthlyDay,
+    monthlyWhen,
     name,
     onSave,
     recurrenceInterval,
@@ -370,7 +502,15 @@ export function CreateAutomationModal({
                   </Label>
                   <Select
                     value={fixedMonth}
-                    onValueChange={setFixedMonth}
+                    onValueChange={(value) => {
+                      setFixedMonth(value);
+                      const max = maxDayInMonth(Number.parseInt(value, 10));
+                      const current = Number.parseInt(fixedDay, 10);
+                      if (Number.isFinite(current) && current > max) {
+                        setFixedDay(String(max));
+                      }
+                      setScheduleError(null);
+                    }}
                     disabled={saving}
                   >
                     <SelectTrigger
@@ -416,7 +556,7 @@ export function CreateAutomationModal({
                       position="popper"
                       className={selectContentCls}
                     >
-                      {Array.from({ length: 31 }, (_, i) => {
+                      {Array.from({ length: fixedMonthMaxDay }, (_, i) => {
                         const d = String(i + 1);
                         return (
                           <SelectItem key={d} value={d}>
@@ -428,7 +568,8 @@ export function CreateAutomationModal({
                   </Select>
                 </div>
                 <p className={cn("col-span-2", hintTextCls)}>
-                  Envoi chaque année à cette date.
+                  Envoi chaque année à cette date. Le 29 février est envoyé le
+                  28 février les années non bissextiles.
                 </p>
               </div>
             ) : (
@@ -449,6 +590,7 @@ export function CreateAutomationModal({
                     className={selectContentCls}
                   >
                     <SelectItem value="weekly">Chaque semaine</SelectItem>
+                    <SelectItem value="monthly">Chaque mois</SelectItem>
                     <SelectItem value="interval_days">
                       Tous les X jours
                     </SelectItem>
@@ -489,21 +631,74 @@ export function CreateAutomationModal({
                       </SelectContent>
                     </Select>
                   </div>
+                ) : recurrenceMode === "monthly" ? (
+                  <MonthlyWhenFields
+                    monthlyWhen={monthlyWhen}
+                    onMonthlyWhenChange={(value) => {
+                      setMonthlyWhen(value);
+                      setScheduleError(null);
+                    }}
+                    monthlyDay={monthlyDay}
+                    onMonthlyDayChange={(value) => {
+                      setMonthlyDay(value);
+                      setScheduleError(null);
+                    }}
+                    saving={saving}
+                    whenSelectId="create-automation-monthly-when"
+                    daySelectId="create-automation-monthly-day"
+                  />
+                ) : recurrenceMode === "interval_months" ? (
+                  <div className="space-y-2">
+                    <div className="space-y-1.5">
+                      <Label
+                        className={fieldLabelCls}
+                        htmlFor="create-automation-interval-months"
+                      >
+                        Nombre de mois
+                      </Label>
+                      <Input
+                        id="create-automation-interval-months"
+                        type="number"
+                        min={1}
+                        max={24}
+                        className={modalFieldCls}
+                        value={recurrenceInterval}
+                        disabled={saving}
+                        onChange={(e) => {
+                          setRecurrenceInterval(e.target.value);
+                          setScheduleError(null);
+                        }}
+                      />
+                    </div>
+                    <MonthlyWhenFields
+                      monthlyWhen={monthlyWhen}
+                      onMonthlyWhenChange={(value) => {
+                        setMonthlyWhen(value);
+                        setScheduleError(null);
+                      }}
+                      monthlyDay={monthlyDay}
+                      onMonthlyDayChange={(value) => {
+                        setMonthlyDay(value);
+                        setScheduleError(null);
+                      }}
+                      saving={saving}
+                      whenSelectId="create-automation-interval-monthly-when"
+                      daySelectId="create-automation-interval-monthly-day"
+                    />
+                  </div>
                 ) : (
                   <div className="space-y-1.5">
                     <Label
                       className={fieldLabelCls}
                       htmlFor="create-automation-interval"
                     >
-                      {recurrenceMode === "interval_days"
-                        ? "Nombre de jours"
-                        : "Nombre de mois"}
+                      Nombre de jours
                     </Label>
                     <Input
                       id="create-automation-interval"
                       type="number"
                       min={1}
-                      max={recurrenceMode === "interval_days" ? 365 : 24}
+                      max={365}
                       className={modalFieldCls}
                       value={recurrenceInterval}
                       disabled={saving}
