@@ -436,7 +436,9 @@ export function AppShell({
                   route === "nouvelle-campagne" ||
                   route === "reglementations-sms" ||
                   route === "qr-boutique"
-                  ? "gap-2 py-3"
+                  ? route === "qr-boutique"
+                    ? "gap-2 py-2 md:py-3"
+                    : "gap-2 py-3"
                   : "gap-[18px] py-4 md:py-5"
               )}
             >

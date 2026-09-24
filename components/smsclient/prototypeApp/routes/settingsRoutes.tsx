@@ -24,7 +24,7 @@ export function renderSettingsRoute(
   ctx: PrototypeAppContext
 ): ReactNode | null {
   if (!SETTINGS_ROUTES.has(r)) return null;
-  const { data, modals, wizard, actions } = ctx;
+  const { data, modals, wizard, actions, go } = ctx;
   const {
     creditsState,
     profileState,
@@ -82,6 +82,14 @@ export function renderSettingsRoute(
             } finally {
               modals.setQrWheelSaving(false);
             }
+          }}
+          onImportContacts={() => {
+            go("contacts");
+            modals.setImportContactsOpen(true);
+          }}
+          onAddContact={() => {
+            go("contacts");
+            modals.openContactAdd();
           }}
         />
       );

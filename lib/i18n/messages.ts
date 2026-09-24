@@ -686,6 +686,120 @@ const fr = {
   "qr.pageTitle": "QR code commerçant",
   "qr.pageSubtitle":
     "Affichez ce QR code en boutique pour permettre à vos clients de s'enregistrer dans votre base de données en quelques secondes.",
+  "qr.hub.methodsTitle": "Comment souhaitez-vous collecter vos clients ?",
+  "qr.hub.methodsSubtitle":
+    "Plusieurs moyens simples pour permettre à vos clients de s'inscrire et de rejoindre votre liste de contacts.",
+  "qr.hub.heroAlt": "Exemple de formulaire d'inscription client sur mobile",
+  "qr.hub.card.qr.title": "QR code",
+  "qr.hub.card.qr.desc":
+    "À afficher en caisse, sur une table, en vitrine ou sur vos supports de communication.",
+  "qr.hub.card.qr.cta": "Configurer mon QR code",
+  "qr.hub.card.link.title": "Lien d'inscription",
+  "qr.hub.card.link.desc":
+    "Partagez le formulaire sur votre site, Instagram, WhatsApp, par email…",
+  "qr.hub.card.link.cta": "Obtenir mon lien",
+  "qr.hub.card.import.title": "Importer des contacts",
+  "qr.hub.card.import.desc":
+    "Vous avez déjà un fichier client ? Importez-le dans SMSclient en quelques clics.",
+  "qr.hub.card.import.cta": "Importer un fichier",
+  "qr.hub.card.manual.title": "Ajout manuel",
+  "qr.hub.card.manual.desc":
+    "Ajoutez rapidement un contact à partir de son numéro.",
+  "qr.hub.card.manual.cta": "Ajouter un contact",
+  "qr.hub.qrModal.title": "QR code d'inscription",
+  "qr.hub.linkModal.desc":
+    "Ce lien ouvre le même formulaire que votre QR code. Partagez-le où vous voulez.",
+  "qr.hub.linkModal.open": "Ouvrir le formulaire",
+  "qr.hub.inspire.title": "Besoin d'inspiration ?",
+  "qr.hub.inspire.subtitle":
+    "Découvrez nos conseils pour attirer plus de clients.",
+  "qr.hub.inspire.display.cta": "Où afficher mon QR code ?",
+  "qr.hub.inspire.display.subtext": "Nos meilleures pratiques",
+  "qr.hub.inspire.wheel.cta": "Roue des récompenses",
+  "qr.hub.inspire.wheel.subtext": "Faites gagner un cadeau",
+  "qr.hub.inspire.welcome.cta": "SMS de bienvenue",
+  "qr.hub.inspire.welcome.subtext": "Envoyez un SMS personnalisé",
+  "qr.hub.inspire.display.title": "Où afficher mon QR code ?",
+  "qr.hub.inspire.display.desc":
+    "Quelques emplacements efficaces pour capter des inscriptions en boutique ou en ligne.",
+  "qr.hub.inspire.display.idea1": "Comptoir ou caisse — visible au moment du paiement",
+  "qr.hub.inspire.display.idea2": "Vitrine ou affiche à l'entrée du magasin",
+  "qr.hub.inspire.display.idea3": "Ticket de caisse ou sac client avec le lien ou le QR",
+  "qr.hub.inspire.display.idea4": "Réseaux sociaux, e-mail ou signature avec le lien d'inscription",
+  "qr.hub.inspire.help.tooltip": "Conseils et bonnes pratiques",
+  "qr.hub.inspire.help.advice.title": "Le conseil SMSclient",
+  "qr.hub.inspire.help.display.advice":
+    "QR à hauteur des yeux, bien dégagé. Une accroche d'une ligne à côté suffit : dites en clair ce que le client gagne en scannant.",
+  "qr.hub.inspire.help.wheel.advice":
+    "Libellés courts sur la roue, lots variés. Prévoyez un gain facile à obtenir et une récompense « coup de cœur » qui donne envie de jouer.",
+  "qr.hub.inspire.help.welcome.advice":
+    "Message bref et humain : remerciez, confirmez l'inscription, puis une seule suite concrète (lien, code, prochaine étape) — pas un catalogue d'avantages.",
+  "qr.hub.inspire.help.display.subtitle":
+    "Placez votre QR code aux endroits stratégiques pour le rendre visible et inciter vos clients à s'inscrire.",
+  "qr.hub.inspire.help.display.tip1": "Sur votre comptoir",
+  "qr.hub.inspire.help.display.tip2": "Sur vos tickets / factures",
+  "qr.hub.inspire.help.display.tip3": "Sur votre vitrine",
+  "qr.hub.inspire.help.display.tip4": "Sur une table / un menu",
+  "qr.hub.inspire.help.display.tip5": "Sur vos emballages",
+  "qr.hub.inspire.help.display.tip6": "Sur vos supports numériques",
+  "qr.hub.inspire.help.display.tip1Sub":
+    "Près de la caisse, pour proposer l'inscription au moment du paiement.",
+  "qr.hub.inspire.help.display.tip2Sub":
+    "Ajoutez le QR code avec une courte phrase d'invitation.",
+  "qr.hub.inspire.help.display.tip3Sub":
+    "Attirez les passants et transformez-les en clients.",
+  "qr.hub.inspire.help.display.tip4Sub":
+    "Idéal pour les restaurants, bars, cafés, salons, salles d'attente, etc.",
+  "qr.hub.inspire.help.display.tip5Sub":
+    "Sac, colis, boîte, carte de remerciement…",
+  "qr.hub.inspire.help.display.tip6Sub":
+    "Site internet, Instagram, Facebook, e-mail, écran en magasin.",
+  "qr.hub.inspire.help.wheel.tip1": "Augmente les inscriptions",
+  "qr.hub.inspire.help.wheel.tip1Sub":
+    "Un jeu simple et ludique qui donne envie de s'inscrire.",
+  "qr.hub.inspire.help.wheel.tip2": "Récompenses personnalisables",
+  "qr.hub.inspire.help.wheel.tip2Sub":
+    "Remises, cadeaux, offres spéciales… À vous de choisir.",
+  "qr.hub.inspire.help.wheel.tip3": "Adaptés à tous les commerces",
+  "qr.hub.inspire.help.wheel.tip3Sub":
+    "Fonctionne aussi bien en boutique qu'en ligne.",
+  "qr.hub.inspire.help.wheel.tip4": "Mise en place en quelques clics",
+  "qr.hub.inspire.help.wheel.tip4Sub":
+    "Activez la roue directement depuis votre formulaire d'inscription.",
+  "qr.hub.inspire.help.welcome.tip1": "Remerciez vos nouveaux clients",
+  "qr.hub.inspire.help.welcome.tip1Sub":
+    "Un message chaleureux pour confirmer leur inscription.",
+  "qr.hub.inspire.help.welcome.tip2": "Mettez en avant les avantages",
+  "qr.hub.inspire.help.welcome.tip2Sub":
+    "Offre de bienvenue, cadeau, −10 %, accès en avant-première…",
+  "qr.hub.inspire.help.welcome.tip3": "100 % automatique",
+  "qr.hub.inspire.help.welcome.tip3Sub":
+    "Le SMS est envoyé automatiquement après inscription, sans action de votre part.",
+  "qr.hub.inspire.help.welcome.tip4": "Message personnalisable",
+  "qr.hub.inspire.help.welcome.tip4Sub":
+    "Adaptez le texte à votre commerce et au ton voulu.",
+  "qr.hub.inspire.help.prev": "Étape précédente",
+  "qr.hub.inspire.help.next": "Étape suivante",
+  "qr.hub.inspire.help.steps": "Étapes du guide",
+  "qr.hub.inspire.help.goToStep": "Aller à l'étape {n}",
+  "qr.hub.inspire.help.display.imageAlt":
+    "Exemple de présentoir QR code en caisse pour attirer des clients",
+  "qr.hub.inspire.help.wheel.title": "Roue des récompenses",
+  "qr.hub.inspire.help.wheel.subtitle":
+    "Proposez la roue juste après l'inscription : un cadeau de bienvenue qui récompense vos clients et donne envie de s'inscrire.",
+  "qr.hub.inspire.help.wheel.desc":
+    "Proposez une roue personnalisée après l'inscription pour fidéliser vos clients.",
+  "qr.hub.inspire.help.wheel.action": "Configurer la roue",
+  "qr.hub.inspire.help.wheel.imageAlt":
+    "Exemple de roue des récompenses sur mobile et liste de gains",
+  "qr.hub.inspire.help.welcome.title": "SMS de bienvenue",
+  "qr.hub.inspire.help.welcome.subtitle":
+    "Envoyez automatiquement un SMS personnalisé juste après l'inscription pour remercier vos nouveaux clients et créer un premier lien.",
+  "qr.hub.inspire.help.welcome.desc":
+    "Accueillez vos nouveaux contacts avec un message personnalisé et chaleureux.",
+  "qr.hub.inspire.help.welcome.action": "Configurer le SMS de bienvenue",
+  "qr.hub.inspire.help.welcome.imageAlt":
+    "Exemple de SMS de bienvenue et autres messages types",
   "qr.signupTitle": "QR code d'inscription",
   "qr.active": "Actif",
   "qr.scanHint": "Scannez pour tester le parcours",
@@ -1780,6 +1894,119 @@ const en: Record<MessageKey, string> = {
   "qr.pageTitle": "Merchant QR code",
   "qr.pageSubtitle":
     "Display this QR code in store so customers can join your database in seconds.",
+  "qr.hub.methodsTitle": "How would you like to collect customers?",
+  "qr.hub.methodsSubtitle":
+    "Simple ways for customers to sign up and join your contact list.",
+  "qr.hub.heroAlt": "Example mobile customer sign-up form",
+  "qr.hub.card.qr.title": "QR code",
+  "qr.hub.card.qr.desc":
+    "Display at checkout, on a table, in your window, or on your marketing materials.",
+  "qr.hub.card.qr.cta": "Set up my QR code",
+  "qr.hub.card.link.title": "Sign-up link",
+  "qr.hub.card.link.desc":
+    "Share the form on your website, Instagram, WhatsApp, by email…",
+  "qr.hub.card.link.cta": "Get my link",
+  "qr.hub.card.import.title": "Import contacts",
+  "qr.hub.card.import.desc":
+    "Already have a customer file? Import it into SMSclient in a few clicks.",
+  "qr.hub.card.import.cta": "Import a file",
+  "qr.hub.card.manual.title": "Manual add",
+  "qr.hub.card.manual.desc":
+    "Quickly add a contact from their phone number.",
+  "qr.hub.card.manual.cta": "Add a contact",
+  "qr.hub.qrModal.title": "Sign-up QR code",
+  "qr.hub.linkModal.desc":
+    "This link opens the same form as your QR code. Share it anywhere.",
+  "qr.hub.linkModal.open": "Open form",
+  "qr.hub.inspire.title": "Need inspiration?",
+  "qr.hub.inspire.subtitle": "Tips to attract more customers.",
+  "qr.hub.inspire.display.cta": "Where to display my QR code?",
+  "qr.hub.inspire.display.subtext": "Our best practices",
+  "qr.hub.inspire.wheel.cta": "Rewards wheel",
+  "qr.hub.inspire.wheel.subtext": "Let customers win a gift",
+  "qr.hub.inspire.welcome.cta": "Welcome SMS",
+  "qr.hub.inspire.welcome.subtext": "Send a personalized SMS",
+  "qr.hub.inspire.display.title": "Where to display my QR code?",
+  "qr.hub.inspire.display.desc":
+    "Effective spots to capture sign-ups in store or online.",
+  "qr.hub.inspire.display.idea1": "Counter or checkout — visible at payment",
+  "qr.hub.inspire.display.idea2": "Storefront or entrance poster",
+  "qr.hub.inspire.display.idea3": "Receipt or bag with link or QR",
+  "qr.hub.inspire.display.idea4": "Social, email, or signature with sign-up link",
+  "qr.hub.inspire.help.tooltip": "Tips & best practices",
+  "qr.hub.inspire.help.advice.title": "The SMSclient tip",
+  "qr.hub.inspire.help.display.advice":
+    "Keep the QR at eye level and unobstructed. One line beside it is enough—say clearly what scanning gives them.",
+  "qr.hub.inspire.help.wheel.advice":
+    "Use short labels and varied prizes. Include an easy win and one standout reward that makes people want to spin.",
+  "qr.hub.inspire.help.welcome.advice":
+    "Keep it brief and human: thank them, confirm sign-up, then one clear next step (link, code, what to do)—not a laundry list of perks.",
+  "qr.hub.inspire.help.display.subtitle":
+    "Place your QR code in strategic spots to keep it visible and encourage customers to sign up.",
+  "qr.hub.inspire.help.display.tip1": "On your counter",
+  "qr.hub.inspire.help.display.tip2": "On receipts / invoices",
+  "qr.hub.inspire.help.display.tip3": "On your storefront",
+  "qr.hub.inspire.help.display.tip4": "On a table / menu",
+  "qr.hub.inspire.help.display.tip5": "On your packaging",
+  "qr.hub.inspire.help.display.tip6": "On your digital channels",
+  "qr.hub.inspire.help.display.tip1Sub":
+    "Near checkout, offer sign-up at payment time.",
+  "qr.hub.inspire.help.display.tip2Sub":
+    "Add the QR code with a short invitation line.",
+  "qr.hub.inspire.help.display.tip3Sub":
+    "Catch passers-by and turn them into customers.",
+  "qr.hub.inspire.help.display.tip4Sub":
+    "Great for restaurants, bars, cafés, salons, waiting rooms, etc.",
+  "qr.hub.inspire.help.display.tip5Sub":
+    "Bags, parcels, boxes, thank-you cards…",
+  "qr.hub.inspire.help.display.tip6Sub":
+    "Website, Instagram, Facebook, email, in-store screens.",
+  "qr.hub.inspire.help.wheel.tip1": "Boost sign-ups",
+  "qr.hub.inspire.help.wheel.tip1Sub":
+    "A simple, fun game that makes people want to register.",
+  "qr.hub.inspire.help.wheel.tip2": "Customizable rewards",
+  "qr.hub.inspire.help.wheel.tip2Sub":
+    "Discounts, gifts, special offers… You choose.",
+  "qr.hub.inspire.help.wheel.tip3": "Works for any business",
+  "qr.hub.inspire.help.wheel.tip3Sub":
+    "Just as effective in-store as online.",
+  "qr.hub.inspire.help.wheel.tip4": "Set up in a few clicks",
+  "qr.hub.inspire.help.wheel.tip4Sub":
+    "Enable the wheel straight from your sign-up form.",
+  "qr.hub.inspire.help.welcome.tip1": "Thank new customers",
+  "qr.hub.inspire.help.welcome.tip1Sub":
+    "A warm message to confirm they've signed up.",
+  "qr.hub.inspire.help.welcome.tip2": "Highlight the benefits",
+  "qr.hub.inspire.help.welcome.tip2Sub":
+    "Welcome offer, gift, 10% off, early access…",
+  "qr.hub.inspire.help.welcome.tip3": "100% automatic",
+  "qr.hub.inspire.help.welcome.tip3Sub":
+    "The SMS goes out right after sign-up—no manual step on your side.",
+  "qr.hub.inspire.help.welcome.tip4": "Customizable message",
+  "qr.hub.inspire.help.welcome.tip4Sub":
+    "Tailor the copy to your business and the tone you want.",
+  "qr.hub.inspire.help.prev": "Previous step",
+  "qr.hub.inspire.help.next": "Next step",
+  "qr.hub.inspire.help.steps": "Guide steps",
+  "qr.hub.inspire.help.goToStep": "Go to step {n}",
+  "qr.hub.inspire.help.display.imageAlt":
+    "Example QR code display at checkout to attract customers",
+  "qr.hub.inspire.help.wheel.title": "Rewards wheel",
+  "qr.hub.inspire.help.wheel.subtitle":
+    "Offer the wheel right after sign-up: a welcome gift that rewards customers and makes others want to join.",
+  "qr.hub.inspire.help.wheel.desc":
+    "Offer a branded wheel after sign-up to engage and retain customers.",
+  "qr.hub.inspire.help.wheel.action": "Configure the wheel",
+  "qr.hub.inspire.help.wheel.imageAlt":
+    "Example rewards wheel on mobile and sample prizes",
+  "qr.hub.inspire.help.welcome.title": "Welcome SMS",
+  "qr.hub.inspire.help.welcome.subtitle":
+    "Automatically send a personalized SMS right after sign-up to thank new customers and start the relationship.",
+  "qr.hub.inspire.help.welcome.desc":
+    "Greet new contacts with a personalized, friendly message.",
+  "qr.hub.inspire.help.welcome.action": "Configure welcome SMS",
+  "qr.hub.inspire.help.welcome.imageAlt":
+    "Example welcome SMS and other message templates",
   "qr.signupTitle": "Sign-up QR code",
   "qr.active": "Active",
   "qr.scanHint": "Scan to test the flow",

@@ -1,24 +1,40 @@
 "use client";
 
-import { QrCapturePreviewModal } from "@/components/smsclient/modals/QrCapturePreviewModal";
+import {
+  QrCollectInspireHelpModal,
+  type InspireHelpStep,
+} from "@/components/smsclient/modals/QrCollectInspireHelpModal";
+import { QrCollectLinkModal } from "@/components/smsclient/modals/QrCollectLinkModal";
+import { QrCollectQrModal } from "@/components/smsclient/modals/QrCollectQrModal";
 import { QrWelcomeSmsSettingsModal } from "@/components/smsclient/modals/QrWelcomeSmsSettingsModal";
 import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSettingsModal";
-import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
 import { Button } from "@/components/ui/button";
+import { useQrStats } from "@/hooks/useQrStats";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
-import { downloadShopQrPdf } from "@/lib/qr/downloadShopQrPdf";
 import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
-import QRCode from "qrcode";
-import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { QrCaptureComplianceCard } from "@/components/smsclient/views/QrCaptureComplianceCard";
-import { QrCapturePhonePreview } from "@/components/smsclient/views/QrCapturePhonePreview";
-import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
-import { useQrStats } from "@/hooks/useQrStats";
 import type { QrWheelConfig } from "@/lib/types/qrWheel";
-import { LoadingLabel } from "@/components/ui/loading-label";
-import { CircleCheck, Copy, Download, Gift, MessageCircle, QrCode } from "lucide-react";
+import {
+  Gift,
+  Lightbulb,
+  ChevronRight,
+  File,
+  Link,
+  MessageCircle,
+  QrCode,
+  Store,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
+
+/** Visuel hub collecte — ajuster widthPx pour la largeur colonne droite. */
+const COLLECTE_HERO_SIZE = {
+  widthPx: 420,
+  widthPercent: 42,
+} as const;
 
 type QrCodeViewProps = {
   publicUrl: string;
@@ -34,48 +50,120 @@ type QrCodeViewProps = {
   wheelSaving: boolean;
   onWheelSave: (config: QrWheelConfig) => Promise<void>;
   onWheelEnableDefaults: () => Promise<void>;
+  onImportContacts?: () => void;
+  onAddContact?: () => void;
 };
 
-function downloadQrPng(dataUrl: string) {
-  const anchor = document.createElement("a");
-  anchor.href = dataUrl;
-  anchor.download = "qr-code-boutique.png";
-  anchor.click();
-}
-
-type QrActionButtonProps = {
-  icon: typeof Download;
+type CollectMethodCardProps = {
+  icon: LucideIcon;
+  iconWrapClassName: string;
+  ctaClassName: string;
   title: string;
-  subtitle: string;
-  disabled?: boolean;
+  description: string;
+  cta: string;
   onClick: () => void;
 };
 
-function QrActionButton({
+function CollectMethodCard({
   icon: Icon,
+  iconWrapClassName,
+  ctaClassName,
   title,
-  subtitle,
-  disabled,
+  description,
+  cta,
   onClick,
-}: QrActionButtonProps) {
+}: CollectMethodCardProps) {
+  return (
+    <article className="flex min-h-0 flex-col gap-2.5 overflow-hidden rounded-xl border border-border bg-card p-3">
+      <div className="flex min-h-0 flex-1 items-start gap-3">
+        <span
+          className={cn(
+            "grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ring-foreground/10 sm:h-12 sm:w-12",
+            iconWrapClassName
+          )}
+          aria-hidden
+        >
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
+        </span>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
+          <h3 className="m-0 text-sm font-semibold leading-snug text-foreground sm:text-base">
+            {title}
+          </h3>
+          <p className="m-0 min-h-0 flex-1 line-clamp-4 text-xs leading-snug text-muted-foreground sm:text-sm sm:leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 justify-center">
+        <Button
+          type="button"
+          size="lg"
+          className={cn("h-11 w-1/2 font-medium sm:h-12", ctaClassName)}
+          onClick={onClick}
+        >
+          {cta}
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+type InspirationCtaCardProps = {
+  icon: LucideIcon;
+  label: string;
+  subtext: string;
+  cardClassName: string;
+  iconWrapClassName: string;
+  chevronClassName: string;
+  onClick: () => void;
+};
+
+function InspirationCtaCard({
+  icon: Icon,
+  label,
+  subtext,
+  cardClassName,
+  iconWrapClassName,
+  chevronClassName,
+  onClick,
+}: InspirationCtaCardProps) {
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-left transition-colors hover:border-[#2f6fed]/30 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50",
+        "group flex min-h-0 cursor-pointer items-center gap-2 rounded-lg border px-2 py-2 text-left transition-colors sm:gap-2.5 sm:px-3 sm:py-2.5",
+        cardClassName
       )}
     >
-      <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
-      <span className="min-w-0">
-        <span className="block truncate text-[11px] font-bold leading-tight text-slate-900">
-          {title}
+      <span
+        className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-md",
+          iconWrapClassName
+        )}
+      >
+        <Icon
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block line-clamp-2 text-[10px] font-semibold leading-snug text-foreground sm:text-xs">
+          {label}
         </span>
-        <span className="block truncate text-[10px] font-semibold leading-tight text-slate-500">
-          {subtitle}
+        <span className="mt-0.5 block line-clamp-1 text-[10px] leading-snug text-muted-foreground">
+          {subtext}
         </span>
       </span>
+      <ChevronRight
+        className={cn(
+          "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5",
+          chevronClassName
+        )}
+        strokeWidth={2.25}
+        aria-hidden
+      />
     </button>
   );
 }
@@ -94,370 +182,224 @@ export function QrCodeView({
   wheelSaving,
   onWheelSave,
   onWheelEnableDefaults,
+  onImportContacts,
+  onAddContact,
 }: QrCodeViewProps) {
   const { t } = useI18n();
   const { stats: qrStats, loading: qrStatsLoading } = useQrStats();
-  const [qrImage, setQrImage] = useState("");
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [templateSaving, setTemplateSaving] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [inspireHelpOpen, setInspireHelpOpen] = useState(false);
+  const [inspireHelpStep, setInspireHelpStep] = useState<InspireHelpStep>(0);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const [wheelModalOpen, setWheelModalOpen] = useState(false);
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [templateSaving, setTemplateSaving] = useState(false);
 
-  const captureModeOptions = useMemo(
+  const openInspireHelp = (step: InspireHelpStep) => {
+    setInspireHelpStep(step);
+    setInspireHelpOpen(true);
+  };
+
+  const openWelcomeConfig = () => {
+    if (captureMode !== "welcome") {
+      void onCaptureModeChange("welcome");
+    }
+    setWelcomeModalOpen(true);
+  };
+
+  const openWheelConfig = () => {
+    if (captureMode !== "wheel") {
+      void onCaptureModeChange("wheel");
+    }
+    setWheelModalOpen(true);
+  };
+
+  const methods = useMemo(
     () =>
       [
         {
-          mode: "welcome" as const,
-          title: t("qr.mode.welcome.title"),
-          description: t("qr.mode.welcome.desc"),
-          icon: MessageCircle,
+          id: "qr",
+          icon: QrCode,
+          iconWrapClassName: "bg-violet-500/10 text-violet-600",
+          ctaClassName:
+            "bg-violet-300/85 text-violet-950 hover:bg-violet-400/90",
+          title: t("qr.hub.card.qr.title"),
+          description: t("qr.hub.card.qr.desc"),
+          cta: t("qr.hub.card.qr.cta"),
+          onClick: () => setQrModalOpen(true),
         },
         {
-          mode: "wheel" as const,
-          title: t("qr.mode.wheel.title"),
-          description: t("qr.mode.wheel.desc"),
-          icon: Gift,
+          id: "link",
+          icon: Link,
+          iconWrapClassName: "bg-blue-500/15 text-blue-600",
+          ctaClassName: "bg-blue-400/90 text-white hover:bg-blue-500/90",
+          title: t("qr.hub.card.link.title"),
+          description: t("qr.hub.card.link.desc"),
+          cta: t("qr.hub.card.link.cta"),
+          onClick: () => setLinkModalOpen(true),
+        },
+        {
+          id: "import",
+          icon: File,
+          iconWrapClassName: "bg-emerald-500/10 text-emerald-600",
+          ctaClassName:
+            "bg-emerald-300/85 text-emerald-950 hover:bg-emerald-400/90",
+          title: t("qr.hub.card.import.title"),
+          description: t("qr.hub.card.import.desc"),
+          cta: t("qr.hub.card.import.cta"),
+          onClick: () => onImportContacts?.(),
+        },
+        {
+          id: "manual",
+          icon: UserPlus,
+          iconWrapClassName: "bg-amber-500/10 text-amber-600",
+          ctaClassName: "bg-amber-300/85 text-amber-950 hover:bg-amber-400/90",
+          title: t("qr.hub.card.manual.title"),
+          description: t("qr.hub.card.manual.desc"),
+          cta: t("qr.hub.card.manual.cta"),
+          onClick: () => onAddContact?.(),
         },
       ] as const,
-    [t],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      if (!publicUrl) {
-        setQrImage("");
-        return;
-      }
-      void QRCode.toDataURL(publicUrl, {
-        margin: 1,
-        width: 280,
-        color: { dark: "#0f172a", light: "#ffffff" },
-      }).then((src: string) => {
-        if (!cancelled) setQrImage(src);
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [publicUrl]);
-
-  const handleModeSelect = useCallback(
-    (mode: Exclude<QrCaptureMode, "none">) => {
-      const nextMode: QrCaptureMode = captureMode === mode ? "none" : mode;
-      void onCaptureModeChange(nextMode);
-    },
-    [captureMode, onCaptureModeChange],
+    [t, onImportContacts, onAddContact]
   );
 
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-[1080px] flex-col gap-2 overflow-hidden">
-      <div className="flex shrink-0 items-start gap-2">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
-          <QrCode className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <h1 className="m-0 text-sm font-black leading-snug tracking-tight text-slate-900">
-            {t("qr.pageTitle")}
-          </h1>
-          <p className="m-0 mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-500">
-            {t("qr.pageSubtitle")}
-          </p>
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+      {error ? (
+        <div
+          className="shrink-0 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive"
+          role="alert"
+        >
+          {error}
         </div>
+      ) : null}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex-row lg:gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+          <QrCaptureStatsCard stats={qrStats} loading={qrStatsLoading} />
+
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <h2 className="m-0 shrink-0 text-base font-semibold leading-tight tracking-tight text-foreground sm:text-lg">
+              {t("qr.hub.methodsTitle")}
+            </h2>
+            <p className="m-0 mt-0.5 line-clamp-2 shrink-0 text-xs text-muted-foreground sm:text-sm">
+              {t("qr.hub.methodsSubtitle")}
+            </p>
+
+            <div className="mt-2 grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2">
+              {methods.map((method) => (
+                <CollectMethodCard
+                  key={method.id}
+                  icon={method.icon}
+                  iconWrapClassName={method.iconWrapClassName}
+                  ctaClassName={method.ctaClassName}
+                  title={method.title}
+                  description={method.description}
+                  cta={method.cta}
+                  onClick={method.onClick}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside
+          className="relative hidden min-h-0 shrink-0 self-stretch overflow-hidden lg:block"
+          style={{
+            width: `min(${COLLECTE_HERO_SIZE.widthPercent}%, ${COLLECTE_HERO_SIZE.widthPx}px)`,
+          }}
+        >
+          <Image
+            src="/images/collecte-clients-exemple.jpg"
+            alt={t("qr.hub.heroAlt")}
+            fill
+            className="object-contain object-top"
+            sizes="(min-width: 1024px) 420px, 0px"
+            priority
+          />
+        </aside>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]">
-        {error ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
-            {error}
+      <section className="shrink-0 rounded-xl border border-border bg-muted/30 p-2.5 sm:p-3">
+        <div className="mb-2 flex items-start gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-background text-amber-500 sm:h-8 sm:w-8">
+            <Lightbulb
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          </span>
+          <div className="min-w-0">
+            <h3 className="m-0 text-xs font-semibold text-foreground sm:text-sm">
+              {t("qr.hub.inspire.title")}
+            </h3>
+            <p className="m-0 mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:text-xs">
+              {t("qr.hub.inspire.subtitle")}
+            </p>
           </div>
-        ) : (
-          <>
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
-            <div className="flex min-h-0 flex-col gap-2 lg:border-r lg:border-slate-100 lg:pr-3">
-              <div className="mx-auto flex aspect-square w-full max-w-[180px] flex-col rounded-xl border border-slate-200 bg-slate-50 p-1.5">
-                <div className="mb-1 flex shrink-0 items-center justify-between gap-1.5">
-                  <h3 className="m-0 text-[11px] font-black leading-tight text-slate-900">
-                    {t("qr.signupTitle")}
-                  </h3>
-                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
-                    {t("qr.active")}
-                  </span>
-                </div>
-                <div className="flex min-h-0 flex-1 items-center justify-center">
-                  {qrImage ? (
-                    <Image
-                      src={qrImage}
-                      alt={t("qr.alt")}
-                      width={110}
-                      height={110}
-                      unoptimized
-                      className="h-[110px] w-[110px] max-h-full max-w-full"
-                    />
-                  ) : (
-                    <div className="h-[110px] w-[110px] animate-pulse rounded-lg bg-slate-200" />
-                  )}
-                </div>
-                <p className="m-0 shrink-0 text-center text-[9px] font-semibold text-slate-400">
-                  {t("qr.scanHint")}
-                </p>
-              </div>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <InspirationCtaCard
+            icon={Store}
+            label={t("qr.hub.inspire.display.cta")}
+            subtext={t("qr.hub.inspire.display.subtext")}
+            cardClassName="border-violet-200/80 bg-violet-50/70 hover:bg-violet-100/80"
+            iconWrapClassName="bg-violet-500/20 text-violet-600"
+            chevronClassName="text-violet-400 group-hover:text-violet-600"
+            onClick={() => openInspireHelp(0)}
+          />
+          <InspirationCtaCard
+            icon={Gift}
+            label={t("qr.hub.inspire.wheel.cta")}
+            subtext={t("qr.hub.inspire.wheel.subtext")}
+            cardClassName="border-amber-200/80 bg-amber-50/80 hover:bg-amber-100/80"
+            iconWrapClassName="bg-amber-500/20 text-amber-600"
+            chevronClassName="text-amber-400 group-hover:text-amber-600"
+            onClick={() => openInspireHelp(1)}
+          />
+          <InspirationCtaCard
+            icon={MessageCircle}
+            label={t("qr.hub.inspire.welcome.cta")}
+            subtext={t("qr.hub.inspire.welcome.subtext")}
+            cardClassName="border-blue-200/80 bg-blue-50/70 hover:bg-blue-100/80"
+            iconWrapClassName="bg-blue-500/20 text-blue-600"
+            chevronClassName="text-blue-400 group-hover:text-blue-600"
+            onClick={() => openInspireHelp(2)}
+          />
+        </div>
+      </section>
 
-              <div className="min-w-0">
-                <p className="m-0 mb-1 text-[11px] font-black text-slate-600">
-                  {t("qr.signupLink")}
-                </p>
-                <div className="min-w-0 truncate rounded-lg border border-[#dfe6f2] bg-slate-50/80 px-2 py-1 text-[11px] font-semibold text-slate-700">
-                  {publicUrl || "—"}
-                </div>
-              </div>
+      <QrCollectQrModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        publicUrl={publicUrl}
+        loading={loading}
+        companyName={companyName}
+        captureMode={captureMode}
+        onCaptureModeChange={onCaptureModeChange}
+        welcomeSmsTemplate={welcomeSmsTemplate}
+        onWelcomeSmsTemplateChange={onWelcomeSmsTemplateChange}
+        wheelConfig={wheelConfig}
+        wheelLoading={wheelLoading}
+        wheelSaving={wheelSaving}
+        onWheelSave={onWheelSave}
+        onWheelEnableDefaults={onWheelEnableDefaults}
+      />
 
-              {downloadError ? (
-                <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-900">
-                  {downloadError}
-                </p>
-              ) : null}
+      <QrCollectLinkModal
+        open={linkModalOpen}
+        onClose={() => setLinkModalOpen(false)}
+        publicUrl={publicUrl}
+      />
 
-              <div className="grid grid-cols-3 gap-1.5">
-                <QrActionButton
-                  icon={Download}
-                  title={t("qr.download")}
-                  subtitle="PNG"
-                  disabled={!qrImage}
-                  onClick={() => {
-                    if (!qrImage) return;
-                    setDownloadError(null);
-                    downloadQrPng(qrImage);
-                  }}
-                />
-                <QrActionButton
-                  icon={Download}
-                  title={t("qr.download")}
-                  subtitle={pdfLoading ? "…" : "PDF"}
-                  disabled={!qrImage || pdfLoading}
-                  onClick={() => {
-                    if (!qrImage || !publicUrl) return;
-                    setDownloadError(null);
-                    setPdfLoading(true);
-                    void downloadShopQrPdf({
-                      qrDataUrl: qrImage,
-                      publicUrl,
-                      companyName,
-                    })
-                      .catch((e) => {
-                        setDownloadError(
-                          e instanceof Error
-                            ? e.message
-                            : t("qr.pdfFailed"),
-                        );
-                      })
-                      .finally(() => {
-                        setPdfLoading(false);
-                      });
-                  }}
-                />
-                <QrActionButton
-                  icon={Copy}
-                  title={t("qr.copyLink")}
-                  subtitle={linkCopied ? t("qr.copied") : "URL"}
-                  disabled={!publicUrl}
-                  onClick={() => {
-                    if (!publicUrl) return;
-                    void navigator.clipboard.writeText(publicUrl).then(() => {
-                      setLinkCopied(true);
-                      window.setTimeout(() => setLinkCopied(false), 1500);
-                    });
-                  }}
-                />
-              </div>
-
-              <div className="border-t border-slate-100 pt-2">
-                <div className="mb-2">
-                  <h3 className="m-0 text-xs font-black text-slate-900">
-                    {t("qr.afterTitle")}
-                  </h3>
-                  <p className="m-0 mt-0.5 text-[10px] font-semibold leading-snug text-slate-500">
-                    {t("qr.afterDesc")}
-                  </p>
-                </div>
-
-                <div
-                  className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-                  role="radiogroup"
-                  aria-label={t("qr.afterAria")}
-                >
-                  {captureModeOptions.map((option) => {
-                    const Icon = option.icon;
-                    const selected = captureMode === option.mode;
-                    return (
-                      <button
-                        key={option.mode}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => handleModeSelect(option.mode)}
-                        className={cn(
-                          "relative flex cursor-pointer flex-col items-start gap-2 rounded-xl border p-2.5 text-left transition-[border-color,box-shadow] duration-200",
-                          selected
-                            ? option.mode === "wheel"
-                              ? "border-2 border-amber-400 bg-gradient-to-br from-amber-50/90 to-orange-50/50 ring-2 ring-amber-300/60 ring-offset-1"
-                              : "border-2 border-[#2f6fed] bg-[#eef4ff] ring-2 ring-[#2f6fed]/25 ring-offset-1"
-                            : "border border-slate-200 bg-white hover:border-slate-300",
-                        )}
-                      >
-                        {selected ? (
-                          <CircleCheck
-                            className="absolute right-2 top-2 h-4 w-4 text-emerald-500"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
-                        ) : null}
-                        <span
-                          className={cn(
-                            "grid h-8 w-8 place-items-center rounded-lg border",
-                            selected
-                              ? option.mode === "wheel"
-                                ? "border-amber-200/80 bg-white/80 text-amber-600"
-                                : "border-[#2f6fed]/20 bg-white text-[#2f6fed]"
-                              : "border-slate-200 bg-slate-50 text-slate-400",
-                          )}
-                        >
-                          <Icon className="h-4 w-4" aria-hidden />
-                        </span>
-                        <span>
-                          <span className="block text-xs font-black text-slate-900">
-                            {option.title}
-                          </span>
-                          <span className="mt-0.5 block text-[10px] font-semibold leading-snug text-slate-500">
-                            {option.description}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="relative mt-3 min-h-[52px]">
-                  <div
-                    className={cn(
-                      "transition-all duration-200 ease-out",
-                      captureMode === "welcome"
-                        ? "translate-y-0 opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "welcome"}
-                  >
-                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-[#2f6fed]/15 bg-[#eef4ff]/40 p-2.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={templateSaving}
-                        onClick={() => setWelcomeModalOpen(true)}
-                      >
-                        {t("qr.configure")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div
-                    className={cn(
-                      "transition-all duration-200 ease-out",
-                      captureMode === "wheel"
-                        ? "translate-y-0 opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "wheel"}
-                  >
-                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-2.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={wheelSaving}
-                        onClick={() => setPreviewModalOpen(true)}
-                      >
-                        {t("qr.preview")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={wheelSaving}
-                        onClick={() => setWheelModalOpen(true)}
-                      >
-                        {t("qr.configure")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <p
-                    className={cn(
-                      "m-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-[10px] font-semibold text-slate-500 transition-opacity duration-200",
-                      captureMode === "none"
-                        ? "relative opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "none"}
-                  >
-                    {t("qr.noneActive")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-col lg:min-h-full lg:pl-0">
-              <QrCapturePhonePreview
-                compact
-                fill
-                className="min-h-0 flex-1"
-                publicUrl={publicUrl}
-                captureMode={captureMode}
-                wheelConfig={wheelConfig}
-                welcomeSmsTemplate={welcomeSmsTemplate}
-                senderName={companyName}
-                initialLoading={wheelLoading && !wheelConfig}
-              />
-
-              <QrCaptureStatsCard
-                embedded
-                className="mt-auto shrink-0 pb-2"
-                stats={qrStats}
-                loading={qrStatsLoading}
-              />
-            </div>
-            </div>
-
-            <QrCaptureComplianceCard className="border-t border-slate-100 pt-2" />
-
-            {loading ? (
-              <div
-                className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/[0.06] backdrop-blur-[1px]"
-                role="status"
-                aria-live="polite"
-                aria-busy="true"
-                aria-label={t("common.loading")}
-              >
-                <div className="rounded-xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
-                  <LoadingLabel
-                    className="text-sm font-bold text-slate-700"
-                    spinnerClassName="size-5"
-                  >
-                    {t("common.loading")}
-                  </LoadingLabel>
-                </div>
-              </div>
-            ) : null}
-          </>
-        )}
-      </div>
+      <QrCollectInspireHelpModal
+        open={inspireHelpOpen}
+        onClose={() => setInspireHelpOpen(false)}
+        initialStep={inspireHelpStep}
+        onConfigureDisplay={() => setQrModalOpen(true)}
+        onConfigureWheel={openWheelConfig}
+        onConfigureWelcome={openWelcomeConfig}
+      />
 
       <QrWelcomeSmsSettingsModal
         open={welcomeModalOpen}
@@ -472,13 +414,6 @@ export function QrCodeView({
             setTemplateSaving(false);
           }
         }}
-      />
-
-      <QrCapturePreviewModal
-        open={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        wheelConfig={wheelConfig}
-        wheelLoading={wheelLoading}
       />
 
       <QrWheelSettingsModal
