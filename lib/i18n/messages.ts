@@ -694,6 +694,15 @@ const fr = {
   "qr.hub.card.qr.desc":
     "À afficher en caisse, sur une table, en vitrine ou sur vos supports de communication.",
   "qr.hub.card.qr.cta": "Configurer mon QR code",
+  "qr.hub.back": "Retour",
+  "qr.hub.backAria": "Retour à la collecte clients",
+  "qr.hub.parcoursIllustrationAlt":
+    "Parcours client : formulaire d'inscription, SMS de bienvenue et roue des récompenses",
+  "qr.hub.parcoursPreview.title": "Aperçu du parcours client",
+  "qr.hub.parcoursPreview.subtitle":
+    "Voici ce que vos clients voient après avoir scanné le QR code.",
+  "qr.hub.displayVisibilityTip":
+    "Pensez à afficher votre QR code dans un endroit bien visible (caisse, vitrine, tables, tickets…)",
   "qr.hub.card.link.title": "Lien d'inscription",
   "qr.hub.card.link.desc":
     "Partagez le formulaire sur votre site, Instagram, WhatsApp, par email…",
@@ -710,6 +719,7 @@ const fr = {
   "qr.hub.linkModal.desc":
     "Ce lien ouvre le même formulaire que votre QR code. Partagez-le où vous voulez.",
   "qr.hub.linkModal.open": "Ouvrir le formulaire",
+  "qr.hub.linkModal.copiedToast": "Copié dans le presse-papiers !",
   "qr.hub.inspire.title": "Besoin d'inspiration ?",
   "qr.hub.inspire.subtitle":
     "Découvrez nos conseils pour attirer plus de clients.",
@@ -830,7 +840,7 @@ const fr = {
   "qr.stats.spins": "Tours de roue",
   "qr.complianceTitle": "Confidentialité et conformité",
   "qr.complianceBody":
-    "Les données collectées via ce formulaire sont sécurisées et utilisées uniquement pour votre relation client.",
+    "Les données collectées via ce formulaire sont sécurisées et utilisées uniquement pour votre\u00a0relation client.",
   "qr.complianceUnsub": "Vos clients peuvent se désinscrire à tout moment.",
   "qr.complianceMore": "En savoir plus",
   "qr.modal.welcome.desc":
@@ -1902,6 +1912,15 @@ const en: Record<MessageKey, string> = {
   "qr.hub.card.qr.desc":
     "Display at checkout, on a table, in your window, or on your marketing materials.",
   "qr.hub.card.qr.cta": "Set up my QR code",
+  "qr.hub.back": "Back",
+  "qr.hub.backAria": "Back to client capture",
+  "qr.hub.parcoursIllustrationAlt":
+    "Customer journey: sign-up form, welcome SMS, and prize wheel",
+  "qr.hub.parcoursPreview.title": "Customer journey preview",
+  "qr.hub.parcoursPreview.subtitle":
+    "This is what your customers see after scanning the QR code.",
+  "qr.hub.displayVisibilityTip":
+    "Display your QR code somewhere easy to see (checkout, window, tables, receipts…)",
   "qr.hub.card.link.title": "Sign-up link",
   "qr.hub.card.link.desc":
     "Share the form on your website, Instagram, WhatsApp, by email…",
@@ -1918,6 +1937,7 @@ const en: Record<MessageKey, string> = {
   "qr.hub.linkModal.desc":
     "This link opens the same form as your QR code. Share it anywhere.",
   "qr.hub.linkModal.open": "Open form",
+  "qr.hub.linkModal.copiedToast": "Copied to clipboard!",
   "qr.hub.inspire.title": "Need inspiration?",
   "qr.hub.inspire.subtitle": "Tips to attract more customers.",
   "qr.hub.inspire.display.cta": "Where to display my QR code?",

@@ -26,6 +26,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { LogoMark } from "@/components/smsclient/shell/LogoMark";
+import { ShellHeaderTitleProvider, useShellHeaderTitle } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import {
   APP_CANVAS_CLASS,
   MAIN_PANEL_CLASS,
@@ -52,7 +53,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 export { SearchBar } from "@/components/smsclient/shell/SearchBar";
 
-export function AppShell({
+function AppShellInner({
   route,
   go,
   onNewCampaign,
@@ -61,6 +62,7 @@ export function AppShell({
   campaignWizardStep,
   children,
 }: ShellProps) {
+  const { titleOverride, headerBack } = useShellHeaderTitle();
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
   const { t } = useI18n();
@@ -345,14 +347,35 @@ export function AppShell({
                     <span className="text-chart-1">.fr</span>
                   </span>
                 </button>
-                <h1 className="m-0 flex shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-foreground">
-                  <TitleIcon
-                    className="size-6 shrink-0 text-primary"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  {t(routeTitleKey(route))}
-                </h1>
+                <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+                  {headerBack ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 h-9 shrink-0 gap-1 rounded-lg bg-canvas px-2.5 text-sm font-semibold text-foreground hover:bg-canvas/80"
+                      aria-label={headerBack.ariaLabel}
+                      onClick={headerBack.onBack}
+                    >
+                      <ChevronLeft
+                        className="h-4 w-4 shrink-0"
+                        strokeWidth={2.25}
+                        aria-hidden
+                      />
+                      {headerBack.label}
+                    </Button>
+                  ) : null}
+                  <h1 className="m-0 flex min-w-0 items-center gap-2.5 truncate text-xl font-semibold tracking-tight text-foreground">
+                    <TitleIcon
+                      className="size-6 shrink-0 text-primary"
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
+                    <span className="truncate">
+                      {titleOverride ?? t(routeTitleKey(route))}
+                    </span>
+                  </h1>
+                </div>
                 {isCampaignWizard && campaignWizardStep != null && (
                   <div className="flex min-w-0 flex-1 justify-center px-4">
                     <CampaignWizardStepper
@@ -458,5 +481,13 @@ export function AppShell({
         }}
       />
     </div>
+  );
+}
+
+export function AppShell(props: ShellProps) {
+  return (
+    <ShellHeaderTitleProvider>
+      <AppShellInner {...props} />
+    </ShellHeaderTitleProvider>
   );
 }

@@ -2,12 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
+import { toast } from "@/components/ui/sonner";
 import { Copy, ExternalLink, Link } from "lucide-react";
-import { useState } from "react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
@@ -28,7 +27,13 @@ export function QrCollectLinkModal({
   publicUrl,
 }: QrCollectLinkModalProps) {
   const { t } = useI18n();
-  const [copied, setCopied] = useState(false);
+
+  const copyLink = () => {
+    if (!publicUrl) return;
+    void navigator.clipboard.writeText(publicUrl).then(() => {
+      toast(t("qr.hub.linkModal.copiedToast"));
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -37,7 +42,7 @@ export function QrCollectLinkModal({
         className={cn(
           formDialogContentCls,
           dialogContentZCls,
-          "max-h-[min(88dvh,420px)] sm:max-w-[480px]",
+          "max-h-[min(88dvh,420px)] sm:max-w-[480px]"
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         overlayClassName={dialogOverlayCls}
@@ -56,13 +61,23 @@ export function QrCollectLinkModal({
 
         <div className="space-y-4 px-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="qr-collect-signup-link">{t("qr.signupLink")}</Label>
-            <Input
-              id="qr-collect-signup-link"
-              readOnly
-              value={publicUrl || "—"}
-              className="font-medium"
-            />
+            <Label id="qr-collect-signup-link-label">{t("qr.signupLink")}</Label>
+            <button
+              type="button"
+              disabled={!publicUrl}
+              aria-labelledby="qr-collect-signup-link-label"
+              className="flex w-full cursor-pointer items-center gap-2 overflow-hidden rounded-lg border border-blue-100/90 bg-blue-50/40 px-3 py-3 text-left transition-colors hover:bg-blue-100/45 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={copyLink}
+            >
+              <span className="min-w-0 flex-1 text-sm font-medium leading-snug break-all text-foreground">
+                {publicUrl || "—"}
+              </span>
+              <Copy
+                className="h-4 w-4 shrink-0 text-blue-600"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            </button>
           </div>
         </div>
 
@@ -71,16 +86,10 @@ export function QrCollectLinkModal({
             type="button"
             variant="outline"
             disabled={!publicUrl}
-            onClick={() => {
-              if (!publicUrl) return;
-              void navigator.clipboard.writeText(publicUrl).then(() => {
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1500);
-              });
-            }}
+            onClick={copyLink}
           >
             <Copy data-icon="inline-start" aria-hidden />
-            {copied ? t("qr.copied") : t("qr.copyLink")}
+            {t("qr.copyLink")}
           </Button>
           <Button
             type="button"

@@ -5,10 +5,11 @@ import {
   type InspireHelpStep,
 } from "@/components/smsclient/modals/QrCollectInspireHelpModal";
 import { QrCollectLinkModal } from "@/components/smsclient/modals/QrCollectLinkModal";
-import { QrCollectQrModal } from "@/components/smsclient/modals/QrCollectQrModal";
+import { QrCollectQrPanel } from "@/components/smsclient/views/QrCollectQrPanel";
 import { QrWelcomeSmsSettingsModal } from "@/components/smsclient/modals/QrWelcomeSmsSettingsModal";
 import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSettingsModal";
 import { QrCaptureStatsCard } from "@/components/smsclient/views/QrCaptureStatsCard";
+import { useShellHeaderTitle } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import { Button } from "@/components/ui/button";
 import { useQrStats } from "@/hooks/useQrStats";
 import { cn } from "@/lib/cn";
@@ -23,12 +24,13 @@ import {
   Link,
   MessageCircle,
   QrCode,
+  ScanQrCode,
   Store,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** Visuel hub collecte — ajuster widthPx pour la largeur colonne droite. */
 const COLLECTE_HERO_SIZE = {
@@ -58,6 +60,8 @@ type CollectMethodCardProps = {
   icon: LucideIcon;
   iconWrapClassName: string;
   ctaClassName: string;
+  ctaHighlighted?: boolean;
+  ctaIcon?: LucideIcon;
   title: string;
   description: string;
   cta: string;
@@ -68,14 +72,16 @@ function CollectMethodCard({
   icon: Icon,
   iconWrapClassName,
   ctaClassName,
+  ctaHighlighted = false,
+  ctaIcon: CtaIcon,
   title,
   description,
   cta,
   onClick,
 }: CollectMethodCardProps) {
   return (
-    <article className="flex min-h-0 flex-col gap-2.5 overflow-hidden rounded-xl border border-border bg-card p-3">
-      <div className="flex min-h-0 flex-1 items-start gap-3">
+    <article className="flex min-h-0 flex-col justify-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-4 sm:gap-3.5 sm:p-5">
+      <div className="flex min-h-0 flex-1 items-center gap-3 sm:gap-3.5">
         <span
           className={cn(
             "grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ring-foreground/10 sm:h-12 sm:w-12",
@@ -85,7 +91,7 @@ function CollectMethodCard({
         >
           <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.25} />
         </span>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center gap-1.5">
           <h3 className="m-0 text-sm font-semibold leading-snug text-foreground sm:text-base">
             {title}
           </h3>
@@ -97,10 +103,24 @@ function CollectMethodCard({
       <div className="flex shrink-0 justify-center">
         <Button
           type="button"
+          variant={ctaHighlighted ? "ghost" : "default"}
           size="lg"
-          className={cn("h-11 w-1/2 font-medium sm:h-12", ctaClassName)}
+          className={cn(
+            "h-10 text-sm sm:h-11",
+            ctaHighlighted
+              ? "w-[72%] font-semibold shadow-none [&>*]:relative [&>*]:z-[1] [&_svg]:!size-6 sm:[&_svg]:!size-7"
+              : "w-[62%] font-medium",
+            ctaClassName,
+          )}
           onClick={onClick}
         >
+          {CtaIcon ? (
+            <CtaIcon
+              className={cn("shrink-0", ctaHighlighted ? "size-6 sm:size-7" : "size-4")}
+              data-icon="inline-start"
+              aria-hidden
+            />
+          ) : null}
           {cta}
         </Button>
       </div>
@@ -132,33 +152,33 @@ function InspirationCtaCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex min-h-0 cursor-pointer items-center gap-2 rounded-lg border px-2 py-2 text-left transition-colors sm:gap-2.5 sm:px-3 sm:py-2.5",
+        "group flex h-full min-h-[4.75rem] cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-3 text-left transition-colors sm:min-h-[5.25rem] sm:gap-3 sm:px-4 sm:py-3.5",
         cardClassName
       )}
     >
       <span
         className={cn(
-          "grid h-8 w-8 shrink-0 place-items-center rounded-md",
+          "grid h-10 w-10 shrink-0 place-items-center rounded-lg sm:h-11 sm:w-11",
           iconWrapClassName
         )}
       >
         <Icon
-          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+          className="h-5 w-5 sm:h-[22px] sm:w-[22px]"
           strokeWidth={2.25}
           aria-hidden
         />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block line-clamp-2 text-[10px] font-semibold leading-snug text-foreground sm:text-xs">
+        <span className="block line-clamp-2 text-xs font-semibold leading-snug text-foreground sm:text-sm">
           {label}
         </span>
-        <span className="mt-0.5 block line-clamp-1 text-[10px] leading-snug text-muted-foreground">
+        <span className="mt-1 block line-clamp-2 text-[11px] leading-snug text-muted-foreground sm:text-xs">
           {subtext}
         </span>
       </span>
       <ChevronRight
         className={cn(
-          "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5",
+          "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 sm:h-[22px] sm:w-[22px]",
           chevronClassName
         )}
         strokeWidth={2.25}
@@ -186,19 +206,62 @@ export function QrCodeView({
   onAddContact,
 }: QrCodeViewProps) {
   const { t } = useI18n();
+  const { setTitleOverride, setHeaderBack } = useShellHeaderTitle();
   const { stats: qrStats, loading: qrStatsLoading } = useQrStats();
-  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrConfigOpen, setQrConfigOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [inspireHelpOpen, setInspireHelpOpen] = useState(false);
   const [inspireHelpStep, setInspireHelpStep] = useState<InspireHelpStep>(0);
+  const inspireHelpOpenRef = useRef(inspireHelpOpen);
+  inspireHelpOpenRef.current = inspireHelpOpen;
+
+  const handleShellBack = useCallback(() => {
+    if (inspireHelpOpenRef.current) {
+      setInspireHelpOpen(false);
+      return;
+    }
+    setQrConfigOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!qrConfigOpen) {
+      setTitleOverride(null);
+      setHeaderBack(null);
+      return;
+    }
+    setTitleOverride(t("qr.pageTitle"));
+    setHeaderBack({
+      label: t("qr.hub.back"),
+      ariaLabel: t("qr.hub.backAria"),
+      onBack: handleShellBack,
+    });
+    return () => {
+      setTitleOverride(null);
+      setHeaderBack(null);
+    };
+  }, [qrConfigOpen, handleShellBack, setTitleOverride, setHeaderBack, t]);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const [wheelModalOpen, setWheelModalOpen] = useState(false);
   const [templateSaving, setTemplateSaving] = useState(false);
 
-  const openInspireHelp = (step: InspireHelpStep) => {
+  const openInspireHelp = useCallback((step: InspireHelpStep) => {
     setInspireHelpStep(step);
     setInspireHelpOpen(true);
-  };
+  }, []);
+
+  const closeInspireHelp = useCallback(() => {
+    setInspireHelpOpen(false);
+  }, []);
+
+  const handleInspireConfigureDisplay = useCallback(() => {
+    setInspireHelpOpen(false);
+    setQrConfigOpen(true);
+  }, []);
+
+  const openDisplayInspireFromQrConfig = useCallback(() => {
+    setQrConfigOpen(true);
+    openInspireHelp(0);
+  }, [openInspireHelp]);
 
   const openWelcomeConfig = () => {
     if (captureMode !== "welcome") {
@@ -221,18 +284,21 @@ export function QrCodeView({
           id: "qr",
           icon: QrCode,
           iconWrapClassName: "bg-violet-500/10 text-violet-600",
+          ctaHighlighted: true,
+          ctaIcon: ScanQrCode,
           ctaClassName:
-            "bg-violet-300/85 text-violet-950 hover:bg-violet-400/90",
+            "border-0 relative isolate overflow-hidden bg-gradient-to-br from-[#4c1d95] via-[#9333ea] to-[#581c87] text-white before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-tl before:from-[#581c87] before:via-[#a855f7] before:to-[#4c1d95] before:opacity-0 before:transition-opacity before:duration-300 before:content-[''] hover:before:opacity-100 hover:text-white",
           title: t("qr.hub.card.qr.title"),
           description: t("qr.hub.card.qr.desc"),
           cta: t("qr.hub.card.qr.cta"),
-          onClick: () => setQrModalOpen(true),
+          onClick: () => setQrConfigOpen(true),
         },
         {
           id: "link",
           icon: Link,
           iconWrapClassName: "bg-blue-500/15 text-blue-600",
-          ctaClassName: "bg-blue-400/90 text-white hover:bg-blue-500/90",
+          ctaClassName:
+            "border-0 bg-blue-500 text-white shadow-sm hover:bg-blue-600",
           title: t("qr.hub.card.link.title"),
           description: t("qr.hub.card.link.desc"),
           cta: t("qr.hub.card.link.cta"),
@@ -243,7 +309,7 @@ export function QrCodeView({
           icon: File,
           iconWrapClassName: "bg-emerald-500/10 text-emerald-600",
           ctaClassName:
-            "bg-emerald-300/85 text-emerald-950 hover:bg-emerald-400/90",
+            "border-0 bg-blue-500 text-white shadow-sm hover:bg-blue-600",
           title: t("qr.hub.card.import.title"),
           description: t("qr.hub.card.import.desc"),
           cta: t("qr.hub.card.import.cta"),
@@ -253,7 +319,8 @@ export function QrCodeView({
           id: "manual",
           icon: UserPlus,
           iconWrapClassName: "bg-amber-500/10 text-amber-600",
-          ctaClassName: "bg-amber-300/85 text-amber-950 hover:bg-amber-400/90",
+          ctaClassName:
+            "border-0 bg-blue-500 text-white shadow-sm hover:bg-blue-600",
           title: t("qr.hub.card.manual.title"),
           description: t("qr.hub.card.manual.desc"),
           cta: t("qr.hub.card.manual.cta"),
@@ -263,8 +330,28 @@ export function QrCodeView({
     [t, onImportContacts, onAddContact]
   );
 
+  const qrPanelProps = {
+    publicUrl,
+    loading,
+    companyName,
+    captureMode,
+    onCaptureModeChange,
+    welcomeSmsTemplate,
+    onWelcomeSmsTemplateChange,
+    wheelConfig,
+    wheelLoading,
+    wheelSaving,
+    onWheelSave,
+    onWheelEnableDefaults,
+  };
+
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+    <div
+      className={cn(
+        "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden",
+        qrConfigOpen ? "gap-1 overflow-x-hidden lg:min-h-0" : "gap-2",
+      )}
+    >
       {error ? (
         <div
           className="shrink-0 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive"
@@ -274,6 +361,15 @@ export function QrCodeView({
         </div>
       ) : null}
 
+      {qrConfigOpen ? (
+        <QrCollectQrPanel
+          {...qrPanelProps}
+          showParcoursIllustration
+          onOpenDisplayInspireHelp={openDisplayInspireFromQrConfig}
+          className="min-h-0 min-w-0 flex-1 lg:h-full"
+        />
+      ) : (
+        <>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex-row lg:gap-4">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <QrCaptureStatsCard stats={qrStats} loading={qrStatsLoading} />
@@ -286,13 +382,17 @@ export function QrCodeView({
               {t("qr.hub.methodsSubtitle")}
             </p>
 
-            <div className="mt-2 grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2">
+            <div className="mt-2 grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2 sm:gap-2.5">
               {methods.map((method) => (
                 <CollectMethodCard
                   key={method.id}
                   icon={method.icon}
                   iconWrapClassName={method.iconWrapClassName}
                   ctaClassName={method.ctaClassName}
+                  ctaHighlighted={
+                    "ctaHighlighted" in method && method.ctaHighlighted === true
+                  }
+                  ctaIcon={"ctaIcon" in method ? method.ctaIcon : undefined}
                   title={method.title}
                   description={method.description}
                   cta={method.cta}
@@ -320,25 +420,25 @@ export function QrCodeView({
         </aside>
       </div>
 
-      <section className="shrink-0 rounded-xl border border-border bg-muted/30 p-2.5 sm:p-3">
-        <div className="mb-2 flex items-start gap-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-background text-amber-500 sm:h-8 sm:w-8">
+      <section className="flex min-h-[9.5rem] shrink-0 flex-col rounded-xl border border-border bg-muted/30 p-3 sm:min-h-[10.5rem] sm:p-4">
+        <div className="mb-2.5 flex shrink-0 items-start gap-2.5 sm:mb-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-background text-amber-500 sm:h-9 sm:w-9">
             <Lightbulb
-              className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+              className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
               strokeWidth={2.25}
               aria-hidden
             />
           </span>
           <div className="min-w-0">
-            <h3 className="m-0 text-xs font-semibold text-foreground sm:text-sm">
+            <h3 className="m-0 text-sm font-semibold text-foreground sm:text-base">
               {t("qr.hub.inspire.title")}
             </h3>
-            <p className="m-0 mt-0.5 line-clamp-1 text-[10px] text-muted-foreground sm:text-xs">
+            <p className="m-0 mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
               {t("qr.hub.inspire.subtitle")}
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className="grid min-h-0 flex-1 grid-cols-3 items-stretch gap-2 sm:gap-3">
           <InspirationCtaCard
             icon={Store}
             label={t("qr.hub.inspire.display.cta")}
@@ -368,23 +468,8 @@ export function QrCodeView({
           />
         </div>
       </section>
-
-      <QrCollectQrModal
-        open={qrModalOpen}
-        onClose={() => setQrModalOpen(false)}
-        publicUrl={publicUrl}
-        loading={loading}
-        companyName={companyName}
-        captureMode={captureMode}
-        onCaptureModeChange={onCaptureModeChange}
-        welcomeSmsTemplate={welcomeSmsTemplate}
-        onWelcomeSmsTemplateChange={onWelcomeSmsTemplateChange}
-        wheelConfig={wheelConfig}
-        wheelLoading={wheelLoading}
-        wheelSaving={wheelSaving}
-        onWheelSave={onWheelSave}
-        onWheelEnableDefaults={onWheelEnableDefaults}
-      />
+        </>
+      )}
 
       <QrCollectLinkModal
         open={linkModalOpen}
@@ -394,9 +479,9 @@ export function QrCodeView({
 
       <QrCollectInspireHelpModal
         open={inspireHelpOpen}
-        onClose={() => setInspireHelpOpen(false)}
+        onClose={closeInspireHelp}
         initialStep={inspireHelpStep}
-        onConfigureDisplay={() => setQrModalOpen(true)}
+        onConfigureDisplay={handleInspireConfigureDisplay}
         onConfigureWheel={openWheelConfig}
         onConfigureWelcome={openWelcomeConfig}
       />
