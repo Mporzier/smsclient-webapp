@@ -50,7 +50,8 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 
 Fichiers clés :
 
-- `modals/FormDialogHeader.tsx` / `FormDialogShell.tsx` — header + shell standard
+- `modals/FormDialogHeader.tsx` / `FormDialogShell.tsx` — header + shell standard ; **`formDirty={isDirty}` obligatoire** si champs éditables
+- skill agent `.cursor/skills/modal-form-dialog` — checklist dismiss / dirty / SMS (lire avant toute modale)
 - `modals/modalFormGuard.ts` — `useModalFormDirty` (baseline **après** reset seeds), `hasStackedOpenDialog`
 - `modals/ContactCreateModal.tsx` — contact create/edit
 - `modals/ConfirmDeleteModal.tsx` — dismiss si `!loading`

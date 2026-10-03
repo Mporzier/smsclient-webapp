@@ -2,7 +2,11 @@
 
 import { ConfirmLinkDeleteModal } from "@/components/smsclient/modals/ConfirmLinkDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
-import { CellTruncate } from "@/components/smsclient/ui";
+import {
+  CellTruncate,
+  CopyableLinkField,
+  copyTextToClipboard,
+} from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,7 +25,7 @@ import { useI18n } from "@/lib/i18n";
 import { createSmsShortLink, deleteSmsLink } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Copy, Link2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Link2, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import type {
@@ -81,12 +85,9 @@ export function LiensView({
 
   const copyToClipboard = useCallback(
     async (text: string) => {
-      try {
-        await navigator.clipboard.writeText(text);
-        toast(t("links.copied"));
-      } catch {
-        toast.error(t("links.copyFailed"));
-      }
+      const ok = await copyTextToClipboard(text);
+      if (ok) toast(t("links.copied"));
+      else toast.error(t("links.copyFailed"));
     },
     [t],
   );
@@ -161,24 +162,13 @@ export function LiensView({
         cell: ({ getValue }) => {
           const shortUrl = getValue<string>();
           return (
-            <div className="flex min-w-0 items-center gap-1">
-              <CellTruncate as="div" className="min-w-0 flex-1 text-primary">
-                {shortUrl}
-              </CellTruncate>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="size-7 shrink-0 rounded-full text-muted-foreground"
-                aria-label={t("links.copyShort")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void copyToClipboard(shortUrl);
-                }}
-              >
-                <Copy className="size-3.5" aria-hidden />
-              </Button>
-            </div>
+            <CopyableLinkField
+              value={shortUrl}
+              size="compact"
+              className="min-w-0"
+              copiedToast={t("links.copied")}
+              copyFailedToast={t("links.copyFailed")}
+            />
           );
         },
       },

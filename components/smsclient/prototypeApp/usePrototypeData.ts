@@ -35,6 +35,7 @@ export function usePrototypeData(route: AppRoute) {
   const profileState = useUserProfile();
   const userQrState = useUserQrCode(
     route === "qr-boutique" || route === "dashboard",
+    profileState.profile?.companyName,
   );
   const qrWheelState = useQrWheel(route === "qr-boutique");
   const trashState = useTrashItems(supabase, user?.id, route === "parametres");

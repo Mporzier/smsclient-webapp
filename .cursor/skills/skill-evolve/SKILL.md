@@ -25,7 +25,8 @@ Rule `.cursor/rules/skill-evolve.mdc` injectée chaque chat. Ce skill = détail.
 
 ## Interdit
 
-- **Implémenter** skill/rule sans proposition acceptée
+- **Implémenter** skill/rule spéculatif sans proposition acceptée
+- Omettre mise à jour skill/rule quand **`conventions-first`** s’applique (comportement validé, écart agent)
 - Spammer une proposition chaque message — max **une** proposition courte quand le signal est clair
 - Dupliquer une rule already always-on en skill « always » sans miroir rule
 - Skills décoratifs / one-shot
@@ -43,9 +44,13 @@ OK à implémenter ?
 
 Attendre **oui** / OK / go. Sinon stop.
 
-## Après acceptation
+## Après acceptation — ou sans proposition si conventions-first
 
 1. Skill : `.cursor/skills/<name>/SKILL.md` (frontmatter `name` + `description` triggers)
-2. Si always-on voulu : rule `.cursor/rules/<name>.mdc` `alwaysApply: true` (compressé) + note dans skill
-3. Catalogue : `smsclient-map` + `wiki/index.md` + `CLAUDE.md` / `AGENTS.md` si always-on
+2. Rule `.cursor/rules/<name>.mdc` `alwaysApply: true` (compressé) + note dans skill
+3. Catalogue : `smsclient-map` + `wiki/index.md` + `CLAUDE.md` / `AGENTS.md`
 4. Pas de test auto
+
+## Lié
+
+- Skill **`conventions-first`** — source de vérité avant impl ; mise à jour skills/rules obligatoire après écart

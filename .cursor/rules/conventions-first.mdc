@@ -1,0 +1,24 @@
+---
+description: Comportement valide = skills + wiki + refs ; écart → skill + always-on
+alwaysApply: true
+---
+
+# conventions-first (always-on)
+
+Miroir skill `.cursor/skills/conventions-first`.
+
+## Avant impl / copie UX ou flow
+
+1. `smsclient-map` → skill domaine (`modal-form-dialog`, `view-scoped-edit`, `next16-guard`, …)
+2. Wiki (`conventions-ui.md`, `index.md`, `hot.md`) si UI ou convention produit
+3. « Comme les autres » / « standard app » → **fichier référence** du skill, pas le seul fichier user a ouvert
+
+## Comportement validé manquant côté agent
+
+Fix code + **dans la même session** : skill (checklist, anti-patterns) + rule always-on miroir si besoin + `smsclient-map` / wiki / JSDoc shell partagé.
+
+Vaut **toutes** requêtes (modales, tables, hooks, QR, auth, …), pas un domaine isolé.
+
+## skill-evolve
+
+Idées nouvelles ou spec floue → toujours proposer avant gros skill. Convention **déjà tranchée** par l’user ou wiki → mettre à jour skills/rules sans re-demander OK process.

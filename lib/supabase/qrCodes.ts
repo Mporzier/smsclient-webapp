@@ -1,4 +1,34 @@
+import { buildDefaultQrWelcomeSmsTemplate } from "@/lib/qr/welcomeSmsDefaults";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function fetchProfileCompanyName(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("company_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return "";
+  return data?.company_name?.trim() ?? "";
+}
+
+/** Pose le SMS de bienvenue par défaut (nom entreprise en dur, prénom en tag). */
+export async function syncDefaultWelcomeSmsTemplate(
+  supabase: SupabaseClient,
+  userId: string,
+  companyName: string,
+): Promise<void> {
+  const welcome_sms_template = buildDefaultQrWelcomeSmsTemplate(companyName);
+  await supabase
+    .from("user_qr_codes")
+    .update({
+      welcome_sms_template,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+}
 
 export type UserQrCodeRecord = {
   id: string;
@@ -35,6 +65,10 @@ export async function getOrCreateUserQrCode(
   if (error) return { data: null, error: new Error(error.message) };
   if (data) return { data: data as UserQrCodeRecord, error: null };
 
+  const companyName = await fetchProfileCompanyName(supabase, userId);
+  const welcome_sms_template =
+    buildDefaultQrWelcomeSmsTemplate(companyName);
+
   for (let i = 0; i < 3; i++) {
     const slug = buildSlug();
     const ins = await supabase
@@ -44,6 +78,7 @@ export async function getOrCreateUserQrCode(
         slug,
         public_label: "Formulaire client",
         is_active: true,
+        welcome_sms_template,
       })
       .select("*")
       .single();

@@ -347,25 +347,30 @@ function AppShellInner({
                     <span className="text-chart-1">.fr</span>
                   </span>
                 </button>
-                <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+                <div
+                  className={cn(
+                    "flex min-w-0 shrink-0 items-center",
+                    headerBack ? "gap-3 sm:gap-4" : "gap-1 sm:gap-2",
+                  )}
+                >
                   {headerBack ? (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
-                      className="-ml-2 h-9 shrink-0 gap-1 rounded-lg bg-canvas px-2.5 text-sm font-semibold text-foreground hover:bg-canvas/80"
+                      className="h-9 shrink-0 gap-1 rounded-full py-0 pl-2 pr-2.5 text-sm leading-none font-semibold hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_10%)] dark:hover:bg-[color-mix(in_oklch,var(--secondary),black_22%)]"
                       aria-label={headerBack.ariaLabel}
                       onClick={headerBack.onBack}
                     >
                       <ChevronLeft
-                        className="h-4 w-4 shrink-0"
+                        className="size-4 shrink-0"
                         strokeWidth={2.25}
                         aria-hidden
                       />
                       {headerBack.label}
                     </Button>
                   ) : null}
-                  <h1 className="m-0 flex min-w-0 items-center gap-2.5 truncate text-xl font-semibold tracking-tight text-foreground">
+                  <h1 className="m-0 flex min-w-0 items-center gap-2.5 truncate text-xl font-semibold leading-none tracking-tight text-foreground">
                     <TitleIcon
                       className="size-6 shrink-0 text-primary"
                       strokeWidth={2.25}

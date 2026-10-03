@@ -158,3 +158,8 @@ export function BadgeFailed({ children }: { children: ReactNode }) {
     </span>
   );
 }
+
+export {
+  CopyableLinkField,
+  copyTextToClipboard,
+} from "@/components/smsclient/CopyableLinkField";

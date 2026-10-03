@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
-import { DEFAULT_QR_WELCOME_SMS_TEMPLATE } from "@/lib/qr/welcomeSmsDefaults";
+import { buildDefaultQrWelcomeSmsTemplate } from "@/lib/qr/welcomeSmsDefaults";
 import {
   getOrCreateUserQrCode,
   qrCaptureModeFromRecord,
@@ -26,7 +26,7 @@ function patchCaptureMode(
   };
 }
 
-export function useUserQrCode(enabled = true) {
+export function useUserQrCode(enabled = true, companyName?: string) {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
@@ -92,11 +92,39 @@ export function useUserQrCode(enabled = true) {
     [userId, supabase],
   );
 
+  const patchWelcomeSmsEnabled = useCallback((enabled: boolean) => {
+    setRecord((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        welcome_sms_enabled: enabled,
+        ...(enabled ? { wheel_enabled: false } : {}),
+      };
+    });
+  }, []);
+
   const setWelcomeSmsEnabled = useCallback(
     async (enabled: boolean) => {
-      await updateWelcomeSms({ enabled });
+      if (!userId) return;
+      let snapshot: UserQrCodeRecord | null = null;
+      setRecord((prev) => {
+        if (!prev) return prev;
+        snapshot = prev;
+        return {
+          ...prev,
+          welcome_sms_enabled: enabled,
+          ...(enabled ? { wheel_enabled: false } : {}),
+        };
+      });
+      if (!snapshot) return;
+      try {
+        await updateWelcomeSms({ enabled });
+      } catch (err) {
+        setRecord(snapshot);
+        throw err;
+      }
     },
-    [updateWelcomeSms],
+    [userId, updateWelcomeSms],
   );
 
   const setWelcomeSmsTemplate = useCallback(
@@ -152,12 +180,14 @@ export function useUserQrCode(enabled = true) {
     captureMode: qrCaptureModeFromRecord(record),
     welcomeSmsEnabled: record?.welcome_sms_enabled ?? false,
     welcomeSmsTemplate:
-      record?.welcome_sms_template ?? DEFAULT_QR_WELCOME_SMS_TEMPLATE,
+      record?.welcome_sms_template ??
+      buildDefaultQrWelcomeSmsTemplate(companyName ?? ""),
     loading,
     error,
     refresh,
     regenerate,
     setCaptureMode,
+    patchWelcomeSmsEnabled,
     setWelcomeSmsEnabled,
     setWelcomeSmsTemplate,
   };

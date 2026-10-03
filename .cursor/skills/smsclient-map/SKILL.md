@@ -7,7 +7,7 @@ description: >
 
 # smsclient-map
 
-Read `wiki/index.md` first (+ `wiki/hot.md`, `wiki/conventions-ui.md` si UI/modales). Max 4 fichiers par domaine (`view-scoped-edit`).
+Read skill **`conventions-first`** then `wiki/index.md` (+ `wiki/hot.md`). **Modales** → **`modal-form-dialog`**. Max 4 fichiers par domaine (`view-scoped-edit`).
 
 ## Skills location
 
@@ -25,7 +25,7 @@ Read `wiki/index.md` first (+ `wiki/hot.md`, `wiki/conventions-ui.md` si UI/moda
 | Domain       | Files                                                                                    |
 | ------------ | ---------------------------------------------------------------------------------------- |
 | Contacts     | `ContactsView.tsx`, `useContacts.ts`, `lib/supabase/clients.ts`                          |
-| Modales      | `modals/ContactCreateModal.tsx`, `modals/modalFormGuard.ts`, `ConfirmDeleteModal.tsx`    |
+| Modales      | skill **`modal-form-dialog`** → `FormDialogShell.tsx`, `CreateSmsLinkModal.tsx`, `modalFormGuard.ts` |
 | Tel / import | `lib/proto/smsUtils.ts`, `lib/import/contactImportMap.ts`, `ImportContactsModal.tsx`     |
 | Listes       | `DataTable.tsx`, `listColumnSizes.ts`                                                    |
 | Wizard       | `CreateCampaign/CampaignWizard.tsx`, `prototypeApp/useCampaignWizard.ts`                 |
@@ -41,6 +41,6 @@ Read `wiki/index.md` first (+ `wiki/hot.md`, `wiki/conventions-ui.md` si UI/moda
 ## Skills catalogue
 
 - **limits**: `no-heavy-cmds`, `no-verify-build` (+ rules always-on) — gagne sur superpowers ; propose cmds, jamais run
-- **smsclient**: `smsclient-map`, `view-scoped-edit`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`, `postgrest-in-chunk`
+- **smsclient**: **`conventions-first`**, `smsclient-map`, `view-scoped-edit`, `modal-form-dialog`, `test-debug-vitest`, `test-debug-playwright`, `next16-guard`, `token-diet`, `anti-loop`, `skill-evolve`, `postgrest-in-chunk`
 - **caveman**: `caveman`, `cavecrew`, `caveman-commit`, `caveman-compress`, `caveman-help`, `caveman-review`, `caveman-stats`
 - **obsidian**: `obsidian-markdown`, `obsidian-cli`, `obsidian-bases`, `json-canvas`

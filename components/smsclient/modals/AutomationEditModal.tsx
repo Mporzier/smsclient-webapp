@@ -1,6 +1,10 @@
 "use client";
 
-import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
+import {
+  ModalSmsMessageField,
+  modalFieldLabelCls,
+  modalHintTextCls,
+} from "@/components/smsclient/modals/ModalSmsMessageField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,14 +26,13 @@ import { useCallback, useMemo, useState } from "react";
 import {
   dialogContentZCls,
   dialogOverlayCls,
-  dialogPopoverZCls,
   formDialogContentCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 import { FormDialogHeader } from "./FormDialogHeader";
 
-const fieldLabelCls = "text-xs font-semibold text-foreground";
-const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
+const fieldLabelCls = modalFieldLabelCls;
+const hintTextCls = modalHintTextCls;
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
@@ -245,31 +248,17 @@ export function AutomationEditModal({
               </div>
 
               <div className={sectionCls}>
-                <div className="space-y-1.5">
-                  <Label className={fieldLabelCls}>
-                    Message SMS{" "}
-                    <span className="text-destructive" aria-hidden>
-                      *
-                    </span>
-                  </Label>
-                  <SmsMessageComposer
-                    value={body}
-                    onChange={(next) => {
-                      setBody(next);
-                      setError(null);
-                    }}
-                    hasError={Boolean(error)}
-                    estimateSample={estimateSample}
-                    customFieldDefs={customFieldDefs}
-                    reserveStop
-                    popoverClassName={dialogPopoverZCls}
-                  />
-                  {error ? (
-                    <p className={cn(hintTextCls, "text-destructive")}>
-                      {error}
-                    </p>
-                  ) : null}
-                </div>
+                <ModalSmsMessageField
+                  value={body}
+                  onChange={(next) => {
+                    setBody(next);
+                    setError(null);
+                  }}
+                  error={error}
+                  estimateSample={estimateSample}
+                  customFieldDefs={customFieldDefs}
+                  disabled={saving}
+                />
               </div>
             </div>
 

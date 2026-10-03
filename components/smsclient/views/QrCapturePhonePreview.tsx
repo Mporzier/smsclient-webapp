@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { DEFAULT_QR_WELCOME_SMS_TEMPLATE } from "@/lib/qr/welcomeSmsDefaults";
+import { useI18n } from "@/lib/i18n";
+import { buildDefaultQrWelcomeSmsTemplate } from "@/lib/qr/welcomeSmsDefaults";
 import { previewSmsMessage } from "@/lib/proto/smsPersonalization";
 import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
 import type { QrWheelConfig } from "@/lib/types/qrWheel";
@@ -266,8 +267,8 @@ function WelcomeSmsScreen({
   sender: string;
 }) {
   const displayMessage =
-    previewSmsMessage(message.trim() || DEFAULT_QR_WELCOME_SMS_TEMPLATE) ||
-    "Bonjour Marie, merci pour votre inscription !";
+    previewSmsMessage(message.trim()) ||
+    "Bienvenue, Marie ! Bienvenue chez Boutique ! Nous sommes ravis de vous avoir parmi nous.";
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-[#f2f2f7]">
@@ -443,6 +444,11 @@ export function QrCapturePhonePreview({
   fill = false,
   className,
 }: QrCapturePhonePreviewProps) {
+  const { t } = useI18n();
+  const defaultWelcomeMessage = useMemo(
+    () => buildDefaultQrWelcomeSmsTemplate(senderName),
+    [senderName],
+  );
   const flowSteps = useMemo(
     () => flowStepsForMode(captureMode),
     [captureMode],
@@ -496,14 +502,14 @@ export function QrCapturePhonePreview({
         <div className="flex items-center justify-between gap-2">
           <h3
             className={cn(
-              "m-0 font-black text-slate-900",
-              compact || fill ? "text-[11px]" : "text-sm",
+              "m-0 font-semibold leading-tight tracking-tight text-foreground",
+              compact || fill ? "text-sm" : "text-base",
             )}
           >
-            Aperçu parcours client
+            {t("qr.hub.parcoursPreview.title")}
           </h3>
           {fill ? (
-            <span className="text-[9px] font-semibold tabular-nums text-slate-400">
+            <span className="text-xs font-medium tabular-nums text-muted-foreground">
               {activeStep + 1}/{flowSteps.length}
             </span>
           ) : null}
@@ -584,7 +590,9 @@ export function QrCapturePhonePreview({
                       ) : null}
                       {step.id === "welcome" ? (
                         <WelcomeSmsScreen
-                          message={welcomeSmsTemplate ?? DEFAULT_QR_WELCOME_SMS_TEMPLATE}
+                          message={
+                            welcomeSmsTemplate ?? defaultWelcomeMessage
+                          }
                           sender={senderName}
                         />
                       ) : null}

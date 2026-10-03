@@ -9,7 +9,9 @@ Miroir skill `.cursor/skills/skill-evolve`.
 
 Quand gap / skill stale / workflow récurrent / erreur répétée → **proposer** amélioration ou nouveau skill/rule.
 
-**Jamais** créer/éditer skill ou rule always-on sans OK user.
+**OK user requis** pour idées nouvelles / spec floue. **Exception** : convention produit **déjà validée** (user corrige le process ou `conventions-first`) → skill + rule always-on dans la même session sans re-proposer.
+
+Voir rule **`conventions-first`**.
 
 Format court :
 

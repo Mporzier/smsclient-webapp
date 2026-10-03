@@ -1,12 +1,12 @@
 "use client";
 
-import { QrCapturePreviewModal } from "@/components/smsclient/modals/QrCapturePreviewModal";
 import { QrWelcomeSmsSettingsModal } from "@/components/smsclient/modals/QrWelcomeSmsSettingsModal";
 import { QrWheelSettingsModal } from "@/components/smsclient/modals/QrWheelSettingsModal";
-import { brandBtnCls } from "@/components/smsclient/modals/modalChrome";
+import { CopyableLinkField } from "@/components/smsclient/CopyableLinkField";
 import { QrCaptureComplianceCard } from "@/components/smsclient/views/QrCaptureComplianceCard";
 import { QrCapturePhonePreview } from "@/components/smsclient/views/QrCapturePhonePreview";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
@@ -15,22 +15,58 @@ import type { QrCaptureMode } from "@/lib/supabase/qrCodes";
 import type { QrWheelConfig } from "@/lib/types/qrWheel";
 import {
   ChevronRight,
-  CircleCheck,
   Copy,
   Download,
   Gift,
   Lightbulb,
+  ListPlus,
   MessageCircle,
+  type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 
 function downloadQrPng(dataUrl: string) {
   const anchor = document.createElement("a");
   anchor.href = dataUrl;
   anchor.download = "qr-code-boutique.png";
   anchor.click();
+}
+
+const qrPanelSectionTitleCls =
+  "m-0 text-base font-semibold leading-tight tracking-tight text-foreground";
+const qrPanelSectionDescCls =
+  "m-0 mt-1.5 text-sm leading-snug text-muted-foreground";
+const qrPanelFieldLabelCls =
+  "m-0 text-sm font-semibold leading-tight text-foreground";
+const qrCardTitleCls =
+  "m-0 text-sm font-semibold leading-tight text-foreground";
+
+function QrPanelSectionHeader({
+  title,
+  description,
+  className,
+}: {
+  title: string;
+  description?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("shrink-0", className)}>
+      <h3 className={qrPanelSectionTitleCls}>{title}</h3>
+      {description ? (
+        <p className={qrPanelSectionDescCls}>{description}</p>
+      ) : null}
+    </div>
+  );
 }
 
 function QrParcoursIllustration({
@@ -113,12 +149,256 @@ function QrActionButton({
   );
 }
 
+type AfterSignupTone = "blue" | "amber" | "violet";
+
+const afterSignupToneStyles: Record<
+  AfterSignupTone,
+  { idle: string; active: string; iconIdle: string; iconActive: string }
+> = {
+  blue: {
+    idle: "border-2 border-solid border-border bg-card shadow-none",
+    active:
+      "border-2 border-solid border-primary bg-primary/[0.04] shadow-sm",
+    iconIdle: "border-border bg-muted/60 text-muted-foreground",
+    iconActive: "border-primary/20 bg-primary/10 text-primary",
+  },
+  amber: {
+    idle: "border-2 border-solid border-border bg-card shadow-none",
+    active:
+      "border-2 border-solid border-amber-400 bg-amber-50/70 shadow-sm",
+    iconIdle: "border-border bg-muted/60 text-muted-foreground",
+    iconActive: "border-amber-300/80 bg-amber-100/80 text-amber-700",
+  },
+  violet: {
+    idle: "border-2 border-solid border-border bg-card shadow-none",
+    active: "border-2 border-solid border-border bg-card shadow-none",
+    iconIdle: "border-violet-200/70 bg-violet-50/80 text-violet-600",
+    iconActive: "border-violet-200/70 bg-violet-50/80 text-violet-600",
+  },
+};
+
+function AfterSignupCardButton({
+  className,
+  ...props
+}: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className={cn(
+        "h-8 shrink-0 px-2.5 text-xs font-medium whitespace-nowrap",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+type AfterSignupOptionCardProps = {
+  variant: "toggle" | "form";
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  tone: AfterSignupTone;
+  active?: boolean;
+  compactFill?: boolean;
+  trailing?: ReactNode;
+  onOpenSettings?: () => void;
+};
+
+function AfterSignupOptionCard({
+  variant,
+  icon: Icon,
+  title,
+  description,
+  tone,
+  active = false,
+  compactFill,
+  trailing,
+  onOpenSettings,
+}: AfterSignupOptionCardProps) {
+  const styles = afterSignupToneStyles[tone];
+  const cardShell = cn(
+    "min-h-0 rounded-xl p-3 transition-[border-color,background-color,box-shadow] duration-300 ease-out",
+    compactFill ? "flex flex-1 flex-col justify-center" : "min-h-[5.5rem]",
+    active ? styles.active : styles.idle,
+  );
+
+  const iconEl = (
+    <span
+      className={cn(
+        "grid h-9 w-9 shrink-0 place-items-center rounded-lg border",
+        active ? styles.iconActive : styles.iconIdle,
+      )}
+    >
+      <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+    </span>
+  );
+
+  const textBlock = (
+    <div className="min-w-0 flex-1">
+      <h4 className="m-0 text-sm font-semibold leading-snug text-foreground">
+        {title}
+      </h4>
+      <p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </div>
+  );
+
+  if (variant === "form") {
+    return (
+      <div className={cardShell}>
+        <div className="flex items-center gap-3">
+          {iconEl}
+          {textBlock}
+          {trailing ? (
+            <div className="flex shrink-0 items-center pl-1">{trailing}</div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  const mainText = onOpenSettings ? (
+    <button
+      type="button"
+      className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm"
+      onClick={onOpenSettings}
+    >
+      {textBlock}
+    </button>
+  ) : (
+    textBlock
+  );
+
+  return (
+    <div className={cardShell}>
+      <div className="flex items-center gap-3">
+        {iconEl}
+        <div className="flex min-w-0 flex-1 items-center">{mainText}</div>
+        {trailing ? (
+          <div className="flex shrink-0 items-center gap-2 pl-1">
+            {trailing}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** UI exclusive : 0 ou 1 toggle actif — jamais les deux. */
+function useExclusiveAfterSignupToggles(
+  welcomeFromServer: boolean,
+  wheelFromServer: boolean,
+) {
+  const [welcomeUi, setWelcomeUi] = useState(welcomeFromServer);
+  const [wheelUi, setWheelUi] = useState(wheelFromServer);
+  const pendingRef = useRef(false);
+
+  useEffect(() => {
+    if (pendingRef.current) return;
+    setWelcomeUi(welcomeFromServer);
+    setWheelUi(wheelFromServer);
+  }, [welcomeFromServer, wheelFromServer]);
+
+  const applyWelcome = useCallback((next: boolean) => {
+    pendingRef.current = true;
+    setWelcomeUi(next);
+    if (next) setWheelUi(false);
+  }, []);
+
+  const applyWheel = useCallback((next: boolean) => {
+    pendingRef.current = true;
+    setWheelUi(next);
+    if (next) setWelcomeUi(false);
+  }, []);
+
+  const rollbackToServer = useCallback(() => {
+    setWelcomeUi(welcomeFromServer);
+    setWheelUi(wheelFromServer);
+  }, [welcomeFromServer, wheelFromServer]);
+
+  const endPending = useCallback(() => {
+    pendingRef.current = false;
+  }, []);
+
+  return {
+    welcomeUi,
+    wheelUi,
+    applyWelcome,
+    applyWheel,
+    rollbackToServer,
+    endPending,
+  };
+}
+
+function AfterSignupToggleCard(
+  props: Omit<
+    AfterSignupOptionCardProps,
+    "variant" | "trailing" | "onOpenSettings"
+  > & {
+    checked: boolean;
+    /** Désactive uniquement le bouton Configurer (pas le switch). */
+    configureDisabled?: boolean;
+    switchAriaLabel: string;
+    configureLabel: string;
+    onCheckedChange: (checked: boolean) => Promise<void>;
+    onConfigure: () => void;
+    tone: Exclude<AfterSignupTone, "violet">;
+  },
+) {
+  const {
+    checked,
+    configureDisabled,
+    switchAriaLabel,
+    configureLabel,
+    onCheckedChange,
+    onConfigure,
+    tone,
+    ...rest
+  } = props;
+
+  return (
+    <AfterSignupOptionCard
+      {...rest}
+      variant="toggle"
+      tone={tone}
+      active={checked}
+      trailing={
+        <div
+          className="flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <AfterSignupCardButton
+            disabled={!checked || configureDisabled}
+            onClick={onConfigure}
+          >
+            {configureLabel}
+          </AfterSignupCardButton>
+          <Switch
+            checked={checked}
+            aria-label={switchAriaLabel}
+            onCheckedChange={(next) => onCheckedChange(next)}
+          />
+        </div>
+      }
+    />
+  );
+}
+
 export type QrCollectQrPanelProps = {
   publicUrl: string;
   loading: boolean;
   companyName?: string;
   captureMode: QrCaptureMode;
-  onCaptureModeChange: (mode: QrCaptureMode) => Promise<void>;
+  welcomeSmsEnabled: boolean;
+  onWelcomeSmsEnabledChange: (enabled: boolean) => Promise<void>;
+  wheelEnabled: boolean;
+  onWheelEnabledChange: (enabled: boolean) => Promise<void>;
+  onEditSignupForm?: () => void;
   welcomeSmsTemplate: string;
   onWelcomeSmsTemplateChange: (template: string) => Promise<void>;
   wheelConfig: QrWheelConfig | null;
@@ -139,7 +419,11 @@ export function QrCollectQrPanel({
   loading,
   companyName,
   captureMode,
-  onCaptureModeChange,
+  welcomeSmsEnabled,
+  onWelcomeSmsEnabledChange,
+  wheelEnabled,
+  onWheelEnabledChange,
+  onEditSignupForm,
   welcomeSmsTemplate,
   onWelcomeSmsTemplateChange,
   wheelConfig,
@@ -160,25 +444,59 @@ export function QrCollectQrPanel({
   const [linkCopied, setLinkCopied] = useState(false);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const [wheelModalOpen, setWheelModalOpen] = useState(false);
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
-  const captureModeOptions = useMemo(
-    () =>
-      [
-        {
-          mode: "welcome" as const,
-          title: t("qr.mode.welcome.title"),
-          description: t("qr.mode.welcome.desc"),
-          icon: MessageCircle,
-        },
-        {
-          mode: "wheel" as const,
-          title: t("qr.mode.wheel.title"),
-          description: t("qr.mode.wheel.desc"),
-          icon: Gift,
-        },
-      ] as const,
-    [t],
+  const {
+    welcomeUi,
+    wheelUi,
+    applyWelcome,
+    applyWheel,
+    rollbackToServer,
+    endPending,
+  } = useExclusiveAfterSignupToggles(welcomeSmsEnabled, wheelEnabled);
+
+  const welcomeToggleSeqRef = useRef(0);
+  const wheelToggleSeqRef = useRef(0);
+
+  const handleWelcomeToggle = useCallback(
+    async (next: boolean) => {
+      applyWelcome(next);
+      const seq = ++welcomeToggleSeqRef.current;
+      try {
+        await onWelcomeSmsEnabledChange(next);
+        if (seq !== welcomeToggleSeqRef.current) return;
+      } catch (err) {
+        if (seq === welcomeToggleSeqRef.current) {
+          rollbackToServer();
+        }
+        throw err;
+      } finally {
+        if (seq === welcomeToggleSeqRef.current) {
+          endPending();
+        }
+      }
+    },
+    [applyWelcome, endPending, onWelcomeSmsEnabledChange, rollbackToServer],
+  );
+
+  const handleWheelToggle = useCallback(
+    async (next: boolean) => {
+      applyWheel(next);
+      const seq = ++wheelToggleSeqRef.current;
+      try {
+        await onWheelEnabledChange(next);
+        if (seq !== wheelToggleSeqRef.current) return;
+      } catch (err) {
+        if (seq === wheelToggleSeqRef.current) {
+          rollbackToServer();
+        }
+        throw err;
+      } finally {
+        if (seq === wheelToggleSeqRef.current) {
+          endPending();
+        }
+      }
+    },
+    [applyWheel, endPending, onWheelEnabledChange, rollbackToServer],
   );
 
   useEffect(() => {
@@ -202,20 +520,19 @@ export function QrCollectQrPanel({
     };
   }, [publicUrl]);
 
-  const handleModeSelect = useCallback(
-    (mode: Exclude<QrCaptureMode, "none">) => {
-      const nextMode: QrCaptureMode = captureMode === mode ? "none" : mode;
-      void onCaptureModeChange(nextMode);
-    },
-    [captureMode, onCaptureModeChange],
+  const editSignupFormButton = (
+    <AfterSignupCardButton
+      disabled={!onEditSignupForm}
+      onClick={() => onEditSignupForm?.()}
+    >
+      {t("qr.after.editSignupForm")}
+    </AfterSignupCardButton>
   );
 
   const qrCodeCardHero = (
     <div className="mx-auto flex h-full min-h-[248px] w-full max-w-[252px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50 p-3 sm:mx-0 sm:w-[252px] sm:self-stretch">
       <div className="mb-1.5 flex shrink-0 items-center justify-between gap-1.5">
-        <h3 className="m-0 text-xs font-black leading-tight text-slate-900">
-          {t("qr.signupTitle")}
-        </h3>
+        <h3 className={qrCardTitleCls}>{t("qr.signupTitle")}</h3>
         <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
           {t("qr.active")}
         </span>
@@ -228,7 +545,7 @@ export function QrCollectQrPanel({
             width={168}
             height={168}
             unoptimized
-            className="h-[168px] w-[168px] max-h-full max-w-full"
+            className="h-[168px] w-[168px] max-h-full max-w-full object-contain"
           />
         ) : (
           <div className="h-[168px] w-[168px] animate-pulse rounded-lg bg-slate-200" />
@@ -243,9 +560,7 @@ export function QrCollectQrPanel({
   const qrCodeCardCompact = (
     <div className="mx-auto flex aspect-square w-full max-w-[200px] shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50 p-2">
       <div className="mb-1 flex shrink-0 items-center justify-between gap-1.5">
-        <h3 className="m-0 text-[11px] font-black leading-tight text-slate-900">
-          {t("qr.signupTitle")}
-        </h3>
+        <h3 className={qrCardTitleCls}>{t("qr.signupTitle")}</h3>
         <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
           {t("qr.active")}
         </span>
@@ -339,18 +654,27 @@ export function QrCollectQrPanel({
   );
 
   const configColumn = (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div
+      className={cn(
+        "flex min-w-0 flex-col gap-2",
+        showParcoursIllustration &&
+          "h-full min-h-0 flex-1 overflow-hidden",
+      )}
+    >
       {showParcoursIllustration ? (
-        <section className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <section className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-stretch">
           {qrCodeCardHero}
           <div className="flex min-h-[248px] min-w-0 flex-1 flex-col sm:h-full sm:self-stretch">
             <div className="flex min-h-0 flex-[1_1_0] flex-col justify-center py-1">
-              <p className="m-0 mb-1.5 text-[11px] font-black text-slate-600">
+              <p className={cn(qrPanelFieldLabelCls, "mb-1.5")}>
                 {t("qr.signupLink")}
               </p>
-              <div className="flex min-h-[2.75rem] min-w-0 items-center truncate rounded-lg border border-[#dfe6f2] bg-slate-50/80 px-3 text-[11px] font-semibold text-slate-700">
-                {publicUrl || "—"}
-              </div>
+              <CopyableLinkField
+                value={publicUrl}
+                size="compact"
+                copiedToast={t("qr.hub.linkModal.copiedToast")}
+              />
             </div>
             <div className="flex min-h-0 flex-[1_1_0] items-stretch py-1">
               <div className="grid h-full min-h-[3.25rem] w-full grid-cols-3 gap-2">
@@ -399,16 +723,66 @@ export function QrCollectQrPanel({
             </div>
           </div>
         </section>
+
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-slate-100 pt-2">
+                <QrPanelSectionHeader
+                  className="mb-1.5"
+                  title={t("qr.afterTitle")}
+                  description={t("qr.afterDesc")}
+                />
+
+                <div
+                  className="flex min-h-0 flex-1 flex-col gap-2"
+                  aria-label={t("qr.afterAria")}
+                >
+                  <AfterSignupToggleCard
+                    compactFill
+                    icon={MessageCircle}
+                    title={t("qr.mode.welcome.title")}
+                    description={t("qr.mode.welcome.desc")}
+                    checked={welcomeUi}
+                    tone="blue"
+                    configureLabel={t("qr.configure")}
+                    switchAriaLabel={t("qr.mode.welcome.title")}
+                    onCheckedChange={handleWelcomeToggle}
+                    onConfigure={() => setWelcomeModalOpen(true)}
+                  />
+                  <AfterSignupToggleCard
+                    compactFill
+                    icon={Gift}
+                    title={t("qr.mode.wheel.title")}
+                    description={t("qr.mode.wheel.desc")}
+                    checked={wheelUi}
+                    tone="amber"
+                    configureLabel={t("qr.configure")}
+                    switchAriaLabel={t("qr.mode.wheel.title")}
+                    onCheckedChange={handleWheelToggle}
+                    onConfigure={() => setWheelModalOpen(true)}
+                  />
+                  <AfterSignupOptionCard
+                    variant="form"
+                    compactFill
+                    tone="violet"
+                    icon={ListPlus}
+                    title={t("qr.after.form.title")}
+                    description={t("qr.after.form.desc")}
+                    trailing={editSignupFormButton}
+                  />
+                </div>
+              </div>
+        </div>
       ) : (
         <>
           {qrCodeCardCompact}
           <div className="min-w-0">
-            <p className="m-0 mb-1 text-[11px] font-black text-slate-600">
+            <p className={cn(qrPanelFieldLabelCls, "mb-1")}>
               {t("qr.signupLink")}
             </p>
-            <div className="min-w-0 truncate rounded-lg border border-[#dfe6f2] bg-slate-50/80 px-2 py-1 text-[11px] font-semibold text-slate-700">
-              {publicUrl || "—"}
-            </div>
+            <CopyableLinkField
+              value={publicUrl}
+              size="compact"
+              copiedToast={t("qr.hub.linkModal.copiedToast")}
+            />
           </div>
           {downloadError ? (
             <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-900">
@@ -416,146 +790,52 @@ export function QrCollectQrPanel({
             </p>
           ) : null}
           <div className="grid grid-cols-3 gap-1.5">{downloadActions}</div>
+
+          <div className="border-t border-slate-100 pt-2">
+            <QrPanelSectionHeader
+              className="mb-2"
+              title={t("qr.afterTitle")}
+              description={t("qr.afterDesc")}
+            />
+            <div
+              className="grid grid-cols-1 gap-2"
+              aria-label={t("qr.afterAria")}
+            >
+              <AfterSignupToggleCard
+                icon={MessageCircle}
+                title={t("qr.mode.welcome.title")}
+                description={t("qr.mode.welcome.desc")}
+                checked={welcomeUi}
+                tone="blue"
+                configureLabel={t("qr.configure")}
+                switchAriaLabel={t("qr.mode.welcome.title")}
+                onCheckedChange={handleWelcomeToggle}
+                onConfigure={() => setWelcomeModalOpen(true)}
+              />
+              <AfterSignupToggleCard
+                icon={Gift}
+                title={t("qr.mode.wheel.title")}
+                description={t("qr.mode.wheel.desc")}
+                checked={wheelUi}
+                tone="amber"
+                configureLabel={t("qr.configure")}
+                switchAriaLabel={t("qr.mode.wheel.title")}
+                onCheckedChange={handleWheelToggle}
+                onConfigure={() => setWheelModalOpen(true)}
+              />
+              <AfterSignupOptionCard
+                variant="form"
+                tone="violet"
+                icon={ListPlus}
+                title={t("qr.after.form.title")}
+                description={t("qr.after.form.desc")}
+                trailing={editSignupFormButton}
+              />
+            </div>
+          </div>
         </>
       )}
-
-              <div className="border-t border-slate-100 pt-2">
-                <div className="mb-2">
-                  <h3 className="m-0 text-xs font-black text-slate-900">
-                    {t("qr.afterTitle")}
-                  </h3>
-                  <p className="m-0 mt-0.5 text-[10px] font-semibold leading-snug text-slate-500">
-                    {t("qr.afterDesc")}
-                  </p>
-                </div>
-
-                <div
-                  className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-                  role="radiogroup"
-                  aria-label={t("qr.afterAria")}
-                >
-                  {captureModeOptions.map((option) => {
-                    const Icon = option.icon;
-                    const selected = captureMode === option.mode;
-                    return (
-                      <button
-                        key={option.mode}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => handleModeSelect(option.mode)}
-                        className={cn(
-                          "relative flex cursor-pointer flex-col items-start gap-2 rounded-xl border p-2.5 text-left transition-[border-color,box-shadow] duration-200",
-                          selected
-                            ? option.mode === "wheel"
-                              ? "border-2 border-amber-400 bg-gradient-to-br from-amber-50/90 to-orange-50/50 ring-2 ring-amber-300/60 ring-offset-1"
-                              : "border-2 border-[#2f6fed] bg-[#eef4ff] ring-2 ring-[#2f6fed]/25 ring-offset-1"
-                            : "border border-slate-200 bg-white hover:border-slate-300",
-                        )}
-                      >
-                        {selected ? (
-                          <CircleCheck
-                            className="absolute right-2 top-2 h-4 w-4 text-emerald-500"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
-                        ) : null}
-                        <span
-                          className={cn(
-                            "grid h-8 w-8 place-items-center rounded-lg border",
-                            selected
-                              ? option.mode === "wheel"
-                                ? "border-amber-200/80 bg-white/80 text-amber-600"
-                                : "border-[#2f6fed]/20 bg-white text-[#2f6fed]"
-                              : "border-slate-200 bg-slate-50 text-slate-400",
-                          )}
-                        >
-                          <Icon className="h-4 w-4" aria-hidden />
-                        </span>
-                        <span>
-                          <span className="block text-xs font-black text-slate-900">
-                            {option.title}
-                          </span>
-                          <span className="mt-0.5 block text-[10px] font-semibold leading-snug text-slate-500">
-                            {option.description}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="relative mt-3 min-h-[52px]">
-                  <div
-                    className={cn(
-                      "transition-all duration-200 ease-out",
-                      captureMode === "welcome"
-                        ? "translate-y-0 opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "welcome"}
-                  >
-                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-[#2f6fed]/15 bg-[#eef4ff]/40 p-2.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={templateSaving}
-                        onClick={() => setWelcomeModalOpen(true)}
-                      >
-                        {t("qr.configure")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div
-                    className={cn(
-                      "transition-all duration-200 ease-out",
-                      captureMode === "wheel"
-                        ? "translate-y-0 opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 -translate-y-1 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "wheel"}
-                  >
-                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-2.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={wheelSaving}
-                        onClick={() => setPreviewModalOpen(true)}
-                      >
-                        {t("qr.preview")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className={cn(brandBtnCls, "h-8 px-3 text-xs")}
-                        disabled={wheelSaving}
-                        onClick={() => setWheelModalOpen(true)}
-                      >
-                        {t("qr.configure")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <p
-                    className={cn(
-                      "m-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-[10px] font-semibold text-slate-500 transition-opacity duration-200",
-                      captureMode === "none"
-                        ? "relative opacity-100"
-                        : "pointer-events-none absolute inset-x-0 top-0 opacity-0",
-                    )}
-                    aria-hidden={captureMode !== "none"}
-                  >
-                    {t("qr.noneActive")}
-                  </p>
-                </div>
-              </div>
-        </div>
+    </div>
   );
 
   const loadingOverlay = loading ? (
@@ -591,7 +871,7 @@ export function QrCollectQrPanel({
         {showParcoursIllustration ? (
           <>
             <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:h-full lg:w-[60%] lg:max-w-[60%] lg:flex-none lg:shrink-0">
-              <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4">
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-4">
                 {configColumn}
                 {loadingOverlay}
               </div>
@@ -645,6 +925,7 @@ export function QrCollectQrPanel({
         open={welcomeModalOpen}
         onClose={() => setWelcomeModalOpen(false)}
         template={welcomeSmsTemplate}
+        companyName={companyName}
         saving={templateSaving}
         onSave={async (template) => {
           setTemplateSaving(true);
@@ -654,13 +935,6 @@ export function QrCollectQrPanel({
             setTemplateSaving(false);
           }
         }}
-      />
-
-      <QrCapturePreviewModal
-        open={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        wheelConfig={wheelConfig}
-        wheelLoading={wheelLoading}
       />
 
       <QrWheelSettingsModal

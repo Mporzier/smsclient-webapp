@@ -10,6 +10,7 @@ import {
 import type { AppRoute } from "@/lib/proto/routes";
 import type { ReactNode } from "react";
 import { toast } from "@/components/ui/sonner";
+import { requestParametresSection } from "@/components/smsclient/views/parametres/parametresNav";
 import type { PrototypeAppContext } from "../usePrototypeApp";
 
 const SETTINGS_ROUTES = new Set<AppRoute>([
@@ -44,23 +45,55 @@ export function renderSettingsRoute(
           error={userQrState.error}
           companyName={profileState.profile?.companyName}
           captureMode={userQrState.captureMode}
-          onCaptureModeChange={async (mode) => {
-            if (mode === "wheel") {
-              qrWheelState.patchEnabled(true);
-            } else {
+          welcomeSmsEnabled={userQrState.welcomeSmsEnabled}
+          onWelcomeSmsEnabledChange={async (enabled) => {
+            if (enabled) {
               qrWheelState.patchEnabled(false);
             }
-            try {
-              await userQrState.setCaptureMode(mode);
-              if (
-                mode === "wheel" &&
-                (qrWheelState.config?.segments.length ?? 0) === 0
-              ) {
-                await qrWheelState.enableWithDefaults();
-              }
-            } catch {
-              /* rollback optimiste */
+            await userQrState.setWelcomeSmsEnabled(enabled);
+            void qrWheelState.refresh(true);
+          }}
+          wheelEnabled={qrWheelState.config?.enabled ?? false}
+          onWheelEnabledChange={async (enabled) => {
+            if (enabled) {
+              userQrState.patchWelcomeSmsEnabled(false);
             }
+            modals.setQrWheelSaving(true);
+            const snapshot = qrWheelState.config;
+            if (snapshot) {
+              qrWheelState.patchEnabled(enabled);
+            }
+            try {
+              if (enabled) {
+                if ((snapshot?.segments.length ?? 0) === 0) {
+                  await qrWheelState.enableWithDefaults();
+                } else if (snapshot) {
+                  await qrWheelState.saveAll({
+                    ...snapshot,
+                    enabled: true,
+                  });
+                }
+              } else if (snapshot) {
+                await qrWheelState.saveAll({
+                  ...snapshot,
+                  enabled: false,
+                });
+              }
+            } catch (err) {
+              if (snapshot) {
+                qrWheelState.patchEnabled(snapshot.enabled);
+              }
+              void userQrState.refresh(true);
+              void qrWheelState.refresh(true);
+              throw err;
+            } finally {
+              modals.setQrWheelSaving(false);
+            }
+            void userQrState.refresh(true);
+          }}
+          onEditSignupForm={() => {
+            requestParametresSection("champs-perso");
+            go("parametres");
           }}
           welcomeSmsTemplate={userQrState.welcomeSmsTemplate}
           onWelcomeSmsTemplateChange={userQrState.setWelcomeSmsTemplate}
@@ -71,6 +104,7 @@ export function renderSettingsRoute(
             modals.setQrWheelSaving(true);
             try {
               await qrWheelState.saveAll(config);
+              await userQrState.refresh(true);
             } finally {
               modals.setQrWheelSaving(false);
             }
@@ -79,6 +113,7 @@ export function renderSettingsRoute(
             modals.setQrWheelSaving(true);
             try {
               await qrWheelState.enableWithDefaults();
+              await userQrState.refresh(true);
             } finally {
               modals.setQrWheelSaving(false);
             }

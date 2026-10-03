@@ -7,7 +7,7 @@ description: >
 
 # view-scoped-edit
 
-Read skill `smsclient-map` first (+ `wiki/conventions-ui.md` si modale / tel / DataTable). Then **max 4 files** unless user asks broader refactor.
+Read skill `smsclient-map` first. **Modale formulaire** → skill **`modal-form-dialog`** (obligatoire). Tel / DataTable → `wiki/conventions-ui.md`. Then **max 4 files** unless user asks broader refactor.
 
 ## Per domain — read only these
 

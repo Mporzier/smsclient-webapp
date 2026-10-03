@@ -51,9 +51,10 @@ Superpowers **ne** font **pas** lancer build/tsc/lint/install/dlx/Task ici. Plan
 - `token-economy` — anti-boucle + doute→question + lectures/edits frugales (`anti-loop`, `token-diet`)
 - `no-git-commit` — pas de `git commit` / `git push` auto
 - `caveman` — sortie compressée (full) ; off = `stop caveman` / `normal mode`
-- `skill-evolve` — proposer improve/add skill avant d’implémenter
+- `conventions-first` — comportement valide = skills + wiki + refs ; écart → skill + rule (`conventions-first`, `modal-form-dialog`, …)
+- `skill-evolve` — proposer skill si spec floue ; si convention déjà validée → mettre à jour sans re-demander OK process
 
-Skills détail (manuel / trigger) : `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`, `no-git-commit`, `skill-evolve`, `smsclient-map`, …
+Skills détail (manuel / trigger) : `conventions-first`, `modal-form-dialog`, `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`, `no-git-commit`, `skill-evolve`, `smsclient-map`, …
 
 ## Vérif manuelle (user lance — agent propose seulement)
 

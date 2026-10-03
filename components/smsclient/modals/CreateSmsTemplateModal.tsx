@@ -9,7 +9,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
+import {
+  ModalSmsMessageField,
+  modalFieldLabelCls,
+  modalHintTextCls,
+} from "@/components/smsclient/modals/ModalSmsMessageField";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import { SMS_PRENOM_PREVIEW_SAMPLE } from "@/lib/proto/smsPersonalization";
@@ -28,7 +32,6 @@ import { FormDialogHeader } from "./FormDialogHeader";
 import {
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
-  dialogPopoverZCls,
   formDialogContentCls,
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
@@ -61,9 +64,9 @@ type CreateSmsTemplateModalProps = {
   customFieldDefs?: readonly CustomFieldDef[];
 };
 
-const fieldLabelCls = "text-xs font-semibold text-foreground";
+const fieldLabelCls = modalFieldLabelCls;
 const fieldMetaCls = "text-xs font-normal text-muted-foreground";
-const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
+const hintTextCls = modalHintTextCls;
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
@@ -272,34 +275,21 @@ export function CreateSmsTemplateModal({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <span className={cn(fieldLabelCls, "block")}>
-              {t("templates.field.body")}{" "}
-              <span className="text-destructive">*</span>
-            </span>
-            <SmsMessageComposer
-              value={body}
-              onChange={(next) => {
-                setBody(next);
-                setBodyError(null);
-                setSaveError(null);
-              }}
-              placeholder={t("templates.field.bodyPlaceholder")}
-              hasError={Boolean(bodyError)}
-              estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
-              customFieldDefs={customFieldDefs}
-              reserveStop
-              popoverClassName={dialogPopoverZCls}
-            />
-            {bodyError ? (
-              <p
-                id="create-sms-template-body-err"
-                className={cn(hintTextCls, "text-destructive")}
-              >
-                {bodyError}
-              </p>
-            ) : null}
-          </div>
+          <ModalSmsMessageField
+            label={t("templates.field.body")}
+            value={body}
+            onChange={(next) => {
+              setBody(next);
+              setBodyError(null);
+              setSaveError(null);
+            }}
+            placeholder={t("templates.field.bodyPlaceholder")}
+            error={bodyError}
+            errorId="create-sms-template-body-err"
+            estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
+            customFieldDefs={customFieldDefs}
+            disabled={saving}
+          />
         </div>
 
         {saveError ? (

@@ -821,14 +821,18 @@ const fr = {
   "qr.pdfFailed": "Impossible de générer le PDF.",
   "qr.afterTitle": "Après l'inscription",
   "qr.afterDesc":
-    "Choisissez une seule option : SMS de bienvenue ou roue des récompenses. Cliquez à nouveau sur une option active pour ne rien sélectionner.",
-  "qr.afterAria": "Option après inscription",
+    "Activez les options souhaitées et personnalisez le formulaire d'inscription.",
+  "qr.afterAria": "Options après inscription",
+  "qr.after.form.title": "Personnaliser le formulaire",
+  "qr.after.form.desc":
+    "Modifiez les champs, le message et l'apparence de votre page d'inscription.",
+  "qr.after.editSignupForm": "Modifier le formulaire",
   "qr.mode.welcome.title": "SMS de bienvenue",
   "qr.mode.welcome.desc":
-    "Envoyez un SMS personnalisé juste après l'inscription du client.",
+    "Envoyez automatiquement un SMS personnalisé juste après l'inscription du client pour le remercier et créer un premier lien.",
   "qr.mode.wheel.title": "Roue des récompenses",
   "qr.mode.wheel.desc":
-    "Faites tourner la roue après l'inscription pour distribuer des récompenses par SMS.",
+    "Après l'inscription, proposez la roue des récompenses : le cadeau gagné est envoyé par SMS au nouveau contact.",
   "qr.configure": "Configurer",
   "qr.preview": "Prévisualiser",
   "qr.noneActive":
@@ -844,9 +848,11 @@ const fr = {
   "qr.complianceUnsub": "Vos clients peuvent se désinscrire à tout moment.",
   "qr.complianceMore": "En savoir plus",
   "qr.modal.welcome.desc":
-    "Personnalisez le message envoyé après l'inscription.",
+    "Personnalisez le SMS envoyé automatiquement après l'inscription via votre QR code.",
   "qr.modal.welcome.placeholder":
-    "Ex. Bonjour [Prénom], merci pour votre inscription…",
+    "Ex. Bienvenue, [Prénom] ! Bienvenue chez Mon Commerce !…",
+  "qr.modal.welcome.messageLabel": "Message SMS",
+  "qr.modal.welcome.reset": "Réinitialiser",
   "qr.modal.preview.title": "Prévisualiser la roue",
   "qr.modal.preview.desc":
     "Aperçu tel que vos clients le verront après l'inscription.",
@@ -2038,13 +2044,18 @@ const en: Record<MessageKey, string> = {
   "qr.pdfFailed": "Could not generate the PDF.",
   "qr.afterTitle": "After sign-up",
   "qr.afterDesc":
-    "Pick only one option: welcome SMS or rewards wheel. Click an active option again to clear the selection.",
-  "qr.afterAria": "Post sign-up option",
+    "Turn on the options you want and customize the sign-up form.",
+  "qr.afterAria": "Post sign-up options",
+  "qr.after.form.title": "Customize the form",
+  "qr.after.form.desc":
+    "Edit the fields, message, and look of your sign-up page.",
+  "qr.after.editSignupForm": "Edit form",
   "qr.mode.welcome.title": "Welcome SMS",
   "qr.mode.welcome.desc":
-    "Send a personalized SMS right after the customer signs up.",
+    "Automatically send a personalized SMS right after sign-up to thank the customer and start the relationship.",
   "qr.mode.wheel.title": "Rewards wheel",
-  "qr.mode.wheel.desc": "Spin the wheel after sign-up to send rewards by SMS.",
+  "qr.mode.wheel.desc":
+    "After sign-up, offer the rewards wheel—the prize is sent by SMS to the new contact.",
   "qr.configure": "Configure",
   "qr.preview": "Preview",
   "qr.noneActive": "No option active: only the contact sign-up is saved.",
@@ -2058,8 +2069,12 @@ const en: Record<MessageKey, string> = {
     "Data collected via this form is secured and used only for your customer relationship.",
   "qr.complianceUnsub": "Customers can unsubscribe at any time.",
   "qr.complianceMore": "Learn more",
-  "qr.modal.welcome.desc": "Customize the message sent after sign-up.",
-  "qr.modal.welcome.placeholder": "Ex. Hello [Prénom], thanks for signing up…",
+  "qr.modal.welcome.desc":
+    "Customize the SMS sent automatically after sign-up via your QR code.",
+  "qr.modal.welcome.placeholder":
+    "Ex. Welcome, [Prénom]! Welcome to My Shop!…",
+  "qr.modal.welcome.messageLabel": "SMS message",
+  "qr.modal.welcome.reset": "Reset",
   "qr.modal.preview.title": "Preview the wheel",
   "qr.modal.preview.desc": "Preview as customers will see it after sign-up.",
   "qr.modal.wheel.title": "Configure the wheel",

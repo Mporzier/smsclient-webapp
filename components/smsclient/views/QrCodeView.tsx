@@ -44,7 +44,11 @@ type QrCodeViewProps = {
   error: string | null;
   companyName?: string;
   captureMode: QrCaptureMode;
-  onCaptureModeChange: (mode: QrCaptureMode) => Promise<void>;
+  welcomeSmsEnabled: boolean;
+  onWelcomeSmsEnabledChange: (enabled: boolean) => Promise<void>;
+  wheelEnabled: boolean;
+  onWheelEnabledChange: (enabled: boolean) => Promise<void>;
+  onEditSignupForm?: () => void;
   welcomeSmsTemplate: string;
   onWelcomeSmsTemplateChange: (template: string) => Promise<void>;
   wheelConfig: QrWheelConfig | null;
@@ -194,7 +198,11 @@ export function QrCodeView({
   error,
   companyName,
   captureMode,
-  onCaptureModeChange,
+  welcomeSmsEnabled,
+  onWelcomeSmsEnabledChange,
+  wheelEnabled,
+  onWheelEnabledChange,
+  onEditSignupForm,
   welcomeSmsTemplate,
   onWelcomeSmsTemplateChange,
   wheelConfig,
@@ -264,16 +272,12 @@ export function QrCodeView({
   }, [openInspireHelp]);
 
   const openWelcomeConfig = () => {
-    if (captureMode !== "welcome") {
-      void onCaptureModeChange("welcome");
-    }
+    void onWelcomeSmsEnabledChange(true);
     setWelcomeModalOpen(true);
   };
 
   const openWheelConfig = () => {
-    if (captureMode !== "wheel") {
-      void onCaptureModeChange("wheel");
-    }
+    void onWheelEnabledChange(true);
     setWheelModalOpen(true);
   };
 
@@ -335,7 +339,11 @@ export function QrCodeView({
     loading,
     companyName,
     captureMode,
-    onCaptureModeChange,
+    welcomeSmsEnabled,
+    onWelcomeSmsEnabledChange,
+    wheelEnabled,
+    onWheelEnabledChange,
+    onEditSignupForm,
     welcomeSmsTemplate,
     onWelcomeSmsTemplateChange,
     wheelConfig,
@@ -490,6 +498,7 @@ export function QrCodeView({
         open={welcomeModalOpen}
         onClose={() => setWelcomeModalOpen(false)}
         template={welcomeSmsTemplate}
+        companyName={companyName}
         saving={templateSaving}
         onSave={async (template) => {
           setTemplateSaving(true);

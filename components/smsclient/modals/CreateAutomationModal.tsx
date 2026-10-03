@@ -1,6 +1,10 @@
 "use client";
 
-import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
+import {
+  ModalSmsMessageField,
+  modalFieldLabelCls,
+  modalHintTextCls,
+} from "@/components/smsclient/modals/ModalSmsMessageField";
 import {
   isValidMonthDay,
   maxDayInMonth,
@@ -45,9 +49,9 @@ import {
   preventDialogOpenAutoFocus,
 } from "./modalChrome";
 
-const fieldLabelCls = "text-xs font-semibold text-foreground";
+const fieldLabelCls = modalFieldLabelCls;
 const fieldMetaCls = "text-xs font-normal text-muted-foreground";
-const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
+const hintTextCls = modalHintTextCls;
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
@@ -734,28 +738,19 @@ export function CreateAutomationModal({
             <p className={hintTextCls}>Fuseau horaire : Europe/Paris</p>
           </div>
 
-          <div className="space-y-1.5">
-            <span className={cn(fieldLabelCls, "block")}>
-              Message SMS <span className="text-destructive">*</span>
-            </span>
-            <SmsMessageComposer
-              value={body}
-              onChange={(next) => {
-                setBody(next);
-                setBodyError(null);
-                setSaveError(null);
-              }}
-              placeholder="Ex. Bonjour {prenom}, profitez de notre offre du mois !"
-              hasError={Boolean(bodyError)}
-              estimateSample={estimateSample}
-              customFieldDefs={customFieldDefs}
-              reserveStop
-              popoverClassName={dialogPopoverZCls}
-            />
-            {bodyError ? (
-              <p className={cn(hintTextCls, "text-destructive")}>{bodyError}</p>
-            ) : null}
-          </div>
+          <ModalSmsMessageField
+            value={body}
+            onChange={(next) => {
+              setBody(next);
+              setBodyError(null);
+              setSaveError(null);
+            }}
+            placeholder="Ex. Bonjour {prenom}, profitez de notre offre du mois !"
+            error={bodyError}
+            estimateSample={estimateSample}
+            customFieldDefs={customFieldDefs}
+            disabled={saving}
+          />
         </div>
 
         {saveError ? (

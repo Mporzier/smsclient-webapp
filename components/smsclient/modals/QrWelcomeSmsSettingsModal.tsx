@@ -1,34 +1,24 @@
 "use client";
 
-import { SmsMessageComposer } from "@/components/smsclient/CreateCampaign/SmsMessageComposer";
+import { FormDialogShell } from "@/components/smsclient/modals/FormDialogShell";
+import { ModalSmsMessageField } from "@/components/smsclient/modals/ModalSmsMessageField";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
+import { buildDefaultQrWelcomeSmsTemplate } from "@/lib/qr/welcomeSmsDefaults";
 import { useI18n } from "@/lib/i18n";
 import {
+  buildEstimateMergeValues,
   normalizePrenomTokens,
-  SMS_PRENOM_PREVIEW_SAMPLE,
 } from "@/lib/proto/smsPersonalization";
-import { cn } from "@/lib/utils";
-import { MessageCircle } from "lucide-react";
+import { useModalFormDirty } from "@/components/smsclient/modals/modalFormGuard";
+import { MessageCircle, RotateCcw } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import {
-  brandBtnCls,
-  brandBtnPrimaryCls,
-  dialogContentZCls,
-  dialogOverlayCls,
-  dialogPopoverZCls,
-  formDialogContentCls,
-  preventDialogOpenAutoFocus,
-} from "./modalChrome";
-import { FormDialogHeader } from "./FormDialogHeader";
 
 type QrWelcomeSmsSettingsModalProps = {
   open: boolean;
   onClose: () => void;
   template: string;
+  companyName?: string;
   saving: boolean;
   onSave: (template: string) => Promise<void>;
 };
@@ -37,104 +27,110 @@ export function QrWelcomeSmsSettingsModal({
   open,
   onClose,
   template,
+  companyName,
   saving,
   onSave,
 }: QrWelcomeSmsSettingsModalProps) {
   const { t } = useI18n();
   const [localTemplate, setLocalTemplate] = useState(template);
+  const [error, setError] = useState<string | null>(null);
   const [prevSync, setPrevSync] = useState({ open, template });
 
   if (open !== prevSync.open || template !== prevSync.template) {
     setPrevSync({ open, template });
-    if (open) setLocalTemplate(template);
+    if (open) {
+      setLocalTemplate(template);
+      setError(null);
+    }
   }
 
-  const normalizedLocal = useMemo(
-    () => normalizePrenomTokens(localTemplate),
-    [localTemplate]
+  const estimateSample = useMemo(
+    () => buildEstimateMergeValues([], []),
+    [],
+  );
+
+  const defaultTemplate = useMemo(
+    () => buildDefaultQrWelcomeSmsTemplate(companyName ?? ""),
+    [companyName],
+  );
+
+  const canReset =
+    !saving && normalizePrenomTokens(localTemplate) !== defaultTemplate;
+
+  const isDirty = useModalFormDirty(
+    open,
+    localTemplate,
+    (a, b) => a === b,
   );
 
   const handleClose = useCallback(() => {
     if (saving) return;
+    setError(null);
     onClose();
   }, [onClose, saving]);
 
   const handleSave = useCallback(async () => {
     if (saving) return;
-    await onSave(normalizedLocal);
-    onClose();
-  }, [normalizedLocal, onClose, onSave, saving]);
+    const normalized = normalizePrenomTokens(localTemplate);
+    const validationError = validateAutomationSmsBody(normalized, {
+      reserveStop: true,
+      estimateSample,
+    });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError(null);
+    try {
+      await onSave(normalized);
+      handleClose();
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Une erreur est survenue.",
+      );
+    }
+  }, [estimateSample, handleClose, localTemplate, onSave, saving]);
 
   return (
-    <Dialog
+    <FormDialogShell
       open={open}
-      onOpenChange={(next) => {
-        if (!next && !saving) handleClose();
-      }}
+      onClose={handleClose}
+      title={t("qr.mode.welcome.title")}
+      description={t("qr.modal.welcome.desc")}
+      icon={<MessageCircle className="size-4" aria-hidden />}
+      onSave={handleSave}
+      saving={saving}
+      formDirty={isDirty}
+      footerLeading={
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!canReset}
+          className="cursor-pointer"
+          onClick={() => {
+            setLocalTemplate(defaultTemplate);
+            setError(null);
+          }}
+        >
+          <RotateCcw aria-hidden />
+          {t("qr.modal.welcome.reset")}
+        </Button>
+      }
     >
-      <DialogContent
-        showCloseButton={!saving}
-        overlayClassName={dialogOverlayCls}
-        className={cn(
-          formDialogContentCls,
-          "max-h-[min(88dvh,640px)] sm:max-w-[560px]",
-          dialogContentZCls
-        )}
-        onOpenAutoFocus={preventDialogOpenAutoFocus}
-        onPointerDownOutside={(e) => {
-          if (saving) e.preventDefault();
+      <ModalSmsMessageField
+        label={t("qr.modal.welcome.messageLabel")}
+        value={localTemplate}
+        onChange={(next) => {
+          setLocalTemplate(next);
+          setError(null);
         }}
-        onEscapeKeyDown={(e) => {
-          if (saving) e.preventDefault();
-        }}
-      >
-        <FormDialogHeader
-          className="items-start px-4 py-3.5"
-          bareIcon
-          icon={
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-ring/20 bg-muted/50 text-ring">
-              <MessageCircle className="h-4 w-4" aria-hidden />
-            </span>
-          }
-          title={t("qr.mode.welcome.title")}
-          titleClassName="font-black"
-          description={t("qr.modal.welcome.desc")}
-          descriptionClassName="font-semibold"
-        />
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <SmsMessageComposer
-            value={localTemplate}
-            onChange={setLocalTemplate}
-            placeholder={t("qr.modal.welcome.placeholder")}
-            estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
-            popoverClassName={dialogPopoverZCls}
-          />
-        </div>
-
-        <div className="flex shrink-0 justify-end gap-2 border-t border-border px-4 py-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className={cn(brandBtnCls, "h-9 px-3 text-xs")}
-            disabled={saving}
-            onClick={handleClose}
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="lg"
-            className={cn(brandBtnPrimaryCls, "h-9 px-3 text-xs")}
-            disabled={saving}
-            onClick={() => void handleSave()}
-          >
-            {saving ? t("dialog.saving") : t("dialog.save")}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        placeholder={t("qr.modal.welcome.placeholder")}
+        error={error}
+        estimateSample={estimateSample}
+        customFieldDefs={[]}
+        disabled={saving}
+      />
+    </FormDialogShell>
   );
 }

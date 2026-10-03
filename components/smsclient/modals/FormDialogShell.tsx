@@ -28,12 +28,19 @@ type FormDialogShellProps = {
   contentClassName?: string;
   /** Ex. `overflow-hidden` quand le contenu gère lui-même son scroll. */
   bodyClassName?: string;
+  /** Bloque overlay / Échap tant que le formulaire a changé (voir `useModalFormDirty`). */
+  formDirty?: boolean;
+  /** Actions pied de modale (ex. Réinitialiser), alignées à gauche. */
+  footerLeading?: ReactNode;
   children: ReactNode;
 };
 
 /**
  * Shell modale formulaire standard (croix = DialogContent showCloseButton).
  * Préférer ceci / FormDialogHeader plutôt que `modalCloseBtn*`.
+ *
+ * Formulaire éditable : passer `formDirty` (`useModalFormDirty`) — voir
+ * `wiki/conventions-ui.md` et skill `.cursor/skills/modal-form-dialog`.
  */
 export function FormDialogShell({
   open,
@@ -48,16 +55,23 @@ export function FormDialogShell({
   wide = false,
   contentClassName,
   bodyClassName,
+  formDirty = false,
+  footerLeading,
   children,
 }: FormDialogShellProps) {
   const { t } = useI18n();
   const resolvedSaveLabel = saveLabel ?? t("dialog.save");
+  const canDismiss = !saving && !formDirty;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next && !saving && !hasStackedOpenDialog()) onClose();
+        if (!next) {
+          if (saving || hasStackedOpenDialog()) return;
+          if (formDirty) return;
+          onClose();
+        }
       }}
     >
       <DialogContent
@@ -72,10 +86,12 @@ export function FormDialogShell({
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}
         onPointerDownOutside={(e) => {
-          if (saving || hasStackedOpenDialog()) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (!canDismiss) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          if (saving || hasStackedOpenDialog()) e.preventDefault();
+          if (hasStackedOpenDialog()) return;
+          if (!canDismiss) e.preventDefault();
         }}
       >
         <FormDialogHeader
@@ -93,25 +109,30 @@ export function FormDialogShell({
           {children}
         </div>
         {onSave ? (
-          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-card p-2.5 px-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={saving}
-              className="cursor-pointer"
-            >
-              {t("dialog.close")}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              onClick={() => void onSave()}
-              disabled={saving}
-              className="cursor-pointer"
-            >
-              {saving ? t("dialog.saving") : resolvedSaveLabel}
-            </Button>
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-card p-2.5 px-4">
+            {footerLeading ? (
+              <div className="flex shrink-0 items-center">{footerLeading}</div>
+            ) : null}
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving}
+                className="cursor-pointer"
+              >
+                {t("dialog.close")}
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                onClick={() => void onSave()}
+                disabled={saving}
+                className="cursor-pointer"
+              >
+                {saving ? t("dialog.saving") : resolvedSaveLabel}
+              </Button>
+            </div>
           </div>
         ) : null}
       </DialogContent>

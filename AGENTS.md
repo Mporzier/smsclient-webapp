@@ -22,7 +22,7 @@ Multi-root : préférer ouvrir **smsclient seul** pour jobs UI.
 
 `.cursor/rules/` (`alwaysApply: true`) — injecté chaque chat :
 
-`agent-session-limits`, `testing-no-auto-run`, `token-economy`, `no-git-commit`, `caveman`, `skill-evolve`.
+`agent-session-limits`, `testing-no-auto-run`, `token-economy`, `no-git-commit`, `caveman`, `conventions-first`, `skill-evolve`.
 
 **Pas** : les 23 fichiers `SKILL.md` en entier. Skills = découverte + Read sur trigger. Miroirs always-on portent l’essentiel des interdits.
 

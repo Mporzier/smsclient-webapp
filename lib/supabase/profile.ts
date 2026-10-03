@@ -8,6 +8,7 @@ import {
   type UserProfile,
   type UserProfileForm,
 } from "@/lib/types/profile";
+import { syncDefaultWelcomeSmsTemplate } from "@/lib/supabase/qrCodes";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type UserProfileRecord = {
@@ -184,6 +185,12 @@ export async function completeUserOnboarding(
   if (error) {
     return { data: null, error: new Error(error.message) };
   }
+
+  await syncDefaultWelcomeSmsTemplate(
+    supabase,
+    userId,
+    form.companyName.trim(),
+  );
 
   return {
     data: recordToProfile(data as UserProfileRecord, email),

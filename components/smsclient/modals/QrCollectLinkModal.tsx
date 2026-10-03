@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "@/components/ui/sonner";
+import {
+  copyTextToClipboard,
+  CopyableLinkField,
+} from "@/components/smsclient/CopyableLinkField";
 import { Copy, ExternalLink, Link } from "lucide-react";
 import {
   dialogContentZCls,
@@ -28,10 +32,11 @@ export function QrCollectLinkModal({
 }: QrCollectLinkModalProps) {
   const { t } = useI18n();
 
+  const copiedToast = t("qr.hub.linkModal.copiedToast");
+
   const copyLink = () => {
-    if (!publicUrl) return;
-    void navigator.clipboard.writeText(publicUrl).then(() => {
-      toast(t("qr.hub.linkModal.copiedToast"));
+    void copyTextToClipboard(publicUrl).then((ok) => {
+      if (ok) toast(copiedToast);
     });
   };
 
@@ -62,22 +67,11 @@ export function QrCollectLinkModal({
         <div className="space-y-4 px-4 py-4">
           <div className="space-y-2">
             <Label id="qr-collect-signup-link-label">{t("qr.signupLink")}</Label>
-            <button
-              type="button"
-              disabled={!publicUrl}
+            <CopyableLinkField
+              value={publicUrl}
+              copiedToast={copiedToast}
               aria-labelledby="qr-collect-signup-link-label"
-              className="flex w-full cursor-pointer items-center gap-2 overflow-hidden rounded-lg border border-blue-100/90 bg-blue-50/40 px-3 py-3 text-left transition-colors hover:bg-blue-100/45 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={copyLink}
-            >
-              <span className="min-w-0 flex-1 text-sm font-medium leading-snug break-all text-foreground">
-                {publicUrl || "—"}
-              </span>
-              <Copy
-                className="h-4 w-4 shrink-0 text-blue-600"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </button>
+            />
           </div>
         </div>
 
