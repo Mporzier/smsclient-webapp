@@ -30,7 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Visuel hub collecte — ajuster widthPx pour la largeur colonne droite. */
 const COLLECTE_HERO_SIZE = {
@@ -220,16 +220,14 @@ export function QrCodeView({
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [inspireHelpOpen, setInspireHelpOpen] = useState(false);
   const [inspireHelpStep, setInspireHelpStep] = useState<InspireHelpStep>(0);
-  const inspireHelpOpenRef = useRef(inspireHelpOpen);
-  inspireHelpOpenRef.current = inspireHelpOpen;
 
   const handleShellBack = useCallback(() => {
-    if (inspireHelpOpenRef.current) {
+    if (inspireHelpOpen) {
       setInspireHelpOpen(false);
       return;
     }
     setQrConfigOpen(false);
-  }, []);
+  }, [inspireHelpOpen]);
 
   useEffect(() => {
     if (!qrConfigOpen) {

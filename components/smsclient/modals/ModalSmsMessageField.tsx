@@ -85,7 +85,7 @@ export function ModalSmsMessageField({
         disabled={disabled}
         compact={compact}
         customFieldDefs={customFieldDefs}
-        estimateSample={estimateSample}
+        estimateSample={estimateSample ?? undefined}
         estimateFirstName={estimateFirstName}
         reserveStop={reserveStop}
         popoverClassName={popoverClassName}
