@@ -7,3 +7,8 @@ export function shortLinkBase(): string {
 export function buildShortUrl(shortCode: string): string {
   return `${shortLinkBase()}/${shortCode}`;
 }
+
+/** Affichage liste — sans schéma http(s):// */
+export function linkUrlDisplayLabel(url: string): string {
+  return url.replace(/^https?:\/\//i, "");
+}

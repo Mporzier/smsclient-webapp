@@ -17,8 +17,10 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 
 type CopyableLinkFieldProps = {
   value: string;
+  /** Texte affiché (copie = `value`). */
+  displayValue?: string;
   className?: string;
-  size?: "default" | "compact";
+  size?: "default" | "compact" | "dense";
   disabled?: boolean;
   /** Toast après copie réussie */
   copiedToast?: string;
@@ -30,6 +32,7 @@ type CopyableLinkFieldProps = {
 
 export function CopyableLinkField({
   value,
+  displayValue,
   className,
   size = "default",
   disabled,
@@ -57,8 +60,12 @@ export function CopyableLinkField({
       disabled={isDisabled}
       aria-labelledby={ariaLabelledBy}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-2 overflow-hidden rounded-lg border border-blue-100/90 bg-blue-50/40 text-left transition-colors hover:bg-blue-100/45 disabled:cursor-not-allowed disabled:opacity-50",
-        size === "default" ? "px-3 py-3" : "min-h-[2.75rem] px-3 py-2",
+        "cursor-pointer overflow-hidden border border-blue-100/90 bg-blue-50/40 text-left transition-colors hover:bg-blue-100/45 disabled:cursor-not-allowed disabled:opacity-50",
+        size === "dense"
+          ? "inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1"
+          : "flex w-full items-center gap-2 rounded-lg",
+        size === "default" && "px-3 py-3",
+        size === "compact" && "min-h-[2.75rem] px-3 py-2",
         className,
       )}
       onClick={(e) => {
@@ -71,15 +78,21 @@ export function CopyableLinkField({
           "min-w-0 flex-1 text-foreground",
           size === "default"
             ? "text-sm font-medium leading-snug break-all"
-            : "truncate text-[11px] font-semibold leading-snug",
+            : size === "dense"
+              ? "truncate text-xs font-semibold leading-snug"
+              : "truncate text-[11px] font-semibold leading-snug",
         )}
       >
-        {value || "—"}
+        {displayValue ?? (value || "—")}
       </span>
       <Copy
         className={cn(
           "shrink-0 text-blue-600",
-          size === "default" ? "h-4 w-4" : "h-3.5 w-3.5",
+          size === "default"
+            ? "h-4 w-4"
+            : size === "dense"
+              ? "size-3.5"
+              : "h-3.5 w-3.5",
         )}
         strokeWidth={2.25}
         aria-hidden

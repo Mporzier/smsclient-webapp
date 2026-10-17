@@ -5,6 +5,9 @@ import {
   campaignSortToOrders,
   type ListSort,
 } from "@/lib/proto/listSort";
+import type { ListColumnFilter } from "@/lib/proto/listFilters";
+import { applyCampaignListFilters } from "@/lib/supabase/campaignListFilters";
+import { attachFilterQuery } from "@/lib/supabase/listFilterSql";
 
 export type SmsCampaignRecord = {
   id: string;
@@ -104,6 +107,7 @@ export async function fetchSmsCampaignsPage(
     search?: string;
     includeTotal?: boolean;
     sort?: ListSort | null;
+    filters?: ListColumnFilter[];
   },
 ): Promise<{
   data: CampaignRowData[];
@@ -126,6 +130,10 @@ export async function fetchSmsCampaignsPage(
     const p = `"%${safe.replace(/"/g, '\\"')}%"`;
     query = query.or(`title.ilike.${p},sender.ilike.${p},body.ilike.${p}`);
   }
+
+  query = attachFilterQuery(query, (q) =>
+    applyCampaignListFilters(q, args.filters ?? []),
+  );
 
   for (const o of campaignSortToOrders(args.sort)) {
     query = query.order(o.column, {

@@ -129,7 +129,24 @@ export function useUserQrCode(enabled = true, companyName?: string) {
 
   const setWelcomeSmsTemplate = useCallback(
     async (template: string) => {
-      await updateWelcomeSms({ template });
+      let snapshot: UserQrCodeRecord | null = null;
+      setRecord((prev) => {
+        if (!prev) return prev;
+        snapshot = prev;
+        return {
+          ...prev,
+          welcome_sms_template: template,
+          welcome_sms_enabled: true,
+          wheel_enabled: false,
+        };
+      });
+      if (!snapshot) return;
+      try {
+        await updateWelcomeSms({ template, enabled: true });
+      } catch (err) {
+        setRecord(snapshot);
+        throw err;
+      }
     },
     [updateWelcomeSms],
   );
@@ -179,6 +196,7 @@ export function useUserQrCode(enabled = true, companyName?: string) {
     publicUrl,
     captureMode: qrCaptureModeFromRecord(record),
     welcomeSmsEnabled: record?.welcome_sms_enabled ?? false,
+    wheelEnabled: record?.wheel_enabled ?? false,
     welcomeSmsTemplate:
       record?.welcome_sms_template ??
       buildDefaultQrWelcomeSmsTemplate(companyName ?? ""),

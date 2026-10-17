@@ -270,7 +270,6 @@ export function QrCodeView({
   }, [openInspireHelp]);
 
   const openWelcomeConfig = () => {
-    void onWelcomeSmsEnabledChange(true);
     setWelcomeModalOpen(true);
   };
 

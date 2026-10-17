@@ -49,6 +49,15 @@
   --modal-icon-size: 2.25rem;
   --modal-icon-glyph-size: 1.25rem;
 
+  /* Help accent — bouton aide header, bandeaux listes vides, etc. */
+  --help-accent-base: oklch(0.606 0.238 293.3);
+  --help-accent-bg: color-mix(in oklch, var(--help-accent-base) 10%, transparent);
+  --help-accent-bg-hover: color-mix(in oklch, var(--help-accent-base) 15%, transparent);
+  --help-accent-border: color-mix(in oklch, var(--help-accent-base) 35%, transparent);
+  --help-accent-fg: oklch(0.457 0.214 293.4);
+  --help-accent-fg-hover: oklch(0.398 0.195 293.2);
+  --help-accent-icon-bg: var(--help-accent-bg-hover);
+
   /* Toast Sonner — inverse UI : sombre en light, clair en dark */
   --toast-bg: linear-gradient(
     145deg,
@@ -106,6 +115,29 @@
   --modal-icon-glyph-size: 1.25rem;
 }
 
+.help-accent-surface {
+  border-color: var(--help-accent-border);
+  background-color: var(--help-accent-bg);
+  color: var(--help-accent-fg);
+}
+
+.help-accent-icon {
+  border-color: var(--help-accent-border);
+  background-color: var(--help-accent-icon-bg);
+  color: var(--help-accent-fg);
+}
+
+.help-accent-control {
+  border-color: var(--help-accent-border);
+  background-color: transparent;
+  color: var(--help-accent-fg);
+}
+
+.help-accent-control:hover {
+  background-color: var(--help-accent-bg-hover);
+  color: var(--help-accent-fg-hover);
+}
+
 /* Réserve la place de la scrollbar dans la colonne principale */
 .app-main-scroll {
   scrollbar-gutter: stable;
@@ -147,6 +179,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-help-accent-bg: var(--help-accent-bg);
+  --color-help-accent-bg-hover: var(--help-accent-bg-hover);
+  --color-help-accent-border: var(--help-accent-border);
+  --color-help-accent-fg: var(--help-accent-fg);
+  --color-help-accent-fg-hover: var(--help-accent-fg-hover);
+  --color-help-accent-icon-bg: var(--help-accent-icon-bg);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -239,6 +277,9 @@
   --sidebar-accent-foreground: oklch(0.964 0.019 243);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.574 0.202 262);
+
+  --help-accent-fg: oklch(0.707 0.185 293.2);
+  --help-accent-fg-hover: oklch(0.78 0.15 293);
 
   --toast-bg: linear-gradient(
     145deg,

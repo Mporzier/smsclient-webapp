@@ -41,7 +41,7 @@ export const SmsRichMessageEditor = forwardRef<
   SmsRichMessageEditorProps
 >(function SmsRichMessageEditor(
   { value, onChange, placeholder, className },
-  ref,
+  ref
 ) {
   const editorRef = useRef<HTMLDivElement>(null);
   const lastEmittedRef = useRef(value);
@@ -69,8 +69,7 @@ export const SmsRichMessageEditor = forwardRef<
   useLayoutEffect(() => {
     const root = editorRef.current;
     if (!root) return;
-    const current =
-      root.childNodes.length > 0 ? serializeSmsEditor(root) : "";
+    const current = root.childNodes.length > 0 ? serializeSmsEditor(root) : "";
     if (current === value) {
       lastEmittedRef.current = value;
       return;
@@ -111,7 +110,7 @@ export const SmsRichMessageEditor = forwardRef<
         return next;
       },
     }),
-    [emitChange, onChange, readSerialized],
+    [emitChange, onChange, readSerialized]
   );
 
   return (
@@ -127,7 +126,7 @@ export const SmsRichMessageEditor = forwardRef<
         "cursor-text text-sm font-semibold leading-relaxed text-slate-900 outline-none",
         "empty:before:pointer-events-none empty:before:content-[attr(data-placeholder)]",
         "empty:before:font-normal empty:before:leading-relaxed empty:before:text-muted-foreground/40",
-        className,
+        className
       )}
       onMouseDown={(e) => {
         if (e.detail !== 3) return;

@@ -52,7 +52,8 @@ export function CountryFlag({ country, className, title }: CountryFlagProps) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 overflow-hidden rounded-md border border-slate-200/80 bg-white shadow-sm",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-background",
+        country === "ch" ? "aspect-square" : "aspect-[3/2]",
         className,
       )}
       role="img"

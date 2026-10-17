@@ -37,6 +37,9 @@ type ModalSmsMessageFieldProps = {
     originalUrl: string;
     label: string;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
+  composerMode?: "message" | "aiPrompt" | "plainText";
+  commercialMessage?: boolean;
+  onCommercialMessageChange?: (checked: boolean) => void;
 };
 
 /**
@@ -61,6 +64,9 @@ export function ModalSmsMessageField({
   savedLinks,
   linksLoading,
   onCreateLink,
+  composerMode = "message",
+  commercialMessage,
+  onCommercialMessageChange,
 }: ModalSmsMessageFieldProps) {
   const showError = Boolean(error);
 
@@ -78,6 +84,7 @@ export function ModalSmsMessageField({
         ) : null}
       </span>
       <SmsMessageComposer
+        mode={composerMode}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
@@ -92,6 +99,8 @@ export function ModalSmsMessageField({
         savedLinks={savedLinks}
         linksLoading={linksLoading}
         onCreateLink={onCreateLink}
+        commercialMessage={commercialMessage}
+        onCommercialMessageChange={onCommercialMessageChange}
       />
       {showError ? (
         <p

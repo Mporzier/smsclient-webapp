@@ -124,6 +124,47 @@ export function groupColumnFilterKind(
   return null;
 }
 
+export function linkColumnFilterKind(columnId: string): ColumnFilterKind | null {
+  if (columnId === "createdLabel") return "date";
+  if (columnId === "clickCount") return "number";
+  if (
+    columnId === "label" ||
+    columnId === "description" ||
+    columnId === "originalUrl"
+  ) {
+    return "text";
+  }
+  return null;
+}
+
+export function campaignColumnFilterKind(
+  columnId: string,
+): ColumnFilterKind | null {
+  if (columnId === "createdLabel") return "date";
+  if (columnId === "recipients" || columnId === "creditsLabel") return "number";
+  if (columnId === "name" || columnId === "status") return "text";
+  return null;
+}
+
+export function templateColumnFilterKind(
+  columnId: string,
+): ColumnFilterKind | null {
+  if (columnId === "createdLabel") return "date";
+  if (columnId === "title" || columnId === "description" || columnId === "body") {
+    return "text";
+  }
+  return null;
+}
+
+export function automationColumnFilterKind(
+  columnId: string,
+): ColumnFilterKind | null {
+  if (columnId === "name" || columnId === "trigger" || columnId === "activity") {
+    return "text";
+  }
+  return null;
+}
+
 export function opsForKind(kind: ColumnFilterKind): ListFilterOp[] {
   switch (kind) {
     case "text":

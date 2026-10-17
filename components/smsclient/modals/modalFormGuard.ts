@@ -75,13 +75,20 @@ export function groupQuickFormSnapshotsEqual(
 export type SmsLinkFormSnapshot = {
   originalUrl: string;
   label: string;
+  description: string;
+  icon: string;
 };
 
 export function smsLinkFormSnapshotsEqual(
   a: SmsLinkFormSnapshot,
   b: SmsLinkFormSnapshot,
 ): boolean {
-  return a.originalUrl === b.originalUrl && a.label === b.label;
+  return (
+    a.originalUrl === b.originalUrl &&
+    a.label === b.label &&
+    a.description === b.description &&
+    a.icon === b.icon
+  );
 }
 
 export type SmsTemplateFormSnapshot = {

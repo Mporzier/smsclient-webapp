@@ -10,7 +10,7 @@ import { usePrototypeData } from "./usePrototypeData";
 import { usePrototypeModals } from "./usePrototypeModals";
 
 export function usePrototypeApp() {
-  const { route, go } = useProtoNavigation();
+  const { route, go, hashPath } = useProtoNavigation();
   const data = usePrototypeData(route);
   const modals = usePrototypeModals(route, {
     from: data.statsDefaultFrom,
@@ -62,6 +62,7 @@ export function usePrototypeApp() {
   return {
     route,
     go,
+    hashPath,
     data,
     modals,
     wizard,

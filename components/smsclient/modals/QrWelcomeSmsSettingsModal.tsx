@@ -4,6 +4,11 @@ import { FormDialogShell } from "@/components/smsclient/modals/FormDialogShell";
 import { ModalSmsMessageField } from "@/components/smsclient/modals/ModalSmsMessageField";
 import { Button } from "@/components/ui/button";
 import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
+import {
+  buildEffectiveSms,
+  hasStopMention,
+  stripStopMention,
+} from "@/lib/proto/smsStopMention";
 import { buildDefaultQrWelcomeSmsTemplate } from "@/lib/qr/welcomeSmsDefaults";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -33,13 +38,16 @@ export function QrWelcomeSmsSettingsModal({
 }: QrWelcomeSmsSettingsModalProps) {
   const { t } = useI18n();
   const [localTemplate, setLocalTemplate] = useState(template);
+  const [commercialMessage, setCommercialMessage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [prevSync, setPrevSync] = useState({ open, template });
 
   if (open !== prevSync.open || template !== prevSync.template) {
     setPrevSync({ open, template });
     if (open) {
-      setLocalTemplate(template);
+      const normalized = normalizePrenomTokens(template);
+      setLocalTemplate(stripStopMention(normalized));
+      setCommercialMessage(hasStopMention(normalized));
       setError(null);
     }
   }
@@ -49,13 +57,16 @@ export function QrWelcomeSmsSettingsModal({
     [],
   );
 
-  const defaultTemplate = useMemo(
-    () => buildDefaultQrWelcomeSmsTemplate(companyName ?? ""),
+  const resetTemplate = useMemo(
+    () =>
+      normalizePrenomTokens(
+        buildDefaultQrWelcomeSmsTemplate(companyName ?? ""),
+      ),
     [companyName],
   );
 
   const canReset =
-    !saving && normalizePrenomTokens(localTemplate) !== defaultTemplate;
+    !saving && normalizePrenomTokens(localTemplate) !== resetTemplate;
 
   const isDirty = useModalFormDirty(
     open,
@@ -73,7 +84,7 @@ export function QrWelcomeSmsSettingsModal({
     if (saving) return;
     const normalized = normalizePrenomTokens(localTemplate);
     const validationError = validateAutomationSmsBody(normalized, {
-      reserveStop: true,
+      reserveStop: commercialMessage,
       estimateSample,
     });
     if (validationError) {
@@ -83,14 +94,26 @@ export function QrWelcomeSmsSettingsModal({
 
     setError(null);
     try {
-      await onSave(normalized);
+      await onSave(buildEffectiveSms(normalized, commercialMessage));
       handleClose();
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Une erreur est survenue.",
       );
     }
-  }, [estimateSample, handleClose, localTemplate, onSave, saving]);
+  }, [
+    commercialMessage,
+    estimateSample,
+    handleClose,
+    localTemplate,
+    onSave,
+    saving,
+  ]);
+
+  const handleReset = useCallback(() => {
+    setLocalTemplate(resetTemplate);
+    setError(null);
+  }, [resetTemplate]);
 
   return (
     <FormDialogShell
@@ -108,10 +131,7 @@ export function QrWelcomeSmsSettingsModal({
           variant="outline"
           disabled={!canReset}
           className="cursor-pointer"
-          onClick={() => {
-            setLocalTemplate(defaultTemplate);
-            setError(null);
-          }}
+          onClick={handleReset}
         >
           <RotateCcw aria-hidden />
           {t("qr.modal.welcome.reset")}
@@ -119,10 +139,11 @@ export function QrWelcomeSmsSettingsModal({
       }
     >
       <ModalSmsMessageField
+        composerMode="plainText"
         label={t("qr.modal.welcome.messageLabel")}
         value={localTemplate}
         onChange={(next) => {
-          setLocalTemplate(next);
+          setLocalTemplate(normalizePrenomTokens(next));
           setError(null);
         }}
         placeholder={t("qr.modal.welcome.placeholder")}
@@ -130,6 +151,8 @@ export function QrWelcomeSmsSettingsModal({
         estimateSample={estimateSample}
         customFieldDefs={[]}
         disabled={saving}
+        commercialMessage={commercialMessage}
+        onCommercialMessageChange={setCommercialMessage}
       />
     </FormDialogShell>
   );

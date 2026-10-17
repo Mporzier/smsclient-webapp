@@ -9,5 +9,7 @@ export { ModelesSmsView } from "./ModelesSmsView";
 export { ParametresView } from "./ParametresView";
 export { ReglementationsSmsView } from "./ReglementationsSmsView";
 export { AideView } from "./AideView";
+export { AideSectionView } from "./AideSectionView";
+export { HelpArticlePanel } from "./HelpArticlePanel";
 export { QrCodeView } from "./QrCodeView";
 export { StatistiquesView } from "./StatistiquesView";

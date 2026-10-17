@@ -87,6 +87,8 @@ export function renderContentRoute(
           onSearchChange={linksState.setSearchInput}
           sorting={linksState.sorting}
           onSortingChange={linksState.setSorting}
+          columnFilters={linksState.columnFilters}
+          onColumnFiltersChange={linksState.setColumnFilters}
           error={linksState.error}
           supabase={linksState.supabase}
           userId={linksState.userId}
@@ -106,6 +108,8 @@ export function renderContentRoute(
           onSearchChange={smsTemplatesState.setSearchInput}
           sorting={smsTemplatesState.sorting}
           onSortingChange={smsTemplatesState.setSorting}
+          columnFilters={smsTemplatesState.columnFilters}
+          onColumnFiltersChange={smsTemplatesState.setColumnFilters}
           error={smsTemplatesState.error}
           supabase={smsTemplatesState.supabase}
           userId={smsTemplatesState.userId}
@@ -116,7 +120,7 @@ export function renderContentRoute(
     case "reglementations-sms":
       return <ReglementationsSmsView />;
     case "aide":
-      return <AideView onGo={ctx.go} />;
+      return <AideView onGo={ctx.go} hashPath={ctx.hashPath} />;
     default:
       return null;
   }

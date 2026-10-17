@@ -10,8 +10,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ListEmptyIntroBanner,
+  shouldShowListEmptyIntro,
+} from "@/components/smsclient/ListEmptyIntroBanner";
+import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
+import {
+  LIST_VIEW_SEARCH_INPUT_CLASS,
+  LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+  LIST_VIEW_TOOLBAR_CLASS,
+} from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { MODELE_SMS_COL } from "@/components/smsclient/listColumnSizes";
+import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
+import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import {
+  LINK_COL,
+  MODELE_SMS_COL,
+  listColFixed,
+} from "@/components/smsclient/listColumnSizes";
+import { normalizeListFilters } from "@/lib/proto/listFilters";
+import { templateColumnFilterKind } from "@/lib/proto/listFilterUi";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -39,11 +58,19 @@ import {
 import type { UserSmsTemplateRow } from "@/lib/types/smsTemplate";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { LayoutTemplate, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import {
+  LayoutTemplate,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import type {
   ColumnDef,
+  ColumnFiltersState,
   OnChangeFn,
   SortingState,
 } from "@tanstack/react-table";
@@ -59,6 +86,8 @@ type ModelesSmsViewProps = {
   onSearchChange: (value: string) => void;
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
+  columnFilters: ColumnFiltersState;
+  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
   error: string | null;
   supabase: SupabaseClient;
   userId: string | undefined;
@@ -77,6 +106,8 @@ export function ModelesSmsView({
   onSearchChange,
   sorting,
   onSortingChange,
+  columnFilters,
+  onColumnFiltersChange: setColumnFilters,
   error,
   supabase,
   userId,
@@ -84,12 +115,26 @@ export function ModelesSmsView({
   customFieldDefs = [],
 }: ModelesSmsViewProps) {
   const { t } = useI18n();
+  const { openHelp } = useShellHelpActions();
+  const [listIntroDismissed, setListIntroDismissed] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [modalRow, setModalRow] = useState<UserSmsTemplateRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     ids: string[];
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const filterLabels = useMemo(
+    () => ({
+      createdLabel: t("templates.col.created"),
+      title: t("templates.col.title"),
+      description: t("templates.col.description"),
+      body: t("templates.col.message"),
+    }),
+    [t],
+  );
+
+  const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
 
   const loadedIds = useMemo(() => rows.map((r) => r.id), [rows]);
 
@@ -136,10 +181,36 @@ export function ModelesSmsView({
       (typeof totalCount === "number" && totalCount > loadedIds.length),
   });
 
+  const renderColumnFilter = useCallback(
+    (columnId: string) => {
+      const kind = templateColumnFilterKind(columnId);
+      if (!kind) return null;
+      return (
+        <DataTableColumnFilter
+          columnId={columnId}
+          columnLabel={
+            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
+          }
+          kind={kind}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+        />
+      );
+    },
+    [clearSelection, columnFilters, filterLabels, setColumnFilters],
+  );
+
   const hasSelection = displaySelectedCount > 0;
 
-  const showBigEmpty =
-    !loading && !error && rows.length === 0 && searchQuery.trim() === "";
+  const showListIntro = shouldShowListEmptyIntro({
+    loading,
+    dataLength: rows.length,
+    searchQuery,
+    dismissed: listIntroDismissed,
+  });
 
   const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(
@@ -253,17 +324,35 @@ export function ModelesSmsView({
     setFormOpen(true);
   }, []);
 
+  const emptyState = (
+    <Empty className="p-0 md:p-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LayoutTemplate aria-hidden />
+        </EmptyMedia>
+        <EmptyTitle>{t("templates.emptyTitle")}</EmptyTitle>
+        <EmptyDescription>{t("templates.emptyBody")}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button variant="default" className="rounded-full" onClick={openCreate}>
+          <Plus aria-hidden />
+          {t("templates.create")}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
+
   const dataColumns: ColumnDef<UserSmsTemplateRow, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
         header: t("templates.col.created"),
-        size: MODELE_SMS_COL.created,
+        ...listColFixed(LINK_COL.created),
       },
       {
         accessorKey: "title",
         header: t("templates.col.title"),
-        size: MODELE_SMS_COL.title,
+        ...listColFixed(LINK_COL.label),
         cell: ({ getValue }) => (
           <CellTruncate as="div" className="text-foreground">
             {getValue<string>()}
@@ -298,10 +387,7 @@ export function ModelesSmsView({
     () => [
       {
         id: "select",
-        size: MODELE_SMS_COL.select,
-        minSize: MODELE_SMS_COL.select,
-        maxSize: MODELE_SMS_COL.select,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => (
           <div className="flex items-center justify-center">
             <Checkbox
@@ -333,10 +419,7 @@ export function ModelesSmsView({
       ...dataColumns,
       {
         id: "actions",
-        size: MODELE_SMS_COL.actions,
-        minSize: MODELE_SMS_COL.actions,
-        maxSize: MODELE_SMS_COL.actions,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => null,
         cell: ({ row }) => (
           <div className="flex items-center justify-center">
@@ -357,6 +440,7 @@ export function ModelesSmsView({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onSelect={() => openEdit(row.original)}>
+                  <Pencil aria-hidden />
                   {t("common.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -365,6 +449,7 @@ export function ModelesSmsView({
                     setPendingDelete({ ids: [row.original.id] })
                   }
                 >
+                  <Trash2 aria-hidden />
                   {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -387,12 +472,17 @@ export function ModelesSmsView({
   const deleteCount = pendingDelete?.ids.length ?? 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3">
-        <InputGroup
-          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
-          role="search"
-        >
+    <div className={LIST_VIEW_STACK_CLASS}>
+      {showListIntro ? (
+        <ListEmptyIntroBanner
+          section="modeles-sms"
+          onLearnMore={openHelp}
+          onDismiss={() => setListIntroDismissed(true)}
+        />
+      ) : null}
+
+      <div className={LIST_VIEW_TOOLBAR_CLASS}>
+        <InputGroup className={LIST_VIEW_SEARCH_INPUT_CLASS} role="search">
           <InputGroupAddon align="inline-start">
             <Search aria-hidden />
           </InputGroupAddon>
@@ -420,7 +510,7 @@ export function ModelesSmsView({
           {hasSelection ? (
             <Button
               variant="destructive"
-              size="lg"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
               className="rounded-full"
               onClick={() => {
                 void (async () => {
@@ -436,7 +526,7 @@ export function ModelesSmsView({
           ) : (
             <Button
               variant="default"
-              size="lg"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
               className="rounded-full"
               onClick={openCreate}
             >
@@ -459,46 +549,44 @@ export function ModelesSmsView({
         </p>
       ) : null}
 
-      {showBigEmpty ? (
-        <Empty className="min-h-[280px] p-0 md:p-0">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LayoutTemplate aria-hidden />
-            </EmptyMedia>
-            <EmptyTitle>{t("templates.emptyTitle")}</EmptyTitle>
-            <EmptyDescription>{t("templates.emptyBody")}</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button
-              variant="default"
-              className="rounded-full"
-              onClick={openCreate}
-            >
-              <Plus aria-hidden />
-              {t("templates.create")}
-            </Button>
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={rows}
-          loading={loading}
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-          onLoadMore={onLoadMore}
-          globalFilter={searchQuery}
-          loadingMessage={t("templates.loading")}
-          emptyMessage={t("templates.emptyTable")}
-          searchNoResultsMessage={t("templates.noSearchResults")}
-          footer={footerLabel}
-          clipHorizontalOverflow
-          sorting={sorting}
-          onSortingChange={onSortingChange}
-          manualSorting
-          onRowClick={openEdit}
-        />
-      )}
+      <ListFilterChips
+        filters={columnFilters}
+        labels={filterLabels}
+        onClearId={(id) => {
+          clearSelection();
+          setColumnFilters((prev) => prev.filter((f) => f.id !== id));
+        }}
+        onClearAll={() => {
+          clearSelection();
+          setColumnFilters([]);
+        }}
+      />
+
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={loading}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMore={onLoadMore}
+        globalFilter={searchQuery}
+        loadingMessage={t("templates.loading")}
+        emptyMessage={emptyState}
+        searchNoResultsMessage={t("templates.noSearchResults")}
+        footer={footerLabel}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+        manualSorting
+        onRowClick={openEdit}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={(updater) => {
+          clearSelection();
+          setColumnFilters(updater);
+        }}
+        manualFiltering
+        hasActiveFilters={hasActiveFilters}
+        renderColumnFilter={renderColumnFilter}
+      />
 
       <CreateSmsTemplateModal
         open={formOpen}

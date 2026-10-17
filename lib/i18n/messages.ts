@@ -17,7 +17,7 @@ const fr = {
   "nav.modeles-sms": "Modèles SMS",
   "nav.qr-boutique": "Collecte clients",
   "nav.aide": "Centre d'aide",
-  "nav.reglementations-sms": "Réglementations SMS",
+  "nav.reglementations-sms": "Conformité SMS",
 
   "route.dashboard": "Accueil",
   "route.contacts": "Contacts",
@@ -29,7 +29,7 @@ const fr = {
   "route.qr-boutique": "Collecte clients",
   "route.liens": "Liens",
   "route.modeles-sms": "Modèles SMS",
-  "route.reglementations-sms": "Réglementations SMS",
+  "route.reglementations-sms": "Conformité SMS",
   "route.aide": "Centre d'aide",
   "route.nouvelle-campagne": "Nouvel envoi SMS",
   "route.acheter-credits": "Acheter des crédits",
@@ -48,6 +48,7 @@ const fr = {
   "shell.creditsRemaining": "Crédits restants",
   "shell.creditsUnit": "crédits",
   "shell.newCampaign": "Nouvel envoi SMS",
+  "shell.help": "Aide",
   "shell.notifications": "Notifications",
 
   "dialog.close": "Fermer",
@@ -254,6 +255,14 @@ const fr = {
   "emoji.empty": "Aucun emoji trouvé.",
   "emoji.hint": "Survolez un emoji pour voir son nom",
   "emoji.insertAria": "Insérer un emoji",
+  "sms.commercialLabel": "Ce message est commercial",
+  "sms.commercialHint": "(offre, promotion, nouveauté, etc.)",
+  "sms.commercialAria": "Ce message est commercial (offre, promotion, nouveauté, etc.)",
+  "sms.commercialUnsubTooltipLine1":
+    "La mention de désinscription sera automatiquement",
+  "sms.commercialUnsubTooltipLine2": "ajoutée à la fin du message.",
+  "sms.commercialUnsubInfoAria":
+    "Information sur la mention de désinscription",
   "emoji.disabledTitle": "Caractères spéciaux désactivés",
   "customFields.type": "Type",
   "customFields.type.text": "Texte",
@@ -441,7 +450,31 @@ const fr = {
   "contacts.createCampaign": "Créer un envoi SMS",
   "contacts.import": "Importer",
   "contacts.add": "Ajouter un contact",
-  "contacts.emptyTitle": "Aucun contact trouvé",
+  "listIntro.contacts.title": "Vous êtes dans vos contacts",
+  "listIntro.contacts.body":
+    "Retrouvez ici tous vos contacts enregistrés. Vous pouvez les ajouter, les organiser en groupes et les utiliser pour vos campagnes SMS.",
+  "listIntro.groupes.title": "Vous êtes dans vos groupes",
+  "listIntro.groupes.body":
+    "Regroupez vos contacts pour segmenter vos audiences. Créez des groupes, mettez-les à jour et lancez des envois SMS ciblés.",
+  "listIntro.campagnes.title": "Vous êtes dans vos envois SMS",
+  "listIntro.campagnes.body":
+    "Consultez l'historique de vos campagnes, suivez leur statut et créez de nouveaux envois SMS depuis cette page.",
+  "listIntro.liens.title": "Vous êtes dans vos liens",
+  "listIntro.liens.body":
+    "Créez des liens courts traçables pour vos SMS et suivez les clics depuis cette liste.",
+  "listIntro.modeles-sms.title": "Vous êtes dans vos modèles SMS",
+  "listIntro.modeles-sms.body":
+    "Enregistrez des textes prêts à l'emploi et réutilisez-les lors de vos envois SMS.",
+  "listIntro.automatisations.title": "Vous êtes dans vos automatisations",
+  "listIntro.automatisations.body":
+    "Programmez des envois récurrents (anniversaires, rappels, fêtes) : les SMS partent seuls aux contacts éligibles.",
+  "listIntro.reglementations-sms.title": "Conformité SMS",
+  "listIntro.reglementations-sms.body":
+    "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre campagne.",
+  "listIntro.learnMore": "En savoir plus",
+  "listIntro.dismissAria": "Masquer ce message",
+
+  "contacts.emptyTitle": "Aucun contact",
   "contacts.emptyBody":
     "Vous n'avez pas encore de contacts. Ajoutez votre premier contact ou importez votre liste de contacts pour commencer à envoyer des SMS.",
   "contacts.emptyTable": "Aucune cible disponible.",
@@ -469,7 +502,7 @@ const fr = {
   "groups.deleteSelected": "Supprimer ({n})",
   "groups.createCampaign": "Créer un envoi SMS",
   "groups.create": "Créer un groupe",
-  "groups.emptyTitle": "Aucun groupe trouvé",
+  "groups.emptyTitle": "Aucun groupe",
   "groups.emptyBody":
     "Vous n'avez pas encore de groupes. Créez votre premier groupe pour segmenter vos contacts et commencer à envoyer des SMS.",
   "groups.emptyTable": "Aucun groupe.",
@@ -488,7 +521,8 @@ const fr = {
   "campaigns.actionsAria": "Actions pour {name}",
   "campaigns.viewDetails": "Voir détails",
   "campaigns.emptyTitle": "Aucun envoi SMS",
-  "campaigns.emptyBody": "Créez un envoi SMS avec « Nouvel envoi SMS ».",
+  "campaigns.emptyBody":
+    "Créez un envoi SMS en cliquant sur \"Nouvel envoi SMS\" pour communiquer avec vos contacts.",
   "campaigns.emptyTable": "Aucun envoi SMS.",
   "campaigns.loading": "Chargement de la liste des envois SMS…",
   "campaigns.noSearchResults": "Aucun résultat pour cette recherche.",
@@ -533,19 +567,30 @@ const fr = {
   "links.createFailed": "Création impossible.",
   "links.createdToast": "Lien court créé",
   "links.deletedToast": "Lien supprimé",
+  "links.deletedManyToast": "{n} liens supprimés",
   "links.deleteTitle": "Supprimer ce lien court ?",
+  "links.deleteManyTitle": "Supprimer {n} liens ?",
+  "links.deleteManyCardTitle": "Redirections désactivées",
+  "links.deleteManyDesc":
+    "Les {n} liens sélectionnés ne redirigeront plus. Cette action est définitive.",
   "links.deleteDesc":
     "Le lien court {shortUrl} ne redirigera plus vers {originalUrl}. Cette action est définitive.",
-  "links.emptyTitle": "Aucun lien court pour le moment",
+  "links.selectAllAria": "Tout sélectionner les liens",
+  "links.selectOneAria": "Sélectionner {name}",
+  "links.deleteSelected": "Supprimer ({n})",
+  "links.copyAria": "Copier le lien court",
+  "links.deleteAria": "Supprimer le lien",
+  "links.emptyTitle": "Aucun lien court",
   "links.emptyBody":
-    "Créez votre premier lien ou activez le suivi des liens dans un envoi SMS.",
+    "Raccourcissez vos URLs et suivez les clics depuis cette liste. Ajoutez un lien en cliquant sur \"Créer un lien\".",
   "links.emptyTable": "Aucun lien.",
   "links.loading": "Chargement de la liste des liens…",
   "links.noSearchResults": "Aucun résultat pour cette recherche.",
   "links.col.created": "Créé le",
-  "links.col.label": "Libellé",
-  "links.col.originalUrl": "URL d'origine",
-  "links.col.shortUrl": "Lien court",
+  "links.col.label": "Nom du lien",
+  "links.col.description": "Description",
+  "links.col.originalUrl": "Destination",
+  "links.col.shortUrl": "Lien court SMS",
   "links.col.clicks": "Clics",
   "links.footerOne": "1 lien",
   "links.footerMany": "{n} liens",
@@ -593,7 +638,7 @@ const fr = {
   "templates.deletedManyToast": "{n} modèles supprimés",
   "templates.emptyTitle": "Aucun modèle personnalisé",
   "templates.emptyBody":
-    "Créez votre premier modèle pour le retrouver dans l'assistant envoi SMS.",
+    "Créez votre premier modèle pour le retrouver dans l'outil d'envoi SMS.",
   "templates.emptyTable": "Aucun modèle.",
   "templates.loading": "Chargement de la liste des modèles…",
   "templates.noSearchResults": "Aucun résultat pour cette recherche.",
@@ -641,6 +686,269 @@ const fr = {
   "stats.loadingAria": "Chargement des statistiques",
   "stats.loading": "Chargement des statistiques…",
 
+  "help.pageTitle": "Centre d'aide",
+  "help.pageSubtitle": "Comment pouvons-nous vous aider ?",
+  "help.card.contacts": "Contacts",
+  "help.card.groupes": "Groupes",
+  "help.card.campagnes": "Envois SMS",
+  "help.card.statistiques": "Statistiques",
+  "help.card.automatisations": "Automatisations",
+  "help.card.liens": "Liens",
+  "help.card.modeles-sms": "Modèles SMS",
+  "help.card.qr-boutique": "QR code boutique",
+  "help.card.reglementations-sms": "Réglementation SMS",
+  "help.card.acheter-credits": "Crédits et facturation",
+  "help.card.parametres": "Paramètres",
+  "help.card.support": "Besoin d'aide ?",
+  "help.card.articlesCount": "{count} articles",
+  "help.card.desc.contacts":
+    "Importez, organisez et segmentez vos contacts pour des envois ciblés.",
+  "help.card.desc.groupes":
+    "Créez des groupes et listes pour structurer vos destinataires.",
+  "help.card.desc.campagnes":
+    "Préparez, programmez et suivez vos campagnes SMS pas à pas.",
+  "help.card.desc.statistiques":
+    "Analysez livraison, lectures et clics pour optimiser vos envois.",
+  "help.card.desc.automatisations":
+    "Automatisez vos scénarios SMS et gagnez du temps au quotidien.",
+  "help.card.desc.liens":
+    "Créez et suivez des liens courts dans vos messages SMS.",
+  "help.card.desc.modeles-sms":
+    "Enregistrez des modèles réutilisables pour vos envois récurrents.",
+  "help.card.desc.qr-boutique":
+    "Collectez des contacts en boutique avec QR code et roue cadeaux.",
+  "help.card.desc.reglementations-sms":
+    "Consentement, STOP et bonnes pratiques réglementaires SMS.",
+  "help.card.desc.acheter-credits":
+    "Achetez des crédits, consultez votre solde et vos factures.",
+  "help.card.desc.parametres":
+    "Profil, équipe, champs personnalisés et préférences du compte.",
+  "help.card.desc.support":
+    "FAQ, contact support et ressources si vous êtes bloqué.",
+  "help.section.back": "Centre d'aide",
+  "help.section.backAria": "Retour au centre d'aide",
+  "help.section.navAria": "Sections et articles d'aide",
+  "help.section.learnTitle": "Ce que vous allez apprendre",
+  "help.section.learnSubtitle":
+    "Les points clés couverts par ce guide et les articles associés.",
+  "help.section.openArticle": "Ouvrir l'article complet",
+  "help.section.videoFallback": "Présentation vidéo",
+  "help.section.videoTitle": "Comprendre {topic} en 5 minutes",
+  "help.section.videoSubtitle.contacts":
+    "Découvrez ce qu'il faut savoir pour gérer, organiser et importer vos contacts simplement.",
+  "help.section.videoSubtitle.groupes":
+    "Découvrez comment structurer vos listes, créer des groupes et cibler vos envois efficacement.",
+  "help.section.videoSubtitle.campagnes":
+    "Découvrez comment préparer, rédiger, programmer et lancer vos envois SMS en toute confiance.",
+  "help.section.videoSubtitle.statistiques":
+    "Découvrez comment lire vos résultats, suivre la performance et améliorer vos prochains envois.",
+  "help.section.videoSubtitle.automatisations":
+    "Découvrez comment automatiser vos scénarios SMS et gagner du temps au quotidien.",
+  "help.section.videoSubtitle.liens":
+    "Découvrez comment créer des liens courts, les suivre et les intégrer à vos messages.",
+  "help.section.videoSubtitle.modeles-sms":
+    "Découvrez comment créer, organiser et réutiliser vos modèles pour vos campagnes récurrentes.",
+  "help.section.videoSubtitle.qr-boutique":
+    "Découvrez comment collecter des contacts en boutique avec le QR code et les outils associés.",
+  "help.section.videoSubtitle.reglementations-sms":
+    "Découvrez les règles essentielles : consentement, STOP, contenu et bonnes pratiques SMS.",
+  "help.section.videoSubtitle.acheter-credits":
+    "Découvrez comment acheter des crédits, suivre votre solde et comprendre votre facturation.",
+  "help.section.videoSubtitle.parametres":
+    "Découvrez comment configurer votre compte, votre équipe et les préférences de l'application.",
+  "help.section.videoSubtitle.support":
+    "Découvrez comment trouver une réponse rapidement ou contacter notre équipe support.",
+  "help.section.tipTitle": "Astuce",
+  "help.section.sidebarSubtitle.contacts":
+    "Tout ce qu'il faut savoir pour gérer votre base de contacts.",
+  "help.section.sidebarSubtitle.groupes":
+    "Tout ce qu'il faut savoir pour structurer et cibler vos groupes.",
+  "help.section.sidebarSubtitle.campagnes":
+    "Tout ce qu'il faut savoir pour préparer et envoyer vos SMS.",
+  "help.section.sidebarSubtitle.statistiques":
+    "Tout ce qu'il faut savoir pour lire et exploiter vos statistiques.",
+  "help.section.sidebarSubtitle.automatisations":
+    "Tout ce qu'il faut savoir pour automatiser vos envois SMS.",
+  "help.section.sidebarSubtitle.liens":
+    "Tout ce qu'il faut savoir pour créer et suivre vos liens.",
+  "help.section.sidebarSubtitle.modeles-sms":
+    "Tout ce qu'il faut savoir pour gérer vos modèles SMS.",
+  "help.section.sidebarSubtitle.qr-boutique":
+    "Tout ce qu'il faut savoir pour collecter des contacts en boutique.",
+  "help.section.sidebarSubtitle.reglementations-sms":
+    "Tout ce qu'il faut savoir sur la conformité de vos envois SMS.",
+  "help.section.sidebarSubtitle.acheter-credits":
+    "Tout ce qu'il faut savoir sur vos crédits et votre facturation.",
+  "help.section.sidebarSubtitle.parametres":
+    "Tout ce qu'il faut savoir pour configurer votre compte.",
+  "help.section.sidebarSubtitle.support":
+    "Tout ce qu'il faut savoir pour obtenir de l'aide rapidement.",
+  "help.articleBody.fallback.intro":
+    "Ce guide détaille « {title} » dans SMSClient, avec les étapes clés et des visuels à venir.",
+  "help.articleBody.fallback.before.body":
+    "Vérifiez vos droits d'accès et regardez où se trouve la fonctionnalité dans le menu avant de commencer.",
+  "help.articleBody.fallback.inApp.body":
+    "Suivez les champs et actions décrits pour « {title} ». Les captures d'écran viendront compléter chaque étape.",
+  "help.articleBody.fallback.result.body":
+    "À la fin, vous devriez obtenir le résultat attendu et pouvoir reproduire l'action en autonomie.",
+  "help.articleBody.block.before.title": "Avant de commencer",
+  "help.articleBody.block.inApp.title": "Dans l'application",
+  "help.articleBody.block.result.title": "Résultat attendu",
+  "help.articleBody.illustration.label": "Capture d'écran à venir",
+  "help.articleBody.illustration.hint":
+    "Un visuel sera ajouté ici pour illustrer cette étape.",
+  "help.articleBody.contacts.manual.intro":
+    "Apprenez à ajouter un contact à la main : saisie des informations, champs utiles et bonnes pratiques pour une fiche propre.",
+  "help.articleBody.contacts.manual.before.body":
+    "Ouvrez la vue Contacts et assurez-vous d'avoir le droit d'ajouter des fiches sur ce compte.",
+  "help.articleBody.contacts.manual.inApp.body":
+    "Cliquez sur Ajouter un contact, renseignez le numéro mobile, le nom et les champs personnalisés si besoin, puis enregistrez.",
+  "help.articleBody.contacts.manual.result.body":
+    "Le contact apparaît dans votre liste, prêt pour vos prochains envois ou groupes.",
+  "help.section.sidebarSearchPlaceholder": "Rechercher un article…",
+  "help.section.sidebarSearchAria": "Rechercher dans les articles de la section",
+  "help.section.sidebarSupportDesc":
+    "Notre équipe support est là pour vous accompagner.",
+  "help.section.group.contacts.basics": "Les bases",
+  "help.section.group.contacts.organize": "Organiser mes contacts",
+  "help.section.group.contacts.import": "Importer mes contacts",
+  "help.section.group.groupes.basics": "Les bases",
+  "help.section.group.groupes.target": "Cibler mes envois",
+  "help.section.group.groupes.maintain": "Entretenir mes groupes",
+  "help.section.group.campagnes.prepare": "Préparer un envoi",
+  "help.section.group.campagnes.message": "Rédiger le message",
+  "help.section.group.campagnes.send": "Envoyer et suivre",
+  "help.section.group.statistiques.basics": "Les indicateurs clés",
+  "help.section.group.statistiques.advanced": "Aller plus loin",
+  "help.section.group.automatisations.basics": "Les bases",
+  "help.section.group.automatisations.run": "Mettre en place",
+  "help.section.group.liens.basics": "Créer et suivre",
+  "help.section.group.liens.campaigns": "Utiliser en campagne",
+  "help.section.group.modeles-sms.create": "Créer un modèle",
+  "help.section.group.modeles-sms.use": "Utiliser au quotidien",
+  "help.section.group.qr-boutique.collect": "Collecter en boutique",
+  "help.section.group.qr-boutique.engage": "Engager vos clients",
+  "help.section.group.qr-boutique.optimize": "Optimiser",
+  "help.section.group.reglementations-sms.essentials": "L'essentiel",
+  "help.section.group.reglementations-sms.practice": "Mise en pratique",
+  "help.section.group.acheter-credits.credits": "Crédits SMS",
+  "help.section.group.acheter-credits.billing": "Facturation",
+  "help.section.group.parametres.account": "Compte et équipe",
+  "help.section.group.parametres.app": "Application",
+  "help.section.group.support.selfService": "Self-service",
+  "help.section.group.support.contact": "Nous contacter",
+  "help.section.sidebarSupportTitle.contacts":
+    "Besoin d'aide pour vos contacts ?",
+  "help.section.sidebarSupportTitle.groupes": "Besoin d'aide sur vos groupes ?",
+  "help.section.sidebarSupportTitle.campagnes":
+    "Besoin d'aide sur vos envois SMS ?",
+  "help.section.sidebarSupportTitle.statistiques":
+    "Besoin d'aide sur vos statistiques ?",
+  "help.section.sidebarSupportTitle.automatisations":
+    "Besoin d'aide sur vos automatisations ?",
+  "help.section.sidebarSupportTitle.liens": "Besoin d'aide sur vos liens ?",
+  "help.section.sidebarSupportTitle.modeles-sms":
+    "Besoin d'aide sur vos modèles SMS ?",
+  "help.section.sidebarSupportTitle.qr-boutique":
+    "Besoin d'aide sur le QR code boutique ?",
+  "help.section.sidebarSupportTitle.reglementations-sms":
+    "Besoin d'aide sur la réglementation SMS ?",
+  "help.section.sidebarSupportTitle.acheter-credits":
+    "Besoin d'aide sur les crédits et la facturation ?",
+  "help.section.sidebarSupportTitle.parametres":
+    "Besoin d'aide sur vos paramètres ?",
+  "help.section.sidebarSupportTitle.support": "Besoin d'aide supplémentaire ?",
+  "help.section.learn.support1": "Trouver une réponse dans la FAQ.",
+  "help.section.learn.support2": "Contacter le support par chat ou e-mail.",
+  "help.section.learn.support3": "Débloquer un cas complexe avec l'équipe.",
+  "help.art.contacts.importCsv": "Importer un fichier CSV",
+  "help.art.contacts.importExcel": "Importer un fichier Excel",
+  "help.art.contacts.manual": "Ajouter un contact manuellement",
+  "help.art.contacts.customFields": "Champs personnalisés",
+  "help.art.contacts.unsubscribed": "Contacts désabonnés",
+  "help.art.contacts.searchFilters": "Recherche et filtres",
+  "help.art.contacts.eligibility": "Contacts éligibles aux envois",
+  "help.art.contacts.bestPractices": "Bonnes pratiques contacts",
+  "help.art.groupes.create": "Créer un groupe",
+  "help.art.groupes.segments": "Segments et listes",
+  "help.art.groupes.rules": "Règles d'appartenance",
+  "help.art.groupes.campaignTarget": "Cibler une campagne",
+  "help.art.groupes.maintain": "Maintenir vos groupes",
+  "help.art.campagnes.firstSend": "Premier envoi SMS",
+  "help.art.campagnes.recipients": "Choisir les destinataires",
+  "help.art.campagnes.compose": "Rédiger le message",
+  "help.art.campagnes.schedule": "Programmer un envoi",
+  "help.art.campagnes.personalization": "Personnalisation",
+  "help.art.campagnes.links": "Liens dans le SMS",
+  "help.art.campagnes.credits": "Crédits et coût",
+  "help.art.campagnes.testSend": "Envoi de test",
+  "help.art.campagnes.errors": "Erreurs fréquentes",
+  "help.art.campagnes.duplicate": "Dupliquer une campagne",
+  "help.art.campagnes.reports": "Comprendre le rapport d'envoi",
+  "help.art.campagnes.checklist": "Checklist avant envoi",
+  "help.art.statistiques.overview": "Vue d'ensemble",
+  "help.art.statistiques.delivery": "Taux de livraison",
+  "help.art.statistiques.reads": "Taux de lecture",
+  "help.art.statistiques.clicks": "Taux de clic",
+  "help.art.statistiques.periods": "Périodes et filtres",
+  "help.art.statistiques.export": "Exporter les données",
+  "help.art.automatisations.intro": "Introduction aux automatisations",
+  "help.art.automatisations.triggers": "Déclencheurs",
+  "help.art.automatisations.templates": "Messages automatiques",
+  "help.art.automatisations.monitor": "Suivi et désactivation",
+  "help.art.liens.create": "Créer un lien court",
+  "help.art.liens.track": "Suivre les clics",
+  "help.art.liens.campaignUse": "Utiliser un lien en campagne",
+  "help.art.modeles.create": "Créer un modèle SMS",
+  "help.art.modeles.variables": "Variables dynamiques",
+  "help.art.modeles.reuse": "Réutiliser un modèle",
+  "help.art.modeles.compliance": "Modèles et conformité",
+  "help.art.modeles.organize": "Organiser vos modèles",
+  "help.art.qr.display": "Afficher le QR en boutique",
+  "help.art.qr.form": "Formulaire d'inscription",
+  "help.art.qr.wheel": "Roue des récompenses",
+  "help.art.qr.welcomeSms": "SMS de bienvenue",
+  "help.art.qr.compliance": "Collecte conforme",
+  "help.art.qr.stats": "Statistiques de collecte",
+  "help.art.qr.tips": "Conseils d'affichage",
+  "help.art.regs.consent": "Consentement et opt-in",
+  "help.art.regs.stop": "STOP et désinscription",
+  "help.art.regs.senderId": "Expéditeur et signature",
+  "help.art.regs.content": "Contenu autorisé",
+  "help.art.regs.hours": "Horaires d'envoi",
+  "help.art.regs.b2b": "SMS B2B",
+  "help.art.regs.b2c": "SMS B2C",
+  "help.art.regs.records": "Preuves et archivage",
+  "help.art.regs.international": "Envoi international",
+  "help.art.credits.buy": "Acheter des crédits",
+  "help.art.credits.balance": "Consulter le solde",
+  "help.art.credits.invoices": "Factures et historique",
+  "help.art.credits.usage": "Comprendre la consommation",
+  "help.art.parametres.profile": "Profil et langue",
+  "help.art.parametres.team": "Équipe et accès",
+  "help.art.parametres.customFields": "Champs personnalisés",
+  "help.art.parametres.appearance": "Apparence clair / sombre",
+  "help.art.parametres.notifications": "Notifications",
+  "help.art.parametres.security": "Sécurité du compte",
+  "help.art.support.faq": "Questions fréquentes",
+  "help.art.support.contact": "Contacter le support",
+  "help.art.support.escalation": "Escalade et urgence",
+  "help.searchPlaceholder": "Rechercher un guide ou un sujet…",
+  "help.searchAria": "Rechercher dans le centre d'aide",
+  "help.popularLabel": "Recherches les plus populaires",
+  "help.popular.q1": "Importer des contacts",
+  "help.popular.q2": "Créer une campagne",
+  "help.popular.q3": "Automatisations",
+  "help.popular.q4": "Statistiques",
+  "help.popular.q5": "Réglementation SMS",
+  "help.noResults":
+    "Aucun guide ne correspond à votre recherche. Essayez un autre mot-clé ou contactez le support.",
+  "help.card.readArticle": "Lire l'article",
+  "help.card.viewArticles": "Voir les articles",
+  "help.card.openSection": "Accéder à la section",
+  "help.footer.title": "Vous ne trouvez pas ce que vous cherchez ?",
+  "help.footer.desc":
+    "Notre équipe support répond à vos questions et vous aide à débloquer votre projet.",
   "help.heroTitle": "Centre d'aide SMSClient 👋",
   "help.heroBody":
     "Tout ce qu'il vous faut pour envoyer vos premiers SMS, gérer vos contacts et suivre vos résultats simplement.",
@@ -917,6 +1225,314 @@ const fr = {
   "helpAction.support": "Contacter le support",
   "helpAction.feedback": "Donner un retour",
 
+  "helpFaq.back": "Retour aux questions",
+  "helpFaq.backPill": "Retour",
+  "helpFaq.stepsLabel": "Étapes :",
+  "helpFaq.panelTitle": "Besoin d'aide sur cette page ?",
+  "helpFaq.close": "Fermer",
+  "helpFaq.fallback.subtitle":
+    "Trouvez rapidement une réponse aux questions fréquentes sur cette section.",
+  "helpFaq.contacts.subtitle":
+    "Trouvez rapidement une réponse aux questions les plus fréquentes sur vos contacts.",
+  "helpFaq.contacts.discover.title": "Découvrir les Contacts en détail",
+  "helpFaq.contacts.discover.teaser":
+    "Guide complet + vidéo d'explication",
+  "helpFaq.fallback.discover.title": "Découvrir {section} en détail",
+  "helpFaq.fallback.discover.teaser":
+    "Guide complet + vidéo d'explication",
+  "helpFaq.discover.duration": "2 min",
+  "helpFaq.contacts.add.title": "Comment ajouter un contact ?",
+  "helpFaq.contacts.add.teaser": "Ajoutez manuellement un nouveau contact.",
+  "helpFaq.contacts.add.intro":
+    "Créez une fiche contact une par une lorsque vous n'avez pas de fichier à importer. Le prénom et un mobile français valide (06 ou 07) sont requis pour enregistrer.",
+  "helpFaq.contacts.add.s1":
+    "Dans le menu, ouvrez Contacts.",
+  "helpFaq.contacts.add.s2":
+    "Cliquez sur « Ajouter un contact » (bouton en haut à droite de la liste, ou depuis l'état vide).",
+  "helpFaq.contacts.add.s3":
+    "Renseignez le prénom (obligatoire) et le mobile : 06 ou 07, 10 chiffres (ex. 06 12 34 56 78).",
+  "helpFaq.contacts.add.s4":
+    "Facultatif : nom, anniversaire, notes, groupes et champs personnalisés déjà configurés.",
+  "helpFaq.contacts.add.s5":
+    "Cliquez sur « Enregistrer le contact » : il apparaît dans la liste des contacts éligibles aux envois.",
+  "helpFaq.contacts.import.title": "Comment importer mes contacts ?",
+  "helpFaq.contacts.import.teaser":
+    "Importez plusieurs contacts en une fois.",
+  "helpFaq.contacts.import.intro":
+    "L'import CSV ajoute ou met à jour plusieurs contacts en une seule opération. Idéal pour migrer une base ou synchroniser un export depuis un autre outil.",
+  "helpFaq.contacts.import.s1":
+    "Sur Contacts, cliquez sur « Importer ».",
+  "helpFaq.contacts.import.s2":
+    "Glissez-déposez votre fichier CSV dans la zone prévue, ou utilisez « Parcourir… ».",
+  "helpFaq.contacts.import.s3":
+    "Pour chaque colonne du fichier, choisissez le rôle : au minimum une colonne « Téléphone » ; vous pouvez aussi mapper prénom, nom, anniversaire et champs personnalisés.",
+  "helpFaq.contacts.import.s4":
+    "Consultez l'aperçu : lignes invalides, numéros déjà en base ou doublons dans le fichier sont signalés. Option « Ajouter au groupe » pour rattacher les contacts importés.",
+  "helpFaq.contacts.import.s5":
+    "Validez avec « Importer X lignes » : un récapitulatif indique combien de contacts ont été créés, ignorés ou déjà présents.",
+  "helpFaq.contacts.edit.title": "Comment modifier un contact ?",
+  "helpFaq.contacts.edit.teaser":
+    "Mettez à jour les informations d'un contact.",
+  "helpFaq.contacts.edit.intro":
+    "Toute modification de fiche est disponible depuis la liste Contacts. Les changements s'appliquent aux prochains envois SMS qui ciblent ce contact.",
+  "helpFaq.contacts.edit.s1":
+    "Ouvrez Contacts et cliquez sur la ligne du contact à modifier.",
+  "helpFaq.contacts.edit.s2":
+    "La modale « Modifier le contact » s'ouvre avec les informations actuelles.",
+  "helpFaq.contacts.edit.s3":
+    "Mettez à jour le prénom, le mobile, l'anniversaire, les notes, les groupes ou les champs personnalisés.",
+  "helpFaq.contacts.edit.s4":
+    "Cliquez sur « Enregistrer le contact ». Si le contact est désabonné, un bandeau l'indique en haut de la modale.",
+  "helpFaq.contacts.groups.title": "Comment fonctionnent les groupes ?",
+  "helpFaq.contacts.groups.teaser":
+    "Organisez vos contacts par groupes.",
+  "helpFaq.contacts.groups.intro":
+    "Un groupe est un libellé partagé par plusieurs contacts. Vous segmentez ainsi votre base pour les envois SMS, sans dupliquer les numéros.",
+  "helpFaq.contacts.groups.s1":
+    "Un même contact peut appartenir à plusieurs groupes (case à cocher dans la fiche ou colonne « Groupes » du tableau).",
+  "helpFaq.contacts.groups.s2":
+    "Pour classer un contact : ouvrez sa fiche et cochez les groupes, ou saisissez « Nouveau groupe… » pour en créer un à la volée.",
+  "helpFaq.contacts.groups.s3":
+    "Pour gérer tous les groupes (renommer, voir les effectifs) : menu Groupes.",
+  "helpFaq.contacts.groups.s4":
+    "Lors d'un nouvel envoi SMS, filtrez ou sélectionnez des groupes pour ne contacter que les contacts concernés.",
+  "helpFaq.contacts.customFields.title":
+    "Comment fonctionnent les champs personnalisés ?",
+  "helpFaq.contacts.customFields.teaser":
+    "Comprenez l'utilité des champs personnalisés.",
+  "helpFaq.contacts.customFields.intro":
+    "Les champs personnalisés stockent des informations métier (numéro client, ville, date d'inscription…) en plus du prénom et du téléphone.",
+  "helpFaq.contacts.customFields.s1":
+    "Créez-les dans Paramètres → section « Champs personnalisés » : libellé + type (texte, nombre ou date).",
+  "helpFaq.contacts.customFields.s2":
+    "Ils apparaissent sur la fiche contact (ajout / modification) et comme colonnes mappables lors d'un import CSV.",
+  "helpFaq.contacts.customFields.s3":
+    "Renseignez les valeurs contact par contact ; elles restent attachées à la fiche même si vous renommez le libellé du champ.",
+  "helpFaq.contacts.customFields.s4":
+    "Dans un SMS ou un modèle, insérez la variable correspondante (menu des balises, ex. [Numéro client]) pour personnaliser le message à l'envoi.",
+  "helpFaq.contacts.stop.title": "Qu'est-ce qu'un contact en STOP ?",
+  "helpFaq.contacts.stop.teaser":
+    "Comprenez les contacts en STOP et le consentement.",
+  "helpFaq.contacts.stop.intro":
+    "Un contact désabonné (STOP) a exercé son droit de ne plus recevoir vos SMS. Il reste en base à titre d'historique mais est exclu des envois.",
+  "helpFaq.contacts.stop.s1":
+    "La liste principale Contacts n'affiche que les contacts éligibles aux envois ; les désabonnés n'y figurent plus.",
+  "helpFaq.contacts.stop.s2":
+    "En bas de liste, le compteur « X désabonné(s) » et « Voir la liste » ouvrent la liste des contacts STOP.",
+  "helpFaq.contacts.stop.s3":
+    "Depuis une fiche contact, « Désabonner » enregistre le STOP après confirmation ; le contact bascule dans les désabonnés.",
+  "helpFaq.contacts.stop.s4":
+    "Un contact désabonné ne peut pas être ciblé par un envoi SMS ou une automatisation tant qu'il n'est pas réinscrit avec consentement.",
+  "helpFaq.contacts.stop.s5":
+    "En ouvrant un contact STOP, la modale affiche un bandeau : « Ce contact est désabonné : il ne recevra plus vos envois SMS. »",
+
+  "helpFaq.groupes.subtitle":
+    "Trouvez rapidement une réponse aux questions les plus fréquentes sur vos groupes.",
+  "helpFaq.groupes.create.title": "Comment créer un groupe ?",
+  "helpFaq.groupes.create.teaser": "Créez un segment pour vos contacts.",
+  "helpFaq.groupes.create.intro":
+    "Un groupe regroupe des contacts sous un même libellé (ex. Clients VIP). Vous l'utilisez ensuite pour cibler vos envois SMS sans sélectionner contact par contact.",
+  "helpFaq.groupes.create.s1": "Ouvrez Groupes dans le menu.",
+  "helpFaq.groupes.create.s2":
+    "Cliquez sur « Créer un groupe » (en haut à droite, ou depuis l'état vide).",
+  "helpFaq.groupes.create.s3":
+    "Saisissez le nom du groupe (obligatoire, 40 caractères max) et, si besoin, une description (120 caractères max).",
+  "helpFaq.groupes.create.s4":
+    "Cochez les contacts éligibles dans la liste (recherche disponible) pour les rattacher au groupe.",
+  "helpFaq.groupes.create.s5":
+    "Enregistrez : le groupe apparaît dans le tableau avec le nombre de contacts et la date de création.",
+  "helpFaq.groupes.edit.title": "Comment modifier un groupe ?",
+  "helpFaq.groupes.edit.teaser": "Renommez ou décrivez un groupe existant.",
+  "helpFaq.groupes.edit.intro":
+    "Vous pouvez ajuster le nom et la description d'un groupe à tout moment. Les contacts membres ne sont pas supprimés tant que vous ne les décochez pas.",
+  "helpFaq.groupes.edit.s1":
+    "Sur Groupes, cliquez sur la ligne du groupe ou ouvrez le menu « Actions » puis modifier.",
+  "helpFaq.groupes.edit.s2":
+    "La modale de groupe s'ouvre en mode édition avec le nom, la description et la liste des membres actuels.",
+  "helpFaq.groupes.edit.s3":
+    "Modifiez le nom ou la description, puis enregistrez.",
+  "helpFaq.groupes.members.title":
+    "Comment gérer les contacts d'un groupe ?",
+  "helpFaq.groupes.members.teaser":
+    "Ajoutez ou retirez des membres du groupe.",
+  "helpFaq.groupes.members.intro":
+    "Les membres d'un groupe sont des contacts éligibles (non désabonnés). Un contact peut appartenir à plusieurs groupes en parallèle.",
+  "helpFaq.groupes.members.s1":
+    "Ouvrez le groupe en édition (clic sur la ligne).",
+  "helpFaq.groupes.members.s2":
+    "Utilisez la recherche pour filtrer la liste des contacts, cochez ou décochez les lignes souhaitées.",
+  "helpFaq.groupes.members.s3":
+    "Les boutons de sélection permettent de tout cocher ou d'effacer la sélection sur la page filtrée.",
+  "helpFaq.groupes.members.s4":
+    "Enregistrez : la colonne « Contacts » du tableau Groupes affiche le nouvel effectif.",
+  "helpFaq.groupes.sendFromGroups.title":
+    "Comment envoyer un SMS à des groupes ?",
+  "helpFaq.groupes.sendFromGroups.teaser":
+    "Ciblez un ou plusieurs groupes en un clic.",
+  "helpFaq.groupes.sendFromGroups.intro":
+    "Depuis la liste Groupes, vous pouvez pré-remplir l'assistant d'envoi SMS avec les groupes sélectionnés. Seuls les contacts abonnés des groupes seront comptés.",
+  "helpFaq.groupes.sendFromGroups.s1":
+    "Cochez un ou plusieurs groupes dans le tableau (case à gauche de chaque ligne).",
+  "helpFaq.groupes.sendFromGroups.s2":
+    "Cliquez sur « Créer un envoi SMS » dans la barre d'actions.",
+  "helpFaq.groupes.sendFromGroups.s3":
+    "Donnez un nom à l'envoi, puis suivez l'assistant (destinataires déjà filtrés par groupes, message, confirmation).",
+  "helpFaq.groupes.sendFromGroups.s4":
+    "La colonne « Dernier envoi SMS » du groupe se met à jour après un envoi réussi.",
+  "helpFaq.groupes.delete.title": "Comment supprimer un groupe ?",
+  "helpFaq.groupes.delete.teaser": "Retirez un groupe de votre base.",
+  "helpFaq.groupes.delete.intro":
+    "Supprimer un groupe ne supprime pas les contacts : seul le libellé de segmentation disparaît. Les fiches contact conservent leurs autres groupes.",
+  "helpFaq.groupes.delete.s1":
+    "Sélectionnez un ou plusieurs groupes via les cases à cocher.",
+  "helpFaq.groupes.delete.s2":
+    "Cliquez sur « Supprimer (n) » et confirmez.",
+  "helpFaq.groupes.delete.s3":
+    "Les contacts restent dans Contacts ; ils ne portent plus le groupe supprimé.",
+
+  "helpFaq.liens.subtitle":
+    "Trouvez rapidement une réponse aux questions les plus fréquentes sur vos liens courts.",
+  "helpFaq.liens.discover.title": "Découvrir les Liens en détail",
+  "helpFaq.liens.discover.teaser":
+    "Guide complet + vidéo d'explication",
+  "helpFaq.liens.whatIs.title": "Qu'est-ce qu'un lien court ?",
+  "helpFaq.liens.whatIs.teaser":
+    "URL compacte, redirection et suivi des clics.",
+  "helpFaq.liens.whatIs.intro":
+    "Un lien court est une adresse web réduite (domaine smsclient.fr) qui redirige automatiquement vers votre page de destination — boutique, formulaire, promo, etc. Vous l'insérez dans le SMS à la place d'une longue URL.",
+  "helpFaq.liens.whatIs.s1":
+    "Dans le SMS, chaque caractère compte : une URL longue consomme plus de segments et alourdit le message.",
+  "helpFaq.liens.whatIs.s2":
+    "Le lien court affiché au destinataire reste lisible ; au clic, il ouvre la même destination que l'URL complète que vous avez enregistrée.",
+  "helpFaq.liens.whatIs.s3":
+    "smsclient compte les ouvertures : vous voyez combien de personnes ont cliqué, sans changer le texte du SMS déjà envoyé.",
+  "helpFaq.liens.whatIs.s4":
+    "Dans Liens, vous gérez le nom, l'icône, la description interne, l'URL de destination et le lien court à copier dans vos campagnes.",
+  "helpFaq.liens.create.title": "Comment créer un lien court ?",
+  "helpFaq.liens.create.teaser":
+    "Nom, icône, description et URL de destination.",
+  "helpFaq.liens.create.intro":
+    "Un lien court associe une URL de destination (HTTPS) à une adresse smsclient.fr traçable. Vous le retrouvez dans la liste Liens avec son libellé et, si besoin, une description interne.",
+  "helpFaq.liens.create.s1":
+    "Ouvrez Liens dans le menu, puis « Créer un lien » (en haut à droite ou depuis l'état vide).",
+  "helpFaq.liens.create.s2":
+    "Choisissez une icône dans la grille, saisissez le nom du lien (obligatoire) et, optionnellement, une description (120 caractères max).",
+  "helpFaq.liens.create.s3":
+    "Indiquez l'URL de destination complète ; elle s'affiche dans la colonne Destination une fois le lien créé.",
+  "helpFaq.liens.create.s4":
+    "Validez : le lien apparaît dans le tableau avec le lien court SMS, la date de création et le compteur de clics (0 au départ).",
+  "helpFaq.liens.create.s5":
+    "Copiez le lien court via la puce bleue « Lien court SMS » ou le menu Actions sur la ligne.",
+  "helpFaq.liens.track.title": "Comment suivre les clics ?",
+  "helpFaq.liens.track.teaser":
+    "Compteur dans la liste et recherche par nom.",
+  "helpFaq.liens.track.intro":
+    "Chaque ouverture du lien court après diffusion du SMS est comptabilisée. Le total s'affiche dans la colonne « Clics » de la liste Liens.",
+  "helpFaq.liens.track.s1":
+    "Repérez le lien grâce à son icône, son nom ou sa description (barre de recherche en haut de la liste).",
+  "helpFaq.liens.track.s2":
+    "La colonne « Clics » indique le nombre total d'ouvertures enregistrées pour ce lien court.",
+  "helpFaq.liens.track.s3":
+    "Comparez plusieurs liens (promo, landing, formulaire) pour voir lequel performe le mieux après vos envois.",
+  "helpFaq.liens.track.s4":
+    "La colonne « Créé le » rappelle quand le lien a été ajouté ; le compteur évolue au fil des campagnes qui l'utilisent.",
+  "helpFaq.liens.campaignUse.title":
+    "Comment utiliser un lien dans un envoi SMS ?",
+  "helpFaq.liens.campaignUse.teaser":
+    "Insérez le lien court dans le message.",
+  "helpFaq.liens.campaignUse.intro":
+    "Les liens créés dans Liens sont pensés pour être collés dans le corps d'un SMS campagne ou d'une automatisation. Seule l'URL courte est envoyée aux destinataires ; la destination reste modifiable côté serveur si vous mettez à jour le lien (selon votre configuration).",
+  "helpFaq.liens.campaignUse.s1":
+    "Créez ou choisissez un lien dans Liens, puis copiez le lien court SMS.",
+  "helpFaq.liens.campaignUse.s2":
+    "Lancez « Nouvel envoi SMS » et rédigez le message à l'étape Message (ou sélectionnez un modèle).",
+  "helpFaq.liens.campaignUse.s3":
+    "Collez le lien court dans le texte ; vérifiez l'aperçu et la longueur du SMS (segments / crédits).",
+  "helpFaq.liens.campaignUse.s4":
+    "Après envoi, les clics remontent dans la colonne « Clics » du lien concerné.",
+  "helpFaq.liens.delete.title": "Comment supprimer un ou plusieurs liens ?",
+  "helpFaq.liens.delete.teaser": "Suppression depuis la liste Liens.",
+  "helpFaq.liens.delete.intro":
+    "Supprimer un lien court le désactive : il ne redirige plus. Les SMS déjà partis conservent l'ancienne URL en texte, mais les nouveaux clics ne seront plus comptés sur ce lien.",
+  "helpFaq.liens.delete.s1":
+    "Cochez un ou plusieurs liens dans la première colonne du tableau.",
+  "helpFaq.liens.delete.s2":
+    "Cliquez sur « Supprimer (n) » dans la barre d'actions et confirmez.",
+  "helpFaq.liens.delete.s3":
+    "Vous pouvez aussi ouvrir le menu « Actions » (⋯) sur une ligne et choisir Supprimer pour un seul lien.",
+
+  "helpFaq.campagnes.subtitle":
+    "Trouvez rapidement une réponse aux questions les plus fréquentes sur vos envois SMS.",
+  "helpFaq.campagnes.create.title": "Comment créer un envoi SMS ?",
+  "helpFaq.campagnes.create.teaser": "Lancez un nouvel envoi depuis l'app.",
+  "helpFaq.campagnes.create.intro":
+    "Un envoi SMS regroupe un message, une liste de destinataires éligibles et un mode d'expédition (immédiat ou programmé). Une fois créé, il apparaît dans Envois SMS.",
+  "helpFaq.campagnes.create.s1":
+    "Cliquez sur « Nouvel envoi SMS » dans l'en-tête (bouton vert) depuis n'importe quelle page, ou ouvrez le menu Envois SMS.",
+  "helpFaq.campagnes.create.s2":
+    "Sur la liste Envois SMS vide, utilisez aussi « Nouvel envoi SMS ».",
+  "helpFaq.campagnes.create.s3":
+    "Indiquez le nom de l'envoi dans la fenêtre « Nouvel envoi SMS », puis « Continuer ».",
+  "helpFaq.campagnes.create.s4":
+    "Parcourez les 3 étapes de l'assistant (destinataires, message, confirmation) puis validez l'envoi ou la programmation.",
+  "helpFaq.campagnes.wizardSteps.title":
+    "Comment fonctionne l'assistant en 3 étapes ?",
+  "helpFaq.campagnes.wizardSteps.teaser":
+    "Destinataires, message, confirmation.",
+  "helpFaq.campagnes.wizardSteps.intro":
+    "L'assistant vous guide de la sélection des destinataires jusqu'à la validation finale, avec une estimation des crédits SMS avant envoi.",
+  "helpFaq.campagnes.wizardSteps.s1":
+    "Étape 1 — Destinataires : choisissez des contacts et/ou des groupes, affinez avec la recherche et les filtres. Seuls les contacts abonnés sont comptés.",
+  "helpFaq.campagnes.wizardSteps.s2":
+    "Étape 2 — Message : rédigez le SMS (manuel, modèle ou assistant IA), vérifiez l'expéditeur et le coût en crédits (segments SMS).",
+  "helpFaq.campagnes.wizardSteps.s3":
+    "Étape 3 — Confirmation : relisez le récapitulatif (destinataires, message, crédits), choisissez envoi immédiat ou date/heure programmée, puis confirmez.",
+  "helpFaq.campagnes.wizardSteps.s4":
+    "Vous pouvez revenir en arrière avec la flèche en bas de l'assistant tant que l'envoi n'est pas parti.",
+  "helpFaq.campagnes.statuses.title":
+    "Que signifient les statuts d'envoi ?",
+  "helpFaq.campagnes.statuses.teaser":
+    "Brouillon, programmée, envoyée…",
+  "helpFaq.campagnes.statuses.intro":
+    "La colonne Statut de la liste Envois SMS résume où en est chaque campagne dans son cycle de vie.",
+  "helpFaq.campagnes.statuses.s1":
+    "Brouillon : envoi commencé mais non finalisé (assistant interrompu ou non confirmé).",
+  "helpFaq.campagnes.statuses.s2":
+    "Programmée : message validé, envoi prévu à la date/heure indiquée dans la colonne Envoi.",
+  "helpFaq.campagnes.statuses.s3":
+    "Envoyée : SMS transmis aux destinataires éligibles ; crédits consommés selon le décompte affiché.",
+  "helpFaq.campagnes.statuses.s4":
+    "Échec ou Annulée : l'envoi n'a pas abouti ou a été annulé avant expédition — ouvrez le détail pour plus de contexte.",
+  "helpFaq.campagnes.details.title":
+    "Comment consulter le détail d'un envoi ?",
+  "helpFaq.campagnes.details.teaser": "Message, cible et crédits.",
+  "helpFaq.campagnes.details.intro":
+    "La fiche détail reprend toutes les informations utiles pour audit ou renvoi d'un message similaire.",
+  "helpFaq.campagnes.details.s1":
+    "Ouvrez Envois SMS et repérez la ligne concernée.",
+  "helpFaq.campagnes.details.s2":
+    "Menu « Actions » sur la ligne → « Voir détails » (ou équivalent).",
+  "helpFaq.campagnes.details.s3":
+    "Consultez date de création, mode (immédiat / programmé), expéditeur, texte du message et nombre de destinataires ciblés.",
+  "helpFaq.campagnes.details.s4":
+    "L'onglet ou section Destinataires liste les contacts concernés lorsque le détail est disponible.",
+  "helpFaq.campagnes.details.s5":
+    "Le bouton « Renvoyer » permet de dupliquer l'envoi vers de nouveaux destinataires si proposé.",
+  "helpFaq.campagnes.schedule.title":
+    "Comment programmer un envoi SMS ?",
+  "helpFaq.campagnes.schedule.teaser":
+    "Choisissez date et heure à l'étape confirmation.",
+  "helpFaq.campagnes.schedule.intro":
+    "La programmation permet de préparer un SMS à l'avance ; il part automatiquement au créneau choisi (fuseau Europe/Paris).",
+  "helpFaq.campagnes.schedule.s1":
+    "Atteignez l'étape 3 — Confirmation de l'assistant.",
+  "helpFaq.campagnes.schedule.s2":
+    "Sélectionnez le mode programmé (plutôt qu'envoi immédiat).",
+  "helpFaq.campagnes.schedule.s3":
+    "Indiquez la date et l'heure d'envoi via le sélecteur ; une date passée est refusée.",
+  "helpFaq.campagnes.schedule.s4":
+    "Validez : le statut passe à « Programmée » et la colonne Envoi affiche le créneau prévu.",
+
   "guide.dashboard.eyebrow": "Accueil",
   "guide.dashboard.title": "Votre tableau de bord SMS",
   "guide.dashboard.desc":
@@ -992,11 +1608,11 @@ const fr = {
   "guide.liens.desc":
     "Créez des URLs courtes pour vos envois SMS et mesurez les clics depuis cette liste.",
   "guide.liens.b1":
-    "Chaque lien associe une URL d'origine à une adresse courte smsclient.fr.",
+    "Icône, nom, description optionnelle et URL de destination : tout est visible dans la liste.",
   "guide.liens.b2":
-    "La colonne « Clics » compte les ouvertures après envoi du SMS.",
+    "Copiez le lien court SMS (puce bleue) et suivez les clics dans la colonne dédiée.",
   "guide.liens.b3":
-    "Copiez le lien court pour l'insérer dans vos messages marketing.",
+    "Sélection multiple : supprimez plusieurs liens d'un coup depuis la barre d'actions.",
   "guide.liens.primary": "Créer un lien",
 
   "guide.modeles-sms.eyebrow": "Modèles SMS",
@@ -1073,7 +1689,7 @@ const fr = {
   "regs.title": "Réglementation SMS",
   "regs.subtitle":
     "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre envoi SMS.",
-  "regs.step1": "1. Sélectionnez le pays",
+  "regs.step1": "Sélectionnez le pays",
   "regs.searchPh": "Rechercher un pays…",
   "regs.orList": "Ou sélectionnez dans la liste",
   "regs.countriesAria": "Pays",
@@ -1085,6 +1701,10 @@ const fr = {
   "regs.disclaimer":
     "Les informations fournies sont à titre informatif et ne constituent pas un avis juridique.",
   "regs.compliant": "Conforme sous conditions",
+  "regs.marketingBannerTitle":
+    "Vous pouvez envoyer des SMS marketing sous conditions.",
+  "regs.marketingBannerSubtitle":
+    "Respectez les règles ci-dessous pour rester en conformité.",
   "regs.riskLevel": "Niveau de risque : {level}",
   "regs.country.fr": "France",
   "regs.country.be": "Belgique",
@@ -1098,6 +1718,9 @@ const fr = {
   "regs.section.legalMentions": "Mentions légales obligatoires",
   "regs.section.stopManagement": "Gestion du STOP",
   "regs.section.officialLinks": "Liens vers les textes officiels",
+  "regs.highlight.stop": "STOP",
+  "regs.highlight.expediteur": "Expéditeur",
+  "regs.disclaimerAria": "Avertissement juridique",
 
   "contact.modal.edit": "Modifier le contact",
   "contact.modal.fallbackName": "Contact",
@@ -1114,7 +1737,7 @@ const fr = {
     "Ex. Client allergique au gluten, préfère les SMS le matin",
   "contact.modal.groupsSelectedOne": "{n} sélectionné",
   "contact.modal.groupsSelectedMany": "{n} sélectionnés",
-  "contact.modal.noGroups": "Aucun groupe — crée-en un ci-dessous.",
+  "contact.modal.noGroups": "Aucun groupe pour l'instant.",
   "contact.modal.groupsAria": "Groupes du contact",
   "contact.modal.groupSizeOne": "{n} contact",
   "contact.modal.groupSizeMany": "{n} contacts",
@@ -1255,7 +1878,7 @@ const en: Record<MessageKey, string> = {
   "nav.modeles-sms": "SMS templates",
   "nav.qr-boutique": "Client capture",
   "nav.aide": "Help center",
-  "nav.reglementations-sms": "SMS regulations",
+  "nav.reglementations-sms": "SMS compliance",
 
   "route.dashboard": "Home",
   "route.contacts": "Contacts",
@@ -1267,7 +1890,7 @@ const en: Record<MessageKey, string> = {
   "route.qr-boutique": "Client capture",
   "route.liens": "Links",
   "route.modeles-sms": "SMS templates",
-  "route.reglementations-sms": "SMS regulations",
+  "route.reglementations-sms": "SMS compliance",
   "route.aide": "Help center",
   "route.nouvelle-campagne": "New SMS send",
   "route.acheter-credits": "Buy credits",
@@ -1286,6 +1909,7 @@ const en: Record<MessageKey, string> = {
   "shell.creditsRemaining": "Credits remaining",
   "shell.creditsUnit": "credits",
   "shell.newCampaign": "New SMS send",
+  "shell.help": "Help",
   "shell.notifications": "Notifications",
 
   "dialog.close": "Close",
@@ -1485,6 +2109,13 @@ const en: Record<MessageKey, string> = {
   "emoji.empty": "No emoji found.",
   "emoji.hint": "Hover an emoji to see its name",
   "emoji.insertAria": "Insert an emoji",
+  "sms.commercialLabel": "This message is commercial",
+  "sms.commercialHint": "(offer, promotion, news, etc.)",
+  "sms.commercialAria":
+    "This message is commercial (offer, promotion, news, etc.)",
+  "sms.commercialUnsubTooltipLine1": "The opt-out notice will be added",
+  "sms.commercialUnsubTooltipLine2": "automatically at the end of the message.",
+  "sms.commercialUnsubInfoAria": "Unsubscribe notice information",
   "emoji.disabledTitle": "Special characters disabled",
   "customFields.type": "Type",
   "customFields.type.text": "Text",
@@ -1669,7 +2300,31 @@ const en: Record<MessageKey, string> = {
   "contacts.createCampaign": "Create an SMS send",
   "contacts.import": "Import",
   "contacts.add": "Add a contact",
-  "contacts.emptyTitle": "No contacts found",
+  "listIntro.contacts.title": "You're in your contacts",
+  "listIntro.contacts.body":
+    "Find all your saved contacts here. Add contacts, organize them into groups, and use them for SMS campaigns.",
+  "listIntro.groupes.title": "You're in your groups",
+  "listIntro.groupes.body":
+    "Group contacts to segment your audience. Create groups, keep them up to date, and send targeted SMS campaigns.",
+  "listIntro.campagnes.title": "You're in your SMS sends",
+  "listIntro.campagnes.body":
+    "Review campaign history, track status, and create new SMS sends from this page.",
+  "listIntro.liens.title": "You're in your links",
+  "listIntro.liens.body":
+    "Create trackable short links for SMS and monitor clicks from this list.",
+  "listIntro.modeles-sms.title": "You're in your SMS templates",
+  "listIntro.modeles-sms.body":
+    "Save ready-to-use message text and reuse it when you send SMS.",
+  "listIntro.automatisations.title": "You're in your automations",
+  "listIntro.automatisations.body":
+    "Schedule recurring sends (birthdays, reminders, holidays)—SMS go out automatically to eligible contacts.",
+  "listIntro.reglementations-sms.title": "SMS compliance",
+  "listIntro.reglementations-sms.body":
+    "Review the SMS sending rules that apply in each country before you launch your campaign.",
+  "listIntro.learnMore": "Learn more",
+  "listIntro.dismissAria": "Dismiss this message",
+
+  "contacts.emptyTitle": "No contacts",
   "contacts.emptyBody":
     "You don't have any contacts yet. Add your first contact or import your contact list to start sending SMS.",
   "contacts.emptyTable": "No targets available.",
@@ -1697,7 +2352,7 @@ const en: Record<MessageKey, string> = {
   "groups.deleteSelected": "Delete ({n})",
   "groups.createCampaign": "Create an SMS send",
   "groups.create": "Create a group",
-  "groups.emptyTitle": "No groups found",
+  "groups.emptyTitle": "No groups",
   "groups.emptyBody":
     "You don't have any groups yet. Create your first group to segment your contacts and start sending SMS.",
   "groups.emptyTable": "No groups.",
@@ -1761,19 +2416,30 @@ const en: Record<MessageKey, string> = {
   "links.createFailed": "Could not create.",
   "links.createdToast": "Short link created",
   "links.deletedToast": "Link deleted",
+  "links.deletedManyToast": "{n} links deleted",
   "links.deleteTitle": "Delete this short link?",
+  "links.deleteManyTitle": "Delete {n} links?",
+  "links.deleteManyCardTitle": "Redirects disabled",
+  "links.deleteManyDesc":
+    "The {n} selected links will no longer redirect. This cannot be undone.",
   "links.deleteDesc":
     "The short link {shortUrl} will no longer redirect to {originalUrl}. This cannot be undone.",
-  "links.emptyTitle": "No short links yet",
+  "links.selectAllAria": "Select all links",
+  "links.selectOneAria": "Select {name}",
+  "links.deleteSelected": "Delete ({n})",
+  "links.copyAria": "Copy short link",
+  "links.deleteAria": "Delete link",
+  "links.emptyTitle": "No short links",
   "links.emptyBody":
-    "Create your first link or enable link tracking in an SMS send.",
+    "Shorten your URLs and track clicks from this list. Add a link by clicking “Create a link”.",
   "links.emptyTable": "No links.",
   "links.loading": "Loading links list…",
   "links.noSearchResults": "No results for this search.",
   "links.col.created": "Created",
-  "links.col.label": "Label",
-  "links.col.originalUrl": "Original URL",
-  "links.col.shortUrl": "Short link",
+  "links.col.label": "Link name",
+  "links.col.description": "Description",
+  "links.col.originalUrl": "Destination",
+  "links.col.shortUrl": "SMS short link",
   "links.col.clicks": "Clicks",
   "links.footerOne": "1 link",
   "links.footerMany": "{n} links",
@@ -1865,6 +2531,267 @@ const en: Record<MessageKey, string> = {
   "stats.loadingAria": "Loading statistics",
   "stats.loading": "Loading statistics…",
 
+  "help.pageTitle": "Help center",
+  "help.pageSubtitle": "How can we help you?",
+  "help.card.contacts": "Contacts",
+  "help.card.groupes": "Groups",
+  "help.card.campagnes": "SMS sends",
+  "help.card.statistiques": "Statistics",
+  "help.card.automatisations": "Automations",
+  "help.card.liens": "Links",
+  "help.card.modeles-sms": "SMS templates",
+  "help.card.qr-boutique": "Store QR code",
+  "help.card.reglementations-sms": "SMS regulations",
+  "help.card.acheter-credits": "Credits and billing",
+  "help.card.parametres": "Settings",
+  "help.card.support": "Need help?",
+  "help.card.articlesCount": "{count} articles",
+  "help.card.desc.contacts":
+    "Import, organize, and segment contacts for targeted sends.",
+  "help.card.desc.groupes":
+    "Create groups and lists to structure your recipients.",
+  "help.card.desc.campagnes":
+    "Prepare, schedule, and track SMS campaigns step by step.",
+  "help.card.desc.statistiques":
+    "Review delivery, reads, and clicks to improve your sends.",
+  "help.card.desc.automatisations":
+    "Automate SMS scenarios and save time every day.",
+  "help.card.desc.liens":
+    "Create and track short links in your SMS messages.",
+  "help.card.desc.modeles-sms":
+    "Save reusable templates for recurring campaigns.",
+  "help.card.desc.qr-boutique":
+    "Collect in-store contacts with QR codes and reward wheels.",
+  "help.card.desc.reglementations-sms":
+    "Consent, STOP, and SMS regulatory best practices.",
+  "help.card.desc.acheter-credits":
+    "Buy credits, check balance, and manage billing.",
+  "help.card.desc.parametres":
+    "Profile, team, custom fields, and account preferences.",
+  "help.card.desc.support":
+    "FAQ, support contact, and resources when you are stuck.",
+  "help.section.back": "Help center",
+  "help.section.backAria": "Back to help center",
+  "help.section.navAria": "Help sections and articles",
+  "help.section.learnTitle": "What you'll learn",
+  "help.section.learnSubtitle":
+    "Key takeaways from this guide and related articles.",
+  "help.section.openArticle": "Open full article",
+  "help.section.videoFallback": "Video overview",
+  "help.section.videoTitle": "Understand {topic} in 5 minutes",
+  "help.section.videoSubtitle.contacts":
+    "Learn what you need to manage, organize, and import your contacts with ease.",
+  "help.section.videoSubtitle.groupes":
+    "Learn how to structure lists, create groups, and target your sends effectively.",
+  "help.section.videoSubtitle.campagnes":
+    "Learn how to prepare, write, schedule, and launch SMS campaigns with confidence.",
+  "help.section.videoSubtitle.statistiques":
+    "Learn how to read results, track performance, and improve your next sends.",
+  "help.section.videoSubtitle.automatisations":
+    "Learn how to automate SMS scenarios and save time every day.",
+  "help.section.videoSubtitle.liens":
+    "Learn how to create short links, track clicks, and use them in your messages.",
+  "help.section.videoSubtitle.modeles-sms":
+    "Learn how to create, organize, and reuse templates for recurring campaigns.",
+  "help.section.videoSubtitle.qr-boutique":
+    "Learn how to collect in-store contacts with QR codes and related tools.",
+  "help.section.videoSubtitle.reglementations-sms":
+    "Learn the essentials: consent, STOP, content rules, and SMS best practices.",
+  "help.section.videoSubtitle.acheter-credits":
+    "Learn how to buy credits, track balance, and understand billing.",
+  "help.section.videoSubtitle.parametres":
+    "Learn how to set up your account, team, and app preferences.",
+  "help.section.videoSubtitle.support":
+    "Learn how to find answers quickly or reach our support team.",
+  "help.section.tipTitle": "Tip",
+  "help.section.sidebarSubtitle.contacts":
+    "Everything you need to manage your contact database.",
+  "help.section.sidebarSubtitle.groupes":
+    "Everything you need to structure and target your groups.",
+  "help.section.sidebarSubtitle.campagnes":
+    "Everything you need to prepare and send SMS campaigns.",
+  "help.section.sidebarSubtitle.statistiques":
+    "Everything you need to read and use your statistics.",
+  "help.section.sidebarSubtitle.automatisations":
+    "Everything you need to automate your SMS sends.",
+  "help.section.sidebarSubtitle.liens":
+    "Everything you need to create and track your links.",
+  "help.section.sidebarSubtitle.modeles-sms":
+    "Everything you need to manage SMS templates.",
+  "help.section.sidebarSubtitle.qr-boutique":
+    "Everything you need to collect contacts in store.",
+  "help.section.sidebarSubtitle.reglementations-sms":
+    "Everything you need to know about SMS compliance.",
+  "help.section.sidebarSubtitle.acheter-credits":
+    "Everything you need to know about credits and billing.",
+  "help.section.sidebarSubtitle.parametres":
+    "Everything you need to configure your account.",
+  "help.section.sidebarSubtitle.support":
+    "Everything you need to get help quickly.",
+  "help.articleBody.fallback.intro":
+    "This guide walks through « {title} » in SMSClient, with key steps and visuals coming soon.",
+  "help.articleBody.fallback.before.body":
+    "Check your access and locate the feature in the menu before you start.",
+  "help.articleBody.fallback.inApp.body":
+    "Follow the fields and actions for « {title} ». Screenshots will complement each step.",
+  "help.articleBody.fallback.result.body":
+    "When done, you should get the expected outcome and repeat the action on your own.",
+  "help.articleBody.block.before.title": "Before you start",
+  "help.articleBody.block.inApp.title": "In the app",
+  "help.articleBody.block.result.title": "Expected result",
+  "help.articleBody.illustration.label": "Screenshot coming soon",
+  "help.articleBody.illustration.hint":
+    "A visual will be added here to illustrate this step.",
+  "help.articleBody.contacts.manual.intro":
+    "Learn how to add a contact manually: enter details, useful fields, and tips for a clean record.",
+  "help.articleBody.contacts.manual.before.body":
+    "Open the Contacts view and confirm you can add records on this account.",
+  "help.articleBody.contacts.manual.inApp.body":
+    "Click Add contact, enter the mobile number, name, and custom fields if needed, then save.",
+  "help.articleBody.contacts.manual.result.body":
+    "The contact appears in your list, ready for sends or groups.",
+  "help.section.sidebarSearchPlaceholder": "Search for an article…",
+  "help.section.sidebarSearchAria": "Search articles in this section",
+  "help.section.sidebarSupportDesc":
+    "Our support team is here to help you.",
+  "help.section.group.contacts.basics": "Basics",
+  "help.section.group.contacts.organize": "Organize my contacts",
+  "help.section.group.contacts.import": "Import my contacts",
+  "help.section.group.groupes.basics": "Basics",
+  "help.section.group.groupes.target": "Target my sends",
+  "help.section.group.groupes.maintain": "Maintain my groups",
+  "help.section.group.campagnes.prepare": "Prepare a send",
+  "help.section.group.campagnes.message": "Write the message",
+  "help.section.group.campagnes.send": "Send and track",
+  "help.section.group.statistiques.basics": "Key metrics",
+  "help.section.group.statistiques.advanced": "Go further",
+  "help.section.group.automatisations.basics": "Basics",
+  "help.section.group.automatisations.run": "Set up",
+  "help.section.group.liens.basics": "Create and track",
+  "help.section.group.liens.campaigns": "Use in campaigns",
+  "help.section.group.modeles-sms.create": "Create a template",
+  "help.section.group.modeles-sms.use": "Day-to-day use",
+  "help.section.group.qr-boutique.collect": "Collect in store",
+  "help.section.group.qr-boutique.engage": "Engage customers",
+  "help.section.group.qr-boutique.optimize": "Optimize",
+  "help.section.group.reglementations-sms.essentials": "Essentials",
+  "help.section.group.reglementations-sms.practice": "In practice",
+  "help.section.group.acheter-credits.credits": "SMS credits",
+  "help.section.group.acheter-credits.billing": "Billing",
+  "help.section.group.parametres.account": "Account and team",
+  "help.section.group.parametres.app": "Application",
+  "help.section.group.support.selfService": "Self-service",
+  "help.section.group.support.contact": "Contact us",
+  "help.section.sidebarSupportTitle.contacts": "Need help with your contacts?",
+  "help.section.sidebarSupportTitle.groupes": "Need help with your groups?",
+  "help.section.sidebarSupportTitle.campagnes": "Need help with SMS sends?",
+  "help.section.sidebarSupportTitle.statistiques":
+    "Need help with your statistics?",
+  "help.section.sidebarSupportTitle.automatisations":
+    "Need help with automations?",
+  "help.section.sidebarSupportTitle.liens": "Need help with your links?",
+  "help.section.sidebarSupportTitle.modeles-sms":
+    "Need help with SMS templates?",
+  "help.section.sidebarSupportTitle.qr-boutique":
+    "Need help with the store QR code?",
+  "help.section.sidebarSupportTitle.reglementations-sms":
+    "Need help with SMS regulations?",
+  "help.section.sidebarSupportTitle.acheter-credits":
+    "Need help with credits and billing?",
+  "help.section.sidebarSupportTitle.parametres":
+    "Need help with your settings?",
+  "help.section.sidebarSupportTitle.support": "Need more help?",
+  "help.section.learn.support1": "Find an answer in the FAQ.",
+  "help.section.learn.support2": "Contact support via chat or email.",
+  "help.section.learn.support3": "Get help from the team on complex cases.",
+  "help.art.contacts.importCsv": "Import a CSV file",
+  "help.art.contacts.importExcel": "Import an Excel file",
+  "help.art.contacts.manual": "Add a contact manually",
+  "help.art.contacts.customFields": "Custom fields",
+  "help.art.contacts.unsubscribed": "Unsubscribed contacts",
+  "help.art.contacts.searchFilters": "Search and filters",
+  "help.art.contacts.eligibility": "Send-eligible contacts",
+  "help.art.contacts.bestPractices": "Contact best practices",
+  "help.art.groupes.create": "Create a group",
+  "help.art.groupes.segments": "Segments and lists",
+  "help.art.groupes.rules": "Membership rules",
+  "help.art.groupes.campaignTarget": "Target a campaign",
+  "help.art.groupes.maintain": "Maintain your groups",
+  "help.art.campagnes.firstSend": "First SMS send",
+  "help.art.campagnes.recipients": "Choose recipients",
+  "help.art.campagnes.compose": "Write the message",
+  "help.art.campagnes.schedule": "Schedule a send",
+  "help.art.campagnes.personalization": "Personalization",
+  "help.art.campagnes.links": "Links in SMS",
+  "help.art.campagnes.credits": "Credits and cost",
+  "help.art.campagnes.testSend": "Test send",
+  "help.art.campagnes.errors": "Common errors",
+  "help.art.campagnes.duplicate": "Duplicate a campaign",
+  "help.art.campagnes.reports": "Understand send reports",
+  "help.art.campagnes.checklist": "Pre-send checklist",
+  "help.art.statistiques.overview": "Overview",
+  "help.art.statistiques.delivery": "Delivery rate",
+  "help.art.statistiques.reads": "Read rate",
+  "help.art.statistiques.clicks": "Click rate",
+  "help.art.statistiques.periods": "Periods and filters",
+  "help.art.statistiques.export": "Export data",
+  "help.art.automatisations.intro": "Automations introduction",
+  "help.art.automatisations.triggers": "Triggers",
+  "help.art.automatisations.templates": "Automatic messages",
+  "help.art.automatisations.monitor": "Monitoring and pause",
+  "help.art.liens.create": "Create a short link",
+  "help.art.liens.track": "Track clicks",
+  "help.art.liens.campaignUse": "Use a link in a campaign",
+  "help.art.modeles.create": "Create an SMS template",
+  "help.art.modeles.variables": "Dynamic variables",
+  "help.art.modeles.reuse": "Reuse a template",
+  "help.art.modeles.compliance": "Templates and compliance",
+  "help.art.modeles.organize": "Organize templates",
+  "help.art.qr.display": "Display QR in store",
+  "help.art.qr.form": "Signup form",
+  "help.art.qr.wheel": "Reward wheel",
+  "help.art.qr.welcomeSms": "Welcome SMS",
+  "help.art.qr.compliance": "Compliant collection",
+  "help.art.qr.stats": "Collection stats",
+  "help.art.qr.tips": "Display tips",
+  "help.art.regs.consent": "Consent and opt-in",
+  "help.art.regs.stop": "STOP and opt-out",
+  "help.art.regs.senderId": "Sender ID and signature",
+  "help.art.regs.content": "Allowed content",
+  "help.art.regs.hours": "Sending hours",
+  "help.art.regs.b2b": "B2B SMS",
+  "help.art.regs.b2c": "B2C SMS",
+  "help.art.regs.records": "Proof and records",
+  "help.art.regs.international": "International sends",
+  "help.art.credits.buy": "Buy credits",
+  "help.art.credits.balance": "Check balance",
+  "help.art.credits.invoices": "Invoices and history",
+  "help.art.credits.usage": "Understand usage",
+  "help.art.parametres.profile": "Profile and language",
+  "help.art.parametres.team": "Team and access",
+  "help.art.parametres.customFields": "Custom fields",
+  "help.art.parametres.appearance": "Light / dark appearance",
+  "help.art.parametres.notifications": "Notifications",
+  "help.art.parametres.security": "Account security",
+  "help.art.support.faq": "Frequently asked questions",
+  "help.art.support.contact": "Contact support",
+  "help.art.support.escalation": "Escalation and urgency",
+  "help.searchPlaceholder": "Search for a guide or topic…",
+  "help.searchAria": "Search the help center",
+  "help.popularLabel": "Popular searches",
+  "help.popular.q1": "Import contacts",
+  "help.popular.q2": "Create a campaign",
+  "help.popular.q3": "Automations",
+  "help.popular.q4": "Statistics",
+  "help.popular.q5": "SMS regulations",
+  "help.noResults":
+    "No guide matches your search. Try another keyword or contact support.",
+  "help.card.readArticle": "Read article",
+  "help.card.viewArticles": "View articles",
+  "help.card.openSection": "Go to section",
+  "help.footer.title": "Can't find what you're looking for?",
+  "help.footer.desc":
+    "Our support team answers your questions and helps you move forward.",
   "help.heroTitle": "SMSClient help center 👋",
   "help.heroBody":
     "Everything you need to send your first SMS, manage contacts, and track results simply.",
@@ -2134,6 +3061,290 @@ const en: Record<MessageKey, string> = {
   "helpAction.support": "Contact support",
   "helpAction.feedback": "Give feedback",
 
+  "helpFaq.back": "Back to questions",
+  "helpFaq.backPill": "Back",
+  "helpFaq.stepsLabel": "Steps:",
+  "helpFaq.panelTitle": "Need help on this page?",
+  "helpFaq.close": "Close",
+  "helpFaq.fallback.subtitle":
+    "Find quick answers to common questions about this section.",
+  "helpFaq.contacts.subtitle":
+    "Find quick answers to the most common questions about your contacts.",
+  "helpFaq.contacts.discover.title": "Explore Contacts in depth",
+  "helpFaq.contacts.discover.teaser":
+    "Full guide + explainer video",
+  "helpFaq.fallback.discover.title": "Explore {section} in depth",
+  "helpFaq.fallback.discover.teaser":
+    "Full guide + explainer video",
+  "helpFaq.discover.duration": "2 min",
+  "helpFaq.contacts.add.title": "How do I add a contact?",
+  "helpFaq.contacts.add.teaser": "Add a new contact manually.",
+  "helpFaq.contacts.add.intro":
+    "Create one record at a time when you are not importing a file. First name and a valid French mobile (06 or 07) are required to save.",
+  "helpFaq.contacts.add.s1": "Open Contacts from the sidebar menu.",
+  "helpFaq.contacts.add.s2":
+    'Click "Add contact" (top-right of the list, or from the empty state).',
+  "helpFaq.contacts.add.s3":
+    "Enter first name (required) and mobile: 06 or 07, 10 digits (e.g. 06 12 34 56 78).",
+  "helpFaq.contacts.add.s4":
+    "Optional: last name, birthday, notes, groups, and any custom fields you configured.",
+  "helpFaq.contacts.add.s5":
+    'Click "Save contact" — the contact appears in the list eligible for SMS sends.',
+  "helpFaq.contacts.import.title": "How do I import contacts?",
+  "helpFaq.contacts.import.teaser": "Import many contacts at once.",
+  "helpFaq.contacts.import.intro":
+    "CSV import adds or updates many contacts in one go. Best when migrating a list or syncing an export from another tool.",
+  "helpFaq.contacts.import.s1": 'On Contacts, click "Import".',
+  "helpFaq.contacts.import.s2":
+    "Drag and drop your CSV into the drop zone, or use \"Browse…\".",
+  "helpFaq.contacts.import.s3":
+    "Map each column: at minimum one Phone column; you can also map first name, last name, birthday, and custom fields.",
+  "helpFaq.contacts.import.s4":
+    "Review the preview — invalid rows, numbers already in the database, or file duplicates are flagged. Optional \"Add to group\" links imported contacts.",
+  "helpFaq.contacts.import.s5":
+    'Confirm with "Import X rows" — a summary shows how many contacts were created, skipped, or already present.',
+  "helpFaq.contacts.edit.title": "How do I edit a contact?",
+  "helpFaq.contacts.edit.teaser": "Update a contact's information.",
+  "helpFaq.contacts.edit.intro":
+    "Edit any record from the Contacts list. Changes apply to the next SMS sends that include this contact.",
+  "helpFaq.contacts.edit.s1":
+    "Open Contacts and click the contact row you want to change.",
+  "helpFaq.contacts.edit.s2":
+    'The "Edit contact" dialog opens with current details.',
+  "helpFaq.contacts.edit.s3":
+    "Update first name, mobile, birthday, notes, groups, or custom fields.",
+  "helpFaq.contacts.edit.s4":
+    'Click "Save contact". If the contact is unsubscribed, a banner appears at the top of the dialog.',
+  "helpFaq.contacts.groups.title": "How do groups work?",
+  "helpFaq.contacts.groups.teaser": "Organize contacts into groups.",
+  "helpFaq.contacts.groups.intro":
+    "A group is a label shared by several contacts. You segment your base for SMS sends without duplicating phone numbers.",
+  "helpFaq.contacts.groups.s1":
+    "One contact can belong to several groups (checkboxes in the record or the Groups column in the table).",
+  "helpFaq.contacts.groups.s2":
+    'To tag a contact: open their record and check groups, or type "New group…" to create one on the fly.',
+  "helpFaq.contacts.groups.s3":
+    "To manage all groups (rename, see counts): Groups in the sidebar.",
+  "helpFaq.contacts.groups.s4":
+    "When creating an SMS send, filter or select groups so only relevant contacts are included.",
+  "helpFaq.contacts.customFields.title": "How do custom fields work?",
+  "helpFaq.contacts.customFields.teaser":
+    "Understand what custom fields are for.",
+  "helpFaq.contacts.customFields.intro":
+    "Custom fields store business data (customer ID, city, signup date…) beyond first name and phone.",
+  "helpFaq.contacts.customFields.s1":
+    'Create them under Settings → "Custom fields": label + type (text, number, or date).',
+  "helpFaq.contacts.customFields.s2":
+    "They appear on the contact form (add/edit) and as mappable columns during CSV import.",
+  "helpFaq.contacts.customFields.s3":
+    "Fill values per contact; values stay on the record even if you rename the field label.",
+  "helpFaq.contacts.customFields.s4":
+    "In an SMS or template, insert the matching merge tag (tag menu, e.g. [Customer ID]) to personalize at send time.",
+  "helpFaq.contacts.stop.title": "What is a STOP contact?",
+  "helpFaq.contacts.stop.teaser":
+    "Understand STOP contacts and consent.",
+  "helpFaq.contacts.stop.intro":
+    "An unsubscribed (STOP) contact opted out of your SMS. They remain in the database for history but are excluded from sends.",
+  "helpFaq.contacts.stop.s1":
+    "The main Contacts list shows only send-eligible contacts; unsubscribed ones are hidden there.",
+  "helpFaq.contacts.stop.s2":
+    'At the bottom of the list, the "X unsubscribed" counter and "View list" open the STOP contact list.',
+  "helpFaq.contacts.stop.s3":
+    'From a contact record, "Unsubscribe" records STOP after confirmation; the contact moves to unsubscribed.',
+  "helpFaq.contacts.stop.s4":
+    "Unsubscribed contacts cannot be targeted by SMS sends or automations until they opt in again with consent.",
+  "helpFaq.contacts.stop.s5":
+    'When opening a STOP contact, the dialog shows: "This contact is unsubscribed: they will no longer receive your SMS sends."',
+
+  "helpFaq.groupes.subtitle":
+    "Find quick answers to the most common questions about your groups.",
+  "helpFaq.groupes.create.title": "How do I create a group?",
+  "helpFaq.groupes.create.teaser": "Create a segment for your contacts.",
+  "helpFaq.groupes.create.intro":
+    "A group gathers contacts under one label (e.g. VIP customers). You then use it to target SMS sends without picking contacts one by one.",
+  "helpFaq.groupes.create.s1": "Open Groups from the sidebar.",
+  "helpFaq.groupes.create.s2":
+    'Click "Create a group" (top-right, or from the empty state).',
+  "helpFaq.groupes.create.s3":
+    "Enter the group name (required, 40 characters max) and optionally a description (120 characters max).",
+  "helpFaq.groupes.create.s4":
+    "Check eligible contacts in the list (search available) to attach them to the group.",
+  "helpFaq.groupes.create.s5":
+    "Save: the group appears in the table with contact count and creation date.",
+  "helpFaq.groupes.edit.title": "How do I edit a group?",
+  "helpFaq.groupes.edit.teaser": "Rename or describe an existing group.",
+  "helpFaq.groupes.edit.intro":
+    "You can change the name and description anytime. Member contacts are not removed unless you uncheck them.",
+  "helpFaq.groupes.edit.s1":
+    "On Groups, click the group row or open the Actions menu and edit.",
+  "helpFaq.groupes.edit.s2":
+    "The group dialog opens in edit mode with name, description, and current members.",
+  "helpFaq.groupes.edit.s3": "Update name or description, then save.",
+  "helpFaq.groupes.members.title": "How do I manage group members?",
+  "helpFaq.groupes.members.teaser": "Add or remove contacts from a group.",
+  "helpFaq.groupes.members.intro":
+    "Group members are eligible contacts (not unsubscribed). A contact can belong to several groups at once.",
+  "helpFaq.groupes.members.s1": "Open the group for editing (click the row).",
+  "helpFaq.groupes.members.s2":
+    "Use search to filter contacts, then check or uncheck rows.",
+  "helpFaq.groupes.members.s3":
+    "Selection controls let you select all or clear the filtered page.",
+  "helpFaq.groupes.members.s4":
+    'Save: the Groups table "Contacts" column shows the updated count.',
+  "helpFaq.groupes.sendFromGroups.title": "How do I send SMS to groups?",
+  "helpFaq.groupes.sendFromGroups.teaser": "Target one or more groups in one go.",
+  "helpFaq.groupes.sendFromGroups.intro":
+    "From the Groups list, you can pre-fill the SMS wizard with selected groups. Only subscribed contacts in those groups are counted.",
+  "helpFaq.groupes.sendFromGroups.s1":
+    "Check one or more groups in the table (box on the left of each row).",
+  "helpFaq.groupes.sendFromGroups.s2":
+    'Click "Create an SMS send" in the action bar.',
+  "helpFaq.groupes.sendFromGroups.s3":
+    "Name the send, then follow the wizard (recipients already filtered by groups, message, confirmation).",
+  "helpFaq.groupes.sendFromGroups.s4":
+    'After a successful send, the group\'s "Last SMS send" column updates.',
+  "helpFaq.groupes.delete.title": "How do I delete a group?",
+  "helpFaq.groupes.delete.teaser": "Remove a group from your workspace.",
+  "helpFaq.groupes.delete.intro":
+    "Deleting a group does not delete contacts—only the segment label. Contact records keep their other groups.",
+  "helpFaq.groupes.delete.s1": "Select one or more groups using the checkboxes.",
+  "helpFaq.groupes.delete.s2": 'Click "Delete (n)" and confirm.',
+  "helpFaq.groupes.delete.s3":
+    "Contacts remain in Contacts; they no longer show the removed group.",
+
+  "helpFaq.liens.subtitle":
+    "Find quick answers to the most common questions about your short links.",
+  "helpFaq.liens.discover.title": "Explore Links in depth",
+  "helpFaq.liens.discover.teaser":
+    "Full guide + explainer video",
+  "helpFaq.liens.whatIs.title": "What is a short link?",
+  "helpFaq.liens.whatIs.teaser":
+    "Compact URL, redirect, and click tracking.",
+  "helpFaq.liens.whatIs.intro":
+    "A short link is a compact web address (smsclient.fr domain) that automatically redirects to your destination page—store, form, promo, etc. You put it in the SMS instead of a long URL.",
+  "helpFaq.liens.whatIs.s1":
+    "In SMS, every character counts: a long URL uses more segments and clutters the message.",
+  "helpFaq.liens.whatIs.s2":
+    "The short link shown to recipients stays readable; when they tap it, they reach the same destination as the full URL you saved.",
+  "helpFaq.liens.whatIs.s3":
+    "smsclient counts opens: you see how many people clicked without changing SMS text already sent.",
+  "helpFaq.liens.whatIs.s4":
+    "In Links you manage name, icon, internal description, destination URL, and the short link to copy into campaigns.",
+  "helpFaq.liens.create.title": "How do I create a short link?",
+  "helpFaq.liens.create.teaser":
+    "Name, icon, description, and destination URL.",
+  "helpFaq.liens.create.intro":
+    "A short link maps a destination URL (HTTPS) to a trackable smsclient.fr address. You find it in Links with its label and optional internal description.",
+  "helpFaq.liens.create.s1":
+    'Open Links in the sidebar, then "Create link" (top right or from the empty state).',
+  "helpFaq.liens.create.s2":
+    "Pick an icon from the grid, enter the link name (required), and optionally a description (120 characters max).",
+  "helpFaq.liens.create.s3":
+    "Enter the full destination URL; it appears in the Destination column once the link is created.",
+  "helpFaq.liens.create.s4":
+    "Save: the link shows in the table with the SMS short link, created date, and click count (0 at first).",
+  "helpFaq.liens.create.s5":
+    'Copy the short link from the blue "SMS short link" chip or the row Actions menu.',
+  "helpFaq.liens.track.title": "How do I track clicks?",
+  "helpFaq.liens.track.teaser":
+    "Counter in the list and search by name.",
+  "helpFaq.liens.track.intro":
+    "Each open of the short link after the SMS goes out is counted. The total appears in the Clicks column on the Links list.",
+  "helpFaq.liens.track.s1":
+    "Find the link by icon, name, or description (search bar at the top of the list).",
+  "helpFaq.liens.track.s2":
+    'The "Clicks" column shows total recorded opens for that short link.',
+  "helpFaq.liens.track.s3":
+    "Compare links (promo, landing, form) to see which performs best after your sends.",
+  "helpFaq.liens.track.s4":
+    'The "Created" column shows when the link was added; the counter updates as campaigns use it.',
+  "helpFaq.liens.campaignUse.title":
+    "How do I use a link in an SMS send?",
+  "helpFaq.liens.campaignUse.teaser":
+    "Insert the short link in your message body.",
+  "helpFaq.liens.campaignUse.intro":
+    "Links created in Links are meant to be pasted into campaign or automation SMS bodies. Recipients only see the short URL; you manage the destination from Links.",
+  "helpFaq.liens.campaignUse.s1":
+    "Create or pick a link in Links, then copy the SMS short link.",
+  "helpFaq.liens.campaignUse.s2":
+    'Start "New SMS send" and write the message on the Message step (or pick a template).',
+  "helpFaq.liens.campaignUse.s3":
+    "Paste the short link in the text; check preview and SMS length (segments / credits).",
+  "helpFaq.liens.campaignUse.s4":
+    'After send, clicks appear in that link\'s "Clicks" column.',
+  "helpFaq.liens.delete.title": "How do I delete one or more links?",
+  "helpFaq.liens.delete.teaser": "Delete from the Links list.",
+  "helpFaq.liens.delete.intro":
+    "Deleting a short link disables it: it no longer redirects. SMS already sent keep the old URL text, but new clicks won't be tracked on that link.",
+  "helpFaq.liens.delete.s1":
+    "Check one or more links in the first column of the table.",
+  "helpFaq.liens.delete.s2":
+    'Click "Delete (n)" in the action bar and confirm.',
+  "helpFaq.liens.delete.s3":
+    'You can also open the row Actions menu (⋯) and choose Delete for a single link.',
+
+  "helpFaq.campagnes.subtitle":
+    "Find quick answers to the most common questions about your SMS sends.",
+  "helpFaq.campagnes.create.title": "How do I create an SMS send?",
+  "helpFaq.campagnes.create.teaser": "Start a new send from the app.",
+  "helpFaq.campagnes.create.intro":
+    "An SMS send bundles a message, eligible recipients, and delivery mode (immediate or scheduled). Once created, it appears under SMS sends.",
+  "helpFaq.campagnes.create.s1":
+    'Click "New SMS send" in the header (green button) from any page, or open SMS sends in the menu.',
+  "helpFaq.campagnes.create.s2":
+    'From an empty SMS sends list, use "New SMS send" as well.',
+  "helpFaq.campagnes.create.s3":
+    'Enter the send name in the "New SMS send" dialog, then "Continue".',
+  "helpFaq.campagnes.create.s4":
+    "Complete the 3 wizard steps (recipients, message, confirmation) then confirm send or schedule.",
+  "helpFaq.campagnes.wizardSteps.title": "How does the 3-step wizard work?",
+  "helpFaq.campagnes.wizardSteps.teaser": "Recipients, message, confirmation.",
+  "helpFaq.campagnes.wizardSteps.intro":
+    "The wizard walks you from recipient selection to final validation, with an SMS credit estimate before sending.",
+  "helpFaq.campagnes.wizardSteps.s1":
+    "Step 1 — Recipients: pick contacts and/or groups, refine with search and filters. Only subscribed contacts count.",
+  "helpFaq.campagnes.wizardSteps.s2":
+    "Step 2 — Message: write the SMS (manual, template, or AI assist), check sender and credit cost (SMS segments).",
+  "helpFaq.campagnes.wizardSteps.s3":
+    "Step 3 — Confirmation: review summary (recipients, message, credits), choose immediate send or scheduled date/time, then confirm.",
+  "helpFaq.campagnes.wizardSteps.s4":
+    "Use the back arrow at the bottom to return to a previous step until the send is submitted.",
+  "helpFaq.campagnes.statuses.title": "What do send statuses mean?",
+  "helpFaq.campagnes.statuses.teaser": "Draft, scheduled, sent…",
+  "helpFaq.campagnes.statuses.intro":
+    "The Status column in SMS sends summarizes where each campaign is in its lifecycle.",
+  "helpFaq.campagnes.statuses.s1":
+    "Draft: send started but not finished (wizard exited or not confirmed).",
+  "helpFaq.campagnes.statuses.s2":
+    "Scheduled: message confirmed, send planned at the date/time shown in the Send column.",
+  "helpFaq.campagnes.statuses.s3":
+    "Sent: SMS delivered to eligible recipients; credits consumed as shown.",
+  "helpFaq.campagnes.statuses.s4":
+    "Failed or Cancelled: send did not complete or was cancelled before dispatch—open details for context.",
+  "helpFaq.campagnes.details.title": "How do I view send details?",
+  "helpFaq.campagnes.details.teaser": "Message, audience, and credits.",
+  "helpFaq.campagnes.details.intro":
+    "The detail view gathers everything you need to audit or resend a similar message.",
+  "helpFaq.campagnes.details.s1": "Open SMS sends and find the row.",
+  "helpFaq.campagnes.details.s2":
+    'Row Actions menu → "View details".',
+  "helpFaq.campagnes.details.s3":
+    "See creation date, mode (immediate / scheduled), sender, message text, and targeted recipient count.",
+  "helpFaq.campagnes.details.s4":
+    "The Recipients section lists contacts when individual detail is available.",
+  "helpFaq.campagnes.details.s5":
+    'Use "Resend" to duplicate the send to new recipients when offered.',
+  "helpFaq.campagnes.schedule.title": "How do I schedule an SMS send?",
+  "helpFaq.campagnes.schedule.teaser": "Pick date and time on the confirmation step.",
+  "helpFaq.campagnes.schedule.intro":
+    "Scheduling lets you prepare a send in advance; it goes out automatically at the chosen slot (Europe/Paris timezone).",
+  "helpFaq.campagnes.schedule.s1": "Reach step 3 — Confirmation in the wizard.",
+  "helpFaq.campagnes.schedule.s2": "Choose scheduled mode instead of immediate send.",
+  "helpFaq.campagnes.schedule.s3":
+    "Set send date and time with the picker; past dates are rejected.",
+  "helpFaq.campagnes.schedule.s4":
+    'Confirm: status becomes "Scheduled" and the Send column shows the planned slot.',
+
   "guide.dashboard.eyebrow": "Home",
   "guide.dashboard.title": "Your SMS dashboard",
   "guide.dashboard.desc":
@@ -2204,9 +3415,11 @@ const en: Record<MessageKey, string> = {
   "guide.liens.desc":
     "Create short URLs for SMS sends and measure clicks from this list.",
   "guide.liens.b1":
-    "Each link maps an original URL to a short smsclient.fr address.",
-  "guide.liens.b2": "The “Clicks” column counts opens after the SMS is sent.",
-  "guide.liens.b3": "Copy the short link to insert into marketing messages.",
+    "Icon, name, optional description, and destination URL—all visible in the list.",
+  "guide.liens.b2":
+    'Copy the SMS short link (blue chip) and track clicks in the dedicated column.',
+  "guide.liens.b3":
+    "Multi-select: delete several links at once from the action bar.",
   "guide.liens.primary": "Create a link",
 
   "guide.modeles-sms.eyebrow": "SMS templates",
@@ -2275,7 +3488,7 @@ const en: Record<MessageKey, string> = {
   "regs.title": "SMS regulations",
   "regs.subtitle":
     "Review SMS sending rules for each country before launching your SMS send.",
-  "regs.step1": "1. Select the country",
+  "regs.step1": "Select the country",
   "regs.searchPh": "Search a country…",
   "regs.orList": "Or pick from the list",
   "regs.countriesAria": "Countries",
@@ -2287,6 +3500,10 @@ const en: Record<MessageKey, string> = {
   "regs.disclaimer":
     "This information is for guidance only and is not legal advice.",
   "regs.compliant": "Compliant under conditions",
+  "regs.marketingBannerTitle":
+    "You can send marketing SMS under certain conditions.",
+  "regs.marketingBannerSubtitle":
+    "Follow the rules below to stay compliant.",
   "regs.riskLevel": "Risk level: {level}",
   "regs.country.fr": "France",
   "regs.country.be": "Belgium",
@@ -2300,6 +3517,9 @@ const en: Record<MessageKey, string> = {
   "regs.section.legalMentions": "Required legal mentions",
   "regs.section.stopManagement": "STOP management",
   "regs.section.officialLinks": "Links to official texts",
+  "regs.highlight.stop": "STOP",
+  "regs.highlight.expediteur": "Sender",
+  "regs.disclaimerAria": "Legal disclaimer",
 
   "contact.modal.edit": "Edit contact",
   "contact.modal.fallbackName": "Contact",
@@ -2315,7 +3535,7 @@ const en: Record<MessageKey, string> = {
   "contact.modal.notesPh": "Ex. Gluten-free, prefers SMS in the morning",
   "contact.modal.groupsSelectedOne": "{n} selected",
   "contact.modal.groupsSelectedMany": "{n} selected",
-  "contact.modal.noGroups": "No groups — create one below.",
+  "contact.modal.noGroups": "No groups yet.",
   "contact.modal.groupsAria": "Contact groups",
   "contact.modal.groupSizeOne": "{n} contact",
   "contact.modal.groupSizeMany": "{n} contacts",

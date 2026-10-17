@@ -66,8 +66,21 @@ type DataTableProps<T> = {
   emptyRowClassName?: string;
 };
 
-const NO_SORT_IDS = new Set(["select", "actions", "avatar"]);
+const NO_SORT_IDS = new Set(["select", "actions", "avatar", "icon"]);
 const NO_FILTER_IDS = NO_SORT_IDS;
+
+function tableCellPaddingClass(colId: string): string {
+  if (colId === "icon") return "px-1 text-center";
+  if (colId === "select" || colId === "actions") return "px-2 text-center";
+  return "px-3";
+}
+
+function isUtilityCenterColumn(colId: string): boolean {
+  return colId === "select" || colId === "actions" || colId === "icon";
+}
+
+/** py-2 + icône tri h-3.5 — réf. liste Liens ; fige la hauteur avec filtres / checkbox. */
+const TABLE_HEAD_ROW_CLS = "h-[1.875rem] py-0 leading-none";
 
 function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
   if (col.id) return col.id;
@@ -82,7 +95,8 @@ function withColumnDefaults<T>(
 ): ColumnDef<T, unknown>[] {
   return columns.map((col) => {
     const id = columnId(col);
-    const noResize = id === "select" || id === "actions";
+    const noResize =
+      id === "select" || id === "actions" || id === "icon";
     const noSort = id != null && NO_SORT_IDS.has(id);
     const noFilter = id != null && NO_FILTER_IDS.has(id);
     return {
@@ -352,7 +366,7 @@ export function DataTable<T>({
   }, []);
 
   const emptyRowContent = (node: ReactNode) => (
-    <td colSpan={columns.length} className="border-b border-border/60 p-0">
+    <td colSpan={columns.length} className="border-b-0 p-0">
       <div
         className={cn(
           "sticky left-0 flex items-center justify-center px-[18px] py-12 text-center text-sm font-medium text-muted-foreground",
@@ -394,7 +408,7 @@ export function DataTable<T>({
   }, [onLoadMore, hasMore, data.length, loading, loadingMore]);
 
   return (
-    <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm", className)}>
+    <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card", className)}>
       <div
         ref={scrollRef}
         className={cn(
@@ -403,10 +417,10 @@ export function DataTable<T>({
         )}
       >
         <table
-          aria-busy={loading}
+          aria-busy={initialLoad}
           className={cn(
             "table-fixed border-separate border-spacing-0 text-sm transition-opacity",
-            loading && "opacity-60",
+            initialLoad && "opacity-60",
           )}
           style={{
             width: "100%",
@@ -419,10 +433,13 @@ export function DataTable<T>({
             {table.getVisibleLeafColumns().map((column) => {
               // Colonnes utilitaires : largeur figée. Les autres peuvent absorber
               // le reliquat (scrollbar globale) sinon blanc à droite de la liste.
+              const min = column.columnDef.minSize;
+              const max = column.columnDef.maxSize;
               const isFixed =
                 column.id === "select" ||
                 column.id === "actions" ||
-                column.id === "avatar";
+                column.id === "avatar" ||
+                (min != null && max != null && min === max);
               return (
                 <col
                   key={column.id}
@@ -461,10 +478,13 @@ export function DataTable<T>({
                     key={header.id}
                     aria-sort={ariaSort}
                     className={cn(
-                      "relative whitespace-nowrap border-b border-border bg-muted py-2 text-xs font-medium text-foreground",
-                      isSelectCol || isActionsCol
-                        ? "px-2 text-center"
-                        : "px-3 text-left",
+                      "relative whitespace-nowrap border-b border-border bg-muted text-xs font-medium text-foreground",
+                      TABLE_HEAD_ROW_CLS,
+                      tableCellPaddingClass(header.column.id),
+                      !isUtilityCenterColumn(header.column.id) &&
+                        "text-left",
+                      isUtilityCenterColumn(header.column.id) &&
+                        "text-center",
                       isSelectCol &&
                         "sticky left-0 z-20 cursor-pointer shadow-[1px_0_0_0_var(--border)]",
                       isActionsCol &&
@@ -485,11 +505,11 @@ export function DataTable<T>({
                     }
                   >
                     {header.isPlaceholder ? null : canSort ? (
-                      <div className="inline-flex min-w-0 items-center gap-0.5">
+                      <div className="-mx-3 flex h-full min-w-0 items-center gap-0.5 px-3">
                         <button
                           type="button"
                           className={cn(
-                            "-mx-3 -my-2 inline-flex min-w-0 flex-1 cursor-pointer select-none items-center gap-1.5 px-3 py-2 text-left",
+                            "inline-flex h-full min-w-0 flex-1 cursor-pointer select-none items-center gap-1.5 text-left",
                             "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
                           )}
                           onClick={() => {
@@ -534,10 +554,19 @@ export function DataTable<T>({
                         ) : null}
                       </div>
                     ) : (
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )
+                      <div
+                        className={cn(
+                          "min-w-0",
+                          isUtilityCenterColumn(header.column.id)
+                            ? "flex h-full items-center justify-center"
+                            : "-mx-3 flex h-full min-w-0 items-center truncate px-3"
+                        )}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </div>
                     )}
                     {header.column.getCanResize() ? (
                       <div
@@ -609,9 +638,9 @@ export function DataTable<T>({
                         key={cell.id}
                         className={cn(
                           "min-w-0 overflow-hidden border-b border-border/60 bg-card py-1.5 align-middle font-normal text-foreground group-hover:bg-accent/60",
-                          isSelectCol || isActionsCol
-                            ? "px-2 text-center"
-                            : "px-3",
+                          tableCellPaddingClass(cell.column.id),
+                          isUtilityCenterColumn(cell.column.id) &&
+                            "text-center",
                           isSelectCol &&
                             "sticky left-0 z-[1] cursor-pointer shadow-[1px_0_0_0_var(--border)]",
                           isActionsCol &&

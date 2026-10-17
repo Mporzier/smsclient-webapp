@@ -69,7 +69,6 @@ export function FormDialogShell({
       onOpenChange={(next) => {
         if (!next) {
           if (saving || hasStackedOpenDialog()) return;
-          if (formDirty) return;
           onClose();
         }
       }}

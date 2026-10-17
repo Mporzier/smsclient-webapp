@@ -122,7 +122,11 @@ export function useInfiniteList<T extends { id: string }>({
               setTotalCount(res.totalCount);
             }
           }
-          setLoading(false);
+        })
+        .finally(() => {
+          if (!cancelled && reqId === inflightRef.current) {
+            setLoading(false);
+          }
         });
     });
 
@@ -177,26 +181,31 @@ export function useInfiniteList<T extends { id: string }>({
     if (!silent) setLoading(true);
     setError(null);
     const reqId = ++inflightRef.current;
-    const res = await fetchPageRef.current({
-      offset: 0,
-      limit: pageSize,
-      search,
-      sort: sortRef.current ?? null,
-      filters: filtersRef.current ?? [],
-    });
-    if (reqId !== inflightRef.current) return;
-    if (res.error) {
-      setError(res.error.message);
-      setRows([]);
-      setHasMore(false);
-    } else {
-      setRows(res.data);
-      setHasMore(res.hasMore);
-      if (typeof res.totalCount === "number") {
-        setTotalCount(res.totalCount);
+    try {
+      const res = await fetchPageRef.current({
+        offset: 0,
+        limit: pageSize,
+        search,
+        sort: sortRef.current ?? null,
+        filters: filtersRef.current ?? [],
+      });
+      if (reqId !== inflightRef.current) return;
+      if (res.error) {
+        setError(res.error.message);
+        setRows([]);
+        setHasMore(false);
+      } else {
+        setRows(res.data);
+        setHasMore(res.hasMore);
+        if (typeof res.totalCount === "number") {
+          setTotalCount(res.totalCount);
+        }
+      }
+    } finally {
+      if (reqId === inflightRef.current) {
+        setLoading(false);
       }
     }
-    if (!silent) setLoading(false);
   }, [enabled, pageSize, search]);
 
   const resetAndReload = useCallback(() => {

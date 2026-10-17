@@ -12,6 +12,7 @@ describe("routes", () => {
     expect(parseHash("#campagnes")).toBe("campagnes");
     expect(parseHash("#nouvelle-campagne")).toBe("nouvelle-campagne");
     expect(parseHash("#dashboard")).toBe("dashboard");
+    expect(parseHash("#aide/contacts")).toBe("aide");
     expect(parseHash("")).toBe("dashboard");
   });
 

@@ -6,7 +6,7 @@ import { fetchSmsLinksPage } from "@/lib/supabase/links";
 import type { LinkRowData } from "@/lib/types/link";
 import type { ListSort } from "@/lib/proto/listSort";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
-import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 
 export function useLinks(active = true) {
@@ -16,6 +16,7 @@ export function useLinks(active = true) {
   const enabled = active && !authLoading && Boolean(userId);
 
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const sort: ListSort | null = sorting[0]
     ? { id: sorting[0].id, desc: !!sorting[0].desc }
     : null;
@@ -26,11 +27,13 @@ export function useLinks(active = true) {
       limit,
       search,
       sort: pageSort,
+      filters,
     }: {
       offset: number;
       limit: number;
       search: string;
       sort: ListSort | null;
+      filters?: ColumnFiltersState;
     }) => {
       if (!userId) {
         return { data: [], hasMore: false, error: null };
@@ -41,12 +44,18 @@ export function useLinks(active = true) {
         search,
         sort: pageSort,
         includeTotal: offset === 0,
+        filters,
       });
     },
     [supabase, userId],
   );
 
-  const list = useInfiniteList<LinkRowData>({ enabled, fetchPage, sort });
+  const list = useInfiniteList<LinkRowData>({
+    enabled,
+    fetchPage,
+    sort,
+    filters: columnFilters,
+  });
 
   return {
     rows: list.rows,
@@ -63,5 +72,7 @@ export function useLinks(active = true) {
     userId,
     sorting,
     setSorting,
+    columnFilters,
+    setColumnFilters,
   };
 }

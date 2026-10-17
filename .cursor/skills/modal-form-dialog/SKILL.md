@@ -27,8 +27,8 @@ Parent : skill **`conventions-first`**. **Avant d’écrire ou copier une modale
 2. **Croix** : `DialogContent showCloseButton={!saving}` — jamais `modalCloseBtn*`.
 3. **Autofocus** : `onOpenAutoFocus={preventDialogOpenAutoFocus}`.
 4. **Dirty** : `useModalFormDirty(open, snapshot, equals)` ; baseline après reset des seeds (voir tip wiki).
-5. **Dismiss** : `canDismiss = !saving && !isDirty` → `onPointerDownOutside` / `onEscapeKeyDown` : si `hasStackedOpenDialog()` ne pas bloquer ; sinon `if (!canDismiss) e.preventDefault()`.
-6. **FormDialogShell** : passer **`formDirty={isDirty}`** dès qu’il y a des champs modifiables (le shell applique dismiss + `onOpenChange` ; sans prop = bug).
+5. **Dismiss** : croix (`showCloseButton`) + bouton Annuler/Fermer → **toujours** `onClose` via `onOpenChange` / `onClick` (bloquer seulement si `saving` ou `hasStackedOpenDialog()`). **Overlay + Échap** : `canDismiss = !saving && !isDirty` → `onPointerDownOutside` / `onEscapeKeyDown` : si stack ouverte ne pas `preventDefault` ; sinon `if (!canDismiss) e.preventDefault()`.
+6. **FormDialogShell** : passer **`formDirty={isDirty}`** dès qu’il y a des champs modifiables (dirty = overlay/Échap seulement ; **pas** la croix).
 7. **Popovers** (emoji, tags, select) : `popoverClassName={dialogPopoverZCls}` ; ne pas bloquer dismiss parent quand stack ouverte.
 8. **Erreurs** : sous le champ (`ModalSmsMessageField` ou équivalent), pas bannière body.
 9. **Submit** : pas disabled pour validation — seulement `saving` / busy.
@@ -38,6 +38,7 @@ Parent : skill **`conventions-first`**. **Avant d’écrire ou copier une modale
 - Brancher `FormDialogShell` sans `formDirty` alors que le body est éditable.
 - Réimplémenter label + `SmsMessageComposer` au lieu de `ModalSmsMessageField`.
 - Bloquer tout `onPointerDownOutside` quand `saving` seulement (oublier dirty).
+- Bloquer `onOpenChange` avec `formDirty` (croix / Fermer ne marchent plus).
 - Lire uniquement la modale cible sans `conventions-ui.md` ni référence `CreateSmsLinkModal`.
 
 ## QR / SMS bienvenue

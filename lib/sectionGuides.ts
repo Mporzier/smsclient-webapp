@@ -1,3 +1,4 @@
+import type { MessageKey } from "@/lib/i18n/messages";
 import type { KnowledgeBaseArticleSlug } from "@/lib/knowledgeBase";
 import type { AppRoute } from "@/lib/proto/routes";
 import type { LucideIcon } from "lucide-react";
@@ -116,6 +117,6 @@ export function guideKeyForRoute(route: AppRoute): SectionGuideKey {
 export function guideMessageKey(
   section: SectionGuideKey,
   part: "eyebrow" | "title" | "desc" | "b1" | "b2" | "b3" | "primary",
-): `guide.${SectionGuideKey}.${typeof part}` {
-  return `guide.${section}.${part}`;
+): MessageKey {
+  return `guide.${section}.${part}` as MessageKey;
 }

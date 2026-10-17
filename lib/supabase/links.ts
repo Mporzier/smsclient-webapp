@@ -1,21 +1,34 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildShortUrl } from "@/lib/proto/shortLinks";
+import { normalizeSmsLinkIconId } from "@/lib/proto/smsLinkIcons";
 import type { LinkRowData } from "@/lib/types/link";
-import { LIST_PAGE_SIZE } from "@/lib/supabase/postgrestChunk";
+import {
+  LIST_PAGE_SIZE,
+  POSTGREST_IN_CHUNK,
+  chunkList,
+  paginateRange,
+} from "@/lib/supabase/postgrestChunk";
+import { normalizeListFilters } from "@/lib/proto/listFilters";
+import type { ColumnFiltersState } from "@tanstack/react-table";
 import {
   linkSortToOrders,
   type ListSort,
 } from "@/lib/proto/listSort";
+import type { ListColumnFilter } from "@/lib/proto/listFilters";
+import { applyLinkListFilters } from "@/lib/supabase/linkListFilters";
+import { attachFilterQuery } from "@/lib/supabase/listFilterSql";
 
 export type SmsCampaignLinkRecord = {
   id: string;
   user_id: string;
   campaign_id: string | null;
   label: string;
+  description: string;
   original_url: string;
   short_code: string;
   click_count: number;
   created_at: string;
+  icon: string;
 };
 
 type CreateShortLinkRpcRow = {
@@ -27,28 +40,63 @@ type CreateShortLinkRpcRow = {
   created_at: string;
 };
 
-function formatFrDate(iso: string): string {
-  return new Date(iso).toLocaleString("fr-FR", {
+function formatCreatedLabels(iso: string): {
+  createdDateLabel: string;
+  createdTimeLabel: string;
+  createdLabel: string;
+} {
+  const d = new Date(iso);
+  const createdDateLabel = d.toLocaleDateString("fr-FR", {
     timeZone: "Europe/Paris",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+  const createdTimeLabel = d.toLocaleTimeString("fr-FR", {
+    timeZone: "Europe/Paris",
     hour: "2-digit",
     minute: "2-digit",
   });
+  return {
+    createdDateLabel,
+    createdTimeLabel,
+    createdLabel: `${createdDateLabel} ${createdTimeLabel}`,
+  };
 }
 
 function recordToRow(r: SmsCampaignLinkRecord): LinkRowData {
+  const created = formatCreatedLabels(r.created_at);
   return {
     id: r.id,
+    icon: normalizeSmsLinkIconId(r.icon),
     label: r.label.trim(),
+    description: r.description?.trim() ?? "",
     originalUrl: r.original_url,
     shortCode: r.short_code,
     shortUrl: buildShortUrl(r.short_code),
     clickCount: r.click_count,
-    createdLabel: formatFrDate(r.created_at),
+    ...created,
     campaignId: r.campaign_id,
   };
+}
+
+function applySmsLinksSearch<T extends { or: (filters: string) => T }>(
+  query: T,
+  rawSearch: string,
+): T {
+  const q = rawSearch.trim();
+  if (!q) return query;
+  const safe = escapeIlike(q);
+  const p = `"%${safe.replace(/"/g, '\\"')}%"`;
+  return query.or(
+    `label.ilike.${p},description.ilike.${p},original_url.ilike.${p},short_code.ilike.${p}`,
+  );
+}
+
+function linkFiltersFromState(
+  filters?: ColumnFiltersState,
+): ReturnType<typeof normalizeListFilters> {
+  return normalizeListFilters(filters ?? []);
 }
 
 export async function fetchSmsLinks(
@@ -85,6 +133,7 @@ export async function fetchSmsLinksPage(
     search?: string;
     includeTotal?: boolean;
     sort?: ListSort | null;
+    filters?: ListColumnFilter[];
   },
 ): Promise<{
   data: LinkRowData[];
@@ -102,13 +151,11 @@ export async function fetchSmsLinksPage(
     .select("*", { count: includeTotal ? "exact" : undefined })
     .eq("user_id", userId);
 
-  if (q) {
-    const safe = escapeIlike(q);
-    const p = `"%${safe.replace(/"/g, '\\"')}%"`;
-    query = query.or(
-      `label.ilike.${p},original_url.ilike.${p},short_code.ilike.${p}`,
-    );
-  }
+  query = applySmsLinksSearch(query, q);
+
+  query = attachFilterQuery(query, (q) =>
+    applyLinkListFilters(q, args.filters ?? []),
+  );
 
   for (const o of linkSortToOrders(args.sort)) {
     query = query.order(o.column, {
@@ -140,12 +187,16 @@ export async function createSmsShortLink(
     originalUrl: string;
     campaignId?: string | null;
     label?: string;
+    description?: string;
+    icon?: string;
   },
 ): Promise<{ data: LinkRowData | null; error: Error | null }> {
   const { data, error } = await supabase.rpc("create_sms_short_link", {
     p_original_url: args.originalUrl.trim(),
     p_campaign_id: args.campaignId ?? null,
     p_label: args.label?.trim() ?? "",
+    p_icon: normalizeSmsLinkIconId(args.icon),
+    p_description: args.description?.trim() ?? "",
   });
 
   if (error) {
@@ -162,16 +213,60 @@ export async function createSmsShortLink(
   return {
     data: {
       id: row.id,
+      icon: normalizeSmsLinkIconId(args.icon),
       label: args.label?.trim() ?? "",
+      description: args.description?.trim() ?? "",
       originalUrl: row.original_url,
       shortCode: row.short_code,
       shortUrl: row.short_url || buildShortUrl(row.short_code),
       clickCount: row.click_count ?? 0,
-      createdLabel: formatFrDate(row.created_at),
+      ...formatCreatedLabels(row.created_at),
       campaignId: args.campaignId ?? null,
     },
     error: null,
   };
+}
+
+export async function countMatchingSmsLinks(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { search?: string; filters?: ColumnFiltersState } = {},
+): Promise<{ count: number; error: Error | null }> {
+  let query = supabase
+    .from("sms_campaign_links")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  query = applySmsLinksSearch(query, args.search ?? "");
+  query = attachFilterQuery(query, (q) =>
+    applyLinkListFilters(q, linkFiltersFromState(args.filters)),
+  );
+  const { count, error } = await query;
+  if (error) return { count: 0, error: new Error(error.message) };
+  return { count: typeof count === "number" ? count : 0, error: null };
+}
+
+export async function fetchMatchingSmsLinkIds(
+  supabase: SupabaseClient,
+  userId: string,
+  args: { search?: string; filters?: ColumnFiltersState } = {},
+): Promise<{ data: string[]; error: Error | null }> {
+  const page = await paginateRange<{ id: string }>(async (from, to) => {
+    let query = supabase
+      .from("sms_campaign_links")
+      .select("id")
+      .eq("user_id", userId);
+    query = applySmsLinksSearch(query, args.search ?? "");
+    query = attachFilterQuery(query, (q) =>
+      applyLinkListFilters(q, linkFiltersFromState(args.filters)),
+    );
+    const res = await query.order("id", { ascending: true }).range(from, to);
+    return {
+      data: (res.data as { id: string }[] | null) ?? null,
+      error: res.error,
+    };
+  });
+  if (page.error) return { data: page.data.map((r) => r.id), error: page.error };
+  return { data: page.data.map((r) => r.id), error: null };
 }
 
 export async function deleteSmsLink(
@@ -179,11 +274,22 @@ export async function deleteSmsLink(
   userId: string,
   linkId: string,
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase
-    .from("sms_campaign_links")
-    .delete()
-    .eq("user_id", userId)
-    .eq("id", linkId);
+  return deleteSmsLinks(supabase, userId, [linkId]);
+}
 
-  return { error: error ? new Error(error.message) : null };
+export async function deleteSmsLinks(
+  supabase: SupabaseClient,
+  userId: string,
+  ids: string[],
+): Promise<{ error: Error | null }> {
+  if (ids.length === 0) return { error: null };
+  for (const batch of chunkList(ids, POSTGREST_IN_CHUNK)) {
+    const { error } = await supabase
+      .from("sms_campaign_links")
+      .delete()
+      .eq("user_id", userId)
+      .in("id", batch);
+    if (error) return { error: new Error(error.message) };
+  }
+  return { error: null };
 }

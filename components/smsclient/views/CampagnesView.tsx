@@ -22,8 +22,24 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  ListEmptyIntroBanner,
+  shouldShowListEmptyIntro,
+} from "@/components/smsclient/ListEmptyIntroBanner";
+import {
+  LIST_VIEW_SEARCH_INPUT_CLASS,
+  LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_TOOLBAR_CLASS,
+} from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { CAMPAIGN_COL } from "@/components/smsclient/listColumnSizes";
+import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
+import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
+import {
+  CAMPAIGN_COL,
+  LINK_COL,
+  listColFixed,
+} from "@/components/smsclient/listColumnSizes";
 import {
   InputGroup,
   InputGroupAddon,
@@ -31,10 +47,13 @@ import {
 } from "@/components/ui/input-group";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
-import { useMemo } from "react";
-import { MoreHorizontal, Plus, Search, Send } from "lucide-react";
+import { normalizeListFilters } from "@/lib/proto/listFilters";
+import { campaignColumnFilterKind } from "@/lib/proto/listFilterUi";
+import { useCallback, useMemo, useState } from "react";
+import { Eye, MoreHorizontal, Plus, Search, Send } from "lucide-react";
 import type {
   ColumnDef,
+  ColumnFiltersState,
   OnChangeFn,
   SortingState,
 } from "@tanstack/react-table";
@@ -76,6 +95,8 @@ type CampagnesProps = {
   onSearchChange: (value: string) => void;
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
+  columnFilters: ColumnFiltersState;
+  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
   error: string | null;
   onNewCampaign: () => void;
   onOpenDetails: (row: CampaignRowData) => void;
@@ -92,11 +113,55 @@ export function CampagnesView({
   onSearchChange,
   sorting,
   onSortingChange,
+  columnFilters,
+  onColumnFiltersChange: setColumnFilters,
   error,
   onNewCampaign,
   onOpenDetails,
 }: CampagnesProps) {
   const { t } = useI18n();
+  const { openHelp } = useShellHelpActions();
+  const [listIntroDismissed, setListIntroDismissed] = useState(false);
+
+  const filterLabels = useMemo(
+    () => ({
+      createdLabel: t("campaigns.col.date"),
+      name: t("campaigns.col.name"),
+      recipients: t("campaigns.col.recipients"),
+      status: t("campaigns.col.status"),
+      creditsLabel: t("campaigns.col.credits"),
+    }),
+    [t],
+  );
+
+  const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
+
+  const renderColumnFilter = useCallback(
+    (columnId: string) => {
+      const kind = campaignColumnFilterKind(columnId);
+      if (!kind) return null;
+      return (
+        <DataTableColumnFilter
+          columnId={columnId}
+          columnLabel={
+            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
+          }
+          kind={kind}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+      );
+    },
+    [columnFilters, filterLabels, setColumnFilters],
+  );
+
+  const showListIntro = shouldShowListEmptyIntro({
+    loading,
+    dataLength: rows.length,
+    searchQuery,
+    hasActiveFilters,
+    dismissed: listIntroDismissed,
+  });
 
   const emptyState = (
     <Empty className="p-0 md:p-0">
@@ -133,7 +198,7 @@ export function CampagnesView({
       {
         accessorKey: "createdLabel",
         header: t("campaigns.col.date"),
-        size: CAMPAIGN_COL.created,
+        ...listColFixed(LINK_COL.created),
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
@@ -181,10 +246,7 @@ export function CampagnesView({
       },
       {
         id: "actions",
-        size: CAMPAIGN_COL.actions,
-        minSize: CAMPAIGN_COL.actions,
-        maxSize: CAMPAIGN_COL.actions,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => null,
         cell: ({ row }) => (
           <div className="flex items-center justify-center">
@@ -205,6 +267,7 @@ export function CampagnesView({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onSelect={() => onOpenDetails(row.original)}>
+                  <Eye aria-hidden />
                   {t("campaigns.viewDetails")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -217,12 +280,17 @@ export function CampagnesView({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <InputGroup
-          className="max-w-sm bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
-          role="search"
-        >
+    <div className={LIST_VIEW_STACK_CLASS}>
+      {showListIntro ? (
+        <ListEmptyIntroBanner
+          section="campagnes"
+          onLearnMore={openHelp}
+          onDismiss={() => setListIntroDismissed(true)}
+        />
+      ) : null}
+
+      <div className={LIST_VIEW_TOOLBAR_CLASS}>
+        <InputGroup className={LIST_VIEW_SEARCH_INPUT_CLASS} role="search">
           <InputGroupAddon align="inline-start">
             <Search aria-hidden />
           </InputGroupAddon>
@@ -241,6 +309,15 @@ export function CampagnesView({
         </div>
       )}
 
+      <ListFilterChips
+        filters={columnFilters}
+        labels={filterLabels}
+        onClearId={(id) => {
+          setColumnFilters((prev) => prev.filter((f) => f.id !== id));
+        }}
+        onClearAll={() => setColumnFilters([])}
+      />
+
       <DataTable
         columns={columns}
         data={rows}
@@ -256,6 +333,11 @@ export function CampagnesView({
         sorting={sorting}
         onSortingChange={onSortingChange}
         manualSorting
+        columnFilters={columnFilters}
+        onColumnFiltersChange={setColumnFilters}
+        manualFiltering
+        hasActiveFilters={hasActiveFilters}
+        renderColumnFilter={renderColumnFilter}
       />
     </div>
   );

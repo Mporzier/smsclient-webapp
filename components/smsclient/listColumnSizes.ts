@@ -19,8 +19,8 @@ export const CONTACT_COL = {
   lastSms: 160,
   /** Import CSV / QR / Manuel */
   source: 140,
-  /** JJ/MM/AAAA court */
-  created: 140,
+  /** JJ/MM/AAAA court — aligné autres listes */
+  created: 130,
   /** Menu … sticky droite — même largeur que select */
   actions: 40,
 } as const;
@@ -38,7 +38,7 @@ export const GROUP_COL = {
 } as const;
 
 export const CAMPAIGN_COL = {
-  created: 120,
+  created: 130,
   name: 220,
   recipients: 110,
   status: 120,
@@ -49,13 +49,35 @@ export const CAMPAIGN_COL = {
 } as const;
 
 export const LINK_COL = {
+  icon: 48,
   created: 130,
   label: 140,
+  description: 160,
   originalUrl: 220,
-  shortUrl: 168,
-  clickCount: 56,
+  /** l.sms.fm/xxxxxxx + chip copie */
+  shortUrl: 152,
+  /** Assez large pour libellé + tri + filtre en en-tête */
+  clickCount: 96,
   /** Menu … sticky droite — même largeur que select contacts */
   actions: 40,
+} as const;
+
+/** Largeur figée — réf. liste Liens ; en-tête identique entre vues. */
+export function listColFixed(pixels: number) {
+  return {
+    size: pixels,
+    minSize: pixels,
+    maxSize: pixels,
+    enableResizing: false,
+  } as const;
+}
+
+export const AUTOMATION_COL = {
+  name: 220,
+  trigger: 300,
+  activity: 150,
+  status: 120,
+  lastActivity: 170,
 } as const;
 
 export const MODELE_SMS_COL = {

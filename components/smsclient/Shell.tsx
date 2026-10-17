@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserProfile } from "@/components/auth/UserProfileProvider";
-import { FloatingHelpBanner } from "@/components/smsclient/FloatingHelpBanner";
+import { ShellHelpModal } from "@/components/smsclient/modals/ShellHelpModal";
 import { HeaderHelpMenu } from "@/components/smsclient/HeaderHelpMenu";
 import { CampaignWizardStepper } from "@/components/smsclient/CreateCampaign/CampaignWizardStepper";
 import { requestParametresSection } from "@/components/smsclient/views/parametres/parametresNav";
@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { navOverrideForRoute, isCampaignWizardRoute } from "@/lib/proto/routes";
 import { navItemKey, routeTitleKey, useI18n } from "@/lib/i18n";
 import { guideKeyForRoute } from "@/lib/sectionGuides";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   ChevronLeft,
@@ -71,8 +71,12 @@ function AppShellInner({
   const TitleIcon = ROUTE_ICONS[route];
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
+  const { helpOpen, setHelpOpen } = useShellHeaderTitle();
   const isCampaignWizard = isCampaignWizardRoute(route);
+
+  useEffect(() => {
+    setHelpOpen(false);
+  }, [route, setHelpOpen]);
 
   const email = user?.email ?? "";
 
@@ -457,13 +461,15 @@ function AppShellInner({
                   route === "nouvelle-campagne" ||
                   route === "reglementations-sms" ||
                   route === "qr-boutique" ||
-                  route === "parametres"
+                  route === "parametres" ||
+                  route === "aide"
                   ? "overflow-hidden"
                   : "overflow-auto",
                 route === "dashboard" ||
                   route === "nouvelle-campagne" ||
                   route === "reglementations-sms" ||
-                  route === "qr-boutique"
+                  route === "qr-boutique" ||
+                  route === "aide"
                   ? route === "qr-boutique"
                     ? "gap-2 py-2 md:py-3"
                     : "gap-2 py-3"
@@ -476,14 +482,10 @@ function AppShellInner({
         </div>
       </div>
 
-      <FloatingHelpBanner
+      <ShellHelpModal
         section={guideKeyForRoute(route)}
         open={helpOpen}
         onClose={() => setHelpOpen(false)}
-        onNavigate={(hash) => {
-          setHelpOpen(false);
-          go(hash);
-        }}
       />
     </div>
   );

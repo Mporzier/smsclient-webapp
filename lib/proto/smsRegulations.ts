@@ -65,13 +65,13 @@ export const SMS_REGULATIONS: CountryRegulations[] = [
         body: "Autorisés sans opt-in marketing si le message est strictement lié au service (confirmation de commande, rappel de RDV, alerte livraison). Pas de contenu promotionnel déguisé.",
       },
       allowedHours: {
-        body: "Recommandation : 8h–20h du lundi au vendredi, 10h–20h le samedi. Évitez le dimanche et les jours fériés pour les messages promotionnels.",
+        body: "Lun. - Ven. : 8h - 20h\nSam : 10h - 20h\nÉvitez le dimanche et jours fériés",
       },
       legalMentions: {
-        body: "Identifiez l'expéditeur (nom commercial ou marque). Sur les SMS promotionnels : mention de désinscription (« Répondez STOP… »). Respect du RGPD pour les données personnelles.",
+        body: "Votre entreprise doit être clairement identifiable.\nIndiquez le nom commercial ou la marque en expéditeur.",
       },
       stopManagement: {
-        body: "Toute personne peut se désinscrire en répondant STOP (ou équivalent). Traitement gratuit et sans délai. Ne plus contacter après désinscription. Conservez la date de retrait.",
+        body: "Désinscription obligatoire et gratuite.\nToute personne doit pouvoir se désinscrire facilement (STOP par SMS).",
       },
       officialLinks: {
         body: "Textes et recommandations des autorités françaises :",

@@ -1,8 +1,17 @@
 "use client";
 
 import { CountryFlag } from "@/components/smsclient/CountryFlag";
+import { ListEmptyIntroBanner } from "@/components/smsclient/ListEmptyIntroBanner";
 import { SearchBar } from "@/components/smsclient/Shell";
+import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import { fieldBox } from "@/components/smsclient/flowFieldStyles";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -15,7 +24,6 @@ import {
   type SmsRegulationCountry,
 } from "@/lib/proto/smsRegulations";
 import {
-  Scale,
   AlertTriangle,
   Users,
   UserCheck,
@@ -27,6 +35,7 @@ import {
   ExternalLink,
   BadgeCheck,
   Info,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -45,8 +54,51 @@ const SECTION_ICONS: Record<RegulationSectionKey, LucideIcon> = {
 const PREVIEW_LEFT_KEYS = REGULATION_SECTION_ORDER.slice(4);
 const PREVIEW_RIGHT_KEYS = REGULATION_SECTION_ORDER.slice(0, 4);
 
+const HIGHLIGHT_SECTION_KEYS: RegulationSectionKey[] = [
+  "allowedHours",
+  "stopManagement",
+  "legalMentions",
+];
+
+type HighlightSectionKey = (typeof HIGHLIGHT_SECTION_KEYS)[number];
+
+const HIGHLIGHT_CARD_THEMES: Record<
+  HighlightSectionKey,
+  {
+    card: string;
+    iconWrap: string;
+    icon: string;
+  }
+> = {
+  allowedHours: {
+    card: "bg-sky-50 dark:bg-sky-950/25",
+    iconWrap: "bg-sky-100 dark:bg-sky-900/50",
+    icon: "text-sky-700 dark:text-sky-400",
+  },
+  stopManagement: {
+    card: "bg-rose-50 dark:bg-rose-950/25",
+    iconWrap: "bg-rose-100 dark:bg-rose-900/50",
+    icon: "text-rose-700 dark:text-rose-400",
+  },
+  legalMentions: {
+    card: "bg-violet-50 dark:bg-violet-950/25",
+    iconWrap: "bg-violet-100 dark:bg-violet-900/50",
+    icon: "text-violet-700 dark:text-violet-400",
+  },
+};
+
+const DROPDOWN_SECTION_KEYS = REGULATION_SECTION_ORDER.filter(
+  (key) => !HIGHLIGHT_SECTION_KEYS.includes(key),
+);
+
 function sectionLabelKey(key: RegulationSectionKey): MessageKey {
   return `regs.section.${key}` as MessageKey;
+}
+
+function highlightTitleKey(key: RegulationSectionKey): MessageKey {
+  if (key === "stopManagement") return "regs.highlight.stop";
+  if (key === "legalMentions") return "regs.highlight.expediteur";
+  return sectionLabelKey(key);
 }
 
 function countryLabelKey(id: SmsRegulationCountry): MessageKey {
@@ -64,57 +116,158 @@ function RegulationPreviewBullet({
   return (
     <li className="flex items-center gap-2">
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-[#2f6fed]/15 bg-[#eef4ff] text-[#2f6fed]"
+        className="grid size-5 shrink-0 place-items-center rounded-md bg-primary/10 text-primary"
         aria-hidden
       >
-        <Icon className="h-2.5 w-2.5" />
+        <Icon className="size-3" strokeWidth={2.25} />
       </span>
-      <span className="min-w-0 text-[11px] font-semibold leading-snug text-slate-700">
+      <span className="min-w-0 text-xs font-medium leading-snug text-muted-foreground">
         {label}
       </span>
     </li>
   );
 }
 
-function RegulationSectionCard({
+function RegulationSectionLinks({
+  links,
+}: {
+  links: NonNullable<RegulationSectionContent["links"]>;
+}) {
+  return (
+    <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
+      {links.map((link) => (
+        <li key={link.url}>
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RegulationHighlightCard({
   sectionKey,
   content,
   title,
 }: {
-  sectionKey: RegulationSectionKey;
+  sectionKey: HighlightSectionKey;
   content: RegulationSectionContent;
   title: string;
 }) {
   const Icon = SECTION_ICONS[sectionKey];
+  const theme = HIGHLIGHT_CARD_THEMES[sectionKey];
 
   return (
-    <section className="rounded-xl border border-slate-200/90 bg-slate-50/60 px-3 py-2.5">
-      <div className="mb-1.5 flex items-center gap-2">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[#2f6fed]/15 bg-[#eef4ff] text-[#2f6fed]">
-          <Icon className="h-3 w-3" aria-hidden />
+    <Card
+      size="sm"
+      className={cn(
+        "h-full min-w-0 shadow-none ring-0",
+        theme.card,
+      )}
+    >
+      <CardHeader className="flex-row items-center gap-2.5 space-y-0">
+        <span
+          className={cn(
+            "grid size-9 shrink-0 place-items-center rounded-lg",
+            theme.iconWrap,
+          )}
+          aria-hidden
+        >
+          <Icon className={cn("size-4", theme.icon)} strokeWidth={2.25} />
         </span>
-        <h3 className="m-0 text-xs font-black text-[#1f3b77]">{title}</h3>
+        <CardTitle className="min-w-0 leading-snug">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="whitespace-pre-line text-pretty text-xs font-medium leading-snug text-muted-foreground">
+          {content.body}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RegulationSectionDropdown({
+  sectionKey,
+  content,
+  title,
+  open,
+  onToggle,
+}: {
+  sectionKey: RegulationSectionKey;
+  content: RegulationSectionContent;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const Icon = SECTION_ICONS[sectionKey];
+  const panelId = `regs-section-${sectionKey}`;
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        id={`${panelId}-trigger`}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className={cn(
+          "flex w-full cursor-pointer items-start gap-2.5 px-3 py-3 text-left transition-colors duration-200",
+          !open && "hover:bg-muted/50",
+        )}
+      >
+        <Icon
+          className="mt-0.5 size-4 shrink-0 text-ring"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          {!open ? (
+            <p className="mt-0.5 line-clamp-1 text-xs font-medium leading-snug text-muted-foreground">
+              {content.body}
+            </p>
+          ) : null}
+        </div>
+        <ChevronDown
+          className={cn(
+            "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-300 ease-in-out",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-in-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div
+            id={panelId}
+            role="region"
+            aria-labelledby={`${panelId}-trigger`}
+            className={cn(
+              "border-t border-border px-3 pb-3 pt-3 transition-opacity duration-300 ease-in-out",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <p className="text-xs font-medium leading-snug text-muted-foreground">
+              {content.body}
+            </p>
+            {content.links && content.links.length > 0 ? (
+              <RegulationSectionLinks links={content.links} />
+            ) : null}
+          </div>
+        </div>
       </div>
-      <p className="m-0 text-[11px] font-semibold leading-snug text-slate-600">
-        {content.body}
-      </p>
-      {content.links && content.links.length > 0 ? (
-        <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
-          {content.links.map((link) => (
-            <li key={link.url}>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2f6fed] hover:underline"
-              >
-                <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </section>
   );
 }
@@ -136,8 +289,18 @@ function matchesCountrySearch(
 
 export function ReglementationsSmsView() {
   const { t } = useI18n();
+  const { openHelp } = useShellHelpActions();
   const [country, setCountry] = useState<SmsRegulationCountry>("fr");
   const [searchQuery, setSearchQuery] = useState("");
+  const [introDismissed, setIntroDismissed] = useState(false);
+  const [openDropdownKey, setOpenDropdownKey] =
+    useState<RegulationSectionKey | null>(null);
+  const [openDropdownCountry, setOpenDropdownCountry] =
+    useState<SmsRegulationCountry>(country);
+  if (country !== openDropdownCountry) {
+    setOpenDropdownCountry(country);
+    setOpenDropdownKey(null);
+  }
 
   const filteredCountries = useMemo(
     () =>
@@ -150,37 +313,31 @@ export function ReglementationsSmsView() {
   const active =
     SMS_REGULATIONS.find((c) => c.id === country) ?? SMS_REGULATIONS[0];
 
-  const riskLabel =
-    active.riskLevel === "faible"
-      ? t("regs.risk.faible")
-      : active.riskLevel;
+  const toggleDropdown = (key: RegulationSectionKey) => {
+    setOpenDropdownKey((current) => (current === key ? null : key));
+  };
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)]">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {!introDismissed ? (
+        <ListEmptyIntroBanner
+          section="reglementations-sms"
+          compact
+          className="shrink-0"
+          onLearnMore={openHelp}
+          onDismiss={() => setIntroDismissed(true)}
+        />
+      ) : null}
+
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,400px)_minmax(0,2fr)]">
       <div
         className={cn(
           fieldBox,
           "flex min-h-0 flex-col gap-3 overflow-y-auto py-4",
         )}
       >
-        <div className="shrink-0">
-          <div className="flex items-start gap-2.5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#2f6fed]/20 bg-[#eef4ff] text-[#2f6fed]">
-              <Scale className="h-[18px] w-[18px]" aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <h1 className="m-0 text-base font-black leading-snug text-slate-900">
-                {t("regs.title")}
-              </h1>
-              <p className="m-0 mt-1 text-xs font-semibold leading-snug text-slate-500">
-                {t("regs.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div className="flex min-h-0 flex-col gap-2">
-          <p className="m-0 shrink-0 text-xs font-black text-slate-800">
+          <p className="m-0 shrink-0 text-sm font-semibold text-foreground">
             {t("regs.step1")}
           </p>
 
@@ -192,7 +349,7 @@ export function ReglementationsSmsView() {
             />
           </div>
 
-          <p className="m-0 shrink-0 text-[11px] font-semibold text-slate-500">
+          <p className="m-0 shrink-0 text-xs font-medium text-muted-foreground">
             {t("regs.orList")}
           </p>
 
@@ -202,7 +359,7 @@ export function ReglementationsSmsView() {
             aria-label={t("regs.countriesAria")}
           >
             {filteredCountries.length === 0 ? (
-              <li className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs font-semibold text-slate-500">
+              <li className="rounded-xl border border-dashed border-border px-3 py-4 text-center text-xs font-medium text-muted-foreground">
                 {t("regs.empty")}
               </li>
             ) : (
@@ -218,21 +375,16 @@ export function ReglementationsSmsView() {
                       className={cn(
                         "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors",
                         selected
-                          ? "border-[#2f6fed] bg-[#eef4ff] shadow-[inset_0_0_0_1px_rgba(47,111,237,0.12)]"
-                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80",
+                          ? "border-primary bg-accent ring-1 ring-primary/10"
+                          : "border-border bg-card hover:bg-muted/50",
                       )}
                     >
-                      <CountryFlag country={c.id} className="h-5 w-[30px]" />
+                      <CountryFlag country={c.id} className="h-5 shrink-0" />
                       <span className="min-w-0 flex-1">
-                        <span
-                          className={cn(
-                            "block text-sm font-extrabold",
-                            selected ? "text-[#1f3b77]" : "text-slate-900",
-                          )}
-                        >
+                        <span className="block text-sm font-semibold text-foreground">
                           {t(countryLabelKey(c.id))}
                         </span>
-                        <span className="block truncate text-[10px] font-semibold text-slate-500">
+                        <span className="block truncate text-xs font-medium text-muted-foreground">
                           {c.authority}
                         </span>
                       </span>
@@ -244,22 +396,16 @@ export function ReglementationsSmsView() {
           </ul>
         </div>
 
-        <div className="flex shrink-0 items-start gap-2.5 rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2.5">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700">
-            <AlertTriangle className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="m-0 text-xs font-black text-amber-900">
-              {t("regs.important")}
-            </p>
-            <p className="m-0 mt-0.5 text-[11px] font-semibold leading-snug text-amber-800/90">
-              {t("regs.importantBody")}
-            </p>
-          </div>
-        </div>
+        <Alert className="shrink-0 border-amber-200/80 bg-amber-50/90 text-amber-950 [&>svg]:text-amber-700">
+          <AlertTriangle aria-hidden />
+          <AlertTitle>{t("regs.important")}</AlertTitle>
+          <AlertDescription className="text-xs text-amber-900/90">
+            {t("regs.importantBody")}
+          </AlertDescription>
+        </Alert>
 
         <div className="shrink-0">
-          <h2 className="m-0 text-xs font-black text-slate-900">
+          <h2 className="m-0 text-sm font-semibold text-foreground">
             {t("regs.previewTitle")}
           </h2>
           <div className="mt-2 grid grid-cols-2 gap-x-3">
@@ -284,58 +430,73 @@ export function ReglementationsSmsView() {
           </div>
         </div>
 
-        <div className="mt-auto flex shrink-0 items-start gap-2 rounded-xl border border-yellow-200/90 bg-yellow-50 px-3 py-2.5">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-yellow-100 text-yellow-700">
-            <Info className="h-3.5 w-3.5" aria-hidden />
-          </span>
-          <p className="m-0 text-[10px] font-semibold leading-snug text-yellow-900/90">
-            {t("regs.disclaimer")}
-          </p>
-        </div>
       </div>
 
       <div
         className={cn(
           fieldBox,
-          "flex min-h-0 flex-col overflow-hidden py-4",
+          "flex min-h-0 min-w-0 flex-col py-4",
         )}
       >
-        <div className="mb-3 flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="mb-3 shrink-0 space-y-3 border-b border-border pb-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <CountryFlag country={active.id} className="h-7 w-10" />
-            <h2 className="m-0 text-base font-black text-slate-900">
-              {t(countryLabelKey(active.id))}
-            </h2>
-          </div>
-          <div className="flex shrink-0 items-start gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50 px-2.5 py-2">
-            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-emerald-100 text-emerald-700">
-              <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
-            </span>
+            <CountryFlag country={active.id} className="h-7 shrink-0" />
             <div className="min-w-0">
-              <p className="m-0 text-[11px] font-black leading-snug text-emerald-900">
-                {t("regs.compliant")}
-              </p>
-              <p className="m-0 text-[10px] font-semibold capitalize text-emerald-800/85">
-                {t("regs.riskLevel", { level: riskLabel })}
+              <h2 className="m-0 text-base font-semibold text-foreground">
+                {t(countryLabelKey(active.id))}
+              </h2>
+              <p className="m-0 mt-0.5 text-xs font-medium text-muted-foreground">
+                {active.authority}
               </p>
             </div>
           </div>
+          <Alert className="border-emerald-200/80 bg-emerald-50/90 text-emerald-950 [&>svg]:text-emerald-700">
+            <BadgeCheck aria-hidden />
+            <AlertTitle className="text-emerald-950">
+              {t("regs.marketingBannerTitle")}
+            </AlertTitle>
+            <AlertDescription className="text-xs text-emerald-900/90">
+              {t("regs.marketingBannerSubtitle")}
+            </AlertDescription>
+          </Alert>
         </div>
 
-        <p className="m-0 mb-2.5 shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-          {active.authority}
-        </p>
-
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
-          {REGULATION_SECTION_ORDER.map((key) => (
-            <RegulationSectionCard
-              key={key}
-              sectionKey={key}
-              title={t(sectionLabelKey(key))}
-              content={active.sections[key]}
-            />
-          ))}
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 content-start gap-2.5 overflow-y-auto">
+          <div className="grid min-w-0 shrink-0 grid-cols-1 gap-3 sm:grid-cols-3 sm:[&>*]:min-w-0">
+            {HIGHLIGHT_SECTION_KEYS.map((key) => (
+              <RegulationHighlightCard
+                key={key}
+                sectionKey={key}
+                title={t(highlightTitleKey(key))}
+                content={active.sections[key]}
+              />
+            ))}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {DROPDOWN_SECTION_KEYS.map((key) => (
+              <RegulationSectionDropdown
+                key={key}
+                sectionKey={key}
+                title={t(sectionLabelKey(key))}
+                content={active.sections[key]}
+                open={openDropdownKey === key}
+                onToggle={() => toggleDropdown(key)}
+              />
+            ))}
+          </div>
         </div>
+
+        <Alert
+          role="note"
+          aria-label={t("regs.disclaimerAria")}
+          className="mt-3 shrink-0 border-yellow-300/90 bg-yellow-100 text-yellow-950"
+        >
+          <Info className="text-yellow-700" aria-hidden />
+          <AlertDescription className="text-xs leading-snug text-yellow-900/95">
+            {t("regs.disclaimer")}
+          </AlertDescription>
+        </Alert>
+      </div>
       </div>
     </div>
   );

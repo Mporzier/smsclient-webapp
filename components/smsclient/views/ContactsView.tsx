@@ -9,11 +9,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  LIST_VIEW_SEARCH_INPUT_CLASS,
+  LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+  LIST_VIEW_TOOLBAR_CLASS,
+} from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
-import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  CONTACT_COL,
+  LINK_COL,
+  listColFixed,
+} from "@/components/smsclient/listColumnSizes";
+import {
+  ListEmptyIntroBanner,
+  shouldShowListEmptyIntro,
+} from "@/components/smsclient/ListEmptyIntroBanner";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import {
   UnsubscribedContactsModal,
   type UnsubscribedContactRow,
@@ -50,6 +65,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   MoreHorizontal,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -268,7 +284,7 @@ function buildContactColumns(
     {
       id: "created",
       header: t("contacts.col.created"),
-      size: CONTACT_COL.created,
+      ...listColFixed(LINK_COL.created),
       accessorFn: (row) => row.createdAt,
       sortingFn: (a, b) =>
         compareIsoTimestampsStable(
@@ -337,7 +353,9 @@ export function ContactsView({
   onFetchSelectableMatchIds,
 }: ContactsProps) {
   const { t } = useI18n();
+  const { openHelp } = useShellHelpActions();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [listIntroDismissed, setListIntroDismissed] = useState(false);
   const [unsubModalOpen, setUnsubModalOpen] = useState(false);
   const [sourceOptions, setSourceOptions] = useState<string[]>([]);
   const [groupOptions, setGroupOptions] = useState<
@@ -584,10 +602,7 @@ export function ContactsView({
     () => [
       {
         id: "select",
-        size: CONTACT_COL.select,
-        minSize: CONTACT_COL.select,
-        maxSize: CONTACT_COL.select,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => (
           <div className="flex items-center justify-center">
             <Checkbox
@@ -619,10 +634,7 @@ export function ContactsView({
       ...columns,
       {
         id: "actions",
-        size: CONTACT_COL.actions,
-        minSize: CONTACT_COL.actions,
-        maxSize: CONTACT_COL.actions,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => null,
         cell: ({ row }) => (
           <div className="flex items-center justify-center">
@@ -645,6 +657,7 @@ export function ContactsView({
                 <DropdownMenuItem
                   onSelect={() => onRowClickRef.current(row.original)}
                 >
+                  <Pencil aria-hidden />
                   {t("common.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -653,6 +666,7 @@ export function ContactsView({
                     onDeleteContactsRef.current([row.original.id])
                   }
                 >
+                  <Trash2 aria-hidden />
                   {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -664,13 +678,26 @@ export function ContactsView({
     [columns, t, toggleAll, toggleSelect, selectedIds, allLoadedSelected]
   );
 
+  const showListIntro = shouldShowListEmptyIntro({
+    loading,
+    dataLength: eligibleRows.length,
+    searchQuery,
+    hasActiveFilters,
+    dismissed: listIntroDismissed,
+  });
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3">
-        <InputGroup
-          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
-          role="search"
-        >
+    <div className={LIST_VIEW_STACK_CLASS}>
+      {showListIntro ? (
+        <ListEmptyIntroBanner
+          section="contacts"
+          onLearnMore={openHelp}
+          onDismiss={() => setListIntroDismissed(true)}
+        />
+      ) : null}
+
+      <div className={LIST_VIEW_TOOLBAR_CLASS}>
+        <InputGroup className={LIST_VIEW_SEARCH_INPUT_CLASS} role="search">
           <InputGroupAddon align="inline-start">
             <Search aria-hidden />
           </InputGroupAddon>
@@ -701,7 +728,7 @@ export function ContactsView({
             <>
               <Button
                 variant="destructive"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={() => {
                   if (matchAllActive && onDeleteContactsMatching) {
@@ -725,7 +752,7 @@ export function ContactsView({
               </Button>
               <Button
                 variant="default"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={() => {
                   void (async () => {
@@ -743,7 +770,7 @@ export function ContactsView({
             <>
               <Button
                 variant="outline"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={onImport}
               >
@@ -752,7 +779,7 @@ export function ContactsView({
               </Button>
               <Button
                 variant="default"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={onAddContact}
               >
@@ -763,6 +790,12 @@ export function ContactsView({
           )}
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+          {error}
+        </div>
+      )}
 
       {expandError && !showExpandBanner ? (
         <p className="m-0 text-xs font-semibold text-destructive">
@@ -782,12 +815,6 @@ export function ContactsView({
           setColumnFilters([]);
         }}
       />
-
-      {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
-          {error}
-        </div>
-      )}
 
       <DataTable
         columns={selectColumns}

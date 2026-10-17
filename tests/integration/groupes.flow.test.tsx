@@ -16,7 +16,7 @@ describe("Groupes — flows (intégration, mocks)", () => {
   it("affiche l'état vide et le bouton de création", () => {
     render(<GroupesFlowHarness />);
 
-    expect(screen.getByText("Aucun groupe trouvé")).toBeInTheDocument();
+    expect(screen.getByText("Aucun groupe")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Créer un groupe" }),
     ).toBeInTheDocument();
@@ -184,6 +184,6 @@ describe("Groupes — flows (intégration, mocks)", () => {
     await waitFor(() => {
       expect(screen.queryByText("À supprimer")).not.toBeInTheDocument();
     });
-    expect(screen.getByText("Aucun groupe trouvé")).toBeInTheDocument();
+    expect(screen.getByText("Aucun groupe")).toBeInTheDocument();
   });
 });

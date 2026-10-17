@@ -8,11 +8,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  LIST_VIEW_SEARCH_INPUT_CLASS,
+  LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+  LIST_VIEW_TOOLBAR_CLASS,
+} from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
 import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
-import { GROUP_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  GROUP_COL,
+  LINK_COL,
+  listColFixed,
+} from "@/components/smsclient/listColumnSizes";
+import {
+  ListEmptyIntroBanner,
+  shouldShowGroupesListIntro,
+} from "@/components/smsclient/ListEmptyIntroBanner";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
@@ -37,6 +52,7 @@ import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
 import {
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Send,
@@ -108,7 +124,7 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
     {
       accessorKey: "createdLabel",
       header: t("groups.col.created"),
-      size: GROUP_COL.created,
+      ...listColFixed(LINK_COL.created),
       cell: ({ getValue }) => (
         <CellTruncate as="div">{getValue<string>()}</CellTruncate>
       ),
@@ -166,7 +182,9 @@ export function GroupesView({
   onFetchSelectableMatchIds,
 }: GroupesProps) {
   const { t } = useI18n();
+  const { openHelp } = useShellHelpActions();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [listIntroDismissed, setListIntroDismissed] = useState(false);
 
   const filterLabels = useMemo(
     () => ({
@@ -229,6 +247,16 @@ export function GroupesView({
   });
 
   const hasSelection = displaySelectedCount > 0;
+
+  const showListIntro = shouldShowGroupesListIntro({
+    loading,
+    rows,
+    totalCount,
+    hasMore,
+    searchQuery,
+    hasActiveFilters,
+    dismissed: listIntroDismissed,
+  });
 
   const emptyState = (
     <Empty className="p-0 md:p-0">
@@ -312,10 +340,7 @@ export function GroupesView({
     () => [
       {
         id: "select",
-        size: GROUP_COL.select,
-        minSize: GROUP_COL.select,
-        maxSize: GROUP_COL.select,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => (
           <div className="flex items-center justify-center">
             <Checkbox
@@ -347,10 +372,7 @@ export function GroupesView({
       ...dataColumns,
       {
         id: "actions",
-        size: GROUP_COL.actions,
-        minSize: GROUP_COL.actions,
-        maxSize: GROUP_COL.actions,
-        enableResizing: false,
+        ...listColFixed(LINK_COL.actions),
         header: () => null,
         cell: ({ row }) => (
           <div className="flex items-center justify-center">
@@ -371,12 +393,14 @@ export function GroupesView({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onSelect={() => onEditGroup(row.original)}>
+                  <Pencil aria-hidden />
                   {t("common.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => onDeleteGroups([row.original.id])}
                 >
+                  <Trash2 aria-hidden />
                   {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -398,12 +422,17 @@ export function GroupesView({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3">
-        <InputGroup
-          className="max-w-sm shrink-0 bg-transparent dark:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:bg-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0"
-          role="search"
-        >
+    <div className={LIST_VIEW_STACK_CLASS}>
+      {showListIntro ? (
+        <ListEmptyIntroBanner
+          section="groupes"
+          onLearnMore={openHelp}
+          onDismiss={() => setListIntroDismissed(true)}
+        />
+      ) : null}
+
+      <div className={LIST_VIEW_TOOLBAR_CLASS}>
+        <InputGroup className={LIST_VIEW_SEARCH_INPUT_CLASS} role="search">
           <InputGroupAddon align="inline-start">
             <Search aria-hidden />
           </InputGroupAddon>
@@ -434,7 +463,7 @@ export function GroupesView({
             <>
               <Button
                 variant="destructive"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={() => {
                   void (async () => {
@@ -449,7 +478,7 @@ export function GroupesView({
               </Button>
               <Button
                 variant="default"
-                size="lg"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
                 className="rounded-full"
                 onClick={() => {
                   void (async () => {
@@ -466,7 +495,7 @@ export function GroupesView({
           ) : (
             <Button
               variant="default"
-              size="lg"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
               className="rounded-full"
               onClick={onCreateGroup}
             >

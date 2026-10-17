@@ -10,6 +10,9 @@ import {
   templateSortToOrders,
   type ListSort,
 } from "@/lib/proto/listSort";
+import type { ListColumnFilter } from "@/lib/proto/listFilters";
+import { applyTemplateListFilters } from "@/lib/supabase/templateListFilters";
+import { attachFilterQuery } from "@/lib/supabase/listFilterSql";
 
 export type UserSmsTemplateRecord = {
   id: string;
@@ -86,6 +89,7 @@ export async function fetchUserSmsTemplatesPage(
     search?: string;
     includeTotal?: boolean;
     sort?: ListSort | null;
+    filters?: ListColumnFilter[];
   },
 ): Promise<{
   data: UserSmsTemplateRow[];
@@ -102,6 +106,9 @@ export async function fetchUserSmsTemplatesPage(
     .select("*", { count: includeTotal ? "exact" : undefined })
     .eq("user_id", userId);
   query = applyTemplateListSearch(query, args.search ?? "");
+  query = attachFilterQuery(query, (q) =>
+    applyTemplateListFilters(q, args.filters ?? []),
+  );
 
   for (const o of templateSortToOrders(args.sort)) {
     query = query.order(o.column, {

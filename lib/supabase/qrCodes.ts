@@ -171,7 +171,12 @@ export async function updateUserQrWelcomeSms(
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (patch.enabled !== undefined) update.welcome_sms_enabled = patch.enabled;
+  if (patch.enabled === true) {
+    update.welcome_sms_enabled = true;
+    update.wheel_enabled = false;
+  } else if (patch.enabled === false) {
+    update.welcome_sms_enabled = false;
+  }
   if (patch.template !== undefined) update.welcome_sms_template = patch.template;
 
   const { data, error } = await supabase

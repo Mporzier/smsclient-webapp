@@ -17,11 +17,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { LinkRowData } from "@/lib/types/link";
 import { URL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { cn } from "@/lib/cn";
-import { Link2 } from "lucide-react";
+import type { SmsLinkIconId } from "@/lib/proto/smsLinkIcons";
+import { Link } from "lucide-react";
 import { useCallback, useState } from "react";
+import {
+  DEFAULT_SMS_LINK_ICON_ID,
+  SmsLinkIconPicker,
+} from "./SmsLinkIconPicker";
 import {
   dialogContentStackedZCls,
   dialogOverlayStackedCls,
@@ -41,6 +47,8 @@ type CreateSmsLinkModalProps = {
   onCreate: (args: {
     originalUrl: string;
     label: string;
+    description: string;
+    icon: SmsLinkIconId;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
   onCreated?: (link: LinkRowData) => void;
 };
@@ -52,6 +60,8 @@ const hintTextCls = "text-xs font-normal leading-snug text-muted-foreground";
 const modalFieldCls =
   "focus-visible:outline-none focus-visible:ring-0 aria-invalid:ring-0";
 
+const SMS_LINK_DESCRIPTION_MAX_LENGTH = 120;
+
 export function CreateSmsLinkModal({
   open,
   onClose,
@@ -60,6 +70,8 @@ export function CreateSmsLinkModal({
 }: CreateSmsLinkModalProps) {
   const [originalUrl, setOriginalUrl] = useState("");
   const [label, setLabel] = useState("");
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState<SmsLinkIconId>(DEFAULT_SMS_LINK_ICON_ID);
   const [saving, setSaving] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [labelError, setLabelError] = useState<string | null>(null);
@@ -71,6 +83,8 @@ export function CreateSmsLinkModal({
     if (open) {
       setOriginalUrl("");
       setLabel("");
+      setDescription("");
+      setIcon(DEFAULT_SMS_LINK_ICON_ID);
       setUrlError(null);
       setLabelError(null);
       setSaveError(null);
@@ -80,7 +94,7 @@ export function CreateSmsLinkModal({
 
   const isDirty = useModalFormDirty(
     open,
-    { originalUrl, label },
+    { originalUrl, label, description, icon },
     smsLinkFormSnapshotsEqual,
   );
   const canDismiss = !saving && !isDirty;
@@ -115,9 +129,14 @@ export function CreateSmsLinkModal({
     const normalized = normalizeUrl(originalUrl);
     setSaving(true);
     setSaveError(null);
+    const trimmedDescription = description
+      .trim()
+      .slice(0, SMS_LINK_DESCRIPTION_MAX_LENGTH);
     const { data, error: createError } = await onCreate({
       originalUrl: normalized,
       label: trimmedLabel,
+      description: trimmedDescription,
+      icon,
     });
     setSaving(false);
     if (createError || !data) {
@@ -126,7 +145,7 @@ export function CreateSmsLinkModal({
     }
     onCreated?.(data);
     onClose();
-  }, [originalUrl, label, onCreate, onCreated, onClose]);
+  }, [originalUrl, label, description, icon, onCreate, onCreated, onClose]);
 
   return (
     <Dialog
@@ -158,7 +177,7 @@ export function CreateSmsLinkModal({
       >
         <DialogHeader className="shrink-0 flex-row items-center gap-2.5 space-y-0 border-b border-border px-4 py-2.5 text-left">
           <div className={modalIconCls("sm")} aria-hidden>
-            <Link2 />
+            <Link />
           </div>
           <DialogTitle className="min-w-0 flex-1 pr-8 text-base font-semibold leading-none tracking-tight">
             Nouveau lien
@@ -236,6 +255,46 @@ export function CreateSmsLinkModal({
                 {labelError}
               </p>
             ) : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              className="flex justify-between gap-2"
+              htmlFor="create-sms-link-description"
+            >
+              <span className={fieldLabelCls}>Description</span>
+              <span className={fieldMetaCls}>
+                {description.length}/{SMS_LINK_DESCRIPTION_MAX_LENGTH}
+              </span>
+            </Label>
+            <Textarea
+              id="create-sms-link-description"
+              className={cn(modalFieldCls, "min-h-[72px] resize-y text-sm")}
+              maxLength={SMS_LINK_DESCRIPTION_MAX_LENGTH}
+              rows={3}
+              placeholder="Ex. Page promo du site — campagne rentrée 2026"
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setSaveError(null);
+              }}
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <span
+              id="create-sms-link-icon-label"
+              className={cn(fieldLabelCls, "block pb-3")}
+            >
+              Icône
+            </span>
+            <SmsLinkIconPicker
+              value={icon}
+              onChange={setIcon}
+              disabled={saving}
+              aria-labelledby="create-sms-link-icon-label"
+            />
           </div>
         </div>
 

@@ -120,9 +120,10 @@ export function CampaignWizardStep1ContinueButton({
     contactsSelectedCount > 0 || groupsSelectedCount > 0;
   return (
     <Button
+      type="button"
       variant="default"
       size="lg"
-      className={className}
+      className={cn("cursor-pointer", className)}
       disabled={!canContinue || selectionPreparing}
       onClick={() => {
         void (async () => {

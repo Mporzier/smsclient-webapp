@@ -24,6 +24,11 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 | max resize colonne | défaut **600** px (`col.maxSize ?? 600`) | `DataTable.tsx` |
 | séparateur resize | trait `after:bg-muted-foreground/45` | `DataTable.tsx` |
 | largeurs contacts | `CONTACT_COL` — `select` et `actions` = **40** (fixes) | `listColumnSizes.ts` |
+| colonne date création | **130 px figés** (`listColFixed(LINK_COL.created)`) — toutes les listes | `listColumnSizes.ts` |
+| colonnes utilitaires | **40 px** (`listColFixed(LINK_COL.actions)`) — select + menu … | idem |
+| liste vide | toujours `DataTable` + `emptyMessage` (pas écran vide sans en-têtes) ; **CTA principaux** du bandeau (create/import/catalogue…) repris dans `EmptyContent` | vues liste |
+| empty row | pas de `border-b` sous le bloc empty dans `DataTable` | `DataTable.tsx` |
+| spacing listes | stack `gap-2` + toolbar `gap-2` / `min-h-8` — ref. Envois SMS ; CTA toolbar `default` (h-8 = recherche), pas `lg` ; `listViewLayout.ts` | vues liste |
 | sticky | `select` gauche, `actions` droite | `ContactsView.tsx` |
 
 ## Téléphone FR (mobile SMS)
@@ -37,12 +42,12 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 
 | Comportement | Règle |
 | ------------ | ----- |
-| Croix fermeture | **Toujours** `DialogContent showCloseButton` (ghost absolu). **Jamais** `modalCloseBtn*` custom |
+| Croix fermeture | **Toujours** `DialogContent showCloseButton` (ghost absolu). **Jamais** `modalCloseBtn*` custom. Croix + bouton Fermer/Annuler **ferment toujours** (sauf `saving` / dialog empilée) |
 | Header | `FormDialogHeader` (+ `FormDialogShell` si shell complet) — `pr-8` réservé pour la croix |
 | Erreurs validation | **Sous le champ**, pas banner en haut du body |
 | Submit | **Jamais** disabled pour form invalide — clic déclenche erreurs. `disabled` seulement `saving` / busy / plafond / env (`!configured`) |
 | Autofocus ouverture | **Aucun** — `onOpenAutoFocus={preventDialogOpenAutoFocus}` (`modalChrome`) |
-| Clic dehors / Escape | Ferme si **pas dirty** et pas en save |
+| Clic dehors / Escape | Ferme si **pas dirty** et pas en save (dirty ne bloque **pas** la croix ni le bouton Fermer) |
 | Form create vide | Pas dirty → ferme |
 | Form update inchangé | Pas dirty → ferme |
 | Dirty | Bloque dismiss (sauf confirm empilée) |

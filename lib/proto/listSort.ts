@@ -60,8 +60,8 @@ export function campaignSortToOrders(
 export const LINK_SORT_COLUMNS: Record<string, string> = {
   createdLabel: "created_at",
   label: "label",
+  description: "description",
   originalUrl: "original_url",
-  shortUrl: "short_code",
   clickCount: "click_count",
 };
 

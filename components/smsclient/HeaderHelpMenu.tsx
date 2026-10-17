@@ -3,6 +3,8 @@
 import { CircleHelp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 
 type HeaderHelpMenuProps = {
   open: boolean;
@@ -10,19 +12,30 @@ type HeaderHelpMenuProps = {
 };
 
 export function HeaderHelpMenu({ open, onToggle }: HeaderHelpMenuProps) {
+  const { t } = useI18n();
+  const label = t("shell.help");
+
   return (
     <Button
       type="button"
       variant="outline"
-      size="icon-lg"
-      title="Aide"
-      aria-label="Aide"
+      size="lg"
+      title={label}
+      aria-label={label}
       aria-expanded={open}
-      aria-controls="floating-help-banner"
-      className="border-violet-500/35 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300"
+      aria-controls="shell-help-modal"
+      className={cn(
+        "help-accent-surface border px-3.5 font-semibold hover:bg-help-accent-bg-hover hover:text-help-accent-fg-hover",
+      )}
       onClick={onToggle}
     >
-      <CircleHelp className="size-5" strokeWidth={2.5} aria-hidden />
+      <CircleHelp
+        data-icon="inline-start"
+        className="size-4"
+        strokeWidth={2.5}
+        aria-hidden
+      />
+      {label}
     </Button>
   );
 }

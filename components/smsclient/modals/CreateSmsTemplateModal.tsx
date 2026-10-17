@@ -16,7 +16,9 @@ import {
 } from "@/components/smsclient/modals/ModalSmsMessageField";
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
+import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
 import { SMS_PRENOM_PREVIEW_SAMPLE } from "@/lib/proto/smsPersonalization";
+import { hasStopMention, stripStopMention } from "@/lib/proto/smsStopMention";
 import {
   isValidSmsTemplateBody,
   isValidSmsTemplateTitle,
@@ -85,6 +87,7 @@ export function CreateSmsTemplateModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
+  const [commercialMessage, setCommercialMessage] = useState(true);
   const [saving, setSaving] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [bodyError, setBodyError] = useState<string | null>(null);
@@ -99,7 +102,9 @@ export function CreateSmsTemplateModal({
     if (open) {
       setTitle(editRow?.title ?? "");
       setDescription(editRow?.description ?? "");
-      setBody(editRow?.body ?? "");
+      const rawBody = editRow?.body ?? "";
+      setBody(stripStopMention(rawBody));
+      setCommercialMessage(rawBody ? hasStopMention(rawBody) : true);
       setTitleError(null);
       setBodyError(null);
       setSaveError(null);
@@ -132,17 +137,31 @@ export function CreateSmsTemplateModal({
     } else {
       setTitleError(null);
     }
-    if (!isValidSmsTemplateBody(body)) {
+    const bodyTrim = body.trim();
+    if (!isValidSmsTemplateBody(bodyTrim)) {
       setBodyError(t("templates.bodyRequired"));
       hasFieldError = true;
     } else {
-      setBodyError(null);
+      const segmentError = validateAutomationSmsBody(bodyTrim, {
+        reserveStop: commercialMessage,
+        customFieldDefs,
+      });
+      if (segmentError) {
+        setBodyError(segmentError);
+        hasFieldError = true;
+      } else {
+        setBodyError(null);
+      }
     }
     if (hasFieldError) return;
 
     setSaving(true);
     setSaveError(null);
-    const payload = { title, description, body };
+    const payload = {
+      title,
+      description,
+      body: stripStopMention(bodyTrim),
+    };
     const { data, error: saveErr } =
       isEdit && editRow && onUpdate
         ? await onUpdate(editRow.id, payload)
@@ -161,6 +180,8 @@ export function CreateSmsTemplateModal({
     title,
     description,
     body,
+    commercialMessage,
+    customFieldDefs,
     isEdit,
     editRow,
     onUpdate,
@@ -289,6 +310,8 @@ export function CreateSmsTemplateModal({
             estimateFirstName={SMS_PRENOM_PREVIEW_SAMPLE}
             customFieldDefs={customFieldDefs}
             disabled={saving}
+            commercialMessage={commercialMessage}
+            onCommercialMessageChange={setCommercialMessage}
           />
         </div>
 

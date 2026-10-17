@@ -53,7 +53,7 @@ export function renderSettingsRoute(
             await userQrState.setWelcomeSmsEnabled(enabled);
             void qrWheelState.refresh(true);
           }}
-          wheelEnabled={qrWheelState.config?.enabled ?? false}
+          wheelEnabled={userQrState.wheelEnabled}
           onWheelEnabledChange={async (enabled) => {
             if (enabled) {
               userQrState.patchWelcomeSmsEnabled(false);
@@ -96,8 +96,19 @@ export function renderSettingsRoute(
             go("parametres");
           }}
           welcomeSmsTemplate={userQrState.welcomeSmsTemplate}
-          onWelcomeSmsTemplateChange={userQrState.setWelcomeSmsTemplate}
-          wheelConfig={qrWheelState.config}
+          onWelcomeSmsTemplateChange={async (template) => {
+            qrWheelState.patchEnabled(false);
+            await userQrState.setWelcomeSmsTemplate(template);
+            void qrWheelState.refresh(true);
+          }}
+          wheelConfig={
+            qrWheelState.config
+              ? {
+                  ...qrWheelState.config,
+                  enabled: userQrState.wheelEnabled,
+                }
+              : null
+          }
           wheelLoading={qrWheelState.loading}
           wheelSaving={modals.qrWheelSaving}
           onWheelSave={async (config) => {

@@ -329,9 +329,9 @@ export function DataTableColumnFilter({
         <Button
           type="button"
           variant="ghost"
-          size="icon-sm"
+          size="icon-xs"
           className={cn(
-            "size-6 shrink-0 rounded-full",
+            "size-5 shrink-0 rounded-full",
             active && "text-primary",
           )}
           aria-label={t("listFilter.aria", { column: columnLabel })}

@@ -16,6 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { automationPresetEmoji } from "@/lib/automations/catalogEmojis";
 import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
+import {
+  buildEffectiveSms,
+  hasStopMention,
+  stripStopMention,
+} from "@/lib/proto/smsStopMention";
 import { cn } from "@/lib/cn";
 import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
 import type { ContactRowData } from "@/lib/types/contact";
@@ -57,6 +62,7 @@ export function AutomationEditModal({
   customFieldDefs = [],
 }: AutomationEditModalProps) {
   const [body, setBody] = useState("");
+  const [commercialMessage, setCommercialMessage] = useState(true);
   const [sendTime, setSendTime] = useState("09:00");
   const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,7 +77,8 @@ export function AutomationEditModal({
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open && row) {
-      setBody(row.body);
+      setBody(stripStopMention(row.body));
+      setCommercialMessage(hasStopMention(row.body));
       setSendTime(row.sendTime);
       setEnabled(row.enabled);
       setError(null);
@@ -88,7 +95,7 @@ export function AutomationEditModal({
     if (!row) return;
 
     const validationError = validateAutomationSmsBody(body, {
-      reserveStop: true,
+      reserveStop: commercialMessage,
       estimateSample,
       customFieldDefs,
     });
@@ -104,7 +111,7 @@ export function AutomationEditModal({
         await onSave({
           mode: "preset",
           presetKey: row.presetKey,
-          body: body.trim(),
+          body: buildEffectiveSms(body.trim(), commercialMessage),
           enabled,
           sendTime,
         });
@@ -114,7 +121,7 @@ export function AutomationEditModal({
           id: row.id,
           name: row.name,
           kind: row.kind === "recurring" ? "recurring" : "fixed_date",
-          body: body.trim(),
+          body: buildEffectiveSms(body.trim(), commercialMessage),
           enabled,
           sendTime,
           fixedMonth: row.fixedMonth,
@@ -136,6 +143,7 @@ export function AutomationEditModal({
   }, [
     row,
     body,
+    commercialMessage,
     enabled,
     sendTime,
     onSave,
@@ -258,6 +266,8 @@ export function AutomationEditModal({
                   estimateSample={estimateSample}
                   customFieldDefs={customFieldDefs}
                   disabled={saving}
+                  commercialMessage={commercialMessage}
+                  onCommercialMessageChange={setCommercialMessage}
                 />
               </div>
             </div>

@@ -12,16 +12,18 @@ import {
 
 type ConfirmLinkDeleteModalProps = {
   open: boolean;
-  shortUrl: string;
-  originalUrl: string;
+  count: number;
+  shortUrl?: string;
+  originalUrl?: string;
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 };
 
 export function ConfirmLinkDeleteModal({
   open,
-  shortUrl,
-  originalUrl,
+  count,
+  shortUrl = "",
+  originalUrl = "",
   onConfirm,
   onCancel,
 }: ConfirmLinkDeleteModalProps) {
@@ -49,10 +51,15 @@ export function ConfirmLinkDeleteModal({
     }
   }, [onConfirm, t]);
 
+  const title =
+    count > 1
+      ? t("links.deleteManyTitle", { n: count })
+      : t("links.deleteTitle");
+
   return (
     <ConfirmDeleteAlertDialog
       open={open}
-      title={t("links.deleteTitle")}
+      title={title}
       loading={loading}
       error={error}
       cancelLabel={t("common.cancel")}
@@ -65,11 +72,17 @@ export function ConfirmLinkDeleteModal({
         icon={Link2}
         iconClassName={confirmCardDestructiveIconCls}
         className={confirmCardDestructiveCls}
-        title="Redirection désactivée"
+        title={count > 1 ? t("links.deleteManyCardTitle") : "Redirection désactivée"}
       >
-        Le lien court <strong className="font-semibold">{shortUrl}</strong> ne
-        redirigera plus vers{" "}
-        <strong className="font-semibold">{originalUrl}</strong>.
+        {count > 1 ? (
+          t("links.deleteManyDesc", { n: count })
+        ) : (
+          <>
+            Le lien court <strong className="font-semibold">{shortUrl}</strong>{" "}
+            ne redirigera plus vers{" "}
+            <strong className="font-semibold">{originalUrl}</strong>.
+          </>
+        )}
       </ConfirmInfoCard>
       <ConfirmInfoCard
         icon={Ban}

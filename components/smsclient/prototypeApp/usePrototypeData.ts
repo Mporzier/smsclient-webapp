@@ -28,9 +28,9 @@ export function usePrototypeData(route: AppRoute) {
   const customFieldsState = useCustomFieldDefs();
   const groupsState = useGroups();
   const campaignsState = useCampaigns();
-  const linksState = useLinks(route === "liens");
-  const smsTemplatesState = useSmsTemplates(route === "modeles-sms");
-  const automationsState = useAutomations(route === "automatisations");
+  const linksState = useLinks();
+  const smsTemplatesState = useSmsTemplates();
+  const automationsState = useAutomations();
   const creditsState = useCredits(route === "parametres");
   const profileState = useUserProfile();
   const userQrState = useUserQrCode(

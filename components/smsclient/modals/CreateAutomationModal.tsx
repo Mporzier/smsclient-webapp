@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
+import { buildEffectiveSms } from "@/lib/proto/smsStopMention";
 import { cn } from "@/lib/cn";
 import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
 import type { ContactRowData } from "@/lib/types/contact";
@@ -178,6 +179,7 @@ export function CreateAutomationModal({
   const [monthlyWhen, setMonthlyWhen] = useState<MonthlyWhen>("day");
   const [monthlyDay, setMonthlyDay] = useState("1");
   const [body, setBody] = useState("");
+  const [commercialMessage, setCommercialMessage] = useState(true);
   const [sendTime, setSendTime] = useState("09:00");
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -209,6 +211,7 @@ export function CreateAutomationModal({
       setMonthlyWhen("day");
       setMonthlyDay("1");
       setBody("");
+      setCommercialMessage(true);
       setSendTime("09:00");
       setNameError(null);
       setScheduleError(null);
@@ -347,7 +350,7 @@ export function CreateAutomationModal({
     }
 
     const bodyValidationError = validateAutomationSmsBody(body, {
-      reserveStop: true,
+      reserveStop: commercialMessage,
       estimateSample,
       customFieldDefs,
     });
@@ -363,7 +366,10 @@ export function CreateAutomationModal({
     setSaving(true);
     setSaveError(null);
     try {
-      await onSave({ ...payload, body: body.trim() });
+      await onSave({
+        ...payload,
+        body: buildEffectiveSms(body.trim(), commercialMessage),
+      });
       handleClose();
     } catch (e) {
       setSaveError(
@@ -374,6 +380,7 @@ export function CreateAutomationModal({
     }
   }, [
     body,
+    commercialMessage,
     customFieldDefs,
     estimateSample,
     fixedDay,
@@ -750,6 +757,8 @@ export function CreateAutomationModal({
             estimateSample={estimateSample}
             customFieldDefs={customFieldDefs}
             disabled={saving}
+            commercialMessage={commercialMessage}
+            onCommercialMessageChange={setCommercialMessage}
           />
         </div>
 

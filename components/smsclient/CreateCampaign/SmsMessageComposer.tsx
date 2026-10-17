@@ -1,8 +1,16 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { Smile } from "lucide-react";
-import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Info, Smile } from "lucide-react";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import {
   EmojiPicker,
   EmojiPickerContent,
@@ -26,7 +34,10 @@ import type { CustomFieldDef } from "@/lib/types/customFields";
 import { useI18n } from "@/lib/i18n";
 import type { SmsMergeValues } from "@/lib/proto/smsPersonalization";
 import type { MergeFillCounts, MergeFillStatus } from "@/lib/proto/smsMergeFill";
-import { AI_PROMPT_MAX_LENGTH } from "@/lib/forms/fieldLimits";
+import {
+  AI_PROMPT_MAX_LENGTH,
+  SMS_BODY_HARD_MAX_LENGTH,
+} from "@/lib/forms/fieldLimits";
 
 type SmsMessageComposerProps = {
   value: string;
@@ -40,7 +51,7 @@ type SmsMessageComposerProps = {
   mergeFillCounts?: MergeFillCounts;
   mergeFillStatus?: MergeFillStatus;
   disabled?: boolean;
-  mode?: "message" | "aiPrompt";
+  mode?: "message" | "aiPrompt" | "plainText";
   estimateFirstName?: string;
   reserveStop?: boolean;
   billableMessage?: string;
@@ -52,6 +63,9 @@ type SmsMessageComposerProps = {
     originalUrl: string;
     label: string;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
+  /** Message commercial (offre, promo…) — absent en mode consigne IA. */
+  commercialMessage?: boolean;
+  onCommercialMessageChange?: (checked: boolean) => void;
 };
 
 export type SmsMessageComposerHandle = {
@@ -82,23 +96,26 @@ export const SmsMessageComposer = forwardRef<
     savedLinks = [],
     linksLoading = false,
     onCreateLink,
+    commercialMessage: commercialMessageProp,
+    onCommercialMessageChange,
   },
   ref,
 ) {
   const { locale, t } = useI18n();
+  const [commercialMessageInternal, setCommercialMessageInternal] =
+    useState(true);
+  const commercialMessage = commercialMessageProp ?? commercialMessageInternal;
+  const setCommercialMessage =
+    onCommercialMessageChange ?? setCommercialMessageInternal;
+  const commercialCheckboxId = useId();
   const [emojisOpen, setEmojisOpen] = useState(false);
   const editorRef = useRef<SmsRichMessageEditorHandle>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const isAiPrompt = mode === "aiPrompt";
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      flushMessage: () =>
-        isAiPrompt ? value.trim() : editorRef.current?.flush() ?? value,
-    }),
-    [isAiPrompt, value],
-  );
+  const useTextarea = mode === "aiPrompt" || mode === "plainText";
+  const textareaMaxLength = isAiPrompt
+    ? maxLength
+    : SMS_BODY_HARD_MAX_LENGTH;
 
   const insertAtPromptCursor = useCallback(
     (text: string) => {
@@ -107,7 +124,7 @@ export const SmsMessageComposer = forwardRef<
       const start = el.selectionStart;
       const end = el.selectionEnd;
       const next = value.slice(0, start) + text + value.slice(end);
-      if (next.length > maxLength) return;
+      if (next.length > textareaMaxLength) return;
       onChange(next);
       requestAnimationFrame(() => {
         el.focus();
@@ -115,23 +132,32 @@ export const SmsMessageComposer = forwardRef<
         el.setSelectionRange(pos, pos);
       });
     },
-    [maxLength, onChange, value],
+    [onChange, textareaMaxLength, value],
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flushMessage: () =>
+        useTextarea ? value.trim() : editorRef.current?.flush() ?? value,
+    }),
+    [useTextarea, value],
   );
 
   const insertEmoji = useCallback(
     (emoji: string) => {
-      if (isAiPrompt) {
+      if (useTextarea) {
         insertAtPromptCursor(emoji);
         return;
       }
       editorRef.current?.insertText(emoji);
     },
-    [insertAtPromptCursor, isAiPrompt],
+    [insertAtPromptCursor, useTextarea],
   );
 
   const insertMergeToken = useCallback(
     (token: string) => {
-      if (isAiPrompt) {
+      if (useTextarea) {
         insertAtPromptCursor(token);
         return;
       }
@@ -140,25 +166,27 @@ export const SmsMessageComposer = forwardRef<
         editorRef.current?.insertText(token);
       });
     },
-    [insertAtPromptCursor, isAiPrompt],
+    [insertAtPromptCursor, useTextarea],
   );
 
   const insertLink = useCallback(
     (link: LinkRowData) => {
       const text = `${link.shortUrl} `;
-      if (isAiPrompt) {
+      if (useTextarea) {
         insertAtPromptCursor(text);
         return;
       }
       editorRef.current?.insertText(text);
     },
-    [insertAtPromptCursor, isAiPrompt],
+    [insertAtPromptCursor, useTextarea],
   );
 
   const showLinkMenu = savedLinks.length > 0 || linksLoading || onCreateLink;
+  const counterReserveStop =
+    mode !== "aiPrompt" ? commercialMessage : reserveStop;
 
   return (
-    <div className={cn("shrink-0", compact ? "mt-1.5" : "mt-2.5")}>
+    <div className={cn("w-full shrink-0", compact ? "mt-1.5" : "mt-2.5")}>
       <div
         className={cn(
           "overflow-hidden rounded-2xl border bg-gradient-to-b from-white to-slate-50/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow",
@@ -167,12 +195,12 @@ export const SmsMessageComposer = forwardRef<
             : "border-[#dfe6f2] focus-within:border-[#2f6fed]/40 focus-within:ring-2 focus-within:ring-[#2f6fed]/15",
         )}
       >
-        {isAiPrompt ? (
+        {useTextarea ? (
           <textarea
             ref={promptRef}
             value={value}
             disabled={disabled}
-            maxLength={maxLength}
+            maxLength={textareaMaxLength}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={cn(
@@ -254,15 +282,59 @@ export const SmsMessageComposer = forwardRef<
 
           <SmsCompositionCounter
             message={value}
-            reserveStop={reserveStop}
+            reserveStop={counterReserveStop}
             billableMessage={billableMessage}
             estimateFirstName={estimateFirstName}
             estimateSample={estimateSample}
             customFieldDefs={customFieldDefs}
           />
         </div>
-
       </div>
+
+      {mode !== "aiPrompt" ? (
+        <label
+          htmlFor={commercialCheckboxId}
+          className={cn(
+            "mt-2 flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border/80 bg-muted/45 px-2.5 py-2",
+            disabled && "cursor-not-allowed opacity-60",
+          )}
+        >
+          <Checkbox
+            id={commercialCheckboxId}
+            checked={commercialMessage}
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              setCommercialMessage(checked === true)
+            }
+            className="shrink-0"
+            aria-describedby={`${commercialCheckboxId}-unsub-hint`}
+          />
+          <span className="min-w-0 flex-1 text-[13px] leading-snug text-foreground">
+            <span className="font-semibold">{t("sms.commercialLabel")}</span>
+            <span className="font-normal text-muted-foreground">
+              {" "}
+              {t("sms.commercialHint")}
+            </span>
+          </span>
+          <span
+            id={`${commercialCheckboxId}-unsub-hint`}
+            className="ml-auto flex shrink-0 items-center gap-2 text-xs leading-[1.25] text-muted-foreground"
+          >
+            <Info
+              className="mt-px h-5 w-5 shrink-0 text-[#2f6fed]"
+              aria-hidden
+            />
+            <span className="text-left">
+              <span className="block whitespace-nowrap">
+                {t("sms.commercialUnsubTooltipLine1")}
+              </span>
+              <span className="block whitespace-nowrap">
+                {t("sms.commercialUnsubTooltipLine2")}
+              </span>
+            </span>
+          </span>
+        </label>
+      ) : null}
     </div>
   );
 });

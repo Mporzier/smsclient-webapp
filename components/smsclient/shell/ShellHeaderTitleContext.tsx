@@ -20,6 +20,9 @@ type ShellHeaderTitleContextValue = {
   setTitleOverride: (title: string | null) => void;
   headerBack: ShellHeaderBackAction | null;
   setHeaderBack: (action: ShellHeaderBackAction | null) => void;
+  helpOpen: boolean;
+  setHelpOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  openHelp: () => void;
 };
 
 const ShellHeaderTitleContext =
@@ -29,6 +32,8 @@ export function ShellHeaderTitleProvider({ children }: { children: ReactNode }) 
   const [titleOverride, setTitleOverrideState] = useState<string | null>(null);
   const [headerBack, setHeaderBackState] =
     useState<ShellHeaderBackAction | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const openHelp = useCallback(() => setHelpOpen(true), []);
   const setTitleOverride = useCallback((title: string | null) => {
     setTitleOverrideState(title);
   }, []);
@@ -42,8 +47,18 @@ export function ShellHeaderTitleProvider({ children }: { children: ReactNode }) 
       setTitleOverride,
       headerBack,
       setHeaderBack,
+      helpOpen,
+      setHelpOpen,
+      openHelp,
     }),
-    [titleOverride, setTitleOverride, headerBack, setHeaderBack],
+    [
+      titleOverride,
+      setTitleOverride,
+      headerBack,
+      setHeaderBack,
+      helpOpen,
+      openHelp,
+    ],
   );
 
   return (
@@ -61,4 +76,12 @@ export function useShellHeaderTitle() {
     );
   }
   return ctx;
+}
+
+/** Ouvre l'aide flottante du shell ; no-op hors provider (tests harness). */
+export function useShellHelpActions() {
+  const ctx = useContext(ShellHeaderTitleContext);
+  return {
+    openHelp: ctx?.openHelp ?? (() => {}),
+  };
 }

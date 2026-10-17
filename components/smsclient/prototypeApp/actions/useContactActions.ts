@@ -154,7 +154,7 @@ export function useContactActions({ data, modals }: ActionsContext) {
         const { error } = await insertClient(supabase, user.id, payload);
         if (error) throw error;
       }
-      await contactsState.refresh();
+      await contactsState.refresh({ silent: true });
       await groupsState.refresh();
       toast("Contact enregistré");
     },

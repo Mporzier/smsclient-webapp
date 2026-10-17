@@ -203,6 +203,8 @@ export function renderAudienceRoute(
           onSearchChange={campaignsState.setSearchInput}
           sorting={campaignsState.sorting}
           onSortingChange={campaignsState.setSorting}
+          columnFilters={campaignsState.columnFilters}
+          onColumnFiltersChange={campaignsState.setColumnFilters}
           error={campaignsState.error}
           onNewCampaign={() => modals.setCampaignNameOpen(true)}
           onOpenDetails={(row) => {

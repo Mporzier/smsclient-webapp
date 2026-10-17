@@ -28,6 +28,7 @@ export function AutomatisationsView({
   rows,
   contacts,
   customFieldDefs = [],
+  loading,
   error,
   onSave,
 }: AutomatisationsViewProps) {
@@ -72,6 +73,7 @@ export function AutomatisationsView({
 
       <ActiveAutomationsTable
         rows={rows}
+        loading={loading}
         onEdit={setEditRow}
         onCreate={() => setCreateModalOpen(true)}
       />
