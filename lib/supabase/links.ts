@@ -8,7 +8,6 @@ import {
   chunkList,
   paginateRange,
 } from "@/lib/supabase/postgrestChunk";
-import { normalizeListFilters } from "@/lib/proto/listFilters";
 import type { ColumnFiltersState } from "@tanstack/react-table";
 import {
   linkSortToOrders,
@@ -95,8 +94,8 @@ function applySmsLinksSearch<T extends { or: (filters: string) => T }>(
 
 function linkFiltersFromState(
   filters?: ColumnFiltersState,
-): ReturnType<typeof normalizeListFilters> {
-  return normalizeListFilters(filters ?? []);
+): ListColumnFilter[] {
+  return (filters ?? []) as ListColumnFilter[];
 }
 
 export async function fetchSmsLinks(

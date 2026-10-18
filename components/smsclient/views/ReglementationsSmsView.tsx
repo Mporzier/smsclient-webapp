@@ -54,13 +54,15 @@ const SECTION_ICONS: Record<RegulationSectionKey, LucideIcon> = {
 const PREVIEW_LEFT_KEYS = REGULATION_SECTION_ORDER.slice(4);
 const PREVIEW_RIGHT_KEYS = REGULATION_SECTION_ORDER.slice(0, 4);
 
-const HIGHLIGHT_SECTION_KEYS: RegulationSectionKey[] = [
+const HIGHLIGHT_SECTION_KEYS = [
   "allowedHours",
   "stopManagement",
   "legalMentions",
-];
+] as const satisfies readonly RegulationSectionKey[];
 
 type HighlightSectionKey = (typeof HIGHLIGHT_SECTION_KEYS)[number];
+
+const HIGHLIGHT_SECTION_KEY_SET = new Set<string>(HIGHLIGHT_SECTION_KEYS);
 
 const HIGHLIGHT_CARD_THEMES: Record<
   HighlightSectionKey,
@@ -88,7 +90,7 @@ const HIGHLIGHT_CARD_THEMES: Record<
 };
 
 const DROPDOWN_SECTION_KEYS = REGULATION_SECTION_ORDER.filter(
-  (key) => !HIGHLIGHT_SECTION_KEYS.includes(key),
+  (key) => !HIGHLIGHT_SECTION_KEY_SET.has(key),
 );
 
 function sectionLabelKey(key: RegulationSectionKey): MessageKey {
