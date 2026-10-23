@@ -1,6 +1,12 @@
 "use client";
 
-import { CellTruncate } from "@/components/smsclient/ui";
+import {
+  CellTruncate,
+  LIST_CELL_EMPTY,
+  ListCellEmpty,
+  ListCellValue,
+  ListCreatedCell,
+} from "@/components/smsclient/ui";
 import { ContactGroupsCell } from "@/components/smsclient/ContactGroupsCell";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,22 +18,32 @@ import {
 import {
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
+  LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS,
+  listViewToolbarSelection,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
 import {
   CONTACT_COL,
   LINK_COL,
   listColFixed,
+  listColResizable,
 } from "@/components/smsclient/listColumnSizes";
 import {
   ListEmptyIntroBanner,
   shouldShowListEmptyIntro,
 } from "@/components/smsclient/ListEmptyIntroBanner";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { ListViewToolbarCtaSwitch } from "@/components/smsclient/ListViewToolbarCtaSwitch";
 import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import {
   UnsubscribedContactsModal,
@@ -48,12 +64,14 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
 import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { avatarColor, contactInitials } from "@/lib/proto/contactDisplay";
 import type { ContactRowData } from "@/lib/types/contact";
 import { isCampaignEligibleContact } from "@/lib/types/contact";
 import { compareIsoTimestampsStable } from "@/lib/proto/compareIso";
+import { formatParisCreatedLabels } from "@/lib/proto/timezone";
 import {
   contactColumnFilterKind,
   customFieldTypesFromDefs,
@@ -66,12 +84,12 @@ import {
   Download,
   MoreHorizontal,
   Pencil,
-  Phone,
   Plus,
   Search,
   Send,
   Trash2,
   UserRound,
+  Users,
 } from "lucide-react";
 import type {
   ColumnDef,
@@ -105,7 +123,8 @@ type ContactsProps = {
   unsubscribedContacts?: UnsubscribedContactRow[];
   unsubscribedCount?: number;
   unsubscribedLoading?: boolean;
-  onLoadUnsubscribed?: () => void;
+  unsubscribedListReady?: boolean;
+  onLoadUnsubscribed?: (options?: { showLoading?: boolean }) => void;
   onImport: () => void;
   onAddContact: () => void;
   onRowClick: (row: ContactRowData) => void;
@@ -120,6 +139,10 @@ type ContactsProps = {
     filters?: ColumnFiltersState,
   ) => void;
   onCreateCampaignFromContacts: (ids: string[]) => void;
+  onAddContactsToGroup?: (
+    ids: string[] | (() => Promise<string[]>),
+    countHint: number,
+  ) => void;
   onResubscribeContacts?: (ids: string[]) => Promise<void>;
   onCountSelectableMatches?: (
     search: string,
@@ -144,17 +167,17 @@ function buildContactColumns(
         const raw = row.customFields?.[def.id];
         if (raw == null) return undefined;
         const text = formatCustomFieldDisplay(raw, def.fieldType).trim();
-        return text && text !== "—" ? text : undefined;
+        return text && text !== LIST_CELL_EMPTY ? text : undefined;
       },
       sortUndefined: "last",
       sortDescFirst: false,
       cell: ({ row }) => (
-        <CellTruncate as="div">
-          {formatCustomFieldDisplay(
+        <ListCellValue
+          value={formatCustomFieldDisplay(
             row.original.customFields?.[def.id],
             def.fieldType
           )}
-        </CellTruncate>
+        />
       ),
     })
   );
@@ -187,9 +210,7 @@ function buildContactColumns(
       header: t("contacts.col.firstName"),
       size: CONTACT_COL.firstName,
       cell: ({ getValue }) => (
-        <CellTruncate as="div" className="">
-          {getValue<string>().trim() || "—"}
-        </CellTruncate>
+        <ListCellValue value={getValue<string>()} />
       ),
     },
     {
@@ -197,9 +218,7 @@ function buildContactColumns(
       header: t("contacts.col.lastName"),
       size: CONTACT_COL.lastName,
       cell: ({ getValue }) => (
-        <CellTruncate as="div" className="">
-          {getValue<string>().trim() || "—"}
-        </CellTruncate>
+        <ListCellValue value={getValue<string>()} />
       ),
     },
     {
@@ -207,13 +226,7 @@ function buildContactColumns(
       header: t("contacts.col.phone"),
       size: CONTACT_COL.phone,
       cell: ({ getValue }) => (
-        <div className="flex items-center gap-1.5">
-          <Phone
-            className="h-3.5 w-3.5 shrink-0 text-emerald-500"
-            aria-hidden
-          />
-          <CellTruncate as="span">{getValue<string>()}</CellTruncate>
-        </div>
+        <ListCellValue value={getValue<string>()} />
       ),
     },
     {
@@ -235,9 +248,7 @@ function buildContactColumns(
       },
       sortUndefined: "last",
       sortDescFirst: false,
-      cell: ({ row }) => (
-        <CellTruncate as="div">{row.original.notes.trim() || "—"}</CellTruncate>
-      ),
+      cell: ({ row }) => <ListCellValue value={row.original.notes} />,
     },
     {
       id: "lastSms",
@@ -256,17 +267,15 @@ function buildContactColumns(
       cell: ({ row }) => {
         const date = row.original.lastSms;
         const body = row.original.lastSmsBody;
-        if (!body && date === "—")
-          return <span className="text-sm text-slate-400">—</span>;
+        if (!body && date === LIST_CELL_EMPTY) return <ListCellEmpty />;
         return (
-          <div className="flex flex-col gap-0.5 truncate">
+          <div className="flex min-w-0 flex-col gap-0.5">
             {body ? (
-              <span className="truncate text-sm text-slate-700">
-                &laquo;&thinsp;{body.slice(0, 50)}
-                {body.length > 50 ? "…" : ""}&thinsp;&raquo;
-              </span>
+              <CellTruncate as="span" className="text-sm text-slate-700">
+                &laquo;&thinsp;{body}&thinsp;&raquo;
+              </CellTruncate>
             ) : null}
-            {date !== "—" && (
+            {date !== LIST_CELL_EMPTY && (
               <span className="text-xs text-slate-400">{date}</span>
             )}
           </div>
@@ -284,7 +293,7 @@ function buildContactColumns(
     {
       id: "created",
       header: t("contacts.col.created"),
-      ...listColFixed(LINK_COL.created),
+      ...listColResizable(LINK_COL.created),
       accessorFn: (row) => row.createdAt,
       sortingFn: (a, b) =>
         compareIsoTimestampsStable(
@@ -294,9 +303,16 @@ function buildContactColumns(
           b.original.id
         ),
       sortDescFirst: false,
-      cell: ({ row }) => (
-        <CellTruncate as="div">{row.original.created}</CellTruncate>
-      ),
+      cell: ({ row }) => {
+        const { createdDateLabel, createdTimeLabel } =
+          formatParisCreatedLabels(row.original.createdAt);
+        return (
+          <ListCreatedCell
+            dateLabel={createdDateLabel}
+            timeLabel={createdTimeLabel}
+          />
+        );
+      },
     },
     /** Champs perso à droite (avant actions sticky). */
     ...customCols,
@@ -341,6 +357,7 @@ export function ContactsView({
   unsubscribedContacts = [],
   unsubscribedCount,
   unsubscribedLoading = false,
+  unsubscribedListReady = true,
   onLoadUnsubscribed,
   onImport,
   onAddContact,
@@ -348,6 +365,7 @@ export function ContactsView({
   onDeleteContacts,
   onDeleteContactsMatching,
   onCreateCampaignFromContacts,
+  onAddContactsToGroup,
   onResubscribeContacts,
   onCountSelectableMatches,
   onFetchSelectableMatchIds,
@@ -454,6 +472,7 @@ export function ContactsView({
     expandCandidate:
       hasMore ||
       (typeof totalCount === "number" && totalCount > loadedIds.length),
+    listMatchTotal: totalCount ?? null,
   });
 
   const onRowClickRef = useRef(onRowClick);
@@ -468,10 +487,11 @@ export function ContactsView({
 
   const openUnsubModal = useCallback(() => {
     setUnsubModalOpen(true);
-    onLoadUnsubscribed?.();
+    onLoadUnsubscribed?.({ showLoading: false });
   }, [onLoadUnsubscribed]);
 
-  const hasSelection = displaySelectedCount > 0;
+  const { selectionActionCount, toolbarHasSelection } =
+    listViewToolbarSelection({ selectedIds, displaySelectedCount });
 
   const emptyState = (
     <Empty className="p-0 md:p-0">
@@ -486,13 +506,19 @@ export function ContactsView({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button
             variant="default"
-            className="rounded-full"
+            size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+            className={LIST_VIEW_CTA_BUTTON_CLASS}
             onClick={onAddContact}
           >
             <Plus aria-hidden />
             {t("contacts.add")}
           </Button>
-          <Button variant="outline" className="rounded-full" onClick={onImport}>
+          <Button
+            variant="outline"
+            size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+            className={LIST_VIEW_CTA_BUTTON_CLASS}
+            onClick={onImport}
+          >
             <Download aria-hidden />
             {t("contacts.import")}
           </Button>
@@ -505,7 +531,7 @@ export function ContactsView({
     eligibleRows.length > 0 && eligibleRows.every((r) => selectedIds.has(r.id));
 
   const footer = useMemo(() => {
-    if (loading) return "…";
+    if (loading && eligibleRows.length === 0) return "…";
     const total =
       typeof totalCount === "number" ? totalCount : eligibleRows.length;
     const contactsLabel = t(
@@ -555,38 +581,29 @@ export function ContactsView({
       clearSelection();
       return;
     }
+    setSelectedIds(new Set(loadedIds));
     selectLoaded();
-  }, [allLoadedSelected, clearSelection, selectLoaded]);
+  }, [allLoadedSelected, clearSelection, loadedIds, selectLoaded]);
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = contactColumnFilterKind(columnId, customFieldDefs);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={filterLabels[columnId] ?? columnId}
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={(next) => {
-            clearSelection();
-            setColumnFilters(next);
-          }}
-          sourceOptions={sourceOptions}
-          groupOptions={groupOptions}
-        />
-      );
-    },
-    [
-      clearSelection,
-      columnFilters,
-      customFieldDefs,
-      filterLabels,
-      groupOptions,
-      setColumnFilters,
-      sourceOptions,
-    ],
-  );
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("contacts");
+
+  const filterSpecs = useMemo(() => {
+    const ids = [
+      "firstName",
+      "lastName",
+      "phone",
+      "groups",
+      "notes",
+      "lastSms",
+      "source",
+      "created",
+      ...customFieldDefs.map((d) => `custom_${d.id}`),
+    ];
+    return buildListFilterSpecs(ids, filterLabels, (id) =>
+      contactColumnFilterKind(id, customFieldDefs),
+    );
+  }, [customFieldDefs, filterLabels]);
 
   const columns = useMemo(
     () => buildContactColumns(customFieldDefs, t),
@@ -678,6 +695,11 @@ export function ContactsView({
     [columns, t, toggleAll, toggleSelect, selectedIds, allLoadedSelected]
   );
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(selectColumns, filterLabels),
+    [selectColumns, filterLabels],
+  );
+
   const showListIntro = shouldShowListEmptyIntro({
     loading,
     dataLength: eligibleRows.length,
@@ -687,7 +709,7 @@ export function ContactsView({
   });
 
   return (
-    <div className={LIST_VIEW_STACK_CLASS}>
+    <div className={cn(LIST_VIEW_STACK_CLASS, "min-w-0 flex-1")}>
       {showListIntro ? (
         <ListEmptyIntroBanner
           section="contacts"
@@ -708,6 +730,21 @@ export function ContactsView({
             aria-label={t("contacts.searchAria")}
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+          sourceOptions={sourceOptions}
+          groupOptions={groupOptions}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
@@ -721,39 +758,74 @@ export function ContactsView({
             onExpand={() => void expandToMatchAll()}
           />
         ) : (
-          <div className="min-w-0 flex-1" aria-hidden />
+          <div className={LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS} aria-hidden />
         )}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
-          {hasSelection ? (
+        <ListViewToolbarCtaSwitch
+          hasSelection={toolbarHasSelection}
+          defaultActions={
+            <>
+              <Button
+                variant="outline"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
+                onClick={onImport}
+              >
+                <Download aria-hidden />
+                {t("contacts.import")}
+              </Button>
+              <Button
+                variant="default"
+                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
+                onClick={onAddContact}
+              >
+                <Plus aria-hidden />
+                {t("contacts.add")}
+              </Button>
+            </>
+          }
+          selectionActions={
             <>
               <Button
                 variant="destructive"
                 size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
                 onClick={() => {
                   if (matchAllActive && onDeleteContactsMatching) {
                     onDeleteContactsMatching(
                       searchQuery,
-                      displaySelectedCount,
+                      selectionActionCount,
                       columnFilters,
                     );
                     clearSelection();
                     return;
                   }
-                  // Résolution des ids (expand en cours) pendant que la modale
-                  // est déjà ouverte : pas d'attente au clic.
                   const idsPromise = ensureSelectionReady();
-                  onDeleteContacts(() => idsPromise, displaySelectedCount);
+                  onDeleteContacts(() => idsPromise, selectionActionCount);
                   void idsPromise.then(() => clearSelection());
                 }}
               >
                 <Trash2 aria-hidden />
-                {t("contacts.deleteSelected", { n: displaySelectedCount })}
+                {t("contacts.deleteSelected", { n: selectionActionCount })}
               </Button>
+              {onAddContactsToGroup ? (
+                <Button
+                  variant="outline"
+                  size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                  className={LIST_VIEW_CTA_BUTTON_CLASS}
+                  onClick={() => {
+                    const idsPromise = ensureSelectionReady();
+                    onAddContactsToGroup(() => idsPromise, selectionActionCount);
+                  }}
+                >
+                  <Users aria-hidden />
+                  {t("contacts.addToGroup")}
+                </Button>
+              ) : null}
               <Button
                 variant="default"
                 size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
                 onClick={() => {
                   void (async () => {
                     const ids = await ensureSelectionReady();
@@ -766,29 +838,8 @@ export function ContactsView({
                 {t("contacts.createCampaign")}
               </Button>
             </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
-                onClick={onImport}
-              >
-                <Download aria-hidden />
-                {t("contacts.import")}
-              </Button>
-              <Button
-                variant="default"
-                size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
-                onClick={onAddContact}
-              >
-                <Plus aria-hidden />
-                {t("contacts.add")}
-              </Button>
-            </>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {error && (
@@ -827,6 +878,8 @@ export function ContactsView({
         loadingMessage={t("contacts.loading")}
         emptyMessage={emptyState}
         searchNoResultsMessage={t("contacts.noSearchResults")}
+        filterNoResultsMessage={t("listView.noFilterResults")}
+        searchAndFilterNoResultsMessage={t("listView.noSearchAndFilterResults")}
         onRowClick={onRowClick}
         footer={footer}
         minContentWidth={minContentWidth}
@@ -840,14 +893,19 @@ export function ContactsView({
         }}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
 
 
       <UnsubscribedContactsModal
         open={unsubModalOpen}
         contacts={unsubscribedContacts}
-        loading={unsubscribedLoading}
+        loading={
+          unsubModalOpen &&
+          unsubscribedContacts.length === 0 &&
+          (!unsubscribedListReady || unsubscribedLoading)
+        }
         onClose={() => setUnsubModalOpen(false)}
         onResubscribe={onResubscribeContacts}
       />

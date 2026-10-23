@@ -27,18 +27,27 @@ import {
   shouldShowListEmptyIntro,
 } from "@/components/smsclient/ListEmptyIntroBanner";
 import {
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
+  LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
 import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import {
   CAMPAIGN_COL,
   LINK_COL,
   listColFixed,
+  listColResizable,
 } from "@/components/smsclient/listColumnSizes";
 import {
   InputGroup,
@@ -49,7 +58,8 @@ import { useI18n, type MessageKey } from "@/lib/i18n";
 import type { CampaignRowData, SmsCampaignStatus } from "@/lib/types/campaign";
 import { normalizeListFilters } from "@/lib/proto/listFilters";
 import { campaignColumnFilterKind } from "@/lib/proto/listFilterUi";
-import { useCallback, useMemo, useState } from "react";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
+import { useMemo, useState } from "react";
 import { Eye, MoreHorizontal, Plus, Search, Send } from "lucide-react";
 import type {
   ColumnDef,
@@ -122,6 +132,8 @@ export function CampagnesView({
   const { t } = useI18n();
   const { openHelp } = useShellHelpActions();
   const [listIntroDismissed, setListIntroDismissed] = useState(false);
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("campagnes");
 
   const filterLabels = useMemo(
     () => ({
@@ -136,23 +148,14 @@ export function CampagnesView({
 
   const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = campaignColumnFilterKind(columnId);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={
-            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
-          }
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      );
-    },
-    [columnFilters, filterLabels, setColumnFilters],
+  const filterSpecs = useMemo(
+    () =>
+      buildListFilterSpecs(
+        ["createdLabel", "name", "recipients", "status", "creditsLabel"],
+        filterLabels,
+        campaignColumnFilterKind,
+      ),
+    [filterLabels],
   );
 
   const showListIntro = shouldShowListEmptyIntro({
@@ -175,7 +178,8 @@ export function CampagnesView({
       <EmptyContent>
         <Button
           variant="default"
-          className="rounded-full"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
           onClick={onNewCampaign}
         >
           <Plus aria-hidden />
@@ -187,18 +191,18 @@ export function CampagnesView({
 
   const footerN = typeof totalCount === "number" ? totalCount : rows.length;
   const footerLabel = useMemo(() => {
-    if (loading) return "…";
+    if (loading && rows.length === 0) return "…";
     return t(footerN === 1 ? "campaigns.footerOne" : "campaigns.footerMany", {
       n: footerN,
     });
-  }, [footerN, loading, t]);
+  }, [footerN, loading, rows.length, t]);
 
   const columns: ColumnDef<CampaignRowData, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "createdLabel",
         header: t("campaigns.col.date"),
-        ...listColFixed(LINK_COL.created),
+        ...listColResizable(LINK_COL.created),
         cell: ({ getValue }) => (
           <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
@@ -279,6 +283,11 @@ export function CampagnesView({
     [onOpenDetails, t],
   );
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(columns, filterLabels),
+    [columns, filterLabels],
+  );
+
   return (
     <div className={LIST_VIEW_STACK_CLASS}>
       {showListIntro ? (
@@ -301,6 +310,17 @@ export function CampagnesView({
             aria-label={t("campaigns.searchAria")}
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
+        <div className={LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS} aria-hidden />
       </div>
 
       {error && (
@@ -328,6 +348,8 @@ export function CampagnesView({
         globalFilter={searchQuery}
         emptyMessage={emptyState}
         searchNoResultsMessage={t("campaigns.noSearchResults")}
+        filterNoResultsMessage={t("listView.noFilterResults")}
+        searchAndFilterNoResultsMessage={t("listView.noSearchAndFilterResults")}
         onRowClick={onOpenDetails}
         footer={footerLabel}
         sorting={sorting}
@@ -337,7 +359,8 @@ export function CampagnesView({
         onColumnFiltersChange={setColumnFilters}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
     </div>
   );

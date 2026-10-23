@@ -8,6 +8,7 @@ export { LiensView } from "./LiensView";
 export { ModelesSmsView } from "./ModelesSmsView";
 export { ParametresView } from "./ParametresView";
 export { ReglementationsSmsView } from "./ReglementationsSmsView";
+export { ParrainageView } from "./ParrainageView";
 export { AideView } from "./AideView";
 export { AideSectionView } from "./AideSectionView";
 export { HelpArticlePanel } from "./HelpArticlePanel";

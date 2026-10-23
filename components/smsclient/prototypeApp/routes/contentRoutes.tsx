@@ -5,6 +5,7 @@ import {
   AutomatisationsView,
   LiensView,
   ModelesSmsView,
+  ParrainageView,
   ReglementationsSmsView,
   StatistiquesView,
 } from "@/components/smsclient/MainViews";
@@ -19,6 +20,7 @@ const CONTENT_ROUTES = new Set<AppRoute>([
   "liens",
   "modeles-sms",
   "reglementations-sms",
+  "parrainage",
   "aide",
 ]);
 
@@ -71,6 +73,7 @@ export function renderContentRoute(
           }
           unsubscribedContacts={unsubscribedContacts}
           unsubscribedLoading={contactsState.unsubscribedLoading}
+          unsubscribedListReady={contactsState.unsubscribedListReady}
           onLoadUnsubscribed={data.loadUnsubscribed}
         />
       );
@@ -119,6 +122,8 @@ export function renderContentRoute(
       );
     case "reglementations-sms":
       return <ReglementationsSmsView />;
+    case "parrainage":
+      return <ParrainageView />;
     case "aide":
       return <AideView onGo={ctx.go} hashPath={ctx.hashPath} />;
     default:

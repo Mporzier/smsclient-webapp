@@ -2,6 +2,7 @@ import {
   analyzeSmsMessage,
   countGsmSeptets,
   countUcs2Units,
+  smsMessageWithinBillableLimit,
   type SmsEncoding,
 } from "@/lib/proto/smsEncoding";
 
@@ -70,6 +71,37 @@ export type StopSegmentImpact = {
   jumpsSegment: boolean;
   extraParts: number;
 };
+
+/** Corps éditeur → texte facturé (STOP auto si message commercial). */
+export function billableCampaignMessage(
+  body: string,
+  includeStop: boolean,
+): string {
+  const trimmed = body.trim();
+  if (!includeStop) return trimmed;
+  return buildEffectiveSms(stripStopMention(trimmed), true);
+}
+
+export function smsEditorBodyWithinBillableLimit(
+  body: string,
+  includeStop: boolean,
+): boolean {
+  return smsMessageWithinBillableLimit(
+    billableCampaignMessage(body, includeStop),
+  );
+}
+
+/** Tronque le corps éditeur en réservant STOP / encodage GSM ou Unicode. */
+export function clampSmsEditorBody(body: string, includeStop: boolean): string {
+  if (smsEditorBodyWithinBillableLimit(body, includeStop)) return body;
+  let result = "";
+  for (const ch of body) {
+    const candidate = result + ch;
+    if (!smsEditorBodyWithinBillableLimit(candidate, includeStop)) break;
+    result = candidate;
+  }
+  return result;
+}
 
 export function getStopSegmentImpact(
   body: string,

@@ -13,6 +13,7 @@ import {
   chunkList,
   paginateRange,
 } from "@/lib/supabase/postgrestChunk";
+import { formatParisCreatedLabels } from "@/lib/proto/timezone";
 
 export type ClientGroupRecord = {
   id: string;
@@ -133,18 +134,28 @@ export async function fetchGroupsPage(
     | "member_count"
   >[];
 
-  const rows: GroupRowData[] = list.map((g) => ({
-    id: g.id,
-    name: g.name,
-    description: g.description?.trim() ?? "",
-    contactCount: g.member_count ?? 0,
-    lastCampaignLabel: g.last_campaign_at
-      ? formatDateFr(g.last_campaign_at)
-      : "—",
-    lastCampaignAt: g.last_campaign_at,
-    createdLabel: formatDateFr(g.created_at),
-    createdAt: g.created_at,
-  }));
+  const rows: GroupRowData[] = list.map((g) => {
+    const { createdDateLabel, createdTimeLabel } = formatParisCreatedLabels(
+      g.created_at,
+    );
+    const createdLabel = createdTimeLabel
+      ? `${createdDateLabel} ${createdTimeLabel}`
+      : createdDateLabel;
+    return {
+      id: g.id,
+      name: g.name,
+      description: g.description?.trim() ?? "",
+      contactCount: g.member_count ?? 0,
+      lastCampaignLabel: g.last_campaign_at
+        ? formatDateFr(g.last_campaign_at)
+        : "—",
+      lastCampaignAt: g.last_campaign_at,
+      createdDateLabel,
+      createdTimeLabel,
+      createdLabel,
+      createdAt: g.created_at,
+    };
+  });
 
   return {
     data: rows,

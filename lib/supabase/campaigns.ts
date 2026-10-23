@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CampaignRowData, CampaignTargetContact, SmsCampaignStatus } from "@/lib/types/campaign";
-import { smsPartsFor } from "@/lib/proto/smsUtils";
+import { validateBillableSmsText } from "@/lib/automations/messageValidation";
+import { SMS_LIMITS, smsPartsFor } from "@/lib/proto/smsUtils";
 import {
   campaignSortToOrders,
   type ListSort,
@@ -177,7 +178,18 @@ export async function insertSmsCampaign(
   userId: string,
   input: NewSmsCampaignInput,
 ): Promise<{ error: Error | null }> {
+  const lengthError = validateBillableSmsText(input.body);
+  if (lengthError) {
+    return { error: new Error(lengthError) };
+  }
   const parts = Math.max(1, smsPartsFor(input.body));
+  if (parts > SMS_LIMITS.MAX_SEGMENTS) {
+    return {
+      error: new Error(
+        `Le message dépasse ${SMS_LIMITS.MAX_SEGMENTS} SMS — raccourcis-le.`,
+      ),
+    };
+  }
   const credits = parts * Math.max(0, input.recipientCount);
   const isNow = input.sendMode === "now";
   const nowIso = new Date().toISOString();

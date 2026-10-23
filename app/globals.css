@@ -5,7 +5,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --openwidget-right-offset: 48px;
   /* smsclient brand — hex refs: #1831c9 primary, #2f6fed action, #e9f5ff accent, #e13b54 destructive */
   --background: oklch(0.984 0.003 247.9);
   --canvas: oklch(0.936 0.012 259.8);
@@ -80,11 +79,6 @@
   --toast-border: oklch(1 0 0 / 14%);
   --toast-icon: oklch(0.99 0.005 250);
   --toast-muted: oklch(0.86 0.03 255);
-}
-
-/* OpenWidget — décalage dynamique (voir openwidgetOffset.ts) */
-#chat-widget-container {
-  right: var(--openwidget-right-offset) !important;
 }
 
 /* Shell icône header modale (globals: --modal-icon-*) */

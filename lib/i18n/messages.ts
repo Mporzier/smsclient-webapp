@@ -13,11 +13,12 @@ const fr = {
   "nav.campagnes": "Envois SMS",
   "nav.statistiques": "Statistiques",
   "nav.automatisations": "Automatisations",
-  "nav.liens": "Liens",
+  "nav.liens": "Liens courts",
   "nav.modeles-sms": "Modèles SMS",
   "nav.qr-boutique": "Collecte clients",
   "nav.aide": "Centre d'aide",
   "nav.reglementations-sms": "Conformité SMS",
+  "nav.parrainage": "Parrainage",
 
   "route.dashboard": "Accueil",
   "route.contacts": "Contacts",
@@ -27,9 +28,10 @@ const fr = {
   "route.statistiques": "Statistiques",
   "route.parametres": "Paramètres",
   "route.qr-boutique": "Collecte clients",
-  "route.liens": "Liens",
+  "route.liens": "Liens courts",
   "route.modeles-sms": "Modèles SMS",
   "route.reglementations-sms": "Conformité SMS",
+  "route.parrainage": "Parrainage",
   "route.aide": "Centre d'aide",
   "route.nouvelle-campagne": "Nouvel envoi SMS",
   "route.acheter-credits": "Acheter des crédits",
@@ -130,7 +132,7 @@ const fr = {
   "parametres.field.city": "Ville",
   "parametres.field.country": "Pays",
   "parametres.field.billingContact": "Contact facturation",
-  "parametres.field.billingContactPlaceholder": "Ex. facturation@entreprise.fr",
+  "parametres.field.billingContactPlaceholder": "E-mail de facturation",
   "parametres.field.siretInvalid": "SIRET invalide (14 chiffres).",
   "parametres.field.tvaInvalid": "Numéro de TVA invalide.",
   "parametres.field.zipInvalid": "Code postal invalide pour ce pays.",
@@ -153,6 +155,10 @@ const fr = {
   "compte.lastName": "Nom",
   "compte.email": "Email",
   "compte.phone": "Téléphone",
+  "compte.field.firstNamePlaceholder": "Prénom",
+  "compte.field.lastNamePlaceholder": "Nom",
+  "compte.field.emailPlaceholder": "Adresse e-mail",
+  "compte.field.phonePlaceholder": "Numéro de mobile",
   "compte.language": "Langue",
   "compte.edit": "Éditer",
   "compte.firstNameEditTitle": "Prénom",
@@ -249,7 +255,7 @@ const fr = {
   "customFields.renameAria": "Renommer",
   "customFields.deleteAria": "Supprimer",
   "customFields.newField": "Nom",
-  "customFields.placeholder": "Ex. Date d'inscription",
+  "customFields.placeholder": "Nom du champ personnalisé",
 
   "emoji.searchPh": "Ex. sourire, cœur, fête",
   "emoji.empty": "Aucun emoji trouvé.",
@@ -380,7 +386,7 @@ const fr = {
   "dashboard.calendarEventModalDesc":
     "Planifiez une date clé à afficher sur votre calendrier marketing.",
   "dashboard.calendarEventTitleLabel": "Titre",
-  "dashboard.calendarEventTitlePlaceholder": "Ex. Soldes d'été",
+  "dashboard.calendarEventTitlePlaceholder": "Nom de l'événement",
   "dashboard.calendarEventDateLabel": "Date",
   "dashboard.calendarEventTypeLabel": "Type d'événement",
   "dashboard.calendarEventSubmit": "Ajouter",
@@ -448,6 +454,17 @@ const fr = {
   "contacts.actionsAria": "Actions pour {name}",
   "contacts.deleteSelected": "Supprimer ({n})",
   "contacts.createCampaign": "Créer un envoi SMS",
+  "contacts.addToGroup": "Ajouter à un groupe",
+  "contacts.addToGroup.title": "Ajouter à un groupe",
+  "contacts.addToGroup.descriptionOne": "1 contact sélectionné",
+  "contacts.addToGroup.descriptionMany": "{n} contacts sélectionnés",
+  "contacts.addToGroup.pickGroup": "Choisir un groupe",
+  "contacts.addToGroup.noGroups": "Aucun groupe — créez-en un dans Groupes.",
+  "contacts.addToGroup.noContacts": "Aucun contact à ajouter.",
+  "contacts.addToGroup.confirm": "Ajouter",
+  "contacts.addToGroup.successOne": "1 contact ajouté au groupe « {name} »",
+  "contacts.addToGroup.successMany":
+    "{n} contacts ajoutés au groupe « {name} »",
   "contacts.import": "Importer",
   "contacts.add": "Ajouter un contact",
   "listIntro.contacts.title": "Vous êtes dans vos contacts",
@@ -468,7 +485,11 @@ const fr = {
   "listIntro.automatisations.title": "Vous êtes dans vos automatisations",
   "listIntro.automatisations.body":
     "Programmez des envois récurrents (anniversaires, rappels, fêtes) : les SMS partent seuls aux contacts éligibles.",
+  "automations.field.namePlaceholder": "Nom de l'automatisation",
   "listIntro.reglementations-sms.title": "Conformité SMS",
+  "listIntro.parrainage.title": "Parrainage",
+  "listIntro.parrainage.body":
+    "Invitez d'autres commerçants : partagez votre lien ou votre code d'inscription.",
   "listIntro.reglementations-sms.body":
     "Consultez les règles d'envoi de SMS applicables dans chaque pays avant de lancer votre campagne.",
   "listIntro.learnMore": "En savoir plus",
@@ -515,6 +536,9 @@ const fr = {
   "groups.col.created": "Création",
   "groups.footerOne": "1 groupe",
   "groups.footerMany": "{n} groupes",
+  "groups.field.namePlaceholder": "Nom du groupe",
+  "groups.field.descriptionPlaceholder":
+    "Décrivez brièvement l'usage de ce groupe",
 
   "campaigns.searchPlaceholder": "Rechercher un envoi SMS…",
   "campaigns.searchAria": "Rechercher un envoi SMS",
@@ -555,11 +579,16 @@ const fr = {
   "campaigns.nameModal.label": "Nom de votre envoi SMS :",
   "campaigns.nameModal.defaultName": "Campagne · {date}",
   "campaigns.nameModal.continue": "Continuer",
+  "campaigns.nameModal.placeholder": "Nom de l'envoi SMS",
 
   "links.searchPlaceholder": "Rechercher un lien…",
   "links.searchAria": "Rechercher un lien",
   "links.actionsAria": "Actions pour {name}",
   "links.create": "Créer un lien",
+  "links.field.urlPlaceholder": "URL de la page de destination",
+  "links.field.labelPlaceholder": "Nom du lien",
+  "links.field.descriptionPlaceholder":
+    "Décrivez brièvement l'usage de ce lien",
   "links.copyShort": "Copier le lien court",
   "links.copied": "Lien copié",
   "links.copyFailed": "Copie impossible",
@@ -601,13 +630,12 @@ const fr = {
     "Réutilisez-le lors de la rédaction d'un envoi SMS.",
   "templates.field.title": "Titre",
   "templates.field.titleCount": "{current}/{max}",
-  "templates.field.titlePlaceholder": "Ex. Promo été",
+  "templates.field.titlePlaceholder": "Nom du modèle",
   "templates.field.description": "Description",
   "templates.field.descriptionPlaceholder":
-    "Ex. Relance VIP, à utiliser en juin (note interne, non envoyée).",
+    "Décrivez brièvement l'usage de ce modèle",
   "templates.field.body": "Message SMS",
-  "templates.field.bodyPlaceholder":
-    "Ex. Bonjour [Prénom], -20 % cette semaine en boutique. On vous attend !",
+  "templates.field.bodyPlaceholder": "Rédigez votre SMS",
   "templates.titleRequired":
     "Le titre est obligatoire ({min} caractères minimum).",
   "templates.bodyRequired": "Le message SMS ne peut pas être vide.",
@@ -898,7 +926,7 @@ const fr = {
   "help.art.automatisations.monitor": "Suivi et désactivation",
   "help.art.liens.create": "Créer un lien court",
   "help.art.liens.track": "Suivre les clics",
-  "help.art.liens.campaignUse": "Utiliser un lien en campagne",
+  "help.art.liens.campaignUse": "Insérer un lien court",
   "help.art.modeles.create": "Créer un modèle SMS",
   "help.art.modeles.variables": "Variables dynamiques",
   "help.art.modeles.reuse": "Réutiliser un modèle",
@@ -1157,8 +1185,7 @@ const fr = {
   "qr.complianceMore": "En savoir plus",
   "qr.modal.welcome.desc":
     "Personnalisez le SMS envoyé automatiquement après l'inscription via votre QR code.",
-  "qr.modal.welcome.placeholder":
-    "Ex. Bienvenue, [Prénom] ! Bienvenue chez Mon Commerce !…",
+  "qr.modal.welcome.placeholder": "Rédigez votre SMS",
   "qr.modal.welcome.messageLabel": "Message SMS",
   "qr.modal.welcome.reset": "Réinitialiser",
   "qr.modal.preview.title": "Prévisualiser la roue",
@@ -1436,8 +1463,7 @@ const fr = {
     "Comparez plusieurs liens (promo, landing, formulaire) pour voir lequel performe le mieux après vos envois.",
   "helpFaq.liens.track.s4":
     "La colonne « Créé le » rappelle quand le lien a été ajouté ; le compteur évolue au fil des campagnes qui l'utilisent.",
-  "helpFaq.liens.campaignUse.title":
-    "Comment utiliser un lien dans un envoi SMS ?",
+  "helpFaq.liens.campaignUse.title": "Comment insérer un lien court ?",
   "helpFaq.liens.campaignUse.teaser":
     "Insérez le lien court dans le message.",
   "helpFaq.liens.campaignUse.intro":
@@ -1659,6 +1685,59 @@ const fr = {
     "Consultez le centre d'aide pour le détail réglementaire.",
   "guide.reglementations-sms.primary": "Centre d'aide",
 
+  "guide.parrainage.eyebrow": "Parrainage",
+  "guide.parrainage.title": "Faire grandir la communauté",
+  "guide.parrainage.desc":
+    "Partagez votre lien d'inscription : chaque nouveau compte créé via votre code est comptabilisé.",
+  "guide.parrainage.b1": "Copiez le lien ou le code depuis cette page.",
+  "guide.parrainage.b2":
+    "Votre filleul s'inscrit avec le lien (paramètre ref).",
+  "guide.parrainage.b3": "Le compteur se met à jour après confirmation du compte.",
+  "guide.parrainage.primary": "Copier mon lien",
+
+  "parrainage.hero.titleLine1": "Parrainez un proche et",
+  "parrainage.hero.titleLine2": "gagnez 100 crédits !",
+  "parrainage.hero.body":
+    "Vous connaissez un commerçant, un artisan, ou une entreprise qui pourrait être intéressée par SMSClient ? Partagez votre lien de parrainage, et lorsqu'il crée un compte et ajoute des crédits SMS, vous recevez 100 crédits sur votre compte SMSClient.",
+  "parrainage.hero.step1": "Partagez votre lien de parrainage.",
+  "parrainage.hero.step2": "Votre filleul crée un compte sur SMSclient.",
+  "parrainage.hero.step3": "Il achète des crédits SMS.",
+  "parrainage.rewardBadge": "100 crédits",
+  "parrainage.termsLink": "Conditions générales de parrainage",
+  "parrainage.termsModal.title": "Conditions générales de parrainage",
+  "parrainage.termsModal.subtitle":
+    "Programme de parrainage SMSClient : règles applicables aux parrains et filleuls.",
+  "parrainage.termsModal.close": "Fermer",
+  "parrainage.termsModal.s1.title": "1. Objet",
+  "parrainage.termsModal.s1.body":
+    "Le programme permet aux utilisateurs de SMSClient (parrains) de recommander la plateforme à un tiers (filleul) via un lien personnel. L'objectif est de faire découvrir SMSClient à de nouvelles entreprises.",
+  "parrainage.termsModal.s2.title": "2. Lien et inscription",
+  "parrainage.termsModal.s2.body":
+    "Chaque parrain dispose d'un lien et d'un code uniques. Le filleul doit créer un compte SMSClient en passant par ce lien. Un même filleul ne peut être rattaché qu'à un seul parrain. Les comptes créés sans lien valide ou en doublon ne donnent pas droit à récompense.",
+  "parrainage.termsModal.s3.title": "3. Récompense de 100 crédits",
+  "parrainage.termsModal.s3.body":
+    "Le parrain reçoit 100 crédits SMS sur son compte lorsque le filleul a créé son compte, validé son inscription et effectué un premier achat de crédits SMS éligible. Les crédits sont ajoutés sous réserve de validation par SMSClient et dans un délai raisonnable. SMSClient se réserve le droit de définir ou d'ajuster les montants promotionnels.",
+  "parrainage.termsModal.s4.title": "4. Usage loyal",
+  "parrainage.termsModal.s4.body":
+    "Sont interdits : auto-parrainage, comptes fictifs, abus de codes, spam ou toute pratique visant à obtenir des crédits de manière frauduleuse. SMSClient peut refuser, suspendre ou retirer des crédits obtenus en violation de ces règles, sans préavis.",
+  "parrainage.termsModal.s5.title": "5. Évolution du programme",
+  "parrainage.termsModal.s5.body":
+    "SMSClient peut modifier ou mettre fin au programme de parrainage à tout moment. Les conditions en vigueur au moment de l'action du filleul (inscription ou achat) s'appliquent, sauf disposition légale contraire. Pour toute question : contactez le support depuis votre espace client.",
+  "parrainage.flow.step1": "Vous parrainez un proche",
+  "parrainage.flow.step2": "Il devient client",
+  "parrainage.flow.step3": "Vous gagnez 100 crédits",
+  "parrainage.linkTitle": "Votre lien de parrainage",
+  "parrainage.linkDesc":
+    "Utilisez ce lien partout où vous parlez de SMSClient.",
+  "parrainage.copyLink": "Copier le lien",
+  "parrainage.copyOk": "Copié dans le presse-papiers.",
+  "parrainage.copyFailed": "Impossible de copier.",
+  "parrainage.shareSectionEyebrow": "Plus de façons de partager",
+  "parrainage.shareLinkedInTitle": "Partager sur LinkedIn",
+  "parrainage.shareLinkedInDesc":
+    "Recommandez SMSClient à votre réseau. Votre lien de parrainage est inclus automatiquement.",
+  "parrainage.shareLinkedInCta": "Partager sur LinkedIn",
+
   "guide.nouvelle-campagne.eyebrow": "Nouvel envoi SMS",
   "guide.nouvelle-campagne.title": "Créer et envoyer un envoi SMS",
   "guide.nouvelle-campagne.desc":
@@ -1733,8 +1812,9 @@ const fr = {
   "contact.modal.mobileBadge": "Mobile FR",
   "contact.modal.birthday": "Anniversaire",
   "contact.modal.optional": "Optionnel",
-  "contact.modal.notesPh":
-    "Ex. Client allergique au gluten, préfère les SMS le matin",
+  "contact.modal.phonePh": "Numéro de mobile",
+  "contact.modal.notesPh": "Notes internes sur ce contact",
+  "feedback.modal.placeholder": "Décrivez votre retour ou suggestion",
   "contact.modal.groupsSelectedOne": "{n} sélectionné",
   "contact.modal.groupsSelectedMany": "{n} sélectionnés",
   "contact.modal.noGroups": "Aucun groupe pour l'instant.",
@@ -1860,6 +1940,19 @@ const fr = {
   "listFilter.preset.thisMonth": "Ce mois",
   "listFilter.lastSms.date": "Date du SMS",
   "listFilter.lastSms.body": "Texte du SMS",
+
+  "listView.filters": "Filtres",
+  "listView.filtersAria": "Ouvrir les filtres de colonnes",
+  "listView.columns": "Colonnes",
+  "listView.columnsAria": "Afficher ou masquer des colonnes",
+  "listView.columnsMenu": "Colonnes visibles",
+  "listView.columnsReset": "Réinitialiser",
+  "listView.filtersPickColumn": "Colonne",
+  "listView.filtersColumnPlaceholder": "Choisir une colonne…",
+  "listView.noFilterResults":
+    "Aucun élément ne correspond aux filtres appliqués.",
+  "listView.noSearchAndFilterResults":
+    "Aucun élément ne correspond à votre recherche et aux filtres appliqués.",
 } as const;
 
 export type MessageKey = keyof typeof fr;
@@ -1874,11 +1967,12 @@ const en: Record<MessageKey, string> = {
   "nav.campagnes": "SMS sends",
   "nav.statistiques": "Statistics",
   "nav.automatisations": "Automations",
-  "nav.liens": "Links",
+  "nav.liens": "Short links",
   "nav.modeles-sms": "SMS templates",
   "nav.qr-boutique": "Client capture",
   "nav.aide": "Help center",
   "nav.reglementations-sms": "SMS compliance",
+  "nav.parrainage": "Referrals",
 
   "route.dashboard": "Home",
   "route.contacts": "Contacts",
@@ -1888,9 +1982,10 @@ const en: Record<MessageKey, string> = {
   "route.statistiques": "Statistics",
   "route.parametres": "Settings",
   "route.qr-boutique": "Client capture",
-  "route.liens": "Links",
+  "route.liens": "Short links",
   "route.modeles-sms": "SMS templates",
   "route.reglementations-sms": "SMS compliance",
+  "route.parrainage": "Referrals",
   "route.aide": "Help center",
   "route.nouvelle-campagne": "New SMS send",
   "route.acheter-credits": "Buy credits",
@@ -1988,7 +2083,7 @@ const en: Record<MessageKey, string> = {
   "parametres.field.city": "City",
   "parametres.field.country": "Country",
   "parametres.field.billingContact": "Billing contact",
-  "parametres.field.billingContactPlaceholder": "Ex. billing@company.com",
+  "parametres.field.billingContactPlaceholder": "Billing email",
   "parametres.field.siretInvalid": "Invalid SIRET (14 digits).",
   "parametres.field.tvaInvalid": "Invalid VAT number.",
   "parametres.field.zipInvalid": "Invalid postal code for this country.",
@@ -2008,6 +2103,10 @@ const en: Record<MessageKey, string> = {
   "compte.lastName": "Last name",
   "compte.email": "Email",
   "compte.phone": "Phone",
+  "compte.field.firstNamePlaceholder": "First name",
+  "compte.field.lastNamePlaceholder": "Last name",
+  "compte.field.emailPlaceholder": "Email address",
+  "compte.field.phonePlaceholder": "Mobile number",
   "compte.language": "Language",
   "compte.edit": "Edit",
   "compte.firstNameEditTitle": "First name",
@@ -2103,7 +2202,7 @@ const en: Record<MessageKey, string> = {
   "customFields.renameAria": "Rename",
   "customFields.deleteAria": "Delete",
   "customFields.newField": "Name",
-  "customFields.placeholder": "Ex. Signup date",
+  "customFields.placeholder": "Custom field name",
 
   "emoji.searchPh": "Ex. smile, heart, party",
   "emoji.empty": "No emoji found.",
@@ -2231,7 +2330,7 @@ const en: Record<MessageKey, string> = {
   "dashboard.calendarEventModalDesc":
     "Schedule a key date on your marketing calendar.",
   "dashboard.calendarEventTitleLabel": "Title",
-  "dashboard.calendarEventTitlePlaceholder": "E.g. Summer sale",
+  "dashboard.calendarEventTitlePlaceholder": "Event name",
   "dashboard.calendarEventDateLabel": "Date",
   "dashboard.calendarEventTypeLabel": "Event type",
   "dashboard.calendarEventSubmit": "Add",
@@ -2298,6 +2397,16 @@ const en: Record<MessageKey, string> = {
   "contacts.actionsAria": "Actions for {name}",
   "contacts.deleteSelected": "Delete ({n})",
   "contacts.createCampaign": "Create an SMS send",
+  "contacts.addToGroup": "Add to a group",
+  "contacts.addToGroup.title": "Add to a group",
+  "contacts.addToGroup.descriptionOne": "1 contact selected",
+  "contacts.addToGroup.descriptionMany": "{n} contacts selected",
+  "contacts.addToGroup.pickGroup": "Choose a group",
+  "contacts.addToGroup.noGroups": "No groups — create one under Groups.",
+  "contacts.addToGroup.noContacts": "No contacts to add.",
+  "contacts.addToGroup.confirm": "Add",
+  "contacts.addToGroup.successOne": "1 contact added to group “{name}”",
+  "contacts.addToGroup.successMany": "{n} contacts added to group “{name}”",
   "contacts.import": "Import",
   "contacts.add": "Add a contact",
   "listIntro.contacts.title": "You're in your contacts",
@@ -2318,7 +2427,11 @@ const en: Record<MessageKey, string> = {
   "listIntro.automatisations.title": "You're in your automations",
   "listIntro.automatisations.body":
     "Schedule recurring sends (birthdays, reminders, holidays)—SMS go out automatically to eligible contacts.",
+  "automations.field.namePlaceholder": "Automation name",
   "listIntro.reglementations-sms.title": "SMS compliance",
+  "listIntro.parrainage.title": "Referrals",
+  "listIntro.parrainage.body":
+    "Invite other businesses: share your sign-up link or referral code.",
   "listIntro.reglementations-sms.body":
     "Review the SMS sending rules that apply in each country before you launch your campaign.",
   "listIntro.learnMore": "Learn more",
@@ -2365,6 +2478,9 @@ const en: Record<MessageKey, string> = {
   "groups.col.created": "Created",
   "groups.footerOne": "1 group",
   "groups.footerMany": "{n} groups",
+  "groups.field.namePlaceholder": "Group name",
+  "groups.field.descriptionPlaceholder":
+    "Briefly describe how you use this group",
 
   "campaigns.searchPlaceholder": "Search an SMS send…",
   "campaigns.searchAria": "Search an SMS send",
@@ -2404,11 +2520,16 @@ const en: Record<MessageKey, string> = {
   "campaigns.nameModal.label": "Your SMS send name:",
   "campaigns.nameModal.defaultName": "Campaign · {date}",
   "campaigns.nameModal.continue": "Continue",
+  "campaigns.nameModal.placeholder": "SMS send name",
 
   "links.searchPlaceholder": "Search a link…",
   "links.searchAria": "Search a link",
   "links.actionsAria": "Actions for {name}",
   "links.create": "Create a link",
+  "links.field.urlPlaceholder": "Destination page URL",
+  "links.field.labelPlaceholder": "Link name",
+  "links.field.descriptionPlaceholder":
+    "Briefly describe how you use this link",
   "links.copyShort": "Copy short link",
   "links.copied": "Link copied",
   "links.copyFailed": "Could not copy",
@@ -2449,13 +2570,12 @@ const en: Record<MessageKey, string> = {
   "templates.createSubtitle": "Reuse it when writing an SMS send.",
   "templates.field.title": "Title",
   "templates.field.titleCount": "{current}/{max}",
-  "templates.field.titlePlaceholder": "Ex. Summer promo",
+  "templates.field.titlePlaceholder": "Template name",
   "templates.field.description": "Description",
   "templates.field.descriptionPlaceholder":
-    "Ex. VIP follow-up, use in June (internal note, not sent).",
+    "Briefly describe how you use this template",
   "templates.field.body": "SMS message",
-  "templates.field.bodyPlaceholder":
-    "Ex. Hi [Prénom], -20% this week in store. We look forward to seeing you!",
+  "templates.field.bodyPlaceholder": "Write your SMS",
   "templates.titleRequired": "Title is required ({min} characters minimum).",
   "templates.bodyRequired": "SMS message cannot be empty.",
   "templates.loginRequired": "Sign in to create a template.",
@@ -2741,7 +2861,7 @@ const en: Record<MessageKey, string> = {
   "help.art.automatisations.monitor": "Monitoring and pause",
   "help.art.liens.create": "Create a short link",
   "help.art.liens.track": "Track clicks",
-  "help.art.liens.campaignUse": "Use a link in a campaign",
+  "help.art.liens.campaignUse": "Insert a short link",
   "help.art.modeles.create": "Create an SMS template",
   "help.art.modeles.variables": "Dynamic variables",
   "help.art.modeles.reuse": "Reuse a template",
@@ -2998,8 +3118,7 @@ const en: Record<MessageKey, string> = {
   "qr.complianceMore": "Learn more",
   "qr.modal.welcome.desc":
     "Customize the SMS sent automatically after sign-up via your QR code.",
-  "qr.modal.welcome.placeholder":
-    "Ex. Welcome, [Prénom]! Welcome to My Shop!…",
+  "qr.modal.welcome.placeholder": "Write your SMS",
   "qr.modal.welcome.messageLabel": "SMS message",
   "qr.modal.welcome.reset": "Reset",
   "qr.modal.preview.title": "Preview the wheel",
@@ -3258,8 +3377,7 @@ const en: Record<MessageKey, string> = {
     "Compare links (promo, landing, form) to see which performs best after your sends.",
   "helpFaq.liens.track.s4":
     'The "Created" column shows when the link was added; the counter updates as campaigns use it.',
-  "helpFaq.liens.campaignUse.title":
-    "How do I use a link in an SMS send?",
+  "helpFaq.liens.campaignUse.title": "How do I insert a short link?",
   "helpFaq.liens.campaignUse.teaser":
     "Insert the short link in your message body.",
   "helpFaq.liens.campaignUse.intro":
@@ -3459,6 +3577,58 @@ const en: Record<MessageKey, string> = {
   "guide.reglementations-sms.b3": "See the help center for regulatory detail.",
   "guide.reglementations-sms.primary": "Help center",
 
+  "guide.parrainage.eyebrow": "Referrals",
+  "guide.parrainage.title": "Grow the community",
+  "guide.parrainage.desc":
+    "Share your sign-up link: each new account created with your code is tracked here.",
+  "guide.parrainage.b1": "Copy the link or code from this page.",
+  "guide.parrainage.b2": "Your referral signs up using the link (ref query).",
+  "guide.parrainage.b3": "The counter updates after the account is created.",
+  "guide.parrainage.primary": "Copy my link",
+
+  "parrainage.hero.titleLine1": "Refer a friend and",
+  "parrainage.hero.titleLine2": "earn 100 credits!",
+  "parrainage.hero.body":
+    "Know a retailer, craft business, or company that might be interested in SMSClient? Share your referral link—when they create an account and add SMS credits, you receive 100 credits on your SMSClient account.",
+  "parrainage.hero.step1": "Share your referral link.",
+  "parrainage.hero.step2": "Your referral creates an SMSclient account.",
+  "parrainage.hero.step3": "They buy SMS credits.",
+  "parrainage.rewardBadge": "100 credits",
+  "parrainage.termsLink": "Referral terms and conditions",
+  "parrainage.termsModal.title": "Referral terms and conditions",
+  "parrainage.termsModal.subtitle":
+    "SMSClient referral program — rules for referrers and referrals.",
+  "parrainage.termsModal.close": "Close",
+  "parrainage.termsModal.s1.title": "1. Purpose",
+  "parrainage.termsModal.s1.body":
+    "The program lets SMSClient users (referrers) recommend the platform to a third party (referral) via a personal link. The goal is to introduce SMSClient to new businesses.",
+  "parrainage.termsModal.s2.title": "2. Link and sign-up",
+  "parrainage.termsModal.s2.body":
+    "Each referrer has a unique link and code. The referral must create an SMSClient account through that link. A referral can only be linked to one referrer. Accounts created without a valid link or as duplicates are not eligible.",
+  "parrainage.termsModal.s3.title": "3. 100-credit reward",
+  "parrainage.termsModal.s3.body":
+    "The referrer receives 100 SMS credits when the referral has created an account, confirmed sign-up, and made a first eligible SMS credit purchase. Credits are granted subject to SMSClient validation and within a reasonable timeframe. SMSClient may define or adjust promotional amounts.",
+  "parrainage.termsModal.s4.title": "4. Fair use",
+  "parrainage.termsModal.s4.body":
+    "Self-referrals, fake accounts, code abuse, spam, or any attempt to obtain credits fraudulently are prohibited. SMSClient may refuse, suspend, or revoke credits obtained in breach of these rules without notice.",
+  "parrainage.termsModal.s5.title": "5. Program changes",
+  "parrainage.termsModal.s5.body":
+    "SMSClient may change or end the referral program at any time. The terms in effect when the referral acts (sign-up or purchase) apply unless law requires otherwise. Questions: contact support from your account area.",
+  "parrainage.flow.step1": "You refer someone",
+  "parrainage.flow.step2": "They become a customer",
+  "parrainage.flow.step3": "You earn 100 credits",
+  "parrainage.linkTitle": "Your referral link",
+  "parrainage.linkDesc":
+    "Use this link anywhere you talk about SMSClient.",
+  "parrainage.copyLink": "Copy link",
+  "parrainage.copyOk": "Copied to clipboard.",
+  "parrainage.copyFailed": "Could not copy.",
+  "parrainage.shareSectionEyebrow": "More ways to share",
+  "parrainage.shareLinkedInTitle": "Share on LinkedIn",
+  "parrainage.shareLinkedInDesc":
+    "Recommend SMSClient to your network. Your referral link is included automatically.",
+  "parrainage.shareLinkedInCta": "Share on LinkedIn",
+
   "guide.nouvelle-campagne.eyebrow": "New SMS send",
   "guide.nouvelle-campagne.title": "Create and send an SMS",
   "guide.nouvelle-campagne.desc":
@@ -3532,7 +3702,9 @@ const en: Record<MessageKey, string> = {
   "contact.modal.mobileBadge": "FR mobile",
   "contact.modal.birthday": "Birthday",
   "contact.modal.optional": "Optional",
-  "contact.modal.notesPh": "Ex. Gluten-free, prefers SMS in the morning",
+  "contact.modal.phonePh": "Mobile number",
+  "contact.modal.notesPh": "Internal notes about this contact",
+  "feedback.modal.placeholder": "Describe your feedback or suggestion",
   "contact.modal.groupsSelectedOne": "{n} selected",
   "contact.modal.groupsSelectedMany": "{n} selected",
   "contact.modal.noGroups": "No groups yet.",
@@ -3658,6 +3830,18 @@ const en: Record<MessageKey, string> = {
   "listFilter.preset.thisMonth": "This month",
   "listFilter.lastSms.date": "SMS date",
   "listFilter.lastSms.body": "SMS text",
+
+  "listView.filters": "Filters",
+  "listView.filtersAria": "Open column filters",
+  "listView.columns": "Columns",
+  "listView.columnsAria": "Show or hide columns",
+  "listView.columnsMenu": "Visible columns",
+  "listView.columnsReset": "Reset",
+  "listView.filtersPickColumn": "Column",
+  "listView.filtersColumnPlaceholder": "Choose a column…",
+  "listView.noFilterResults": "No items match the applied filters.",
+  "listView.noSearchAndFilterResults":
+    "No items match your search and applied filters.",
 };
 
 export const messages: Record<Locale, Record<MessageKey, string>> = {

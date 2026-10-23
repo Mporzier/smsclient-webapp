@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { LinkRowData } from "@/lib/types/link";
 import { URL_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import type { SmsLinkIconId } from "@/lib/proto/smsLinkIcons";
 import { Link } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -68,6 +69,7 @@ export function CreateSmsLinkModal({
   onCreate,
   onCreated,
 }: CreateSmsLinkModalProps) {
+  const { t } = useI18n();
   const [originalUrl, setOriginalUrl] = useState("");
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
@@ -194,7 +196,7 @@ export function CreateSmsLinkModal({
               type="url"
               className={modalFieldCls}
               maxLength={URL_MAX_LENGTH}
-              placeholder="Ex. www.votre-site.fr/promo"
+              placeholder={t("links.field.urlPlaceholder")}
               value={originalUrl}
               aria-invalid={Boolean(urlError)}
               aria-describedby={urlError ? "create-sms-link-url-err" : undefined}
@@ -234,7 +236,7 @@ export function CreateSmsLinkModal({
               minLength={SMS_LINK_LABEL_MIN_LENGTH}
               maxLength={SMS_LINK_LABEL_MAX_LENGTH}
               className={modalFieldCls}
-              placeholder="Ex. Promo été"
+              placeholder={t("links.field.labelPlaceholder")}
               value={label}
               aria-invalid={Boolean(labelError)}
               aria-describedby={
@@ -272,7 +274,7 @@ export function CreateSmsLinkModal({
               className={cn(modalFieldCls, "min-h-[72px] resize-y text-sm")}
               maxLength={SMS_LINK_DESCRIPTION_MAX_LENGTH}
               rows={3}
-              placeholder="Ex. Page promo du site — campagne rentrée 2026"
+              placeholder={t("links.field.descriptionPlaceholder")}
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);

@@ -63,7 +63,7 @@ type SmsMessageComposerProps = {
     originalUrl: string;
     label: string;
   }) => Promise<{ data: LinkRowData | null; error: string | null }>;
-  /** Message commercial (offre, promo…) — absent en mode consigne IA. */
+  /** Message commercial (offre, promo…). */
   commercialMessage?: boolean;
   onCommercialMessageChange?: (checked: boolean) => void;
 };
@@ -111,6 +111,10 @@ export const SmsMessageComposer = forwardRef<
   const [emojisOpen, setEmojisOpen] = useState(false);
   const editorRef = useRef<SmsRichMessageEditorHandle>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  const pendingRichCaretRef = useRef<number | null>(null);
+  const pendingTextareaSelRef = useRef<{ start: number; end: number } | null>(
+    null,
+  );
   const isAiPrompt = mode === "aiPrompt";
   const useTextarea = mode === "aiPrompt" || mode === "plainText";
   const textareaMaxLength = isAiPrompt
@@ -144,15 +148,45 @@ export const SmsMessageComposer = forwardRef<
     [useTextarea, value],
   );
 
+  const captureCaretForInsert = useCallback(() => {
+    if (useTextarea) {
+      const el = promptRef.current;
+      if (!el) return;
+      pendingTextareaSelRef.current = {
+        start: el.selectionStart,
+        end: el.selectionEnd,
+      };
+      return;
+    }
+    pendingRichCaretRef.current = editorRef.current?.getCaretOffset() ?? null;
+  }, [useTextarea]);
+
   const insertEmoji = useCallback(
     (emoji: string) => {
       if (useTextarea) {
+        const el = promptRef.current;
+        const saved = pendingTextareaSelRef.current;
+        pendingTextareaSelRef.current = null;
+        if (el && saved) {
+          const next =
+            value.slice(0, saved.start) + emoji + value.slice(saved.end);
+          if (next.length > textareaMaxLength) return;
+          onChange(next);
+          requestAnimationFrame(() => {
+            el.focus();
+            const pos = saved.start + emoji.length;
+            el.setSelectionRange(pos, pos);
+          });
+          return;
+        }
         insertAtPromptCursor(emoji);
         return;
       }
-      editorRef.current?.insertText(emoji);
+      const offset = pendingRichCaretRef.current;
+      pendingRichCaretRef.current = null;
+      editorRef.current?.insertText(emoji, offset);
     },
-    [insertAtPromptCursor, useTextarea],
+    [insertAtPromptCursor, onChange, textareaMaxLength, useTextarea, value],
   );
 
   const insertMergeToken = useCallback(
@@ -182,8 +216,8 @@ export const SmsMessageComposer = forwardRef<
   );
 
   const showLinkMenu = savedLinks.length > 0 || linksLoading || onCreateLink;
-  const counterReserveStop =
-    mode !== "aiPrompt" ? commercialMessage : reserveStop;
+  const stopReserved =
+    commercialMessageProp !== undefined ? commercialMessage : reserveStop;
 
   return (
     <div className={cn("w-full shrink-0", compact ? "mt-1.5" : "mt-2.5")}>
@@ -216,6 +250,7 @@ export const SmsMessageComposer = forwardRef<
             value={value}
             onChange={onChange}
             placeholder={placeholder}
+            reserveStop={stopReserved}
             className={
               compact ? "min-h-16 max-h-20 py-2 text-[13px] leading-snug" : undefined
             }
@@ -231,6 +266,10 @@ export const SmsMessageComposer = forwardRef<
                   disabled={disabled}
                   title={t("emoji.insertAria")}
                   aria-label={t("emoji.insertAria")}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    captureCaretForInsert();
+                  }}
                   className={cn(
                     "grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-slate-200/90 bg-white text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 data-[state=open]:border-[#2f6fed]/30 data-[state=open]:bg-[#eef4ff] data-[state=open]:text-[#2f6fed]",
                     disabled &&
@@ -243,6 +282,7 @@ export const SmsMessageComposer = forwardRef<
               <PopoverContent
                 align="start"
                 sideOffset={8}
+                onOpenAutoFocus={(e) => e.preventDefault()}
                 className={cn("w-auto gap-0 overflow-hidden p-0", popoverClassName)}
               >
                 <EmojiPicker
@@ -282,7 +322,7 @@ export const SmsMessageComposer = forwardRef<
 
           <SmsCompositionCounter
             message={value}
-            reserveStop={counterReserveStop}
+            reserveStop={stopReserved}
             billableMessage={billableMessage}
             estimateFirstName={estimateFirstName}
             estimateSample={estimateSample}
@@ -291,8 +331,7 @@ export const SmsMessageComposer = forwardRef<
         </div>
       </div>
 
-      {mode !== "aiPrompt" ? (
-        <label
+      <label
           htmlFor={commercialCheckboxId}
           className={cn(
             "mt-2 flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border/80 bg-muted/45 px-2.5 py-2",
@@ -333,8 +372,7 @@ export const SmsMessageComposer = forwardRef<
               </span>
             </span>
           </span>
-        </label>
-      ) : null}
+      </label>
     </div>
   );
 });

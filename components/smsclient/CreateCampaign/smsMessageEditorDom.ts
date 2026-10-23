@@ -1,3 +1,4 @@
+import { smsEditorBodyWithinBillableLimit } from "@/lib/proto/smsStopMention";
 import { normalizePrenomTokens, SMS_PRENOM_TAG } from "@/lib/proto/smsPersonalization";
 import { smsPrenomBubbleClass } from "./smsPrenomTagStyles";
 
@@ -150,6 +151,7 @@ export function repairPrenomChips(root: HTMLElement) {
 export function shouldPreventEditorBeforeInput(
   root: HTMLElement,
   e: InputEvent,
+  reserveStop = false,
 ): boolean {
   if (e.inputType.startsWith("delete")) return false;
   const sel = window.getSelection();
@@ -157,6 +159,13 @@ export function shouldPreventEditorBeforeInput(
   const range = sel.getRangeAt(0);
   if (findPrenomChipAncestor(range.startContainer, root)) return true;
   if (!range.collapsed && selectionIntersectsChip(root, range)) return true;
+
+  if (
+    range.collapsed &&
+    !smsEditorBodyWithinBillableLimit(serializeSmsEditor(root), reserveStop)
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -211,6 +220,97 @@ function getActiveRange(root: HTMLElement): Range | null {
   return range;
 }
 
+/** Offset dans le texte sérialisé (sélection avant fermeture popover emoji / menu). */
+export function getSerializedCaretOffset(root: HTMLElement): number | null {
+  const range = getActiveRange(root);
+  if (!range) return null;
+  const pre = document.createRange();
+  pre.selectNodeContents(root);
+  pre.setEnd(range.startContainer, range.startOffset);
+  const holder = document.createElement("div");
+  holder.appendChild(pre.cloneContents());
+  return serializeSmsEditor(holder).length;
+}
+
+function setSelectionAtSerializedOffset(root: HTMLElement, targetOffset: number) {
+  const sel = window.getSelection();
+  if (!sel) return;
+
+  const apply = (container: Node, offset: number) => {
+    const range = document.createRange();
+    range.setStart(container, offset);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+
+  if (targetOffset <= 0) {
+    if (root.childNodes.length === 0) {
+      apply(root, 0);
+      return;
+    }
+    const first = root.firstChild!;
+    if (first.nodeType === Node.TEXT_NODE) apply(first, 0);
+    else apply(root, 0);
+    return;
+  }
+
+  let remaining = targetOffset;
+
+  const walk = (node: Node): boolean => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const len = (node.textContent ?? "").length;
+      if (remaining <= len) {
+        apply(node, remaining);
+        return true;
+      }
+      remaining -= len;
+      return false;
+    }
+    if (node instanceof HTMLElement) {
+      if (node.hasAttribute(SMS_PRENOM_CHIP_ATTR)) {
+        const len = SMS_PRENOM_TAG.length;
+        if (remaining <= len) {
+          const parent = node.parentNode ?? root;
+          const idx = Array.prototype.indexOf.call(parent.childNodes, node);
+          apply(parent, remaining < len ? idx : idx + 1);
+          return true;
+        }
+        remaining -= len;
+        return false;
+      }
+      if (node.tagName === "BR") {
+        if (remaining <= 1) {
+          const idx = Array.prototype.indexOf.call(root.childNodes, node);
+          apply(root, remaining < 1 ? idx : idx + 1);
+          return true;
+        }
+        remaining -= 1;
+        return false;
+      }
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (walk(node.childNodes[i]!)) return true;
+    }
+    return false;
+  };
+
+  for (let i = 0; i < root.childNodes.length; i++) {
+    if (walk(root.childNodes[i]!)) return;
+  }
+
+  if (root.childNodes.length === 0) {
+    apply(root, 0);
+    return;
+  }
+  const last = root.lastChild!;
+  if (last.nodeType === Node.TEXT_NODE) {
+    apply(last, (last.textContent ?? "").length);
+  } else {
+    apply(root, root.childNodes.length);
+  }
+}
+
 function placeCaretAfter(node: Node) {
   const sel = window.getSelection();
   const range = document.createRange();
@@ -220,8 +320,15 @@ function placeCaretAfter(node: Node) {
   sel?.addRange(range);
 }
 
-export function insertTextAtSelection(root: HTMLElement, text: string) {
+export function insertTextAtSelection(
+  root: HTMLElement,
+  text: string,
+  caretOffset?: number | null,
+) {
   root.focus();
+  if (caretOffset != null) {
+    setSelectionAtSerializedOffset(root, caretOffset);
+  }
   const range = getActiveRange(root);
   const node = document.createTextNode(text);
 

@@ -73,7 +73,9 @@ export function GroupesFlowHarness({
           contactCount: selectedContactIds.length,
           lastCampaignLabel: "—",
           lastCampaignAt: null,
-          createdLabel: "17/06/2025",
+          createdDateLabel: "17/06/2025",
+          createdTimeLabel: "12:00",
+          createdLabel: "17/06/2025 12:00",
           createdAt: "2025-06-17T10:00:00.000Z",
         },
       ]);

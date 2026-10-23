@@ -61,6 +61,7 @@ export function useInfiniteList<T extends { id: string }>({
 
   const fetchPageRef = useRef(fetchPage);
   const inflightRef = useRef(0);
+  const rowsRef = useRef(rows);
   const sortKey = sort ? `${sort.id}:${sort.desc ? "d" : "a"}` : "";
   const sortRef = useRef(sort);
   const filtersKey = listFiltersKey(filters);
@@ -70,6 +71,7 @@ export function useInfiniteList<T extends { id: string }>({
     fetchPageRef.current = fetchPage;
     sortRef.current = sort;
     filtersRef.current = filters;
+    rowsRef.current = rows;
   });
 
   useEffect(() => {
@@ -97,7 +99,8 @@ export function useInfiniteList<T extends { id: string }>({
 
     queueMicrotask(() => {
       if (cancelled) return;
-      setLoading(true);
+      const backgroundRefetch = rowsRef.current.length > 0;
+      if (!backgroundRefetch) setLoading(true);
       setError(null);
 
       void fetchPageRef

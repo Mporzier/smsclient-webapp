@@ -5,12 +5,12 @@ description: >
   Si doute → demander à l'utilisateur, ne pas brûler de tokens.
   Use when user says "anti-loop", "pas de boucle", "si doute demande", "/anti-loop",
   or when agent is about to retry a failed command, guess among options, or claim "done" without evidence.
-  Always-on mirror: .cursor/rules/token-economy.mdc (with token-diet).
+  Always-on mirror: .cursor/rules/token-economy.mdc (+ token-diet.mdc).
 ---
 
 # anti-loop
 
-**Always-on** : rule `.cursor/rules/token-economy.mdc` (injectée chaque chat). Ce skill = détail / rappel manuel.
+**Always-on** : rules `.cursor/rules/token-economy.mdc` + `.cursor/rules/token-diet.mdc` (injectées chaque chat). Ce skill = détail / rappel manuel.
 
 But : **zéro tokens gaspillés** en retries, exploration en spirale, ou « done » faux.
 

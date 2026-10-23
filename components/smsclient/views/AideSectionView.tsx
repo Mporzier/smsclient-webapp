@@ -26,7 +26,6 @@ import {
 import { HelpArticlePanel } from "@/components/smsclient/views/HelpArticlePanel";
 import { helpCenterSectionPath } from "@/lib/helpCenterHash";
 import { useI18n } from "@/lib/i18n";
-import { openOpenWidget } from "@/lib/openwidget";
 import {
   SECTION_GUIDES,
   guideMessageKey,
@@ -105,11 +104,6 @@ function cardGuideKey(
 function openSupportEmail() {
   window.location.href =
     "mailto:support@smsclient.fr?subject=Aide%20SMSClient";
-}
-
-function openSupportContact() {
-  if (openOpenWidget("form-contact")) return;
-  openSupportEmail();
 }
 
 export function AideSectionView({
@@ -341,7 +335,7 @@ export function AideSectionView({
           <Button
             type="button"
             className="shrink-0 sm:ml-2"
-            onClick={openSupportContact}
+            onClick={openSupportEmail}
           >
             {t("help.support.cta")}
           </Button>

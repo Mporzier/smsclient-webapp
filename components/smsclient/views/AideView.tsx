@@ -21,7 +21,6 @@ import {
 } from "@/lib/helpCenterSections";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { useI18n } from "@/lib/i18n";
-import { openOpenWidget } from "@/lib/openwidget";
 import { AideSectionView } from "@/components/smsclient/views/AideSectionView";
 import {
   SECTION_GUIDES,
@@ -45,11 +44,6 @@ const HELP_FOOTER_ICON_ACCENT = helpCenterCardAccent(
 function openSupportEmail() {
   window.location.href =
     "mailto:support@smsclient.fr?subject=Aide%20SMSClient";
-}
-
-function openSupportContact() {
-  if (openOpenWidget("form-contact")) return;
-  openSupportEmail();
 }
 
 function normalizeSearch(value: string): string {
@@ -290,7 +284,7 @@ function AideHubView({ onGo }: { onGo?: (hash: string) => void }) {
         <Button
           type="button"
           className="shrink-0"
-          onClick={openSupportContact}
+          onClick={openSupportEmail}
         >
           {t("help.support.cta")}
         </Button>

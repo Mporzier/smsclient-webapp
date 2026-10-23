@@ -13,6 +13,11 @@ export type GroupRowData = {
   lastCampaignLabel: string;
   /** ISO dernière campagne, null si aucune. */
   lastCampaignAt: string | null;
+  /** Date seule — affichage liste */
+  createdDateLabel: string;
+  /** Heure seule — sous la date */
+  createdTimeLabel: string;
+  /** Date + heure — filtres / tri */
   createdLabel: string;
   /** ISO pour tri chronologique. */
   createdAt: string;

@@ -14,6 +14,7 @@ export {
   /** @deprecated */ type GroupCreateModalContactRow,
 } from "./GroupModal";
 export { GroupQuickCreateModal } from "./GroupQuickCreateModal";
+export { AddContactsToGroupModal } from "./AddContactsToGroupModal";
 export { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 export {
   ConfirmDeleteAlertDialog,

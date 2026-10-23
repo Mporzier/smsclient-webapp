@@ -12,6 +12,10 @@ import { useRouter } from "next/navigation";
 import { navOverrideForRoute, isCampaignWizardRoute } from "@/lib/proto/routes";
 import { navItemKey, routeTitleKey, useI18n } from "@/lib/i18n";
 import { guideKeyForRoute } from "@/lib/sectionGuides";
+import {
+  shellMainOverflowLocked,
+  shellMainUsesListCompactPadding,
+} from "@/lib/proto/viewLayout";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
@@ -457,23 +461,21 @@ function AppShellInner({
               data-app-main-scroll
               className={cn(
                 "app-main-scroll flex min-h-0 min-w-0 flex-1 flex-col bg-card px-4 md:px-5",
-                route === "dashboard" ||
-                  route === "nouvelle-campagne" ||
-                  route === "reglementations-sms" ||
-                  route === "qr-boutique" ||
-                  route === "parametres" ||
-                  route === "aide"
-                  ? "overflow-hidden"
+                shellMainOverflowLocked(route)
+                  ? "overflow-hidden p-px"
                   : "overflow-auto",
-                route === "dashboard" ||
-                  route === "nouvelle-campagne" ||
-                  route === "reglementations-sms" ||
-                  route === "qr-boutique" ||
-                  route === "aide"
-                  ? route === "qr-boutique"
-                    ? "gap-2 py-2 md:py-3"
-                    : "gap-2 py-3"
-                  : "gap-[18px] py-4 md:py-5"
+                shellMainUsesListCompactPadding(route)
+                  ? "gap-2 pt-2 pb-4 md:pb-5"
+                  : route === "dashboard" ||
+                      route === "nouvelle-campagne" ||
+                      route === "reglementations-sms" ||
+                      route === "parrainage" ||
+                      route === "qr-boutique" ||
+                      route === "aide"
+                    ? route === "qr-boutique"
+                      ? "gap-2 py-2 md:py-3"
+                      : "gap-2 py-3"
+                    : "gap-[18px] py-4 md:py-5"
               )}
             >
               {children}

@@ -27,6 +27,8 @@ type CopyableLinkFieldProps = {
   /** Toast si la copie échoue */
   copyFailedToast?: string;
   onCopied?: () => void;
+  /** Liste Liens : texte visible en entier (retour ligne si besoin). */
+  wrapDisplay?: boolean;
   "aria-labelledby"?: string;
 };
 
@@ -39,6 +41,7 @@ export function CopyableLinkField({
   copiedToast,
   copyFailedToast,
   onCopied,
+  wrapDisplay,
   "aria-labelledby": ariaLabelledBy,
 }: CopyableLinkFieldProps) {
   const handleCopy = useCallback(() => {
@@ -79,7 +82,9 @@ export function CopyableLinkField({
           size === "default"
             ? "text-sm font-medium leading-snug break-all"
             : size === "dense"
-              ? "truncate text-xs font-semibold leading-snug"
+              ? wrapDisplay
+                ? "break-all text-xs font-semibold leading-snug"
+                : "truncate text-xs font-semibold leading-snug"
               : "truncate text-[11px] font-semibold leading-snug",
         )}
       >

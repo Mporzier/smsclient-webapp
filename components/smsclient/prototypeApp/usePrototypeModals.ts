@@ -26,6 +26,10 @@ export function usePrototypeModals(
     null
   );
   const [importContactsOpen, setImportContactsOpen] = useState(false);
+  const [addContactsToGroupOpen, setAddContactsToGroupOpen] = useState(false);
+  const [addContactsToGroupCount, setAddContactsToGroupCount] = useState(0);
+  const [addContactsToGroupResolveIds, setAddContactsToGroupResolveIds] =
+    useState<(() => Promise<string[]>) | null>(null);
   const [campaignDetailsOpen, setCampaignDetailsOpen] = useState(false);
   const [campaignDetailsRow, setCampaignDetailsRow] =
     useState<CampaignRowData | null>(null);
@@ -81,6 +85,7 @@ export function usePrototypeModals(
       groupEditOpen ||
       contactModalOpen ||
       importContactsOpen ||
+      addContactsToGroupOpen ||
       campaignNameOpen;
     document.body.style.overflow = anyModal ? "hidden" : "";
     return () => {
@@ -92,6 +97,7 @@ export function usePrototypeModals(
     groupEditOpen,
     contactModalOpen,
     importContactsOpen,
+    addContactsToGroupOpen,
     campaignNameOpen,
   ]);
 
@@ -170,6 +176,20 @@ export function usePrototypeModals(
     setGroupEditOpen(true);
   }, []);
 
+  const openAddContactsToGroup = useCallback(
+    (
+      idsOrResolve: string[] | (() => Promise<string[]>),
+      countHint: number,
+    ) => {
+      setAddContactsToGroupCount(countHint);
+      setAddContactsToGroupResolveIds(() => async () =>
+        Array.isArray(idsOrResolve) ? idsOrResolve : await idsOrResolve(),
+      );
+      setAddContactsToGroupOpen(true);
+    },
+    [],
+  );
+
   return {
     groupModalOpen,
     setGroupModalOpen,
@@ -185,6 +205,11 @@ export function usePrototypeModals(
     contactEditRow,
     importContactsOpen,
     setImportContactsOpen,
+    addContactsToGroupOpen,
+    setAddContactsToGroupOpen,
+    addContactsToGroupCount,
+    addContactsToGroupResolveIds,
+    openAddContactsToGroup,
     campaignDetailsOpen,
     setCampaignDetailsOpen,
     campaignDetailsRow,

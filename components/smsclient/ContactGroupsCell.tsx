@@ -1,5 +1,6 @@
 "use client";
 
+import { ListCellEmpty, ListCellValue } from "@/components/smsclient/ui";
 import { cn } from "@/lib/cn";
 import {
   groupColor,
@@ -20,9 +21,10 @@ const GROUPS_GAP_PX = 4;
 /** Pills groupes avec overflow mesuré + tip « … » (liste Contacts / modale groupe). */
 export function ContactGroupsCell({
   groups,
-  emptyLabel = "—",
+  emptyLabel,
 }: {
   groups: string[];
+  /** Sans groupe : tiret liste par défaut, ou libellé (ex. modale groupe). */
   emptyLabel?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,7 +115,10 @@ export function ContactGroupsCell({
   }, [tipOpen, updateTipPos]);
 
   if (groups.length === 0) {
-    return <span className="text-sm text-muted-foreground">{emptyLabel}</span>;
+    if (emptyLabel?.trim()) {
+      return <ListCellValue value={emptyLabel} />;
+    }
+    return <ListCellEmpty />;
   }
 
   const overflow = groups.length - visibleCount;

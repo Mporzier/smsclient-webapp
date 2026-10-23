@@ -22,6 +22,7 @@ import {
   stripStopMention,
 } from "@/lib/proto/smsStopMention";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldDef } from "@/lib/types/customFields";
@@ -61,6 +62,7 @@ export function AutomationEditModal({
   contacts = [],
   customFieldDefs = [],
 }: AutomationEditModalProps) {
+  const { t } = useI18n();
   const [body, setBody] = useState("");
   const [commercialMessage, setCommercialMessage] = useState(true);
   const [sendTime, setSendTime] = useState("09:00");
@@ -262,6 +264,7 @@ export function AutomationEditModal({
                     setBody(next);
                     setError(null);
                   }}
+                  placeholder={t("templates.field.bodyPlaceholder")}
                   error={error}
                   estimateSample={estimateSample}
                   customFieldDefs={customFieldDefs}

@@ -14,7 +14,7 @@ import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkM
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { cn } from "@/lib/cn";
 import type { LinkRowData } from "@/lib/types/link";
-import { Check, Link2, Plus } from "lucide-react";
+import { Check, Link, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type SmsLinkMenuBaseProps = {
@@ -77,12 +77,7 @@ export function SmsLinkInsertMenu(
   );
 
   const triggerLabel =
-    mode === "pick" ? "Choisir un lien" : "Insérer un lien";
-  const menuHint =
-    mode === "pick"
-      ? "L’IA intègre l’URL courte du lien dans le SMS généré."
-      : "Insère l'URL courte du lien dans le message.";
-
+    mode === "pick" ? "Choisir un lien" : "Insérer un lien court";
   const selectedLinkId = isPickMode ? props.selectedLinkId : null;
 
   return (
@@ -99,7 +94,7 @@ export function SmsLinkInsertMenu(
               disabled={disabled || loading}
               className="h-8 gap-1.5 rounded-lg px-2.5 text-[11px] font-bold"
             >
-              <Link2 className="size-3.5" aria-hidden />
+              <Link className="size-3.5" aria-hidden />
               {triggerLabel}
             </Button>
           </DropdownMenuTrigger>
@@ -107,8 +102,14 @@ export function SmsLinkInsertMenu(
             align="start"
             className={cn("w-72", contentClassName)}
           >
-            <DropdownMenuLabel>{menuHint}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {mode === "pick" ? (
+              <>
+                <DropdownMenuLabel>
+                  L’IA intègre l’URL courte du lien dans le SMS généré.
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
             {loading ? (
               <DropdownMenuLabel className="font-normal">
                 <LoadingLabel spinnerClassName="size-3.5">

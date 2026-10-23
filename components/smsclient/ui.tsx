@@ -113,6 +113,69 @@ export function CellTruncate({
   );
 }
 
+/** Tiret cellule vide — même taille que le texte liste (hérite DataTable). */
+export const LIST_CELL_EMPTY = "—";
+
+export function ListCellEmpty({ className }: { className?: string }) {
+  return (
+    <span className={cn("text-muted-foreground", className)} aria-hidden>
+      {LIST_CELL_EMPTY}
+    </span>
+  );
+}
+
+/** Texte cellule liste ou tiret vide standard. */
+export function ListCellValue({
+  value,
+  className,
+  as = "div",
+}: {
+  value: string | null | undefined;
+  className?: string;
+  as?: "span" | "div";
+}) {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed || trimmed === LIST_CELL_EMPTY) {
+    return <ListCellEmpty className={className} />;
+  }
+  return (
+    <CellTruncate as={as} className={className}>
+      {trimmed}
+    </CellTruncate>
+  );
+}
+
+/** Colonne « créé le » (date + heure) dans les listes DataTable. */
+export function ListCreatedCell({
+  dateLabel,
+  timeLabel,
+}: {
+  dateLabel: string;
+  timeLabel?: string | null;
+}) {
+  const empty =
+    !dateLabel.trim() || dateLabel.trim() === LIST_CELL_EMPTY;
+  if (empty) {
+    return (
+      <div className="min-w-0">
+        <ListCellEmpty />
+      </div>
+    );
+  }
+  return (
+    <div className="min-w-0">
+      <CellTruncate as="div" className="text-foreground">
+        {dateLabel}
+      </CellTruncate>
+      {timeLabel ? (
+        <CellTruncate as="div" className="text-xs text-muted-foreground">
+          {timeLabel}
+        </CellTruncate>
+      ) : null}
+    </div>
+  );
+}
+
 export function PlusIcon({ className }: { className?: string }) {
   return (
     <Plus

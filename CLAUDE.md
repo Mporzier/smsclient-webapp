@@ -48,13 +48,14 @@ Superpowers **ne** font **pas** lancer build/tsc/lint/install/dlx/Task ici. Plan
 
 - `agent-session-limits` — ≤3 shells, pas de chaînes, pas de Task sauf demande, **pas de commandes lourdes** (skill `no-heavy-cmds`) ; gagne sur superpowers
 - `testing-no-auto-run` — pas de test/build/tsc/lint/install auto (skills `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`)
-- `token-economy` — anti-boucle + doute→question + lectures/edits frugales (`anti-loop`, `token-diet`)
+- `token-economy` — anti-boucle + **doute = stop tâche + question** (`anti-loop`)
+- `token-diet` — lectures/recherche/edits frugales ; même règle doute (`token-diet` skill)
 - `no-git-commit` — pas de `git commit` / `git push` auto
 - `caveman` — sortie compressée (full) ; off = `stop caveman` / `normal mode`
 - `conventions-first` — comportement valide = skills + wiki + refs ; écart → skill + rule (`conventions-first`, `modal-form-dialog`, …)
 - `skill-evolve` — proposer skill si spec floue ; si convention déjà validée → mettre à jour sans re-demander OK process
 
-Skills détail (manuel / trigger) : `conventions-first`, `modal-form-dialog`, `anti-loop`, `token-diet`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`, `no-git-commit`, `skill-evolve`, `smsclient-map`, …
+Skills détail (manuel / trigger) : `conventions-first`, `modal-form-dialog`, `anti-loop`, `caveman`, `no-verify-build`, `no-heavy-cmds`, `no-integration-tests`, `no-git-commit`, `skill-evolve`, `smsclient-map`, …
 
 ## Vérif manuelle (user lance — agent propose seulement)
 

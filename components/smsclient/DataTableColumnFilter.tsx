@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  LIST_FILTER_SELECT_CONTENT_PROPS,
+  LIST_FILTER_SELECT_TRIGGER_CLASS,
+} from "@/components/smsclient/listViewLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -218,7 +222,16 @@ const DATE_FILTER_OPS = new Set<ListFilterOp>([
   "between",
 ]);
 
-export function DataTableColumnFilter({
+export type ColumnFilterPanelProps = DataTableColumnFilterProps & {
+  className?: string;
+  /** Panel Filtres toolbar : pas de fermeture auto après apply. */
+  closeOnApply?: boolean;
+  onApplied?: () => void;
+  /** Toolbar : colonne déjà choisie dans le select parent. */
+  showColumnLabel?: boolean;
+};
+
+export function ColumnFilterPanel({
   columnId,
   columnLabel,
   kind,
@@ -226,17 +239,12 @@ export function DataTableColumnFilter({
   onColumnFiltersChange,
   sourceOptions = [],
   groupOptions = [],
-}: DataTableColumnFilterProps) {
+  className,
+  closeOnApply = true,
+  onApplied,
+  showColumnLabel = true,
+}: ColumnFilterPanelProps) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-
-  const active =
-    kind === "lastSms"
-      ? Boolean(
-          getColumnFilterValue(columnFilters, "lastSms") ||
-            getColumnFilterValue(columnFilters, "lastSmsBody"),
-        )
-      : Boolean(getColumnFilterValue(columnFilters, columnId));
 
   const defaultOp = opsForKind(kind)[0]!;
 
@@ -253,18 +261,6 @@ export function DataTableColumnFilter({
   const [bodyDraft, setBodyDraft] = useState<ListFilterValue>(
     bodyCurrent ?? { op: "contains", value: "" },
   );
-
-  const resetDraft = useCallback(() => {
-    const cur = getColumnFilterValue(columnFilters, columnId);
-    const op = cur?.op ?? defaultOp;
-    setDraftOp(op);
-    setDraft(cur ?? { op, value: "" });
-    if (kind === "lastSms") {
-      const b = getColumnFilterValue(columnFilters, "lastSmsBody");
-      setBodyOp(b?.op ?? "contains");
-      setBodyDraft(b ?? { op: "contains", value: "" });
-    }
-  }, [columnFilters, columnId, defaultOp, kind]);
 
   const apply = useCallback(() => {
     let next = columnFilters.filter(
@@ -294,7 +290,7 @@ export function DataTableColumnFilter({
       }
     }
     onColumnFiltersChange(next);
-    setOpen(false);
+    if (closeOnApply) onApplied?.();
   }, [
     bodyDraft.value,
     bodyOp,
@@ -303,50 +299,19 @@ export function DataTableColumnFilter({
     draft.value,
     draftOp,
     kind,
+    closeOnApply,
+    onApplied,
     onColumnFiltersChange,
   ]);
-
-  const clear = useCallback(() => {
-    onColumnFiltersChange(
-      columnFilters.filter(
-        (f) => f.id !== columnId && f.id !== "lastSmsBody",
-      ),
-    );
-    setOpen(false);
-  }, [columnFilters, columnId, onColumnFiltersChange]);
 
   const ops = useMemo(() => opsForKind(kind), [kind]);
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(v) => {
-        setOpen(v);
-        if (v) resetDraft();
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className={cn(
-            "size-5 shrink-0 rounded-full",
-            active && "text-primary",
-          )}
-          aria-label={t("listFilter.aria", { column: columnLabel })}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ListFilter className="size-3.5" aria-hidden />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="z-[10000] w-72 space-y-3 p-3"
-        align="start"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="space-y-2">
-          <Label className="text-xs">{columnLabel}</Label>
+    <div className={cn("space-y-3", className)}>
+        <div className="w-full space-y-2">
+          {showColumnLabel ? (
+            <Label className="text-xs">{columnLabel}</Label>
+          ) : null}
           <Select
             value={draftOp}
             onValueChange={(v) => {
@@ -355,12 +320,15 @@ export function DataTableColumnFilter({
               setDraft({ op, value: isRangeOp(op) ? { from: "", to: "" } : "" });
             }}
           >
-            <SelectTrigger className="w-full" size="sm">
+            <SelectTrigger
+              className={LIST_FILTER_SELECT_TRIGGER_CLASS}
+              size="sm"
+            >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="z-[10001]">
+            <SelectContent {...LIST_FILTER_SELECT_CONTENT_PROPS}>
               {ops.map((op) => (
-                <SelectItem key={op} value={op}>
+                <SelectItem key={op} value={op} className="cursor-pointer">
                   {t(opLabelKey(op))}
                 </SelectItem>
               ))}
@@ -411,12 +379,15 @@ export function DataTableColumnFilter({
                 setBodyDraft({ op, value: "" });
               }}
             >
-              <SelectTrigger className="w-full" size="sm">
+              <SelectTrigger
+                className={LIST_FILTER_SELECT_TRIGGER_CLASS}
+                size="sm"
+              >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="z-[10001]">
+              <SelectContent {...LIST_FILTER_SELECT_CONTENT_PROPS}>
                 {LAST_SMS_BODY_OPS.map((op) => (
-                  <SelectItem key={op} value={op}>
+                  <SelectItem key={op} value={op} className="cursor-pointer">
                     {t(opLabelKey(op))}
                   </SelectItem>
                 ))}
@@ -436,14 +407,60 @@ export function DataTableColumnFilter({
           </div>
         ) : null}
 
-        <div className="flex justify-end gap-2 border-t border-border pt-2">
-          <Button type="button" variant="ghost" size="sm" onClick={clear}>
-            {t("listFilter.clear")}
-          </Button>
+        <div className="flex justify-end border-t border-border pt-2">
           <Button type="button" size="sm" onClick={apply}>
             {t("listFilter.apply")}
           </Button>
         </div>
+    </div>
+  );
+}
+
+/** @deprecated En-têtes tableau — préférer `ListViewFiltersButton`. */
+export function DataTableColumnFilter(props: DataTableColumnFilterProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const kind = props.kind;
+  const active =
+    kind === "lastSms"
+      ? Boolean(
+          getColumnFilterValue(props.columnFilters, "lastSms") ||
+            getColumnFilterValue(props.columnFilters, "lastSmsBody"),
+        )
+      : Boolean(getColumnFilterValue(props.columnFilters, props.columnId));
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className={cn(
+            "size-5 shrink-0 rounded-full",
+            active && "text-primary",
+          )}
+          aria-label={t("listFilter.aria", { column: props.columnLabel })}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ListFilter className="size-3.5" aria-hidden />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="z-[10000] w-72 p-3"
+        align="start"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ColumnFilterPanel
+          {...props}
+          closeOnApply
+          onApplied={() => setOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );

@@ -6,7 +6,6 @@ import {
   type CampaignSmsTemplate,
 } from "@/lib/proto/campaignSmsTemplates";
 import type { BusinessActivityId } from "@/lib/types/businessActivity";
-import { businessActivityLabel } from "@/lib/types/businessActivity";
 import {
   toCampaignSmsTemplate,
   type UserSmsTemplateRow,
@@ -43,7 +42,7 @@ function TemplateCard({
         "cursor-pointer rounded-xl border p-3 text-left transition-colors",
         selected
           ? "border-[#2f6fed] bg-[#eef4ff] ring-1 ring-[#2f6fed]/20"
-          : "border-slate-200 bg-white hover:border-slate-300",
+          : "border-slate-200 bg-white hover:border-slate-300"
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -76,24 +75,12 @@ export function SmsTemplatePicker({
   onCreateCustomTemplate,
 }: SmsTemplatePickerProps) {
   const readyTemplates = getCampaignSmsTemplatesForActivity(businessActivity);
-  const sectorLabel = businessActivity
-    ? businessActivityLabel(businessActivity)
-    : businessActivityLabel("autre");
   const personalTemplates = customTemplates.map(toCampaignSmsTemplate);
   const handleCreate = onCreateCustomTemplate ?? onManageCustomTemplates;
 
   return (
     <div className="space-y-5">
       <section className="space-y-2">
-        <div>
-          <h3 className="m-0 text-xs font-black text-slate-900">
-            Modèles prêts à l&apos;emploi
-          </h3>
-          <p className="m-0 mt-0.5 text-[11px] font-semibold text-slate-500">
-            6 modèles pour{" "}
-            <span className="font-black text-slate-700">{sectorLabel}</span>
-          </p>
-        </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {readyTemplates.map((template) => (
             <TemplateCard

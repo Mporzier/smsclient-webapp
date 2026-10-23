@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { Ban, Link2 } from "lucide-react";
+import { Ban, Link } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   ConfirmDeleteAlertDialog,
@@ -69,7 +69,7 @@ export function ConfirmLinkDeleteModal({
       onConfirm={() => void handleConfirm()}
     >
       <ConfirmInfoCard
-        icon={Link2}
+        icon={Link}
         iconClassName={confirmCardDestructiveIconCls}
         className={confirmCardDestructiveCls}
         title={count > 1 ? t("links.deleteManyCardTitle") : "Redirection désactivée"}

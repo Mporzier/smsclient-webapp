@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { validateAutomationSmsBody } from "@/lib/automations/messageValidation";
+import { useI18n } from "@/lib/i18n";
 import { buildEffectiveSms } from "@/lib/proto/smsStopMention";
 import { cn } from "@/lib/cn";
 import { buildEstimateMergeValues } from "@/lib/proto/smsPersonalization";
@@ -168,6 +169,7 @@ export function CreateAutomationModal({
   contacts = [],
   customFieldDefs = [],
 }: CreateAutomationModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [scheduleType, setScheduleType] = useState<ScheduleType>("fixed_date");
   const [fixedMonth, setFixedMonth] = useState("1");
@@ -459,7 +461,7 @@ export function CreateAutomationModal({
               className={modalFieldCls}
               maxLength={NAME_MAX}
               value={name}
-              placeholder="Ex. Relance clients fidèles"
+              placeholder={t("automations.field.namePlaceholder")}
               aria-invalid={Boolean(nameError)}
               disabled={saving}
               onChange={(e) => {
@@ -752,7 +754,7 @@ export function CreateAutomationModal({
               setBodyError(null);
               setSaveError(null);
             }}
-            placeholder="Ex. Bonjour {prenom}, profitez de notre offre du mois !"
+            placeholder={t("templates.field.bodyPlaceholder")}
             error={bodyError}
             estimateSample={estimateSample}
             customFieldDefs={customFieldDefs}

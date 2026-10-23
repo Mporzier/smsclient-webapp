@@ -5,6 +5,7 @@ import { FormDialogShell } from "@/components/smsclient/modals/FormDialogShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { submitUserFeedback } from "@/lib/supabase/feedback";
 import type { FeedbackCategory } from "@/lib/types/feedback";
@@ -50,6 +51,7 @@ export function SoumettreAvisModal({
   initialCategory,
   initialMessage,
 }: SoumettreAvisModalProps) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const [category, setCategory] = useState<FeedbackCategory>("suggestion");
@@ -158,7 +160,7 @@ export function SoumettreAvisModal({
               setMessage(e.target.value.slice(0, MAX_LENGTH));
               setSubmitError(null);
             }}
-            placeholder="Ex. L’import CSV ignore les doublons…"
+            placeholder={t("feedback.modal.placeholder")}
             rows={6}
             aria-label="Votre avis"
             className="min-h-[140px] resize-none pb-7"

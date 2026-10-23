@@ -10,7 +10,10 @@ import {
   type ColumnSizingState,
   type Row,
   type SortingState,
+  type VisibilityState,
 } from "@tanstack/react-table";
+import { CellTruncate } from "@/components/smsclient/ui";
+import { LIST_COLUMN_PINNED_IDS } from "@/components/smsclient/listViewTableHelpers";
 import { distributeColumnWidths } from "@/components/smsclient/listColumnSizes";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import { cn } from "@/lib/utils";
@@ -37,6 +40,10 @@ type DataTableProps<T> = {
   emptyMessage?: ReactNode;
   loadingMessage?: string;
   searchNoResultsMessage?: ReactNode;
+  /** Liste vide avec filtres actifs (sans recherche texte). */
+  filterNoResultsMessage?: ReactNode;
+  /** Liste vide avec recherche + filtres. */
+  searchAndFilterNoResultsMessage?: ReactNode;
   onRowClick?: (row: T) => void;
   footer?: ReactNode;
   /** Tronque le contenu au lieu de faire défiler horizontalement. */
@@ -58,7 +65,8 @@ type DataTableProps<T> = {
   onColumnFiltersChange?: (updater: SetStateAction<ColumnFiltersState>) => void;
   manualFiltering?: boolean;
   hasActiveFilters?: boolean;
-  renderColumnFilter?: (columnId: string) => ReactNode;
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: (updater: SetStateAction<VisibilityState>) => void;
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
@@ -81,6 +89,50 @@ function isUtilityCenterColumn(colId: string): boolean {
 
 /** py-2 + icône tri h-3.5 — réf. liste Liens ; fige la hauteur avec filtres / checkbox. */
 const TABLE_HEAD_ROW_CLS = "h-[1.875rem] py-0 leading-none";
+const TABLE_HEAD_ROW_PX = 30;
+
+type ColumnResizeSession = {
+  columnId: string;
+  startX: number;
+  startSize: number;
+  minSize: number;
+  maxSize: number;
+  leftOffset: number;
+};
+
+function columnCanManualResize(colId: string): boolean {
+  return (
+    colId !== "select" &&
+    colId !== "actions" &&
+    colId !== "avatar" &&
+    colId !== "icon"
+  );
+}
+
+function leftOffsetBeforeColumn(
+  columnId: string,
+  sizing: ColumnSizingState,
+  weights: { id: string; weight: number }[]
+): number {
+  let offset = 0;
+  for (const w of weights) {
+    if (w.id === columnId) break;
+    offset += sizing[w.id] ?? w.weight;
+  }
+  return offset;
+}
+
+function clampColumnWidth(size: number, minSize: number, maxSize: number): number {
+  return Math.min(maxSize, Math.max(minSize, size));
+}
+
+function pointerClientX(e: MouseEvent | TouchEvent): number {
+  if ("touches" in e) {
+    const t = e.touches[0] ?? e.changedTouches[0];
+    return t?.clientX ?? 0;
+  }
+  return e.clientX;
+}
 
 function columnId<T>(col: ColumnDef<T, unknown>): string | undefined {
   if (col.id) return col.id;
@@ -95,16 +147,19 @@ function withColumnDefaults<T>(
 ): ColumnDef<T, unknown>[] {
   return columns.map((col) => {
     const id = columnId(col);
-    const noResize =
-      id === "select" || id === "actions" || id === "icon";
+    const noResize = id === "select" || id === "actions" || id === "icon";
     const noSort = id != null && NO_SORT_IDS.has(id);
     const noFilter = id != null && NO_FILTER_IDS.has(id);
     return {
       ...col,
-      enableResizing: noResize ? false : (col.enableResizing ?? true),
-      enableSorting: noSort ? false : (col.enableSorting ?? true),
-      enableColumnFilter: noFilter ? false : (col.enableColumnFilter ?? true),
-      minSize: col.minSize ?? (noResize ? 36 : 64),
+      enableResizing: noResize ? false : col.enableResizing ?? true,
+      enableSorting: noSort ? false : col.enableSorting ?? true,
+      enableColumnFilter: noFilter ? false : col.enableColumnFilter ?? true,
+      enableHiding:
+        id != null && LIST_COLUMN_PINNED_IDS.has(id)
+          ? false
+          : col.enableHiding ?? true,
+      minSize: col.minSize ?? col.size ?? (noResize ? 36 : 64),
       /** Plafond resize manuel (évite colonnes trop larges). */
       maxSize: col.maxSize ?? 600,
     };
@@ -120,6 +175,8 @@ export function DataTable<T>({
   emptyMessage = "Aucun élément.",
   loadingMessage = "Chargement…",
   searchNoResultsMessage = "Aucun résultat pour cette recherche.",
+  filterNoResultsMessage,
+  searchAndFilterNoResultsMessage,
   onRowClick,
   footer,
   clipHorizontalOverflow = false,
@@ -131,7 +188,8 @@ export function DataTable<T>({
   onColumnFiltersChange: onColumnFiltersChangeProp,
   manualFiltering = false,
   hasActiveFilters = false,
-  renderColumnFilter,
+  columnVisibility: columnVisibilityProp,
+  onColumnVisibilityChange: onColumnVisibilityChangeProp,
   hasMore = false,
   loadingMore = false,
   onLoadMore,
@@ -145,6 +203,9 @@ export function DataTable<T>({
     useState<ColumnFiltersState>([]);
   const columnFilters = columnFiltersProp ?? internalColumnFilters;
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const [internalColumnVisibility, setInternalColumnVisibility] =
+    useState<VisibilityState>({});
+  const columnVisibility = columnVisibilityProp ?? internalColumnVisibility;
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const userResizedRef = useRef(false);
@@ -152,11 +213,19 @@ export function DataTable<T>({
   const lastAvailRef = useRef(0);
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
+  const columnSizingRef = useRef(columnSizing);
+  columnSizingRef.current = columnSizing;
+  const resizePreviewRef = useRef<HTMLDivElement>(null);
+  const resizeSessionRef = useRef<ColumnResizeSession | null>(null);
+  const resizeListenersRef = useRef<{
+    move: (e: MouseEvent | TouchEvent) => void;
+    up: (e: MouseEvent | TouchEvent) => void;
+  } | null>(null);
+  const handleColumnSizingChangeRef = useRef<
+    (updater: SetStateAction<ColumnSizingState>) => void
+  >(() => {});
 
-  const sizedColumns = useMemo(
-    () => withColumnDefaults(columns),
-    [columns]
-  );
+  const sizedColumns = useMemo(() => withColumnDefaults(columns), [columns]);
 
   const sizingWeights = useMemo(
     () =>
@@ -172,6 +241,17 @@ export function DataTable<T>({
     [sizedColumns]
   );
 
+  const visibleSizingWeights = useMemo(
+    () =>
+      sizingWeights.filter((w) => {
+        if (LIST_COLUMN_PINNED_IDS.has(w.id)) return true;
+        return columnVisibility[w.id] !== false;
+      }),
+    [sizingWeights, columnVisibility]
+  );
+  const visibleSizingWeightsRef = useRef(visibleSizingWeights);
+  visibleSizingWeightsRef.current = visibleSizingWeights;
+
   /** Somme des largeurs ≥ clientWidth — sinon blanc + pas de scroll. */
   const clampSizingToContainer = useCallback(
     (
@@ -179,11 +259,11 @@ export function DataTable<T>({
       avail: number,
       preferGrowId?: string
     ): ColumnSizingState => {
-      if (avail <= 0 || sizingWeights.length === 0) return sizing;
+      if (avail <= 0 || visibleSizingWeights.length === 0) return sizing;
 
       let sum = 0;
       const resolved: ColumnSizingState = {};
-      for (const w of sizingWeights) {
+      for (const w of visibleSizingWeights) {
         const size = sizing[w.id] ?? w.weight;
         resolved[w.id] = size;
         sum += size;
@@ -194,17 +274,17 @@ export function DataTable<T>({
       const growId =
         preferGrowId && resolved[preferGrowId] != null
           ? preferGrowId
-          : [...sizingWeights]
+          : [...visibleSizingWeights]
               .reverse()
               .find((w) => w.id !== "select" && w.id !== "actions")?.id ??
-            sizingWeights[sizingWeights.length - 1]!.id;
+            visibleSizingWeights[visibleSizingWeights.length - 1]!.id;
 
       return {
         ...resolved,
         [growId]: (resolved[growId] ?? 0) + deficit,
       };
     },
-    [sizingWeights]
+    [visibleSizingWeights]
   );
 
   const applyContainerFill = useCallback(() => {
@@ -213,23 +293,29 @@ export function DataTable<T>({
     const avail = el.clientWidth;
     if (avail <= 0) return;
     const target = Math.max(avail, minContentWidth ?? 0);
-    const colsKey = sizingWeights
+    const colsKey = visibleSizingWeights
       .map((w) => `${w.id}:${w.weight}:${w.minSize}:${w.maxSize}`)
+      .join("|");
+    const visKey = Object.entries(columnVisibility)
+      .filter(([, v]) => v === false)
+      .map(([k]) => k)
+      .sort()
       .join(",");
+    const layoutKey = `${colsKey}::${visKey}`;
     if (!userResizedRef.current) {
       const prevAvail = lastAvailRef.current;
       // L'apparition de la scrollbar verticale (lazyload) doit relancer la
       // répartition, sinon les colonnes dépassent ou laissent du blanc.
       if (
-        fillKeyRef.current === colsKey &&
+        fillKeyRef.current === layoutKey &&
         prevAvail > 0 &&
         avail === prevAvail
       ) {
         return;
       }
       lastAvailRef.current = avail;
-      fillKeyRef.current = colsKey;
-      setColumnSizing(distributeColumnWidths(sizingWeights, target));
+      fillKeyRef.current = layoutKey;
+      setColumnSizing(distributeColumnWidths(visibleSizingWeights, target));
       return;
     }
     const prevAvail = lastAvailRef.current;
@@ -238,7 +324,17 @@ export function DataTable<T>({
     }
     lastAvailRef.current = avail;
     setColumnSizing((prev) => clampSizingToContainer(prev, target));
-  }, [sizingWeights, clampSizingToContainer, minContentWidth]);
+  }, [
+    visibleSizingWeights,
+    columnVisibility,
+    clampSizingToContainer,
+    minContentWidth,
+  ]);
+
+  useLayoutEffect(() => {
+    userResizedRef.current = false;
+    fillKeyRef.current = "";
+  }, [columnVisibility]);
 
   useLayoutEffect(() => {
     applyContainerFill();
@@ -253,26 +349,154 @@ export function DataTable<T>({
     (updater: SetStateAction<ColumnSizingState>) => {
       userResizedRef.current = true;
       setColumnSizing((prev) => {
-        const proposed =
+        const raw =
           typeof updater === "function" ? updater(prev) : updater;
+        const proposed: ColumnSizingState = { ...raw };
+        for (const w of visibleSizingWeights) {
+          const v = proposed[w.id];
+          if (v != null) {
+            proposed[w.id] = clampColumnWidth(v, w.minSize, w.maxSize);
+          }
+        }
         const avail = scrollRef.current?.clientWidth ?? 0;
         if (avail <= 0) return proposed;
         const target = Math.max(avail, minContentWidth ?? 0);
 
         let shrunkId: string | undefined;
-        for (const w of sizingWeights) {
+        let prevSum = 0;
+        let newSum = 0;
+        for (const w of visibleSizingWeights) {
           const before = prev[w.id] ?? w.weight;
           const after = proposed[w.id] ?? prev[w.id] ?? w.weight;
-          if (after < before) {
+          prevSum += before;
+          newSum += after;
+          if (after < before && shrunkId == null) {
             shrunkId = w.id;
-            break;
           }
+        }
+        // Agrandissement manuel : ne pas réallouer le surplus (bloquait la dernière colonne).
+        if (newSum > prevSum || newSum >= target) {
+          return proposed;
         }
 
         return clampSizingToContainer(proposed, target, shrunkId);
       });
     },
-    [sizingWeights, clampSizingToContainer, minContentWidth]
+    [visibleSizingWeights, clampSizingToContainer, minContentWidth]
+  );
+
+  handleColumnSizingChangeRef.current = handleColumnSizingChange;
+
+  const endColumnResizeSession = useCallback(() => {
+    const listeners = resizeListenersRef.current;
+    if (listeners) {
+      document.removeEventListener("mousemove", listeners.move);
+      document.removeEventListener("mouseup", listeners.up);
+      document.removeEventListener("touchmove", listeners.move);
+      document.removeEventListener("touchend", listeners.up);
+      document.removeEventListener("touchcancel", listeners.up);
+      resizeListenersRef.current = null;
+    }
+    document.body.style.removeProperty("cursor");
+    document.body.style.removeProperty("user-select");
+    const preview = resizePreviewRef.current;
+    if (preview) preview.style.display = "none";
+    resizeSessionRef.current = null;
+  }, []);
+
+  const updateResizePreview = useCallback((leftPx: number) => {
+    const preview = resizePreviewRef.current;
+    if (!preview) return;
+    preview.style.display = "block";
+    preview.style.left = `${leftPx}px`;
+  }, []);
+
+  const startColumnResize = useCallback(
+    (
+      e: React.MouseEvent | React.TouchEvent,
+      columnId: string,
+      startSize: number,
+      minSize: number,
+      maxSize: number
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
+      endColumnResizeSession();
+
+      const startX = pointerClientX(
+        e.nativeEvent as MouseEvent | TouchEvent
+      );
+      const leftOffset = leftOffsetBeforeColumn(
+        columnId,
+        columnSizingRef.current,
+        visibleSizingWeightsRef.current
+      );
+      resizeSessionRef.current = {
+        columnId,
+        startX,
+        startSize,
+        minSize,
+        maxSize,
+        leftOffset,
+      };
+      updateResizePreview(
+        leftOffset + clampColumnWidth(startSize, minSize, maxSize)
+      );
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const onMove = (ev: MouseEvent | TouchEvent) => {
+        const session = resizeSessionRef.current;
+        if (!session) return;
+        if ("cancelable" in ev && ev.cancelable) ev.preventDefault();
+        const delta = pointerClientX(ev) - session.startX;
+        const nextSize = clampColumnWidth(
+          session.startSize + delta,
+          session.minSize,
+          session.maxSize
+        );
+        updateResizePreview(session.leftOffset + nextSize);
+      };
+
+      const onUp = (ev: MouseEvent | TouchEvent) => {
+        const session = resizeSessionRef.current;
+        endColumnResizeSession();
+        if (!session) return;
+        const delta = pointerClientX(ev) - session.startX;
+        const nextSize = clampColumnWidth(
+          session.startSize + delta,
+          session.minSize,
+          session.maxSize
+        );
+        if (nextSize === session.startSize) return;
+        userResizedRef.current = true;
+        handleColumnSizingChangeRef.current((prev) => ({
+          ...prev,
+          [session.columnId]: nextSize,
+        }));
+      };
+
+      resizeListenersRef.current = { move: onMove, up: onUp };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+      document.addEventListener("touchmove", onMove, { passive: false });
+      document.addEventListener("touchend", onUp);
+      document.addEventListener("touchcancel", onUp);
+    },
+    [endColumnResizeSession, updateResizePreview]
+  );
+
+  useEffect(() => () => endColumnResizeSession(), [endColumnResizeSession]);
+
+  const handleColumnVisibilityChange = useCallback(
+    (updater: SetStateAction<VisibilityState>) => {
+      if (onColumnVisibilityChangeProp) {
+        onColumnVisibilityChangeProp(updater);
+      } else {
+        setInternalColumnVisibility(updater);
+      }
+    },
+    [onColumnVisibilityChangeProp]
   );
 
   const handleSortingChange = useCallback(
@@ -294,7 +518,7 @@ export function DataTable<T>({
         setInternalColumnFilters(updater);
       }
     },
-    [onColumnFiltersChangeProp],
+    [onColumnFiltersChangeProp]
   );
 
   // TanStack Table returns unstable function identities — React Compiler skips this hook on purpose.
@@ -302,16 +526,17 @@ export function DataTable<T>({
   const table = useReactTable({
     data,
     columns: sizedColumns,
-    state: { sorting, columnSizing, columnFilters },
+    state: { sorting, columnSizing, columnFilters, columnVisibility },
     onSortingChange: handleSortingChange,
     onColumnFiltersChange: handleColumnFiltersChange,
     onColumnSizingChange: handleColumnSizingChange,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
     enableMultiSort: false,
-    /** Sinon 3e clic (ou clic rapide multi-detail) vide le tri → paraît « cassé ». */
-    enableSortingRemoval: false,
+    /** Reset au 3e clic géré dans le header (asc → desc → aucun). */
+    enableSortingRemoval: true,
     /** Évite 1er clic en desc sur dates / colonnes à sortUndefined. */
     sortDescFirst: false,
     manualSorting,
@@ -327,8 +552,7 @@ export function DataTable<T>({
       }
       return String(index);
     },
-    columnResizeMode: "onChange",
-    enableColumnResizing: true,
+    enableColumnResizing: false,
     defaultColumn: {
       size: 120,
       minSize: 64,
@@ -342,15 +566,22 @@ export function DataTable<T>({
 
   const initialLoad = loading && data.length === 0;
 
+  const hasSearchText = globalFilter.trim() !== "";
+  const hasFilters =
+    hasActiveFilters || (!manualFiltering && columnFilters.length > 0);
+
   const isEmpty =
-    !loading &&
-    data.length === 0 &&
-    globalFilter.trim() === "" &&
-    !hasActiveFilters;
-  const isSearchEmpty =
-    !loading &&
-    data.length === 0 &&
-    (globalFilter.trim() !== "" || hasActiveFilters);
+    !loading && tableRows.length === 0 && !hasSearchText && !hasFilters;
+
+  const isNoMatch =
+    !loading && tableRows.length === 0 && (hasSearchText || hasFilters);
+
+  const noMatchMessage =
+    hasFilters && hasSearchText
+      ? searchAndFilterNoResultsMessage ?? searchNoResultsMessage
+      : hasFilters
+      ? filterNoResultsMessage ?? searchNoResultsMessage
+      : searchNoResultsMessage;
 
   // Largeur visible du scroller : garde le message vide centré même quand les
   // colonnes (champs perso) rendent le tableau plus large que l'écran.
@@ -370,7 +601,7 @@ export function DataTable<T>({
       <div
         className={cn(
           "sticky left-0 flex items-center justify-center px-[18px] py-12 text-center text-sm font-medium text-muted-foreground",
-          emptyRowClassName,
+          emptyRowClassName
         )}
         style={viewportWidth ? { width: viewportWidth } : undefined}
       >
@@ -399,7 +630,7 @@ export function DataTable<T>({
           onLoadMoreRef.current?.();
         }
       },
-      { root, rootMargin: "120px", threshold: 0 },
+      { root, rootMargin: "120px", threshold: 0 }
     );
     obs.observe(target);
     // Remplit le viewport si 1ère page trop courte.
@@ -408,27 +639,43 @@ export function DataTable<T>({
   }, [onLoadMore, hasMore, data.length, loading, loadingMore]);
 
   return (
-    <section className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card", className)}>
+    <section
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card",
+        className
+      )}
+    >
       <div
         ref={scrollRef}
         className={cn(
           "min-h-0 w-full flex-1 overflow-y-auto",
-          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-auto"
+          clipHorizontalOverflow ? "overflow-x-hidden" : "overflow-x-scroll"
         )}
       >
-        <table
-          aria-busy={initialLoad}
-          className={cn(
-            "table-fixed border-separate border-spacing-0 text-sm transition-opacity",
-            initialLoad && "opacity-60",
-          )}
+        <div
+          className="relative min-w-full"
           style={{
             width: "100%",
-            // Jamais plus étroit que le conteneur, sinon blanc à droite quand la
-            // somme des colonnes est inférieure à la largeur disponible.
             minWidth: Math.max(totalSize, viewportWidth),
           }}
         >
+          <div
+            ref={resizePreviewRef}
+            aria-hidden
+            className="pointer-events-none absolute top-0 z-40 w-0.5 -translate-x-1/2 bg-primary"
+            style={{ height: TABLE_HEAD_ROW_PX, display: "none" }}
+          />
+          <table
+            aria-busy={initialLoad}
+            className={cn(
+              "table-fixed border-separate border-spacing-0 text-[15px] leading-snug transition-opacity",
+              initialLoad && "opacity-60"
+            )}
+            style={{
+              width: "100%",
+              minWidth: Math.max(totalSize, viewportWidth),
+            }}
+          >
           <colgroup>
             {table.getVisibleLeafColumns().map((column) => {
               // Colonnes utilitaires : largeur figée. Les autres peuvent absorber
@@ -440,12 +687,13 @@ export function DataTable<T>({
                 column.id === "actions" ||
                 column.id === "avatar" ||
                 (min != null && max != null && min === max);
+              const colMin = min ?? column.getSize();
               return (
                 <col
                   key={column.id}
                   style={{
                     width: column.getSize(),
-                    minWidth: column.getSize(),
+                    minWidth: colMin,
                     maxWidth: isFixed ? column.getSize() : undefined,
                   }}
                 />
@@ -454,159 +702,192 @@ export function DataTable<T>({
           </colgroup>
           <thead className="sticky top-0 z-10">
             <tr>
-              {table.getHeaderGroups()[0].headers.map((header, index, headers) => {
-                const isSelectCol = header.column.id === "select";
-                const isActionsCol = header.column.id === "actions";
-                // La colonne actions sticky pose déjà un liseré à gauche : le
-                // trait de la poignée de resize ferait doublon.
-                const nextIsActions =
-                  headers[index + 1]?.column.id === "actions";
-                const canFilter =
-                  header.column.getCanFilter() && renderColumnFilter != null;
-                const canSort = header.column.getCanSort();
-                const sorted = header.column.getIsSorted();
-                const ariaSort =
-                  sorted === "asc"
-                    ? "ascending"
-                    : sorted === "desc"
+              {table
+                .getHeaderGroups()[0]
+                .headers.map((header, index, headers) => {
+                  const isSelectCol = header.column.id === "select";
+                  const isActionsCol = header.column.id === "actions";
+                  // La colonne actions sticky pose déjà un liseré à gauche : le
+                  // trait de la poignée de resize ferait doublon.
+                  const nextIsActions =
+                    headers[index + 1]?.column.id === "actions";
+                  const canSort = header.column.getCanSort();
+                  const sorted = header.column.getIsSorted();
+                  const ariaSort =
+                    sorted === "asc"
+                      ? "ascending"
+                      : sorted === "desc"
                       ? "descending"
                       : canSort
-                        ? "none"
-                        : undefined;
-                return (
-                  <th
-                    key={header.id}
-                    aria-sort={ariaSort}
-                    className={cn(
-                      "relative whitespace-nowrap border-b border-border bg-muted text-xs font-medium text-foreground",
-                      TABLE_HEAD_ROW_CLS,
-                      tableCellPaddingClass(header.column.id),
-                      !isUtilityCenterColumn(header.column.id) &&
-                        "text-left",
-                      isUtilityCenterColumn(header.column.id) &&
-                        "text-center",
-                      isSelectCol &&
-                        "sticky left-0 z-20 cursor-pointer shadow-[1px_0_0_0_var(--border)]",
-                      isActionsCol &&
-                        "sticky right-0 z-20 shadow-[-1px_0_0_0_var(--border)]",
-                      canSort && "cursor-pointer"
-                    )}
-                    onClick={
-                      isSelectCol
-                        ? (e) => {
-                            const box = e.currentTarget.querySelector(
-                              "[data-slot=checkbox]",
-                            ) as HTMLElement | null;
-                            if (box && e.target !== box && !box.contains(e.target as Node)) {
-                              box.click();
+                      ? "none"
+                      : undefined;
+                  return (
+                    <th
+                      key={header.id}
+                      aria-sort={ariaSort}
+                      className={cn(
+                        "relative whitespace-nowrap border-b border-border bg-muted font-medium text-foreground",
+                        TABLE_HEAD_ROW_CLS,
+                        tableCellPaddingClass(header.column.id),
+                        !isUtilityCenterColumn(header.column.id) && "text-left",
+                        isUtilityCenterColumn(header.column.id) &&
+                          "text-center",
+                        isSelectCol &&
+                          "sticky left-0 z-20 cursor-pointer shadow-[1px_0_0_0_var(--border)]",
+                        isActionsCol &&
+                          "sticky right-0 z-20 shadow-[-1px_0_0_0_var(--border)]",
+                        canSort && "cursor-pointer"
+                      )}
+                      onClick={
+                        isSelectCol
+                          ? (e) => {
+                              const box = e.currentTarget.querySelector(
+                                "[data-slot=checkbox]"
+                              ) as HTMLElement | null;
+                              if (
+                                box &&
+                                e.target !== box &&
+                                !box.contains(e.target as Node)
+                              ) {
+                                box.click();
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                  >
-                    {header.isPlaceholder ? null : canSort ? (
-                      <div className="-mx-3 flex h-full min-w-0 items-center gap-0.5 px-3">
-                        <button
-                          type="button"
-                          className={cn(
-                            "inline-flex h-full min-w-0 flex-1 cursor-pointer select-none items-center gap-1.5 text-left",
-                            "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
-                          )}
-                          onClick={() => {
-                            const columnId = header.column.id;
-                            handleSortingChange((prev) => {
-                              const current = prev.find((s) => s.id === columnId);
-                              if (!current) return [{ id: columnId, desc: false }];
-                              return [{ id: columnId, desc: !current.desc }];
-                            });
-                          }}
-                        >
-                          <span className="min-w-0 flex-1 truncate">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
+                          : undefined
+                      }
+                    >
+                      {header.isPlaceholder ? null : canSort ? (
+                        <div className="-mx-3 flex h-full min-w-0 items-center gap-0.5 px-3">
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex h-full min-w-0 flex-1 cursor-pointer select-none items-center gap-1.5 text-left",
+                              "hover:text-foreground focus-visible:outline-none focus-visible:ring-0"
                             )}
-                          </span>
-                          {sorted === "asc" ? (
-                            <ArrowUp
-                              className="h-3.5 w-3.5 shrink-0 text-foreground"
-                              aria-hidden
-                            />
-                          ) : sorted === "desc" ? (
-                            <ArrowDown
-                              className="h-3.5 w-3.5 shrink-0 text-foreground"
-                              aria-hidden
-                            />
-                          ) : (
-                            <ArrowUpDown
-                              className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70"
-                              aria-hidden
-                            />
-                          )}
-                        </button>
-                        {canFilter ? (
-                          <span
-                            className="shrink-0"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={() => {
+                              const columnId = header.column.id;
+                              handleSortingChange((prev) => {
+                                const current = prev.find(
+                                  (s) => s.id === columnId
+                                );
+                                if (!current)
+                                  return [{ id: columnId, desc: false }];
+                                if (!current.desc) {
+                                  return [{ id: columnId, desc: true }];
+                                }
+                                return [];
+                              });
+                            }}
                           >
-                            {renderColumnFilter!(header.column.id)}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div
-                        className={cn(
-                          "min-w-0",
-                          isUtilityCenterColumn(header.column.id)
-                            ? "flex h-full items-center justify-center"
-                            : "-mx-3 flex h-full min-w-0 items-center truncate px-3"
-                        )}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </div>
-                    )}
-                    {header.column.getCanResize() ? (
-                      <div
-                        role="separator"
-                        aria-orientation="vertical"
-                        aria-label="Redimensionner la colonne"
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          header.getResizeHandler()(e);
-                        }}
-                        onTouchStart={(e) => {
-                          e.stopPropagation();
-                          header.getResizeHandler()(e);
-                        }}
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          header.column.resetSize();
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "absolute top-0 right-0 z-30 h-full w-1.5 cursor-col-resize touch-none select-none",
-                          "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-muted-foreground/45",
-                          "hover:after:bg-primary",
-                          header.column.getIsResizing() && "after:bg-primary",
-                          nextIsActions &&
-                            !header.column.getIsResizing() &&
-                            "after:bg-transparent hover:after:bg-primary"
-                        )}
-                      />
-                    ) : null}
-                  </th>
-                );
-              })}
+                            <CellTruncate
+                              as="span"
+                              className={cn(
+                                "min-w-0 flex-1",
+                                sorted && "font-semibold"
+                              )}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </CellTruncate>
+                            {sorted === "asc" ? (
+                              <ArrowUp
+                                className="h-3.5 w-3.5 shrink-0 text-foreground"
+                                aria-hidden
+                              />
+                            ) : sorted === "desc" ? (
+                              <ArrowDown
+                                className="h-3.5 w-3.5 shrink-0 text-foreground"
+                                aria-hidden
+                              />
+                            ) : (
+                              <ArrowUpDown
+                                className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70"
+                                aria-hidden
+                              />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          className={cn(
+                            "min-w-0",
+                            isUtilityCenterColumn(header.column.id)
+                              ? "flex h-full items-center justify-center"
+                              : "-mx-3 flex h-full min-w-0 items-center truncate px-3"
+                          )}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </div>
+                      )}
+                      {columnCanManualResize(header.column.id) ? (
+                        <div
+                          role="separator"
+                          aria-orientation="vertical"
+                          aria-label="Redimensionner la colonne"
+                          onMouseDown={(e) => {
+                            const minSize =
+                              header.column.columnDef.minSize ?? 64;
+                            const maxSize =
+                              header.column.columnDef.maxSize ?? 600;
+                            startColumnResize(
+                              e,
+                              header.column.id,
+                              columnSizing[header.column.id] ??
+                                header.getSize(),
+                              minSize,
+                              maxSize
+                            );
+                          }}
+                          onTouchStart={(e) => {
+                            const minSize =
+                              header.column.columnDef.minSize ?? 64;
+                            const maxSize =
+                              header.column.columnDef.maxSize ?? 600;
+                            startColumnResize(
+                              e,
+                              header.column.id,
+                              columnSizing[header.column.id] ??
+                                header.getSize(),
+                              minSize,
+                              maxSize
+                            );
+                          }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            const w = sizingWeights.find(
+                              (x) => x.id === header.column.id
+                            );
+                            if (!w) return;
+                            userResizedRef.current = true;
+                            handleColumnSizingChange((prev) => ({
+                              ...prev,
+                              [header.column.id]: w.weight,
+                            }));
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            "absolute top-0 right-0 z-30 h-full w-1.5 cursor-col-resize touch-none select-none",
+                            "after:absolute after:inset-y-2 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-muted-foreground/45",
+                            "hover:after:bg-primary active:after:bg-primary",
+                            nextIsActions &&
+                              "after:bg-transparent hover:after:bg-primary"
+                          )}
+                        />
+                      ) : null}
+                    </th>
+                  );
+                })}
             </tr>
           </thead>
           <tbody>
             {isEmpty && <tr>{emptyRowContent(emptyMessage)}</tr>}
-            {isSearchEmpty && <tr>{emptyRowContent(searchNoResultsMessage)}</tr>}
+            {isNoMatch && <tr>{emptyRowContent(noMatchMessage)}</tr>}
             {!isEmpty &&
-              !isSearchEmpty &&
+              !isNoMatch &&
               tableRows.map((row: Row<T>) => (
                 <tr
                   key={row.id}
@@ -651,7 +932,7 @@ export function DataTable<T>({
                             ? (e) => {
                                 e.stopPropagation();
                                 const box = e.currentTarget.querySelector(
-                                  "[data-slot=checkbox]",
+                                  "[data-slot=checkbox]"
                                 ) as HTMLElement | null;
                                 if (
                                   box &&
@@ -662,8 +943,8 @@ export function DataTable<T>({
                                 }
                               }
                             : isActionsCol
-                              ? (e) => e.stopPropagation()
-                              : undefined
+                            ? (e) => e.stopPropagation()
+                            : undefined
                         }
                       >
                         {flexRender(
@@ -677,6 +958,7 @@ export function DataTable<T>({
               ))}
           </tbody>
         </table>
+        </div>
         {onLoadMore && hasMore ? (
           <div
             ref={sentinelRef}
@@ -695,8 +977,7 @@ export function DataTable<T>({
         <span className="min-w-0">
           {initialLoad
             ? loadingMessage
-            : footer ??
-              `${data.length} élément${data.length > 1 ? "s" : ""}`}
+            : footer ?? `${data.length} élément${data.length > 1 ? "s" : ""}`}
         </span>
       </div>
     </section>

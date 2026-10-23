@@ -12,6 +12,7 @@ import {
   ContactCreateModal,
   GroupModal,
   GroupQuickCreateModal,
+  AddContactsToGroupModal,
 } from "@/components/smsclient/PrototypeModals";
 import type { PrototypeAppContext } from "./usePrototypeApp";
 import { useGroupModalContacts } from "@/hooks/useGroupModalContacts";
@@ -22,7 +23,7 @@ type Props = {
 };
 
 export function PrototypeAppModals({ ctx }: Props) {
-  const { data, modals, wizard, actions } = ctx;
+  const { data, modals, wizard, actions, go } = ctx;
   const {
     contactsState,
     customFieldsState,
@@ -192,6 +193,27 @@ export function PrototypeAppModals({ ctx }: Props) {
           }}
         />
       )}
+
+      {user?.id && modals.addContactsToGroupResolveIds ? (
+        <AddContactsToGroupModal
+          open={modals.addContactsToGroupOpen}
+          onClose={() => modals.setAddContactsToGroupOpen(false)}
+          groupOptions={groupsState.rows.map((g) => g.name)}
+          contactCount={modals.addContactsToGroupCount}
+          resolveContactIds={modals.addContactsToGroupResolveIds}
+          supabase={supabase}
+          userId={user.id}
+          onAdded={async () => {
+            await contactsState.refresh();
+            await groupsState.refresh();
+          }}
+          onCreateGroup={() => {
+            modals.setAddContactsToGroupOpen(false);
+            go("groupes");
+            modals.setGroupModalOpen(true);
+          }}
+        />
+      ) : null}
 
       <ConfirmDeleteModal
         open={modals.confirmDeleteOpen}

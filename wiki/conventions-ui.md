@@ -17,6 +17,20 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 
 - Logo + texte `smsclient.fr` (sidebar et header mobile) cliquables → `go("dashboard")` — `components/smsclient/Shell.tsx`
 
+## Layout / overflow (bordures cards)
+
+| Symptôme | Cause | Correctif |
+| -------- | ----- | ----------- |
+| Bordure ou `ring` d’une card **coupée à gauche/droite** (souvent avec `main` ou vue en `overflow-hidden`) | Un ancêtre `overflow-hidden` **clippe** le `box-shadow` du `ring` Tailwind (peint hors de la boîte de l’enfant) | **Cards shadcn** : `border border-border` (pas `ring` seul) — `components/ui/card.tsx` |
+| Vue pleine hauteur sans scroll (`#parrainage`, conformité, QR, …) | Colonne flex `overflow-hidden` sans marge intérieure | **`VIEW_STACK_CLIP_SAFE`** (`lib/proto/viewLayout.ts`) sur la racine vue : `overflow-hidden` + **`p-px`** |
+| `<main>` sans scroll | Même clipping sur les bords du viewport contenu | Routes `overflow-hidden` dans `Shell.tsx` : **`p-px`** en plus du padding horizontal |
+
+Règles agent :
+
+- Racine vue shell non scrollable → `VIEW_STACK_CLIP_SAFE` (+ `gap-*` si besoin), pas `overflow-hidden` nu sur un flex pleine largeur.
+- Ne pas envelopper une card bordée dans un parent `overflow-hidden` sans **`p-px`** (ou padding équivalent) sur ce parent.
+- Sections custom : préférer **`border border-border`** à `ring-*` si le bloc est dans une zone clipée.
+
 ## DataTable / listes
 
 | Règle | Détail | Fichier |
@@ -29,7 +43,10 @@ Faits utiles pour agents. Source : sessions produit 2026-07.
 | liste vide | toujours `DataTable` + `emptyMessage` (pas écran vide sans en-têtes) ; **CTA principaux** du bandeau (create/import/catalogue…) repris dans `EmptyContent` | vues liste |
 | empty row | pas de `border-b` sous le bloc empty dans `DataTable` | `DataTable.tsx` |
 | spacing listes | stack `gap-2` + toolbar `gap-2` / `min-h-8` — ref. Envois SMS ; CTA toolbar `default` (h-8 = recherche), pas `lg` ; `listViewLayout.ts` | vues liste |
+| CTA listes | toolbar + `EmptyContent` : `variant` default/outline/destructive, `size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}`, `className={LIST_VIEW_CTA_BUTTON_CLASS}` — **pas** `rounded-full` (radius = footer modale / Button shadcn) | `listViewLayout.ts`, vues liste |
 | sticky | `select` gauche, `actions` droite | `ContactsView.tsx` |
+| texte tronqué en cellule | **`CellTruncate`** (`components/smsclient/ui.tsx`) — une ligne, tip portail **seulement si** overflow ; pas `truncate` nu dans une cellule DataTable | vues liste |
+| colonne « créé le » | **`ListCreatedCell`** (date + heure, même tip) | `ContactsView`, `LiensView`, `ModelesSmsView` |
 
 ## Téléphone FR (mobile SMS)
 

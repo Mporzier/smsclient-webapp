@@ -14,9 +14,7 @@ export function shouldShowExpandBanner(args: {
 }): boolean {
   if (!args.pageSelectActive) return false;
   if (args.matchTotal != null) return args.matchTotal > args.selectedCount;
-  return Boolean(
-    args.expandCandidate || args.counting || args.countUnavailable,
-  );
+  return Boolean(args.expandCandidate || args.countUnavailable);
 }
 
 /** Requête count sans réponse (verrou auth, socket morte) : pas de spinner infini. */
@@ -198,8 +196,8 @@ export function useGmailSelectAll({
   }, []);
 
   const clearSelection = useCallback(() => {
-    setSelectedIds([]);
     resetBanner();
+    setSelectedIds([]);
   }, [resetBanner, setSelectedIds]);
 
   const deselectLoaded = useCallback(() => {
@@ -232,13 +230,25 @@ export function useGmailSelectAll({
       setSelectedIds([...loadedIds]);
     }
     setPendingDisplayTotal(null);
-    setPageSelectActive(true);
     setMatchAllActive(false);
     setExpandError(null);
     setExpanding(false);
     expandGenRef.current += 1;
     expandPromiseRef.current = null;
     const seedTotal = listMatchTotalRef.current;
+    if (
+      typeof seedTotal === "number" &&
+      seedTotal <= loadedIds.length &&
+      !expandCandidateRef.current
+    ) {
+      setPageSelectActive(false);
+      setMatchTotal(null);
+      setCountUnavailable(false);
+      setCounting(false);
+      countGenRef.current += 1;
+      return;
+    }
+    setPageSelectActive(true);
     setMatchTotal(typeof seedTotal === "number" ? seedTotal : null);
     setCountUnavailable(false);
     setCounting(typeof seedTotal !== "number");
@@ -377,7 +387,7 @@ export function useGmailSelectAll({
     pageSelectActive &&
     (matchTotal != null
       ? matchTotal > loadedIds.length
-      : Boolean(expandCandidate || counting || countUnavailable));
+      : Boolean(expandCandidate || countUnavailable));
   const displaySelectedCount =
     pendingDisplayTotal != null && selectedCount < pendingDisplayTotal
       ? pendingDisplayTotal

@@ -17,3 +17,31 @@ export function getAuthLoginPath(query = ""): string {
   const path = base ? `${base}/auth/login/` : "/auth/login/";
   return query ? `${path}?${query}` : path;
 }
+
+function publicOrigin(): string {
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
+function appBasePath(): string {
+  return (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+}
+
+/** URL inscription publique (parrainage `ref`). */
+export function getAuthSignupUrl(referralCode?: string): string {
+  const base = appBasePath();
+  const path = base ? `${base}/auth/signup/` : "/auth/signup/";
+  const q = referralCode?.trim()
+    ? `ref=${encodeURIComponent(referralCode.trim())}`
+    : "";
+  const origin = publicOrigin();
+  return q ? `${origin}${path}?${q}` : `${origin}${path}`;
+}
+
+/** Lien partageable affiché (mock `/parrainage/CODE`). */
+export function getPublicReferralUrl(referralCode: string): string {
+  const code = referralCode.trim().toUpperCase();
+  const base = appBasePath();
+  const path = base ? `${base}/parrainage/` : "/parrainage/";
+  return `${publicOrigin()}${path}${encodeURIComponent(code)}`;
+}
+

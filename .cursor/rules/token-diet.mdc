@@ -1,0 +1,39 @@
+---
+description: Token diet — lectures/recherche/edits frugales ; doute = stop tâche + question (always-on)
+alwaysApply: true
+---
+
+# token-diet (always-on)
+
+Miroir skill `.cursor/skills/token-diet`. Anti-boucle / retry : rule `token-economy` + `agent-session-limits`.
+
+## Doute — stop tâche (priorité max)
+
+**Dès qu’il y a doute** (spec floue, ≥2 interprétations, comportement inconnu, choix produit non tranché, cause non prouvée) :
+
+1. **Stop immédiat** — plus d’outils (Grep, Read, Shell, patch, subagent).
+2. **Pas** de « je continue en attendant », pas de patch provisoire, pas d’exploration « pour départager ».
+3. Réponse : ce qui est sûr (1–3 lignes) + **une** question claire → **attendre** la réponse user.
+
+Reprise seulement après tranché user ou spec devenue non ambiguë.
+
+## Recherche code
+
+- Interdit : Grep sans `path` + `head_limit`, `find` repo-wide, spirale > **2** tours sans hypothèse unique.
+- Obligatoire : `smsclient-map` / `view-scoped-edit` → ~4 fichiers domaine max ; puis Grep ciblé ; `Read` avec `offset`/`limit` sur gros fichiers (`CampaignWizard.tsx`, `Shell.tsx`, `ParametresView.tsx`).
+
+## Édition
+
+- `StrReplace` ciblé. Pas de `Write` full file sauf fichier neuf ou >~50 % du fichier.
+- Pas de flip-flop patch (hypothèse A → B → A) : si deux sens possibles → **doute** → stop + question.
+
+## Doc web
+
+- HTML lourd : `npx defuddle parse <URL> --md`. `.md` raw → WebFetch OK.
+
+## Échec / hypothèse
+
+- 1 hypothèse → 1 fix minimal → stop. **2** hypothèses ratées ou 2 causes plausibles → stop + question user.
+- Agent ne lance pas build/test (rule `testing-no-auto-run`).
+
+Sortie courte : rule `caveman`. Détail skill : `.cursor/skills/token-diet`.

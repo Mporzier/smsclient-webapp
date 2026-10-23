@@ -13,6 +13,8 @@ import type {
 } from "@/lib/types/automation";
 import type { ContactRowData } from "@/lib/types/contact";
 import type { CustomFieldDef } from "@/lib/types/customFields";
+import { VIEW_STACK_CLIP_SAFE } from "@/lib/proto/viewLayout";
+import { cn } from "@/lib/cn";
 import { useMemo, useState } from "react";
 
 export type AutomatisationsViewProps = {
@@ -53,7 +55,7 @@ export function AutomatisationsView({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
+    <div className={cn(VIEW_STACK_CLIP_SAFE, "gap-5")}>
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
           {error}

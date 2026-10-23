@@ -185,6 +185,16 @@ export function useContactActions({ data, modals }: ActionsContext) {
     [user, supabase, contactsState]
   );
 
+  const handleAddContactsToGroup = useCallback(
+    (
+      idsOrResolve: string[] | (() => Promise<string[]>),
+      countHint: number,
+    ) => {
+      modals.openAddContactsToGroup(idsOrResolve, countHint);
+    },
+    [modals],
+  );
+
   return {
     handleDeleteContacts,
     handleDeleteContactsMatching,
@@ -192,5 +202,6 @@ export function useContactActions({ data, modals }: ActionsContext) {
     handleUnsubscribeContact,
     handleContactSave,
     handleResubscribeContacts,
+    handleAddContactsToGroup,
   };
 }

@@ -7,9 +7,9 @@
  * Paliers Unicode Ringover : 70 · 134 · 201 · … (×67)
  * Paliers GSM Ringover     : 160 · 306 · 459 · … (×153)
  *
- * Plafond plateforme : 8 segments max (Ringover)
- * - GSM max     : 153 × 8 = 1 224 septets
- * - Unicode max : 67 × 8  = 536 unités UTF-16
+ * Plafond plateforme : 2 segments max (campagnes / proto)
+ * - GSM max     : 153 × 2 = 306 septets
+ * - Unicode max : 67 × 2  = 134 unités UTF-16
  *
  * UCS-2 facture en unités UTF-16 (👩‍🚒 = 5, 👩🏽‍🚒 = 7).
  * Accents hors GSM (ç, ê, ë, î, emoji…) basculent tout le message en Unicode.
@@ -29,7 +29,7 @@ const GSM_BASIC = new Set(GSM_BASIC_CHARS.split(""));
 const GSM_EXTENDED = new Set(GSM_EXTENDED_CHARS.split(""));
 
 export const SMS_LIMITS = {
-  MAX_SEGMENTS: 8,
+  MAX_SEGMENTS: 2,
   GSM_SINGLE: 160,
   GSM_CONCAT: 153,
   UNICODE_SINGLE: 70,
@@ -50,7 +50,7 @@ export type SmsMessageStats = {
   singleSegmentLimit: number;
   concatSegmentSize: number;
   maxSegments: number;
-  /** Plafond absolu (8 segments Ringover). */
+  /** Plafond absolu (MAX_SEGMENTS). */
   maxBillableCharacters: number;
   exceedsMaxSegments: boolean;
   /** Caractères restants avant le palier suivant (0 si palier plein). */
@@ -89,7 +89,7 @@ export function maxBillableCharacters(encoding: SmsEncoding): number {
     : SMS_LIMITS.UNICODE_CONCAT * SMS_LIMITS.MAX_SEGMENTS;
 }
 
-/** Paliers cumulés Ringover (1 à 8 SMS). */
+/** Paliers cumulés Ringover (1 à MAX_SEGMENTS SMS). */
 export function smsTierLimits(encoding: SmsEncoding): number[] {
   const { GSM_SINGLE, GSM_CONCAT, UNICODE_SINGLE, UNICODE_CONCAT, MAX_SEGMENTS } =
     SMS_LIMITS;
@@ -183,4 +183,24 @@ export function analyzeSmsMessage(text: string): SmsMessageStats {
     UNICODE_SINGLE,
     UNICODE_CONCAT,
   );
+}
+
+export function smsMessageWithinBillableLimit(text: string): boolean {
+  const stats = analyzeSmsMessage(text);
+  return (
+    !stats.exceedsMaxSegments &&
+    stats.characterCount <= stats.maxBillableCharacters
+  );
+}
+
+/** Tronque en respectant GSM septets / UCS-2 (emoji, €, etc.). */
+export function clampSmsMessageToBillableLimit(text: string): string {
+  if (smsMessageWithinBillableLimit(text)) return text;
+  let result = "";
+  for (const ch of text) {
+    const candidate = result + ch;
+    if (!smsMessageWithinBillableLimit(candidate)) break;
+    result = candidate;
+  }
+  return result;
 }

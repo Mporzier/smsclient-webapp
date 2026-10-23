@@ -141,12 +141,8 @@ const GROUPS: Record<HelpCenterCardId, HelpCenterArticleGroup[]> = {
       articles: [
         { id: "create", titleKey: "help.art.liens.create" },
         { id: "track", titleKey: "help.art.liens.track" },
+        { id: "campaign-use", titleKey: "help.art.liens.campaignUse" },
       ],
-    },
-    {
-      id: "campaigns",
-      titleKey: "help.section.group.liens.campaigns",
-      articles: [{ id: "campaign-use", titleKey: "help.art.liens.campaignUse" }],
     },
   ],
   "modeles-sms": [

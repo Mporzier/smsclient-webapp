@@ -1,5 +1,6 @@
 "use client";
 
+import { CellTruncate } from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { CheckboxVisual } from "@/components/ui/checkbox";
 import {
@@ -227,13 +228,19 @@ export function UnsubscribedContactsModal({
                       <CheckboxVisual checked={selected} className="shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-foreground">
+                      <CellTruncate
+                        as="div"
+                        className="text-sm font-medium text-foreground"
+                      >
                         {line}
-                      </div>
+                      </CellTruncate>
                       {c.date && c.date !== "—" && (
-                        <div className={cn("mt-0.5 truncate", hintTextCls)}>
+                        <CellTruncate
+                          as="div"
+                          className={cn("mt-0.5", hintTextCls)}
+                        >
                           Désinscrit le {c.date}
-                        </div>
+                        </CellTruncate>
                       )}
                     </div>
                   </>

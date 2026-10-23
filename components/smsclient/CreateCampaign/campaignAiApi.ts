@@ -13,6 +13,8 @@ export type GenerateCampaignSmsInput = {
   options: SmsAiOptions;
   linkUrl?: string;
   customFieldDefs?: CustomFieldDef[];
+  /** Ajoute la mention STOP en fin de variante si true (défaut). */
+  commercialMessage?: boolean;
 };
 
 function variantHasAllTokens(text: string, tokens: string[]): boolean {
@@ -63,7 +65,9 @@ export async function generateCampaignSmsVariants(
     );
   }
 
-  return variants
-    .slice(0, 3)
-    .map((v) => appendStopMention(stripStopMention(v)));
+  const commercial = input.commercialMessage !== false;
+  return variants.slice(0, 3).map((v) => {
+    const body = stripStopMention(v);
+    return commercial ? appendStopMention(body) : body;
+  });
 }

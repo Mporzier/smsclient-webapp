@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/client";
 import {
-  countUnsubscribedContacts,
   fetchClientsPage,
   fetchUnsubscribedContacts,
 } from "@/lib/supabase/clients";
@@ -100,36 +99,42 @@ export function useContacts(withUnsubscribed = true) {
   >([]);
   const [unsubscribedCount, setUnsubscribedCount] = useState(0);
   const [unsubscribedLoading, setUnsubscribedLoading] = useState(false);
+  const [unsubscribedListReady, setUnsubscribedListReady] = useState(false);
   const unsubscribedOpenedRef = useRef(false);
 
-  const loadUnsubscribed = useCallback(async () => {
-    if (!userId) {
-      setUnsubscribedContacts([]);
-      return;
-    }
-    unsubscribedOpenedRef.current = true;
-    setUnsubscribedLoading(true);
-    const { data, error: err } = await fetchUnsubscribedContacts(supabase);
-    if (!err) {
-      setUnsubscribedContacts(data);
-      setUnsubscribedCount(data.length);
-    }
-    setUnsubscribedLoading(false);
-  }, [userId, supabase]);
+  const loadUnsubscribed = useCallback(
+    async (options?: { showLoading?: boolean }) => {
+      if (!userId) {
+        setUnsubscribedContacts([]);
+        setUnsubscribedListReady(true);
+        return;
+      }
+      unsubscribedOpenedRef.current = true;
+      const showLoading = options?.showLoading === true;
+      if (showLoading) setUnsubscribedLoading(true);
+      try {
+        const { data, error: err } = await fetchUnsubscribedContacts(supabase);
+        if (!err) {
+          setUnsubscribedContacts(data);
+          setUnsubscribedCount(data.length);
+        }
+      } finally {
+        setUnsubscribedLoading(false);
+        setUnsubscribedListReady(true);
+      }
+    },
+    [userId, supabase],
+  );
 
   const refreshUnsubscribed = useCallback(async () => {
     if (!userId || !withUnsubscribed) {
       setUnsubscribedContacts([]);
       setUnsubscribedCount(0);
+      setUnsubscribedListReady(true);
       return;
     }
-    if (unsubscribedOpenedRef.current) {
-      await loadUnsubscribed();
-      return;
-    }
-    const { count, error: err } = await countUnsubscribedContacts(supabase);
-    if (!err) setUnsubscribedCount(count);
-  }, [userId, supabase, withUnsubscribed, loadUnsubscribed]);
+    await loadUnsubscribed({ showLoading: false });
+  }, [userId, withUnsubscribed, loadUnsubscribed]);
 
   const refresh = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -145,6 +150,7 @@ export function useContacts(withUnsubscribed = true) {
         unsubscribedOpenedRef.current = false;
         setUnsubscribedContacts([]);
         setUnsubscribedCount(0);
+        setUnsubscribedListReady(false);
       });
       return;
     }
@@ -202,6 +208,7 @@ export function useContacts(withUnsubscribed = true) {
     unsubscribedContacts,
     unsubscribedCount,
     unsubscribedLoading,
+    unsubscribedListReady,
     loadUnsubscribed,
     sorting,
     setSorting,

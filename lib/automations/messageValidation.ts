@@ -7,6 +7,22 @@ import { buildEffectiveSms } from "@/lib/proto/smsStopMention";
 import { analyzeSmsMessage, SMS_LIMITS } from "@/lib/proto/smsUtils";
 import type { CustomFieldDef } from "@/lib/types/customFields";
 
+/** Corps déjà facturé (STOP inclus si envoyé tel quel). */
+export function validateBillableSmsText(body: string): string | null {
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return "Le message ne peut pas être vide.";
+  }
+  const stats = analyzeSmsMessage(trimmed);
+  if (
+    stats.exceedsMaxSegments ||
+    stats.characterCount > stats.maxBillableCharacters
+  ) {
+    return `Le message dépasse ${SMS_LIMITS.MAX_SEGMENTS} SMS — raccourcis-le.`;
+  }
+  return null;
+}
+
 export function validateAutomationSmsBody(
   body: string,
   options: {

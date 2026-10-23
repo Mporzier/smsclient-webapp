@@ -100,6 +100,7 @@ export function renderAudienceRoute(
           unsubscribedContacts={data.unsubscribedContacts}
           unsubscribedCount={data.unsubscribedCount}
           unsubscribedLoading={contactsState.unsubscribedLoading}
+          unsubscribedListReady={contactsState.unsubscribedListReady}
           onLoadUnsubscribed={data.loadUnsubscribed}
           onImport={() => modals.setImportContactsOpen(true)}
           onAddContact={modals.openContactAdd}
@@ -109,6 +110,7 @@ export function renderAudienceRoute(
           onCreateCampaignFromContacts={(ids) =>
             wizard.openCampaignComposer({ contactIds: ids })
           }
+          onAddContactsToGroup={actions.handleAddContactsToGroup}
           onResubscribeContacts={actions.handleResubscribeContacts}
           onCountSelectableMatches={(search, filters) =>
             countClientIds(supabase, {

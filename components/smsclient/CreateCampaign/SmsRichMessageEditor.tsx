@@ -12,6 +12,7 @@ import {
   clearFillerBreaks,
   handlePrenomChipKeyDown,
   insertPrenomAtSelection,
+  getSerializedCaretOffset,
   insertTextAtSelection,
   renderSmsEditorValue,
   repairPrenomChips,
@@ -19,10 +20,11 @@ import {
   serializeSmsEditor,
   shouldPreventEditorBeforeInput,
 } from "./smsMessageEditorDom";
-import { SMS_BODY_HARD_MAX_LENGTH } from "@/lib/forms/fieldLimits";
+import { clampSmsEditorBody } from "@/lib/proto/smsStopMention";
 
 export type SmsRichMessageEditorHandle = {
-  insertText: (text: string) => void;
+  insertText: (text: string, caretOffset?: number | null) => void;
+  getCaretOffset: () => number | null;
   insertPrenom: () => void;
   focus: () => void;
   /** Lit le DOM, sync state parent, retourne le texte sérialisé. */
@@ -34,13 +36,15 @@ type SmsRichMessageEditorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  /** Réserve STOP 36000 dans le plafond (message commercial). */
+  reserveStop?: boolean;
 };
 
 export const SmsRichMessageEditor = forwardRef<
   SmsRichMessageEditorHandle,
   SmsRichMessageEditorProps
 >(function SmsRichMessageEditor(
-  { value, onChange, placeholder, className },
+  { value, onChange, placeholder, className, reserveStop = false },
   ref
 ) {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -52,12 +56,13 @@ export const SmsRichMessageEditor = forwardRef<
     clearFillerBreaks(root);
     repairPrenomChips(root);
     let next = serializeSmsEditor(root);
-    if (next.length > SMS_BODY_HARD_MAX_LENGTH) {
-      next = next.slice(0, SMS_BODY_HARD_MAX_LENGTH);
+    const clamped = clampSmsEditorBody(next, reserveStop);
+    if (clamped !== next) {
+      next = clamped;
       renderSmsEditorValue(root, next);
     }
     return next;
-  }, []);
+  }, [reserveStop]);
 
   const emitChange = useCallback(() => {
     const next = readSerialized();
@@ -88,11 +93,16 @@ export const SmsRichMessageEditor = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
-      insertText: (text: string) => {
+      insertText: (text: string, caretOffset?: number | null) => {
         const root = editorRef.current;
         if (!root) return;
-        insertTextAtSelection(root, text);
+        insertTextAtSelection(root, text, caretOffset);
         emitChange();
+      },
+      getCaretOffset: () => {
+        const root = editorRef.current;
+        if (!root) return null;
+        return getSerializedCaretOffset(root);
       },
       insertPrenom: () => {
         const root = editorRef.current;
@@ -138,7 +148,7 @@ export const SmsRichMessageEditor = forwardRef<
       onBeforeInput={(e) => {
         const root = editorRef.current;
         if (!root || !(e.nativeEvent instanceof InputEvent)) return;
-        if (shouldPreventEditorBeforeInput(root, e.nativeEvent)) {
+        if (shouldPreventEditorBeforeInput(root, e.nativeEvent, reserveStop)) {
           e.preventDefault();
         }
       }}

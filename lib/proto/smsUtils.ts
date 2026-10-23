@@ -1,14 +1,23 @@
 import {
   analyzeSmsMessage,
+  clampSmsMessageToBillableLimit,
   isGsm7Message,
   maxBillableCharacters,
   SMS_LIMITS,
+  smsMessageWithinBillableLimit,
   type SmsEncoding,
   type SmsMessageStats,
 } from "@/lib/proto/smsEncoding";
 
 export type { SmsEncoding, SmsMessageStats };
-export { analyzeSmsMessage, isGsm7Message, maxBillableCharacters, SMS_LIMITS };
+export {
+  analyzeSmsMessage,
+  clampSmsMessageToBillableLimit,
+  isGsm7Message,
+  maxBillableCharacters,
+  SMS_LIMITS,
+  smsMessageWithinBillableLimit,
+};
 
 /** @deprecated Préférer `analyzeSmsMessage(text).encoding === "UNICODE"`. */
 export function isUnicode(str: string): boolean {

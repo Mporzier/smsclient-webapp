@@ -4,12 +4,12 @@ description: >
   Règles de réduction drastique de tokens (lectures, recherches, edits, docs web).
   Use when user says "token diet", "moins de tokens", "économie tokens", "/token-diet",
   or when a task risks large context (web docs, broad search, big file rewrites).
-  Always-on mirror: .cursor/rules/token-economy.mdc (with anti-loop).
+  Always-on mirror: .cursor/rules/token-diet.mdc (+ token-economy for anti-loop).
 ---
 
 # token-diet
 
-**Always-on** : rule `.cursor/rules/token-economy.mdc` (injectée chaque chat). Ce skill = détail / rappel manuel.
+**Always-on** : rule `.cursor/rules/token-diet.mdc` (injectée chaque chat). Anti-boucle / doute stop : `token-economy.mdc`. Ce skill = détail / rappel manuel.
 
 Coupe **tokens d'entrée / outils**. Sortie terse = skill `caveman`. Plafonds shell/tests = rule `agent-session-limits` + `testing-no-auto-run` (ne pas relancer).
 

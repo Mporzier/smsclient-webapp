@@ -2,7 +2,11 @@
 
 import { ConfirmSmsTemplateDeleteModal } from "@/components/smsclient/modals/ConfirmSmsTemplateDeleteModal";
 import { CreateSmsTemplateModal } from "@/components/smsclient/modals/CreateSmsTemplateModal";
-import { CellTruncate } from "@/components/smsclient/ui";
+import {
+  CellTruncate,
+  ListCellValue,
+  ListCreatedCell,
+} from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,20 +22,30 @@ import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTit
 import {
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
+  LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS,
+  listViewToolbarSelection,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
 import {
   LINK_COL,
   MODELE_SMS_COL,
   listColFixed,
+  listColResizable,
 } from "@/components/smsclient/listColumnSizes";
 import { normalizeListFilters } from "@/lib/proto/listFilters";
 import { templateColumnFilterKind } from "@/lib/proto/listFilterUi";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { ListViewToolbarCtaSwitch } from "@/components/smsclient/ListViewToolbarCtaSwitch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
@@ -47,6 +61,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
 import { useI18n } from "@/lib/i18n";
 import {
   countMatchingSmsTemplates,
@@ -123,6 +138,8 @@ export function ModelesSmsView({
     ids: string[];
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("modeles-sms");
 
   const filterLabels = useMemo(
     () => ({
@@ -179,36 +196,27 @@ export function ModelesSmsView({
     expandCandidate:
       hasMore ||
       (typeof totalCount === "number" && totalCount > loadedIds.length),
+    listMatchTotal: totalCount ?? null,
   });
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = templateColumnFilterKind(columnId);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={
-            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
-          }
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={(next) => {
-            clearSelection();
-            setColumnFilters(next);
-          }}
-        />
-      );
-    },
-    [clearSelection, columnFilters, filterLabels, setColumnFilters],
+  const filterSpecs = useMemo(
+    () =>
+      buildListFilterSpecs(
+        ["createdLabel", "title", "description", "body"],
+        filterLabels,
+        templateColumnFilterKind,
+      ),
+    [filterLabels],
   );
 
-  const hasSelection = displaySelectedCount > 0;
+  const { selectionActionCount, toolbarHasSelection } =
+    listViewToolbarSelection({ selectedIds, displaySelectedCount });
 
   const showListIntro = shouldShowListEmptyIntro({
     loading,
     dataLength: rows.length,
     searchQuery,
+    hasActiveFilters,
     dismissed: listIntroDismissed,
   });
 
@@ -311,8 +319,9 @@ export function ModelesSmsView({
       clearSelection();
       return;
     }
+    setSelectedIds(new Set(loadedIds));
     selectLoaded();
-  }, [allLoadedSelected, clearSelection, selectLoaded]);
+  }, [allLoadedSelected, clearSelection, loadedIds, selectLoaded]);
 
   const openCreate = useCallback(() => {
     setModalRow(null);
@@ -334,7 +343,12 @@ export function ModelesSmsView({
         <EmptyDescription>{t("templates.emptyBody")}</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button variant="default" className="rounded-full" onClick={openCreate}>
+        <Button
+          variant="default"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
+          onClick={openCreate}
+        >
           <Plus aria-hidden />
           {t("templates.create")}
         </Button>
@@ -347,36 +361,34 @@ export function ModelesSmsView({
       {
         accessorKey: "createdLabel",
         header: t("templates.col.created"),
-        ...listColFixed(LINK_COL.created),
+        ...listColResizable(LINK_COL.created),
+        cell: ({ row }) => (
+          <ListCreatedCell
+            dateLabel={row.original.createdDateLabel}
+            timeLabel={row.original.createdTimeLabel}
+          />
+        ),
       },
       {
         accessorKey: "title",
         header: t("templates.col.title"),
         ...listColFixed(LINK_COL.label),
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-foreground">
-            {getValue<string>()}
-          </CellTruncate>
+          <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
       },
       {
         accessorKey: "description",
         header: t("templates.col.description"),
         size: MODELE_SMS_COL.description,
-        cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-muted-foreground">
-            {getValue<string>() || "—"}
-          </CellTruncate>
-        ),
+        cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
       },
       {
         accessorKey: "body",
         header: t("templates.col.message"),
         size: MODELE_SMS_COL.body,
         cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-muted-foreground">
-            {getValue<string>()}
-          </CellTruncate>
+          <CellTruncate as="div">{getValue<string>()}</CellTruncate>
         ),
       },
     ],
@@ -469,6 +481,11 @@ export function ModelesSmsView({
     ],
   );
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(columns, filterLabels),
+    [columns, filterLabels],
+  );
+
   const deleteCount = pendingDelete?.ids.length ?? 0;
 
   return (
@@ -493,6 +510,19 @@ export function ModelesSmsView({
             aria-label={t("templates.searchAria")}
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
@@ -504,14 +534,26 @@ export function ModelesSmsView({
             onExpand={() => void expandToMatchAll()}
           />
         ) : (
-          <div className="min-w-0 flex-1" aria-hidden />
+          <div className={LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS} aria-hidden />
         )}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
-          {hasSelection ? (
+        <ListViewToolbarCtaSwitch
+          hasSelection={toolbarHasSelection}
+          defaultActions={
+            <Button
+              variant="default"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+              className={LIST_VIEW_CTA_BUTTON_CLASS}
+              onClick={openCreate}
+            >
+              <Plus aria-hidden />
+              {t("templates.create")}
+            </Button>
+          }
+          selectionActions={
             <Button
               variant="destructive"
               size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-              className="rounded-full"
+              className={LIST_VIEW_CTA_BUTTON_CLASS}
               onClick={() => {
                 void (async () => {
                   const ids = await ensureSelectionReady();
@@ -521,20 +563,10 @@ export function ModelesSmsView({
               }}
             >
               <Trash2 aria-hidden />
-              {t("templates.deleteSelected", { n: displaySelectedCount })}
+              {t("templates.deleteSelected", { n: selectionActionCount })}
             </Button>
-          ) : (
-            <Button
-              variant="default"
-              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-              className="rounded-full"
-              onClick={openCreate}
-            >
-              <Plus aria-hidden />
-              {t("templates.create")}
-            </Button>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {error ? (
@@ -573,6 +605,8 @@ export function ModelesSmsView({
         loadingMessage={t("templates.loading")}
         emptyMessage={emptyState}
         searchNoResultsMessage={t("templates.noSearchResults")}
+        filterNoResultsMessage={t("listView.noFilterResults")}
+        searchAndFilterNoResultsMessage={t("listView.noSearchAndFilterResults")}
         footer={footerLabel}
         sorting={sorting}
         onSortingChange={onSortingChange}
@@ -585,7 +619,8 @@ export function ModelesSmsView({
         }}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
 
       <CreateSmsTemplateModal

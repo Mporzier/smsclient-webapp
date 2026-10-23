@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { useCallback, useState } from "react";
 import { Users } from "lucide-react";
 import {
@@ -46,6 +47,7 @@ export function GroupQuickCreateModal({
   onClose,
   onCreated,
 }: GroupQuickCreateModalProps) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
@@ -165,7 +167,7 @@ export function GroupQuickCreateModal({
                 setNameError(null);
                 setSaveError(null);
               }}
-              placeholder="Ex. Clients VIP"
+              placeholder={t("groups.field.namePlaceholder")}
             />
             {nameError ? (
               <p
@@ -191,7 +193,7 @@ export function GroupQuickCreateModal({
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               rows={3}
-              placeholder="Ex. Clients VIP, relance juin"
+              placeholder={t("groups.field.descriptionPlaceholder")}
             />
           </div>
         </div>

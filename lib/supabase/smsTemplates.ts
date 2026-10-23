@@ -23,24 +23,38 @@ export type UserSmsTemplateRecord = {
   created_at: string;
 };
 
-function formatFrDate(iso: string): string {
-  return new Date(iso).toLocaleString("fr-FR", {
+function formatCreatedLabels(iso: string): {
+  createdDateLabel: string;
+  createdTimeLabel: string;
+  createdLabel: string;
+} {
+  const d = new Date(iso);
+  const createdDateLabel = d.toLocaleDateString("fr-FR", {
     timeZone: "Europe/Paris",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+  const createdTimeLabel = d.toLocaleTimeString("fr-FR", {
+    timeZone: "Europe/Paris",
     hour: "2-digit",
     minute: "2-digit",
   });
+  return {
+    createdDateLabel,
+    createdTimeLabel,
+    createdLabel: `${createdDateLabel} ${createdTimeLabel}`,
+  };
 }
 
 function recordToRow(r: UserSmsTemplateRecord): UserSmsTemplateRow {
+  const created = formatCreatedLabels(r.created_at);
   return {
     id: r.id,
     title: r.title.trim(),
     description: r.description.trim(),
     body: r.body,
-    createdLabel: formatFrDate(r.created_at),
+    ...created,
   };
 }
 

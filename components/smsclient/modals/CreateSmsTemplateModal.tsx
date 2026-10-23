@@ -206,7 +206,7 @@ export function CreateSmsTemplateModal({
         overlayClassName={dialogOverlayStackedCls}
         className={cn(
           formDialogContentCls,
-          "max-h-[min(86dvh,640px)] sm:max-w-[520px]",
+          "max-h-[min(90dvh,820px)] sm:max-w-[620px]",
           dialogContentStackedZCls,
         )}
         onOpenAutoFocus={preventDialogOpenAutoFocus}

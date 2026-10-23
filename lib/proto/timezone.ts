@@ -70,3 +70,26 @@ export function formatParisCalendarDate(iso: string | null | undefined): string 
   const { day, month, year } = parisDateParts(new Date(iso));
   return `${day}/${month}/${year}`;
 }
+
+/** Date + heure liste (aligné modèles SMS / liens). */
+export function formatParisCreatedLabels(iso: string | null | undefined): {
+  createdDateLabel: string;
+  createdTimeLabel: string;
+} {
+  if (!iso) {
+    return { createdDateLabel: "—", createdTimeLabel: "" };
+  }
+  const d = new Date(iso);
+  const createdDateLabel = d.toLocaleDateString("fr-FR", {
+    timeZone: "Europe/Paris",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const createdTimeLabel = d.toLocaleTimeString("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return { createdDateLabel, createdTimeLabel };
+}

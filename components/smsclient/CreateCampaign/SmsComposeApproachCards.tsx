@@ -204,16 +204,17 @@ export function SmsComposeApproachCards({
             ) : null}
             <div
               className={cn(
-                "flex min-w-0 flex-1 flex-col justify-center",
-                compact ? "min-w-0" : "flex-1 px-4 py-5"
+                "flex min-w-0 flex-1 flex-col",
+                compact ? "min-w-0 justify-center" : "px-4 pt-5 pb-2"
               )}
             >
-              <div
-                className={cn(
-                  "flex min-w-0 items-center",
-                  compact ? "gap-2" : "gap-3"
-                )}
-              >
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center">
+                <div
+                  className={cn(
+                    "flex min-w-0 items-center",
+                    compact ? "gap-2" : "gap-3"
+                  )}
+                >
                 <span
                   className={cn(
                     "grid shrink-0 place-items-center rounded-full leading-none",
@@ -240,6 +241,10 @@ export function SmsComposeApproachCards({
                   )}
                 </div>
               </div>
+              </div>
+              {!compact ? (
+                <div className="h-9 shrink-0 sm:h-10" aria-hidden />
+              ) : null}
             </div>
           </button>
         );

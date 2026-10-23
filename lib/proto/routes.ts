@@ -10,6 +10,7 @@ export type AppRoute =
   | "liens"
   | "modeles-sms"
   | "reglementations-sms"
+  | "parrainage"
   | "aide"
   | "nouvelle-campagne"
   | "acheter-credits";
@@ -26,6 +27,7 @@ export const APP_ROUTES: AppRoute[] = [
   "liens",
   "modeles-sms",
   "reglementations-sms",
+  "parrainage",
   "aide",
   "nouvelle-campagne",
   "acheter-credits",
@@ -47,6 +49,7 @@ export const ROUTE_TITLES: Record<AppRoute, string> = {
   liens: "Liens",
   "modeles-sms": "Modèles SMS",
   "reglementations-sms": "Conformité SMS",
+  parrainage: "Parrainage",
   aide: "Centre d'aide",
   "nouvelle-campagne": "Nouvel envoi SMS",
   "acheter-credits": "Acheter des crédits",

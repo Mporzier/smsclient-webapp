@@ -37,6 +37,18 @@ describe("shouldShowExpandBanner", () => {
       }),
     ).toBe(true);
   });
+
+  it("false while counting without expandCandidate", () => {
+    expect(
+      shouldShowExpandBanner({
+        pageSelectActive: true,
+        matchTotal: null,
+        selectedCount: 2,
+        expandCandidate: false,
+        counting: true,
+      }),
+    ).toBe(false);
+  });
 });
 
 describe("useGmailSelectAll", () => {
@@ -128,6 +140,42 @@ describe("useGmailSelectAll", () => {
       selectedIds: Array.from({ length: 100 }, (_, i) => `id-${i}`),
     });
     expect(result.current.displaySelectedCount).toBe(100);
+  });
+
+  it("skips expand banner when listMatchTotal fits loaded page", async () => {
+    let selected: string[] = [];
+    const setSelectedIds = vi.fn((ids: string[]) => {
+      selected = ids;
+    });
+    let countCalled = false;
+
+    const { result, rerender } = renderHook(
+      ({ selectedIds }) =>
+        useGmailSelectAll({
+          search: "",
+          loadedIds: ["a", "b"],
+          selectedIds,
+          setSelectedIds,
+          countMatch: async () => {
+            countCalled = true;
+            return { count: 2, error: null };
+          },
+          fetchAllIds: async () => ({ data: ["a", "b"], error: null }),
+          expandCandidate: false,
+          listMatchTotal: 2,
+        }),
+      { initialProps: { selectedIds: selected } },
+    );
+
+    await act(async () => {
+      result.current.selectLoaded();
+    });
+    rerender({ selectedIds: selected });
+
+    expect(selected).toEqual(["a", "b"]);
+    expect(result.current.showExpandBanner).toBe(false);
+    expect(result.current.counting).toBe(false);
+    expect(countCalled).toBe(false);
   });
 
   it("seeds matchTotal from listMatchTotal on selectLoaded", async () => {

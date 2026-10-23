@@ -1,6 +1,10 @@
 "use client";
 
-import { CellTruncate } from "@/components/smsclient/ui";
+import {
+  CellTruncate,
+  ListCellValue,
+  ListCreatedCell,
+} from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,22 +15,32 @@ import {
 import {
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
+  LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS,
+  listViewToolbarSelection,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
 import {
   GROUP_COL,
   LINK_COL,
   listColFixed,
+  listColResizable,
 } from "@/components/smsclient/listColumnSizes";
 import {
   ListEmptyIntroBanner,
   shouldShowGroupesListIntro,
 } from "@/components/smsclient/ListEmptyIntroBanner";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { ListViewToolbarCtaSwitch } from "@/components/smsclient/ListViewToolbarCtaSwitch";
 import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTitleContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -43,11 +57,13 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
 import { cn } from "@/lib/cn";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { listFiltersKey, normalizeListFilters } from "@/lib/proto/listFilters";
 import { groupColumnFilterKind } from "@/lib/proto/listFilterUi";
 import { groupColor } from "@/lib/proto/contactDisplay";
+import { formatParisCreatedLabels } from "@/lib/proto/timezone";
 import type { GroupRowData } from "@/lib/types/group";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -104,9 +120,7 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
       accessorKey: "description",
       header: t("groups.col.description"),
       size: GROUP_COL.description,
-      cell: ({ getValue }) => (
-        <CellTruncate as="div">{getValue<string>().trim() || "—"}</CellTruncate>
-      ),
+      cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
     },
     {
       accessorKey: "contactCount",
@@ -117,17 +131,22 @@ function buildGroupColumns(t: TFn): ColumnDef<GroupRowData, unknown>[] {
       accessorKey: "lastCampaignLabel",
       header: t("groups.col.lastCampaign"),
       size: GROUP_COL.lastCampaign,
-      cell: ({ getValue }) => (
-        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-      ),
+      cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
     },
     {
       accessorKey: "createdLabel",
       header: t("groups.col.created"),
-      ...listColFixed(LINK_COL.created),
-      cell: ({ getValue }) => (
-        <CellTruncate as="div">{getValue<string>()}</CellTruncate>
-      ),
+      ...listColResizable(LINK_COL.created),
+      cell: ({ row }) => {
+        const { createdDateLabel, createdTimeLabel } =
+          formatParisCreatedLabels(row.original.createdAt);
+        return (
+          <ListCreatedCell
+            dateLabel={createdDateLabel}
+            timeLabel={createdTimeLabel}
+          />
+        );
+      },
     },
   ];
 }
@@ -185,6 +204,8 @@ export function GroupesView({
   const { openHelp } = useShellHelpActions();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [listIntroDismissed, setListIntroDismissed] = useState(false);
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("groupes");
 
   const filterLabels = useMemo(
     () => ({
@@ -244,9 +265,11 @@ export function GroupesView({
     expandCandidate:
       hasMore ||
       (typeof totalCount === "number" && totalCount > loadedIds.length),
+    listMatchTotal: totalCount ?? null,
   });
 
-  const hasSelection = displaySelectedCount > 0;
+  const { selectionActionCount, toolbarHasSelection } =
+    listViewToolbarSelection({ selectedIds, displaySelectedCount });
 
   const showListIntro = shouldShowGroupesListIntro({
     loading,
@@ -270,7 +293,8 @@ export function GroupesView({
       <EmptyContent>
         <Button
           variant="default"
-          className="rounded-full"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
           onClick={onCreateGroup}
         >
           <Plus aria-hidden />
@@ -308,32 +332,24 @@ export function GroupesView({
       clearSelection();
       return;
     }
+    setSelectedIds(new Set(loadedIds));
     selectLoaded();
-  }, [allLoadedSelected, clearSelection, selectLoaded]);
+  }, [allLoadedSelected, clearSelection, loadedIds, selectLoaded]);
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = groupColumnFilterKind(columnId);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={filterLabels[columnId as keyof typeof filterLabels] ?? columnId}
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={(next) => {
-            clearSelection();
-            setColumnFilters(next);
-          }}
-        />
-      );
-    },
-    [
-      clearSelection,
-      columnFilters,
-      filterLabels,
-      setColumnFilters,
-    ],
+  const filterSpecs = useMemo(
+    () =>
+      buildListFilterSpecs(
+        [
+          "name",
+          "description",
+          "contactCount",
+          "lastCampaignLabel",
+          "createdLabel",
+        ],
+        filterLabels,
+        groupColumnFilterKind,
+      ),
+    [filterLabels],
   );
 
   const selectColumns: ColumnDef<GroupRowData, unknown>[] = useMemo(
@@ -421,6 +437,11 @@ export function GroupesView({
     ]
   );
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(selectColumns, filterLabels),
+    [selectColumns, filterLabels],
+  );
+
   return (
     <div className={LIST_VIEW_STACK_CLASS}>
       {showListIntro ? (
@@ -443,6 +464,19 @@ export function GroupesView({
             aria-label={t("groups.searchAria")}
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
@@ -456,15 +490,27 @@ export function GroupesView({
             onExpand={() => void expandToMatchAll()}
           />
         ) : (
-          <div className="min-w-0 flex-1" aria-hidden />
+          <div className={LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS} aria-hidden />
         )}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
-          {hasSelection ? (
+        <ListViewToolbarCtaSwitch
+          hasSelection={toolbarHasSelection}
+          defaultActions={
+            <Button
+              variant="default"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+              className={LIST_VIEW_CTA_BUTTON_CLASS}
+              onClick={onCreateGroup}
+            >
+              <Plus aria-hidden />
+              {t("groups.create")}
+            </Button>
+          }
+          selectionActions={
             <>
               <Button
                 variant="destructive"
                 size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
                 onClick={() => {
                   void (async () => {
                     const ids = await ensureSelectionReady();
@@ -474,12 +520,12 @@ export function GroupesView({
                 }}
               >
                 <Trash2 aria-hidden />
-                {t("groups.deleteSelected", { n: displaySelectedCount })}
+                {t("groups.deleteSelected", { n: selectionActionCount })}
               </Button>
               <Button
                 variant="default"
                 size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-                className="rounded-full"
+                className={LIST_VIEW_CTA_BUTTON_CLASS}
                 onClick={() => {
                   void (async () => {
                     const ids = await ensureSelectionReady();
@@ -492,18 +538,8 @@ export function GroupesView({
                 {t("groups.createCampaign")}
               </Button>
             </>
-          ) : (
-            <Button
-              variant="default"
-              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-              className="rounded-full"
-              onClick={onCreateGroup}
-            >
-              <Plus aria-hidden />
-              {t("groups.create")}
-            </Button>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {error && (
@@ -542,6 +578,8 @@ export function GroupesView({
         loadingMessage={t("groups.loading")}
         emptyMessage={emptyState}
         searchNoResultsMessage={t("groups.noSearchResults")}
+        filterNoResultsMessage={t("listView.noFilterResults")}
+        searchAndFilterNoResultsMessage={t("listView.noSearchAndFilterResults")}
         onRowClick={onEditGroup}
         footer={footerLabel}
         sorting={sorting}
@@ -554,7 +592,8 @@ export function GroupesView({
         }}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
     </div>
   );

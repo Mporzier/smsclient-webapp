@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/cn";
 import { useI18n } from "@/lib/i18n";
 import type { MessageKey } from "@/lib/i18n/messages";
+import { VIEW_STACK_CLIP_SAFE } from "@/lib/proto/viewLayout";
 import {
   REGULATION_SECTION_ORDER,
   SMS_REGULATIONS,
@@ -320,7 +321,7 @@ export function ReglementationsSmsView() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+    <div className={cn(VIEW_STACK_CLIP_SAFE, "gap-3")}>
       {!introDismissed ? (
         <ListEmptyIntroBanner
           section="reglementations-sms"

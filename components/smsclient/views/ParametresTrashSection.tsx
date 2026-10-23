@@ -1,7 +1,12 @@
 "use client";
 
 import { DataTable } from "@/components/smsclient/DataTable";
+import { ListCellValue } from "@/components/smsclient/ui";
 import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  LIST_VIEW_CTA_BUTTON_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+} from "@/components/smsclient/listViewLayout";
 import { TrashRestoreModal } from "@/components/smsclient/modals/TrashRestoreModal";import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -281,7 +286,7 @@ export function ParametresTrashSection({
       {
         accessorKey: "description",
         header: t("trash.col.description"),
-        cell: ({ getValue }) => getValue<string>() || "—",
+        cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
       },
       {
         accessorKey: "contactCount",
@@ -346,8 +351,8 @@ export function ParametresTrashSection({
         <div className="min-w-0 flex-1" aria-hidden />
         <Button
           variant="default"
-          size="lg"
-          className="rounded-full"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
           disabled={selectedCount === 0}
           onClick={() => setConfirmOpen(true)}
         >

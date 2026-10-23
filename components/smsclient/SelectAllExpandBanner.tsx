@@ -40,7 +40,7 @@ export function SelectAllExpandBanner({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground",
+        "flex h-8 min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 text-[11px] font-semibold leading-none text-foreground",
         className
       )}
       role="status"

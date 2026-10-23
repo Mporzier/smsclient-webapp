@@ -463,7 +463,7 @@ export function ContactCreateModal({
                   inputMode="numeric"
                   autoComplete="tel-national"
                   enterKeyHint="done"
-                  placeholder="Ex. 06 12 34 56 78"
+                  placeholder={t("contact.modal.phonePh")}
                   maxLength={PHONE_DISPLAY_MAX_LENGTH}
                   className={cn(modalFieldCls, "pl-8")}
                   value={phone}

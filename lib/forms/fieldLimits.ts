@@ -15,7 +15,7 @@ export const COUNTRY_MAX_LENGTH = 60;
 export const BILLING_CONTACT_MAX_LENGTH = 120;
 export const URL_MAX_LENGTH = 2048;
 export const SMS_TEMPLATE_DESCRIPTION_MAX_LENGTH = 120;
-/** Plafond absolu SMS (8 × GSM concat). Check encoding-aware reste au submit. */
+/** Plafond saisie SMS (2 × GSM concat septets). Éditeur campagne clamp encoding-aware. */
 export const SMS_BODY_HARD_MAX_LENGTH =
   SMS_LIMITS.GSM_CONCAT * SMS_LIMITS.MAX_SEGMENTS;
 export const CUSTOM_FIELD_LABEL_MAX_LENGTH = 60;

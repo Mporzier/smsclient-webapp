@@ -51,7 +51,9 @@ export function makeGroup(overrides: Partial<GroupRowData> = {}): GroupRowData {
     contactCount: 0,
     lastCampaignLabel: "—",
     lastCampaignAt: null,
-    createdLabel: "01/06/2025",
+    createdDateLabel: "01/06/2025",
+    createdTimeLabel: "12:00",
+    createdLabel: "01/06/2025 12:00",
     createdAt: "2025-06-01T10:00:00.000Z",
     ...overrides,
   };

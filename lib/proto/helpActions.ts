@@ -1,8 +1,4 @@
 import {
-  isOpenWidgetEnabled,
-  openOpenWidget,
-} from "@/lib/openwidget";
-import {
   BookOpen,
   CircleHelp,
   Mail,
@@ -23,7 +19,6 @@ export const HELP_ACTIONS: HelpAction[] = [
     id: "center",
     icon: BookOpen,
     onClick: () => {
-      if (openOpenWidget("faq")) return;
       window.open("https://smsclient.fr/aide", "_blank", "noopener,noreferrer");
     },
   },
@@ -31,7 +26,6 @@ export const HELP_ACTIONS: HelpAction[] = [
     id: "faq",
     icon: CircleHelp,
     onClick: () => {
-      if (openOpenWidget("faq")) return;
       window.open("https://smsclient.fr/faq", "_blank", "noopener,noreferrer");
     },
   },
@@ -39,7 +33,6 @@ export const HELP_ACTIONS: HelpAction[] = [
     id: "support",
     icon: Mail,
     onClick: () => {
-      if (openOpenWidget("form-contact")) return;
       window.location.href =
         "mailto:support@smsclient.fr?subject=Aide%20SMSClient";
     },
@@ -48,11 +41,8 @@ export const HELP_ACTIONS: HelpAction[] = [
     id: "feedback",
     icon: MessageCircle,
     onClick: () => {
-      if (openOpenWidget("form-feedback")) return;
       window.location.href =
         "mailto:support@smsclient.fr?subject=Retour%20SMSClient&body=Bonjour%2C%0A%0A";
     },
   },
 ];
-
-export { isOpenWidgetEnabled };

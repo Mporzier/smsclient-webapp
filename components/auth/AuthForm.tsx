@@ -81,11 +81,15 @@ export function AuthForm({ mode }: Props) {
 
     try {
       if (mode === "signup") {
+        const referralCode = searchParams.get("ref")?.trim() ?? "";
         const { data, error: err } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
           options: {
             emailRedirectTo: getEmailRedirectTo(),
+            ...(referralCode
+              ? { data: { referral_code: referralCode.toUpperCase() } }
+              : {}),
           },
         });
         if (err) {

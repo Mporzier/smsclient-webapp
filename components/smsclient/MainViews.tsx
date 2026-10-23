@@ -15,6 +15,7 @@ export {
   ParametresView,
   QrCodeView,
   ReglementationsSmsView,
+  ParrainageView,
   AideView,
   StatistiquesView,
 } from "./views";

@@ -244,6 +244,7 @@ export function renderDefaultRoute(ctx: PrototypeAppContext): ReactNode {
       onCreateCampaignFromContacts={(ids) =>
         wizard.openCampaignComposer({ contactIds: ids })
       }
+      onAddContactsToGroup={actions.handleAddContactsToGroup}
     />
   );
 }

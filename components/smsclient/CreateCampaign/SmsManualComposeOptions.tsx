@@ -41,14 +41,14 @@ function ManualEnhanceModeCard({
         "flex min-h-0 cursor-pointer flex-col gap-1.5 rounded-xl border p-2.5 text-left transition-colors",
         selected
           ? "border-primary/40 bg-accent/60 ring-1 ring-primary/15"
-          : "border-border bg-card hover:bg-muted/30",
+          : "border-border bg-card hover:bg-muted/30"
       )}
     >
       <div className="flex items-center gap-2">
         <span
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-full text-base leading-none",
-            selected ? "bg-blue-100" : "bg-muted",
+            selected ? "bg-blue-100" : "bg-muted"
           )}
           aria-hidden
         >
@@ -57,7 +57,7 @@ function ManualEnhanceModeCard({
         <span
           className={cn(
             "text-xs font-semibold leading-snug",
-            selected ? "text-foreground" : "text-foreground/90",
+            selected ? "text-foreground" : "text-foreground/90"
           )}
         >
           {label}
@@ -75,25 +75,23 @@ export function SmsManualComposeOptions({
   disabled = false,
   showModeCards = false,
 }: SmsManualComposeOptionsProps) {
-  const [modes, setModes] = useState<ManualEnhanceMode[]>(
-    () => [...DEFAULT_MANUAL_ENHANCE_MODES],
-  );
+  const [modes, setModes] = useState<ManualEnhanceMode[]>(() => [
+    ...DEFAULT_MANUAL_ENHANCE_MODES,
+  ]);
 
   const toggleMode = (value: ManualEnhanceMode) => {
     setModes((prev) =>
-      prev.includes(value)
-        ? prev.filter((m) => m !== value)
-        : [...prev, value],
+      prev.includes(value) ? prev.filter((m) => m !== value) : [...prev, value]
     );
   };
 
   const selectedLabels = MANUAL_ENHANCE_MODES.filter((m) =>
-    modes.includes(m.value),
+    modes.includes(m.value)
   ).map((m) => m.label);
 
   const ctaLabel = (() => {
     if (!showModeCards) return "Correction et reformulation";
-    if (selectedLabels.length === 0) return "Appliquer au message";
+    if (selectedLabels.length === 0) return "Choisissez une option ci-dessus";
     if (selectedLabels.length === 1) {
       return `${selectedLabels[0]} le message`;
     }
@@ -125,10 +123,7 @@ export function SmsManualComposeOptions({
         <Button
           variant="default"
           size="lg"
-          className={cn(
-            brandBtnPrimaryCls,
-            "h-10 shrink-0 gap-2 px-4 text-sm",
-          )}
+          className={cn(brandBtnPrimaryCls, "h-10 shrink-0 gap-2 px-4 text-sm")}
           onClick={() => onApplyEnhance(modes)}
           disabled={disabled || (showModeCards && modes.length === 0)}
         >

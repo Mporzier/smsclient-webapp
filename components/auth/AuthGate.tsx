@@ -25,7 +25,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   /** Même logique que `basePath` : le pathname côté app n’inclut pas le préfixe du repo. */
   const isPublicCapturePage =
     pathname === "/capture" || pathname === "/capture/" || false;
-  const isPublicPage = isAuthPage || isPublicCapturePage;
+  const isPublicParrainagePage =
+    pathname === "/parrainage" ||
+    pathname === "/parrainage/" ||
+    pathname?.startsWith("/parrainage/") ||
+    false;
+  const isPublicPage =
+    isAuthPage || isPublicCapturePage || isPublicParrainagePage;
 
   const unconfirmed = Boolean(user && !user.email_confirmed_at);
 

@@ -8,6 +8,7 @@ import {
   CircleHelp,
   CircleUserRound,
   Coins,
+  Gift,
   LayoutTemplate,
   Link,
   Send,
@@ -30,6 +31,7 @@ export type SectionGuideKey =
   | "parametres"
   | "qr-boutique"
   | "reglementations-sms"
+  | "parrainage"
   | "nouvelle-campagne"
   | "acheter-credits"
   | "aide";
@@ -92,6 +94,10 @@ export const SECTION_GUIDES: Record<SectionGuideKey, SectionGuideMeta> = {
   "reglementations-sms": {
     icon: Scale,
     primaryRoute: "aide",
+    kbSlug: "accueil",
+  },
+  parrainage: {
+    icon: Gift,
     kbSlug: "accueil",
   },
   "nouvelle-campagne": {

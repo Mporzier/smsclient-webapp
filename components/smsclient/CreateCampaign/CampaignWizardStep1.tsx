@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  LIST_VIEW_CTA_BUTTON_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+} from "@/components/smsclient/listViewLayout";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -381,7 +385,8 @@ export function CampaignWizardStep1Main() {
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <Button
                         variant="default"
-                        className="rounded-full"
+                        size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                        className={LIST_VIEW_CTA_BUTTON_CLASS}
                         onClick={() => onGoToContacts("add")}
                       >
                         <Plus aria-hidden />
@@ -389,7 +394,8 @@ export function CampaignWizardStep1Main() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="rounded-full"
+                        size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                        className={LIST_VIEW_CTA_BUTTON_CLASS}
                         onClick={() => onGoToContacts("import")}
                       >
                         <Download aria-hidden />
@@ -535,7 +541,8 @@ export function CampaignWizardStep1Main() {
                 <EmptyContent>
                   <Button
                     variant="default"
-                    className="rounded-full"
+                    size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+                    className={LIST_VIEW_CTA_BUTTON_CLASS}
                     onClick={onGoToGroups}
                   >
                     <Plus aria-hidden />

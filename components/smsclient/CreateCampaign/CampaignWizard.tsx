@@ -74,7 +74,6 @@ import { CAMPAIGN_WIZARD_SUMMARY_COL } from "./campaignLayout";
 import {
   buildDefaultCampaignTitle,
   stripStopMention,
-  hasStopMention,
   buildEffectiveSms,
 } from "./campaignTextUtils";
 import {
@@ -342,14 +341,10 @@ export function CampaignWizard({
   }, [commercialMessage, syncEffectiveSms, smsBody]);
 
   const applyExternalMessage = useCallback(
-    (raw: string, opts?: { fromAiApi?: boolean }) => {
+    (raw: string, _opts?: { fromAiApi?: boolean }) => {
       const body = stripStopMention(raw);
       setSmsBody(body);
-      if (opts?.fromAiApi && hasStopMention(raw)) {
-        setSms(raw.trim());
-      } else {
-        setSms(buildEffectiveSms(body, commercialMessage));
-      }
+      setSms(buildEffectiveSms(body, commercialMessage));
     },
     [setSms, commercialMessage],
   );
@@ -538,6 +533,7 @@ export function CampaignWizard({
         options: aiOptions,
         customFieldDefs,
         linkUrl,
+        commercialMessage,
       });
       setAiVariants(variants);
       if (variants.length > 0) {
@@ -568,6 +564,7 @@ export function CampaignWizard({
     applyExternalMessage,
     aiFreeTrialUsedToday,
     campaignMessageTooShortError,
+    commercialMessage,
   ]);
 
   const handleSelectAiVariant = useCallback(
@@ -1031,6 +1028,8 @@ export function CampaignWizard({
                               savedLinks={savedLinks}
                               linksLoading={linksLoading}
                               onCreateLink={handleCreateSmsLink}
+                              commercialMessage={commercialMessage}
+                              onCommercialMessageChange={setCommercialMessage}
                             />
                           ) : (
                             <>

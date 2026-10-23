@@ -1,7 +1,12 @@
 "use client";
 
 import { DataTable } from "@/components/smsclient/DataTable";
+import { CellTruncate } from "@/components/smsclient/ui";
 import { CONTACT_COL } from "@/components/smsclient/listColumnSizes";
+import {
+  LIST_VIEW_CTA_BUTTON_CLASS,
+  LIST_VIEW_TOOLBAR_BUTTON_SIZE,
+} from "@/components/smsclient/listViewLayout";
 import { ConfirmCustomFieldDeleteModal } from "@/components/smsclient/modals/ConfirmCustomFieldDeleteModal";
 import {
   dialogContentStackedZCls,
@@ -280,7 +285,7 @@ export function CustomFieldsSettingsPanel({
               </Button>
             </div>
           ) : (
-            <span className="truncate">{row.original.label}</span>
+            <CellTruncate as="span">{row.original.label}</CellTruncate>
           ),
       },
       {
@@ -348,8 +353,8 @@ export function CustomFieldsSettingsPanel({
           <div className="min-w-0 flex-1" aria-hidden />
           <Button
             variant="destructive"
-            size="lg"
-            className="rounded-full"
+            size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+            className={LIST_VIEW_CTA_BUTTON_CLASS}
             disabled={selectedCount === 0 || busy}
             onClick={() =>
               setDeleteIds(
@@ -364,8 +369,8 @@ export function CustomFieldsSettingsPanel({
           </Button>
           <Button
             variant="default"
-            size="lg"
-            className="rounded-full"
+            size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+            className={LIST_VIEW_CTA_BUTTON_CLASS}
             disabled={busy || atCap}
             onClick={() => setCreateOpen(true)}
           >

@@ -3,7 +3,12 @@
 import { ConfirmLinkDeleteModal } from "@/components/smsclient/modals/ConfirmLinkDeleteModal";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
 import { CopyableLinkField } from "@/components/smsclient/CopyableLinkField";
-import { CellTruncate, copyTextToClipboard } from "@/components/smsclient/ui";
+import {
+  CellTruncate,
+  ListCellValue,
+  ListCreatedCell,
+  copyTextToClipboard,
+} from "@/components/smsclient/ui";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,13 +33,25 @@ import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTit
 import {
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
+  LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS,
+  listViewToolbarSelection,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
-import { LINK_COL, listColFixed } from "@/components/smsclient/listColumnSizes";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
+import {
+  LINK_COL,
+  listColFixed,
+  listColResizable,
+} from "@/components/smsclient/listColumnSizes";
 import { listFiltersKey, normalizeListFilters } from "@/lib/proto/listFilters";
 import { linkColumnFilterKind } from "@/lib/proto/listFilterUi";
 import {
@@ -57,7 +74,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   Copy,
   ExternalLink,
-  Link2,
+  Link,
   MoreHorizontal,
   Plus,
   Search,
@@ -66,7 +83,9 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { SelectAllExpandBanner } from "@/components/smsclient/SelectAllExpandBanner";
+import { ListViewToolbarCtaSwitch } from "@/components/smsclient/ListViewToolbarCtaSwitch";
 import { useGmailSelectAll } from "@/hooks/useGmailSelectAll";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -121,6 +140,8 @@ export function LiensView({
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [listIntroDismissed, setListIntroDismissed] = useState(false);
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("liens");
 
   const filterLabels = useMemo(
     () => ({
@@ -185,36 +206,33 @@ export function LiensView({
     expandCandidate:
       hasMore ||
       (typeof totalCount === "number" && totalCount > loadedIds.length),
+    listMatchTotal: totalCount ?? null,
   });
 
-  const hasSelection = displaySelectedCount > 0;
+  const { selectionActionCount, toolbarHasSelection } =
+    listViewToolbarSelection({ selectedIds, displaySelectedCount });
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = linkColumnFilterKind(columnId);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={
-            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
-          }
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={(next) => {
-            clearSelection();
-            setColumnFilters(next);
-          }}
-        />
-      );
-    },
-    [clearSelection, columnFilters, filterLabels, setColumnFilters]
+  const filterSpecs = useMemo(
+    () =>
+      buildListFilterSpecs(
+        [
+          "createdLabel",
+          "label",
+          "description",
+          "originalUrl",
+          "clickCount",
+        ],
+        filterLabels,
+        linkColumnFilterKind,
+      ),
+    [filterLabels],
   );
 
   const showListIntro = shouldShowListEmptyIntro({
     loading,
     dataLength: rows.length,
     searchQuery,
+    hasActiveFilters,
     dismissed: listIntroDismissed,
   });
 
@@ -222,7 +240,7 @@ export function LiensView({
     <Empty className="p-0 md:p-0">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <Link2 aria-hidden />
+          <Link aria-hidden />
         </EmptyMedia>
         <EmptyTitle>{t("links.emptyTitle")}</EmptyTitle>
         <EmptyDescription>{t("links.emptyBody")}</EmptyDescription>
@@ -230,7 +248,8 @@ export function LiensView({
       <EmptyContent>
         <Button
           variant="default"
-          className="rounded-full"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
           onClick={() => setCreateOpen(true)}
         >
           <Plus aria-hidden />
@@ -322,8 +341,9 @@ export function LiensView({
       clearSelection();
       return;
     }
+    setSelectedIds(new Set(loadedIds));
     selectLoaded();
-  }, [allLoadedSelected, clearSelection, selectLoaded]);
+  }, [allLoadedSelected, clearSelection, loadedIds, selectLoaded]);
 
   const openDeleteOne = useCallback((row: LinkRowData) => {
     setPendingDelete({
@@ -351,19 +371,13 @@ export function LiensView({
         accessorKey: "label",
         header: t("links.col.label"),
         ...listColFixed(LINK_COL.label),
-        cell: ({ getValue }) => (
-          <CellTruncate as="div">{getValue<string>() || "—"}</CellTruncate>
-        ),
+        cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
       },
       {
         accessorKey: "description",
         header: t("links.col.description"),
         size: LINK_COL.description,
-        cell: ({ getValue }) => (
-          <CellTruncate as="div" className="text-muted-foreground">
-            {getValue<string>()?.trim() || "—"}
-          </CellTruncate>
-        ),
+        cell: ({ getValue }) => <ListCellValue value={getValue<string>()} />,
       },
       {
         accessorKey: "originalUrl",
@@ -373,19 +387,19 @@ export function LiensView({
           const url = getValue<string>();
           const label = linkUrlDisplayLabel(url);
           return (
-            <CellTruncate as="div" className="min-w-0">
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={url}
-                className="inline-flex min-w-0 max-w-full items-center gap-1 text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="size-3 shrink-0" aria-hidden />
-                <span className="truncate">{label}</span>
-              </a>
-            </CellTruncate>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={url}
+              className="inline-flex min-w-0 max-w-full items-center gap-1 text-foreground underline-offset-4 hover:text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="size-3 shrink-0" aria-hidden />
+              <CellTruncate as="span" className="min-w-0">
+                {label}
+              </CellTruncate>
+            </a>
           );
         },
       },
@@ -402,6 +416,8 @@ export function LiensView({
               value={shortUrl}
               displayValue={linkUrlDisplayLabel(shortUrl)}
               size="dense"
+              wrapDisplay
+              className="flex w-full min-w-0"
               copiedToast={t("links.copied")}
               copyFailedToast={t("links.copyFailed")}
             />
@@ -419,16 +435,12 @@ export function LiensView({
       {
         accessorKey: "createdLabel",
         header: t("links.col.created"),
-        ...listColFixed(LINK_COL.created),
+        ...listColResizable(LINK_COL.created),
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium text-foreground">
-              {row.original.createdDateLabel}
-            </div>
-            <div className="truncate text-xs text-muted-foreground">
-              {row.original.createdTimeLabel}
-            </div>
-          </div>
+          <ListCreatedCell
+            dateLabel={row.original.createdDateLabel}
+            timeLabel={row.original.createdTimeLabel}
+          />
         ),
       },
     ],
@@ -522,6 +534,11 @@ export function LiensView({
     ]
   );
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(columns, filterLabels),
+    [columns, filterLabels],
+  );
+
   const deleteCount = pendingDelete?.ids.length ?? 0;
 
   return (
@@ -546,6 +563,19 @@ export function LiensView({
             aria-label={t("links.searchAria")}
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={(next) => {
+            clearSelection();
+            setColumnFilters(next);
+          }}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
         {showExpandBanner ? (
           <SelectAllExpandBanner
             matchTotal={matchTotal}
@@ -557,14 +587,26 @@ export function LiensView({
             onExpand={() => void expandToMatchAll()}
           />
         ) : (
-          <div className="min-w-0 flex-1" aria-hidden />
+          <div className={LIST_VIEW_TOOLBAR_EXPAND_SLOT_CLASS} aria-hidden />
         )}
-        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
-          {hasSelection ? (
+        <ListViewToolbarCtaSwitch
+          hasSelection={toolbarHasSelection}
+          defaultActions={
+            <Button
+              variant="default"
+              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+              className={LIST_VIEW_CTA_BUTTON_CLASS}
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus aria-hidden />
+              {t("links.create")}
+            </Button>
+          }
+          selectionActions={
             <Button
               variant="destructive"
               size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-              className="rounded-full"
+              className={LIST_VIEW_CTA_BUTTON_CLASS}
               onClick={() => {
                 void (async () => {
                   const ids = await ensureSelectionReady();
@@ -574,20 +616,10 @@ export function LiensView({
               }}
             >
               <Trash2 aria-hidden />
-              {t("links.deleteSelected", { n: displaySelectedCount })}
+              {t("links.deleteSelected", { n: selectionActionCount })}
             </Button>
-          ) : (
-            <Button
-              variant="default"
-              size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-              className="rounded-full"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus aria-hidden />
-              {t("links.create")}
-            </Button>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {error ? (
@@ -626,6 +658,8 @@ export function LiensView({
         loadingMessage={t("links.loading")}
         emptyMessage={emptyState}
         searchNoResultsMessage={t("links.noSearchResults")}
+        filterNoResultsMessage={t("listView.noFilterResults")}
+        searchAndFilterNoResultsMessage={t("listView.noSearchAndFilterResults")}
         footer={footerLabel}
         sorting={sorting}
         onSortingChange={onSortingChange}
@@ -637,7 +671,8 @@ export function LiensView({
         }}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
 
       <CreateSmsLinkModal

@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { CreateSmsLinkModal } from "@/components/smsclient/modals/CreateSmsLinkModal";
 import { LoadingLabel } from "@/components/ui/loading-label";
 import type { LinkRowData } from "@/lib/types/link";
-import { Link2, Plus } from "lucide-react";
+import { Link, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type SmsLinkPickerProps = {
@@ -125,7 +125,7 @@ export function SmsLinkPicker({
                   disabled && "pointer-events-none opacity-50",
                 )}
               >
-                <Link2
+                <Link
                   className="h-3.5 w-3.5 shrink-0 text-[#2f6fed]"
                   aria-hidden
                 />

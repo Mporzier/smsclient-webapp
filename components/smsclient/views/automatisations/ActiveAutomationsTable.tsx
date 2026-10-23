@@ -8,12 +8,19 @@ import { useShellHelpActions } from "@/components/smsclient/shell/ShellHeaderTit
 import {
   LIST_VIEW_SEARCH_INPUT_CLASS,
   LIST_VIEW_STACK_CLASS,
+  LIST_VIEW_CTA_BUTTON_CLASS,
   LIST_VIEW_TOOLBAR_BUTTON_SIZE,
   LIST_VIEW_TOOLBAR_CLASS,
 } from "@/components/smsclient/listViewLayout";
 import { DataTable } from "@/components/smsclient/DataTable";
-import { DataTableColumnFilter } from "@/components/smsclient/DataTableColumnFilter";
+import { ListCellEmpty } from "@/components/smsclient/ui";
 import { ListFilterChips } from "@/components/smsclient/ListFilterChips";
+import { ListViewColumnsButton } from "@/components/smsclient/ListViewColumnsButton";
+import { ListViewFiltersButton } from "@/components/smsclient/ListViewFiltersButton";
+import {
+  buildListColumnToggleOptions,
+  buildListFilterSpecs,
+} from "@/components/smsclient/listViewTableHelpers";
 import {
   AUTOMATION_COL,
   LINK_COL,
@@ -48,9 +55,13 @@ import { normalizeListFilters } from "@/lib/proto/listFilters";
 import { rowMatchesListFilters } from "@/lib/proto/listRowFilters";
 import { automationColumnFilterKind } from "@/lib/proto/listFilterUi";
 import type { AutomationRowData } from "@/lib/types/automation";
-import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+} from "@tanstack/react-table";
 import { MoreHorizontal, Pencil, Plus, Search, Zap } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { usePersistedListColumnVisibility } from "@/hooks/usePersistedListColumnVisibility";
+import { useMemo, useState } from "react";
 
 const TAG_LABEL: Record<string, string> = {
   calendrier: "Calendrier",
@@ -88,35 +99,30 @@ export function ActiveAutomationsTable({
   const [listIntroDismissed, setListIntroDismissed] = useState(false);
   const [query, setQuery] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const { columnVisibility, setColumnVisibility } =
+    usePersistedListColumnVisibility("automatisations");
 
   const filterLabels = useMemo(
     () => ({
       name: "Automatisation",
       trigger: "Déclenchement",
       activity: "Activité",
+      status: "Statut",
+      lastActivity: "Dernière activité",
     }),
     [],
   );
 
   const hasActiveFilters = normalizeListFilters(columnFilters).length > 0;
 
-  const renderColumnFilter = useCallback(
-    (columnId: string) => {
-      const kind = automationColumnFilterKind(columnId);
-      if (!kind) return null;
-      return (
-        <DataTableColumnFilter
-          columnId={columnId}
-          columnLabel={
-            filterLabels[columnId as keyof typeof filterLabels] ?? columnId
-          }
-          kind={kind}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      );
-    },
-    [columnFilters, filterLabels],
+  const filterSpecs = useMemo(
+    () =>
+      buildListFilterSpecs(
+        ["name", "trigger", "activity"],
+        filterLabels,
+        automationColumnFilterKind,
+      ),
+    [filterLabels],
   );
 
   const activeRows = useMemo(
@@ -195,7 +201,7 @@ export function ActiveAutomationsTable({
         header: "Dernière activité",
         size: AUTOMATION_COL.lastActivity,
         cell: () => (
-          <span className="text-sm text-muted-foreground">—</span>
+          <ListCellEmpty />
         ),
       },
       {
@@ -248,7 +254,8 @@ export function ActiveAutomationsTable({
         <Button
           type="button"
           variant="default"
-          className="rounded-full"
+          size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
+          className={LIST_VIEW_CTA_BUTTON_CLASS}
           onClick={onCreate}
         >
           <Plus aria-hidden />
@@ -261,10 +268,16 @@ export function ActiveAutomationsTable({
   const n = filteredRows.length;
   const footer = n === 1 ? "1 automatisation" : `${n} automatisations`;
 
+  const columnToggleOptions = useMemo(
+    () => buildListColumnToggleOptions(columns, filterLabels),
+    [columns, filterLabels],
+  );
+
   const showListIntro = shouldShowListEmptyIntro({
     loading,
-    dataLength: activeRows.length,
+    dataLength: filteredRows.length,
     searchQuery: query,
+    hasActiveFilters,
     dismissed: listIntroDismissed,
   });
 
@@ -290,13 +303,23 @@ export function ActiveAutomationsTable({
             aria-label="Rechercher une automatisation active"
           />
         </InputGroup>
+        <ListViewFiltersButton
+          specs={filterSpecs}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+        <ListViewColumnsButton
+          options={columnToggleOptions}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+        />
         <div className="min-w-0 flex-1" aria-hidden />
         <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="default"
             size={LIST_VIEW_TOOLBAR_BUTTON_SIZE}
-            className="rounded-full"
+            className={LIST_VIEW_CTA_BUTTON_CLASS}
             onClick={onCreate}
           >
             <Plus aria-hidden />
@@ -318,6 +341,8 @@ export function ActiveAutomationsTable({
         loading={loading}
         emptyMessage={emptyState}
         searchNoResultsMessage="Aucun résultat pour cette recherche."
+        filterNoResultsMessage="Aucun élément ne correspond aux filtres appliqués."
+        searchAndFilterNoResultsMessage="Aucun élément ne correspond à votre recherche et aux filtres appliqués."
         globalFilter={query}
         onRowClick={onEdit}
         className="min-h-0 flex-1"
@@ -326,7 +351,8 @@ export function ActiveAutomationsTable({
         onColumnFiltersChange={setColumnFilters}
         manualFiltering
         hasActiveFilters={hasActiveFilters}
-        renderColumnFilter={renderColumnFilter}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
       />
     </section>
   );

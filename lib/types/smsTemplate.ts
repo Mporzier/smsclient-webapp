@@ -8,6 +8,11 @@ export type UserSmsTemplateRow = {
   title: string;
   description: string;
   body: string;
+  /** Date seule — affichage liste */
+  createdDateLabel: string;
+  /** Heure seule — sous la date */
+  createdTimeLabel: string;
+  /** Date + heure — filtres / tri */
   createdLabel: string;
 };
 

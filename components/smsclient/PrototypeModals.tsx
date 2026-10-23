@@ -12,6 +12,7 @@ export {
   GroupCreateModal,
   GroupEditModal,
   GroupQuickCreateModal,
+  AddContactsToGroupModal,
   UnsubscribedContactsModal,
   type UnsubscribedContactRow,
 } from "./modals";

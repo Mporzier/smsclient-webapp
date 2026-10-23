@@ -11,6 +11,7 @@ import {
   CircleUserRound,
   Info,
   Link,
+  Gift,
   MessageSquareText,
   Scale,
   Send,
@@ -27,6 +28,7 @@ export type ListEmptyIntroSection = Extract<
   | "modeles-sms"
   | "automatisations"
   | "reglementations-sms"
+  | "parrainage"
 >;
 
 const COPY_KEYS: Record<
@@ -61,6 +63,10 @@ const COPY_KEYS: Record<
     title: "listIntro.reglementations-sms.title",
     body: "listIntro.reglementations-sms.body",
   },
+  parrainage: {
+    title: "listIntro.parrainage.title",
+    body: "listIntro.parrainage.body",
+  },
 };
 
 const FALLBACK_ICONS = {
@@ -71,6 +77,7 @@ const FALLBACK_ICONS = {
   "modeles-sms": MessageSquareText,
   automatisations: CalendarSync,
   "reglementations-sms": Scale,
+  parrainage: Gift,
 } as const;
 
 export type ListEmptyIntroBannerProps = {
@@ -175,7 +182,7 @@ function listIntroBaseVisible(options: {
 }): boolean {
   if (options.dismissed || options.loading) return false;
   if (options.searchQuery.trim() !== "") return false;
-  if (options.hasActiveFilters) return false;
+  if (options.hasActiveFilters === true) return false;
   return true;
 }
 

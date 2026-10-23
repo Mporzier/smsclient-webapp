@@ -15,6 +15,7 @@ import {
 } from "@/components/smsclient/modals/ConfirmInfoCard";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/lib/i18n";
 import { SEARCH_QUERY_MAX_LENGTH } from "@/lib/forms/fieldLimits";
 import {
   innerInputSm,
@@ -695,6 +696,7 @@ function GroupModalContactsFooter({
 }
 
 export function GroupModal(props: GroupModalProps) {
+  const { t } = useI18n();
   const isCreate = props.mode === "create";
   const group = isCreate ? null : props.group;
   const contacts = useMemo(() => props.contacts ?? [], [props.contacts]);
@@ -1064,7 +1066,7 @@ export function GroupModal(props: GroupModalProps) {
                       setNameError(null);
                       setError(null);
                     }}
-                    placeholder="Ex. Clients VIP"
+                    placeholder={t("groups.field.namePlaceholder")}
                   />
                 </div>
                 {nameError ? (
@@ -1092,7 +1094,7 @@ export function GroupModal(props: GroupModalProps) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
-                    placeholder="Ex. Clients VIP, relance juin"
+                    placeholder={t("groups.field.descriptionPlaceholder")}
                   />
                 </div>
               </div>

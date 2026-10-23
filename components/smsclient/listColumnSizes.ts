@@ -55,7 +55,7 @@ export const LINK_COL = {
   description: 160,
   originalUrl: 220,
   /** l.sms.fm/xxxxxxx + chip copie */
-  shortUrl: 152,
+  shortUrl: 186,
   /** Assez large pour libellé + tri + filtre en en-tête */
   clickCount: 96,
   /** Menu … sticky droite — même largeur que select contacts */
@@ -69,6 +69,14 @@ export function listColFixed(pixels: number) {
     minSize: pixels,
     maxSize: pixels,
     enableResizing: false,
+  } as const;
+}
+
+/** Largeur initiale + min, resize autorisé (ex. date en fin de liste). */
+export function listColResizable(pixels: number) {
+  return {
+    size: pixels,
+    minSize: pixels,
   } as const;
 }
 

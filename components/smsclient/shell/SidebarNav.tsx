@@ -9,6 +9,7 @@ import {
   CircleHelp,
   CircleUserRound,
   Coins,
+  Gift,
   LayoutTemplate,
   Link,
   Send,
@@ -88,6 +89,7 @@ type NavKey =
   | "parametres"
   | "qr-boutique"
   | "reglementations-sms"
+  | "parrainage"
   | "aide"
   | "liens"
   | "modeles-sms";
@@ -128,6 +130,7 @@ export const toolsNav: NavItem[] = [
 export const assistanceNav: NavItem[] = [
   { id: "aide", hash: "aide", icon: CircleHelp },
   { id: "reglementations-sms", hash: "reglementations-sms", icon: Scale },
+  { id: "parrainage", hash: "parrainage", icon: Gift },
 ];
 
 /** Icône titre topbar — alignée sidebar / menu compte */
@@ -143,6 +146,7 @@ export const ROUTE_ICONS: Record<AppRoute, LucideIcon> = {
   liens: Link,
   "modeles-sms": MessageSquareText,
   "reglementations-sms": Scale,
+  parrainage: Gift,
   aide: CircleHelp,
   "nouvelle-campagne": Send,
   "acheter-credits": Coins,

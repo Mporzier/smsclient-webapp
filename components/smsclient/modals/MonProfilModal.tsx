@@ -17,6 +17,7 @@ import {
 } from "@/lib/forms/fieldLimits";
 import { defaultProfileForm, profileToForm } from "@/lib/supabase/profile";
 import type { UserProfileForm } from "@/lib/types/profile";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { UserRound } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -39,6 +40,7 @@ type MonProfilModalProps = {
 };
 
 export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { profile, loading, saveProfile } = useUserProfile();
   const [saved, setSaved] = useState<Pick<
@@ -176,7 +178,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                   setDraft((prev) => ({ ...prev, firstName: e.target.value }));
                   if (firstNameError) setFirstNameError(null);
                 }}
-                placeholder="Ex. Patrick"
+                placeholder={t("compte.field.firstNamePlaceholder")}
               />
               {firstNameError ? (
                 <p className="mt-1.5 text-xs font-medium text-destructive">
@@ -196,7 +198,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, lastName: e.target.value }))
                 }
-                placeholder="Ex. Azevedo"
+                placeholder={t("compte.field.lastNamePlaceholder")}
               />
             </div>
             <div className="col-span-2 max-[480px]:col-span-1">
@@ -211,7 +213,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, email: e.target.value }))
                 }
-                placeholder="Ex. email@domaine.fr"
+                placeholder={t("compte.field.emailPlaceholder")}
               />
             </div>
             <div className="col-span-2 max-[480px]:col-span-1">
@@ -226,7 +228,7 @@ export function MonProfilModal({ open, onClose }: MonProfilModalProps) {
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, phone: e.target.value }))
                 }
-                placeholder="Ex. 06 00 00 00 00"
+                placeholder={t("compte.field.phonePlaceholder")}
               />
             </div>
           </div>
